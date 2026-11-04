@@ -1,41 +1,53 @@
-import {
-  Outfit_400Regular,
-  Outfit_500Medium,
-  Outfit_600SemiBold,
-  Outfit_700Bold,
-  Outfit_800ExtraBold,
-  useFonts,
-} from '@expo-google-fonts/outfit';
-import { SplashScreen, Stack } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import { GroceryProvider } from '../state/GroceryContext';
-import { colors } from '../theme';
-
-SplashScreen.preventAutoHideAsync();
+import { useMemo } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { ToastProvider } from '../components/Toast';
+import { StoreProvider } from '../state/store';
+import { useTheme } from '../theme';
 
 export default function RootLayout() {
-  const [loaded, error] = useFonts({
-    Outfit_400Regular,
-    Outfit_500Medium,
-    Outfit_600SemiBold,
-    Outfit_700Bold,
-    Outfit_800ExtraBold,
-  });
+  const t = useTheme();
 
-  useEffect(() => {
-    if (loaded || error) SplashScreen.hideAsync();
-  }, [loaded, error]);
-
-  if (!loaded && !error) return null;
+  const navTheme = useMemo(() => {
+    const base = t.isDark ? DarkTheme : DefaultTheme;
+    return {
+      ...base,
+      colors: {
+        ...base.colors,
+        primary: t.colors.tint,
+        background: t.colors.background,
+        card: t.colors.cell,
+        text: t.colors.label,
+        border: t.colors.separator,
+        notification: t.colors.accent,
+      },
+    };
+  }, [t]);
 
   return (
-    <GroceryProvider>
-      <StatusBar style="light" />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="recipe/[id]" options={{ animation: 'slide_from_right' }} />
-      </Stack>
-    </GroceryProvider>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: t.colors.background }}>
+      <ThemeProvider value={navTheme}>
+        <StoreProvider>
+          <ToastProvider>
+            <StatusBar style="auto" />
+            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: t.colors.background } }}>
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="recipe/[id]" />
+              <Stack.Screen
+                name="plan-picker"
+                options={{
+                  presentation: 'formSheet',
+                  sheetAllowedDetents: [0.7, 1],
+                  sheetGrabberVisible: true,
+                  sheetCornerRadius: t.radius.xl,
+                  contentStyle: { backgroundColor: t.colors.groupedBackground },
+                }}
+              />
+            </Stack>
+          </ToastProvider>
+        </StoreProvider>
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }

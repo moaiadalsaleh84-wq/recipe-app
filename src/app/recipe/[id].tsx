@@ -1,305 +1,269 @@
-import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { useEffect, useRef, useState } from 'react';
+import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import Animated, {
+  Extrapolation,
+  interpolate,
+  useAnimatedReaction,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Confetti } from '../../components/Confetti';
-import { Pill } from '../../components/Pill';
-import { getRecipe } from '../../data/mock';
-import { formatQty, roundQty, useGroceries } from '../../state/GroceryContext';
-import { colors, fonts, fontSizes, onRecipeColor, radius, recipeColors, shadow, spacing } from '../../theme';
+import { scheduleOnRN } from 'react-native-worklets';
+import { Icon, type IconName } from '../../components/Icon';
+import { PressableScale } from '../../components/PressableScale';
+import { useToast } from '../../components/Toast';
+import { Button, EmptyState, IconButton, Separator, Stepper } from '../../components/ui';
+import { getRecipe, type DietTag } from '../../data/mock';
+import { formatQty, roundQty, useStore } from '../../state/store';
+import { useTheme } from '../../theme';
 
-type Tab = 'ingredients' | 'steps';
-
-export default function RecipeDetailScreen() {
+export default function RecipeScreen() {
+  const t = useTheme();
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const toast = useToast();
   const { id } = useLocalSearchParams<{ id: string }>();
   const recipe = getRecipe(id);
-  const insets = useSafeAreaInsets();
-  const { addIngredients } = useGroceries();
-  const [tab, setTab] = useState<Tab>('ingredients');
-  const [servings, setServings] = useState(recipe?.servings ?? 1);
-  const [added, setAdded] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const { isFavorite, toggleFavorite, addIngredients, showOnlyTag } = useStore();
+
+  const [servings, setServings] = useState(recipe?.servings ?? 2);
+  const [justAdded, setJustAdded] = useState(false);
+  const [barVisible, setBarVisible] = useState(false);
+  const addedTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(addedTimer.current), []);
+
+  const heroHeight = Math.min(Math.round(width * 0.92), 520);
+  const scrollY = useSharedValue(0);
+  const onScroll = useAnimatedScrollHandler((e) => {
+    scrollY.set(e.contentOffset.y);
+  });
+
+  // Swap the status bar style once the compact bar covers the photo.
+  const barThreshold = heroHeight - insets.top - 70;
+  useAnimatedReaction(
+    () => scrollY.get() > barThreshold,
+    (visible, prev) => {
+      if (visible !== prev) scheduleOnRN(setBarVisible, visible);
+    },
+    [barThreshold],
+  );
+
+  // Stretch on pull-down, gentle parallax on scroll.
+  const heroStyle = useAnimatedStyle(() => {
+    const y = scrollY.get();
+    return {
+      transform: [
+        { translateY: y < 0 ? y / 2 : y * 0.35 },
+        { scale: y < 0 ? 1 + -y / heroHeight : 1 },
+      ],
+    };
+  });
+  const barStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.get(), [barThreshold - 40, barThreshold], [0, 1], Extrapolation.CLAMP),
+  }));
+
+  const goBack = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
   if (!recipe) {
     return (
-      <View style={[styles.missing, { paddingTop: insets.top }]}>
-        <Text style={styles.sectionTitle}>Recipe not found</Text>
-        <Pill label="Go back" variant="ink" onPress={() => router.back()} />
+      <View style={{ flex: 1, justifyContent: 'center', backgroundColor: t.colors.background }}>
+        <EmptyState icon="fork" title="Recipe Not Found" message="It may have been removed." action={{ label: 'Back to Recipes', onPress: goBack }} />
       </View>
     );
   }
 
-  const bg = recipeColors[recipe.color];
-  const fg = onRecipeColor[recipe.color];
-  const fgMuted = fg === colors.white ? colors.textOnColorMuted : colors.inkMuted;
+  const fav = isFavorite(recipe.id);
   const scale = servings / recipe.servings;
 
-  const goBack = () => (router.canGoBack() ? router.back() : router.replace('/'));
+  const onFavorite = () => {
+    const now = toggleFavorite(recipe.id);
+    toast({
+      message: now ? 'Saved to your recipes' : 'Removed from Saved',
+      icon: now ? 'heartFill' : 'heart',
+      tone: now ? 'success' : 'info',
+      action: { label: 'Undo', onPress: () => toggleFavorite(recipe.id) },
+    });
+  };
+
+  const onAdd = () => {
+    const n = addIngredients(recipe.id, recipe.ingredients, scale);
+    setJustAdded(true);
+    clearTimeout(addedTimer.current);
+    addedTimer.current = setTimeout(() => setJustAdded(false), 1800);
+    toast({
+      message: `Added ${n} ingredients for ${servings} ${servings === 1 ? 'serving' : 'servings'}`,
+      icon: 'cart',
+      action: { label: 'View', onPress: () => router.navigate('/groceries') },
+    });
+  };
+
+  const onTag = (tag: DietTag) => {
+    showOnlyTag(tag);
+    router.dismissTo('/');
+    toast({ message: `Showing ${tag.toLowerCase()} recipes`, tone: 'info', icon: 'search' });
+  };
+
+  const stats: { icon: IconName; value: string; label: string }[] = [
+    { icon: 'clock', value: `${recipe.minutes} min`, label: 'Time' },
+    { icon: 'flame', value: `${Math.round(recipe.calories)}`, label: 'kcal / serving' },
+    { icon: 'chart', value: recipe.difficulty, label: 'Difficulty' },
+  ];
 
   return (
-    <View style={[styles.screen, { backgroundColor: bg }]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <View style={{ flex: 1, backgroundColor: t.colors.background }}>
+      <StatusBar style={barVisible ? 'auto' : 'light'} animated />
+      <Animated.ScrollView
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        contentInsetAdjustmentBehavior="never"
+        contentContainerStyle={{ paddingBottom: insets.bottom + 110 }}
+      >
         {/* Hero */}
-        <View style={[styles.hero, { paddingTop: insets.top + spacing.md }]}>
-          <View style={styles.topRow}>
-            <Pressable onPress={goBack} style={styles.circleBtn} accessibilityLabel="Go back">
-              <Ionicons name="chevron-back" size={24} color={colors.ink} />
-            </Pressable>
-            <View style={styles.glassPill}>
-              <Text style={[styles.glassText, { color: fg }]}>{recipe.category}</Text>
-            </View>
-          </View>
+        <Animated.View style={[{ height: heroHeight, backgroundColor: t.colors.imagePlaceholder }, heroStyle]}>
+          <Image source={recipe.image} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} accessibilityLabel={`Photo of ${recipe.title}`} />
+          <LinearGradient colors={['rgba(0,0,0,0.35)', 'rgba(0,0,0,0)']} style={[styles.heroShade, { height: insets.top + 90 }]} pointerEvents="none" />
+        </Animated.View>
 
-          <View style={styles.art}>
-            <Confetti seed={recipe.title.length} />
-          </View>
-          <View style={styles.halo}>
-            <View style={styles.haloInner}>
-              <Text style={styles.emoji}>{recipe.emoji}</Text>
-            </View>
-          </View>
-
-          <Text style={[styles.kicker, { color: fgMuted }]}>Today you’re making</Text>
-          <Text style={[styles.title, { color: fg }]}>{recipe.title}</Text>
-          <Text style={[styles.tagline, { color: fgMuted }]}>{recipe.tagline}</Text>
-
-          <View style={styles.metaRow}>
-            <Pill label={`${recipe.minutes} min`} icon="time-outline" variant="white" />
-            <Pill label={`${recipe.calories} kcal`} icon="flame-outline" variant={recipe.color === 'yellow' ? 'white' : 'accent'} />
-            <Pill label={recipe.difficulty} variant="ink" />
-            {recipe.tags.map((t) => (
-              <Pill key={t} label={t} variant={fg === colors.ink ? 'glassDark' : 'glass'} />
-            ))}
-          </View>
-        </View>
-
-        {/* Content sheet */}
-        <View style={[styles.sheet, { paddingBottom: 120 + insets.bottom }]}>
-          <View style={styles.segment}>
-            {(['ingredients', 'steps'] as const).map((t) => (
-              <Pressable key={t} onPress={() => setTab(t)} style={[styles.segmentBtn, tab === t && styles.segmentBtnActive]}>
-                <Text style={[styles.segmentText, tab === t && styles.segmentTextActive]}>
-                  {t === 'ingredients' ? `Ingredients (${recipe.ingredients.length})` : `Steps (${recipe.steps.length})`}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-
-          {tab === 'ingredients' ? (
-            <>
-              <View style={styles.servingsRow}>
-                <View>
-                  <Text style={styles.sectionTitle}>Servings</Text>
-                  <Text style={styles.muted}>Quantities update as you change this</Text>
-                </View>
-                <View style={styles.stepper}>
-                  <StepperBtn icon="remove" onPress={() => setServings((s) => Math.max(1, s - 1))} />
-                  <Text style={styles.stepperValue}>{servings}</Text>
-                  <StepperBtn icon="add" onPress={() => setServings((s) => Math.min(24, s + 1))} />
-                </View>
-              </View>
-
-              {recipe.ingredients.map((ing) => (
-                <View key={ing.id} style={styles.ingredientRow}>
-                  <View style={[styles.dot, { backgroundColor: bg }]} />
-                  <Text style={styles.ingredientName}>{ing.name}</Text>
-                  <Text style={styles.ingredientQty}>{formatQty(roundQty(ing.quantity * scale), ing.unit)}</Text>
-                </View>
-              ))}
-            </>
-          ) : (
-            recipe.steps.map((step, i) => (
-              <View key={i} style={styles.stepRow}>
-                <View style={styles.stepNum}>
-                  <Text style={styles.stepNumText}>{i + 1}</Text>
-                </View>
-                <Text style={styles.stepText}>{step}</Text>
-              </View>
-            ))
-          )}
-        </View>
-      </ScrollView>
-
-      {/* Sticky actions */}
-      <View style={[styles.actions, { paddingBottom: insets.bottom + spacing.md }]}>
-        <Pressable
-          onPress={() => {
-            addIngredients(recipe.id, recipe.ingredients, scale);
-            setAdded(true);
-          }}
-          style={({ pressed }) => [styles.primaryBtn, added && styles.primaryBtnDone, pressed && { opacity: 0.9 }]}
-        >
-          <Ionicons name={added ? 'checkmark-circle' : 'basket-outline'} size={22} color={added ? colors.ink : colors.white} />
-          <Text style={[styles.primaryBtnText, added && { color: colors.ink }]}>
-            {added ? 'Added to groceries' : 'Add to grocery list'}
+        <View style={[styles.body, { backgroundColor: t.colors.background, borderRadius: t.radius.xl, marginTop: -t.radius.xl }]}>
+          <Text style={[t.type.footnote, { color: t.colors.tint, fontWeight: '600', letterSpacing: 0.4 }]}>{recipe.category.toUpperCase()}</Text>
+          <Text style={[t.type.largeTitle, { color: t.colors.label, marginTop: 4 }]} accessibilityRole="header">
+            {recipe.title}
           </Text>
-        </Pressable>
-        <Pressable
-          onPress={() => setSaved((s) => !s)}
-          style={styles.circleBtnLarge}
-          accessibilityLabel={saved ? 'Remove from favourites' : 'Save to favourites'}
-        >
-          <Ionicons name={saved ? 'heart' : 'heart-outline'} size={24} color={saved ? colors.coral : colors.ink} />
-        </Pressable>
+          <Text style={[t.type.body, { color: t.colors.secondaryLabel, marginTop: 8 }]}>{recipe.description}</Text>
+
+          <View style={[styles.stats, { backgroundColor: t.colors.fill, borderRadius: t.radius.lg }]}>
+            {stats.map((s, i) => (
+              <View key={s.label} style={[styles.stat, i > 0 && { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: t.colors.separator }]} accessible accessibilityLabel={`${s.label}: ${s.value}`}>
+                <Icon name={s.icon} size={18} color={t.colors.tint} />
+                <Text style={[t.type.headline, { color: t.colors.label }]}>{s.value}</Text>
+                <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]}>{s.label}</Text>
+              </View>
+            ))}
+          </View>
+
+          {recipe.tags.length > 0 && (
+            <View style={styles.tags}>
+              {recipe.tags.map((tag) => (
+                <PressableScale
+                  key={tag}
+                  haptic="select"
+                  onPress={() => onTag(tag)}
+                  accessibilityRole="link"
+                  hitSlop={{ top: 4, bottom: 4 }}
+                  accessibilityLabel={`${tag}. Show all ${tag.toLowerCase()} recipes`}
+                  style={[styles.tag, { backgroundColor: t.colors.tintSoft }]}
+                >
+                  <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: '600' }]}>{tag}</Text>
+                  <Icon name="chevronRight" size={11} color={t.colors.tint} weight="bold" />
+                </PressableScale>
+              ))}
+            </View>
+          )}
+
+          {/* Ingredients */}
+          <View style={styles.sectionHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={[t.type.title2, { color: t.colors.label }]} accessibilityRole="header">
+                Ingredients
+              </Text>
+              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 2 }]}>
+                {servings} {servings === 1 ? 'serving' : 'servings'}
+              </Text>
+            </View>
+            <Stepper value={servings} onChange={setServings} label="servings" />
+          </View>
+          <View style={[styles.card, { backgroundColor: t.colors.fill, borderRadius: t.radius.lg }]}>
+            {recipe.ingredients.map((ing, i) => (
+              <View key={ing.id}>
+                {i > 0 && <Separator inset={16} />}
+                <View style={styles.ingredient}>
+                  <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>{ing.name}</Text>
+                  <Text style={[t.type.body, { color: t.colors.secondaryLabel, fontVariant: ['tabular-nums'] }]} testID={`qty-${ing.id}`}>
+                    {formatQty(roundQty(ing.quantity * scale), ing.unit)}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
+
+          {/* Method */}
+          <Text style={[t.type.title2, { color: t.colors.label, marginTop: 32, marginBottom: 12 }]} accessibilityRole="header">
+            Method
+          </Text>
+          {recipe.steps.map((step, i) => (
+            <View key={i} style={styles.step} accessible accessibilityLabel={`Step ${i + 1}. ${step}`}>
+              <View style={[styles.stepNum, { backgroundColor: t.colors.tintSoft }]}>
+                <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: '700' }]}>{i + 1}</Text>
+              </View>
+              <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>{step}</Text>
+            </View>
+          ))}
+        </View>
+      </Animated.ScrollView>
+
+      {/* Compact bar that fades in once the photo scrolls away */}
+      <Animated.View pointerEvents="none" style={[styles.topBar, { height: insets.top + 56 }, barStyle]}>
+        <BlurView tint="systemChromeMaterial" intensity={90} style={StyleSheet.absoluteFill} />
+        <View style={[StyleSheet.absoluteFill, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: t.colors.separator }]} />
+        <Text style={[t.type.headline, styles.topTitle, { color: t.colors.label, top: insets.top + 17 }]} numberOfLines={1}>
+          {recipe.title}
+        </Text>
+      </Animated.View>
+
+      {/* Floating controls */}
+      <View style={[styles.controls, { top: insets.top + 6 }]} pointerEvents="box-none">
+        <GlassButton icon="back" label="Back" onPress={goBack} />
+        <GlassButton icon={fav ? 'heartFill' : 'heart'} label={fav ? 'Remove from Saved' : 'Save recipe'} onPress={onFavorite} color={fav ? t.colors.accent : undefined} />
+      </View>
+
+      {/* Sticky action */}
+      <View style={[styles.bottom, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+        <BlurView tint="systemChromeMaterial" intensity={90} style={StyleSheet.absoluteFill} />
+        <View style={[StyleSheet.absoluteFill, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.colors.separator }]} />
+        <Button
+          label={justAdded ? 'Added to Grocery List' : 'Add to Grocery List'}
+          icon={justAdded ? 'check' : 'cartAdd'}
+          variant={justAdded ? 'tinted' : 'filled'}
+          onPress={onAdd}
+          accessibilityLabel={`Add ingredients for ${servings} servings to the grocery list`}
+        />
       </View>
     </View>
   );
 }
 
-function StepperBtn({ icon, onPress }: { icon: 'add' | 'remove'; onPress: () => void }) {
+/** Circular blurred button that reads well over photos and the blurred bar. */
+function GlassButton({ icon, label, onPress, color }: { icon: IconName; label: string; onPress: () => void; color?: string }) {
+  const t = useTheme();
   return (
-    <Pressable onPress={onPress} style={styles.stepperBtn} accessibilityLabel={icon === 'add' ? 'More servings' : 'Fewer servings'}>
-      <Ionicons name={icon} size={18} color={colors.ink} />
-    </Pressable>
+    <View style={styles.glass}>
+      <BlurView tint="systemChromeMaterial" intensity={80} style={StyleSheet.absoluteFill} />
+      <IconButton icon={icon} accessibilityLabel={label} onPress={onPress} color={color ?? t.colors.label} iconSize={18} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
-  missing: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md },
-  hero: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
-  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  circleBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadow.card,
-  },
-  glassPill: {
-    backgroundColor: colors.overlayLight,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-  },
-  glassText: { fontFamily: fonts.bold, fontSize: fontSizes.sm },
-  art: { position: 'absolute', left: 0, right: 0, top: 80, height: 300 },
-  halo: {
-    alignSelf: 'center',
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: colors.overlayLighter,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginVertical: spacing.lg,
-  },
-  haloInner: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: colors.overlayLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emoji: { fontSize: 96 },
-  kicker: { fontFamily: fonts.semibold, fontSize: fontSizes.md },
-  title: {
-    fontFamily: fonts.extrabold,
-    fontSize: fontSizes.display,
-    lineHeight: fontSizes.display * 1.05,
-    letterSpacing: -1.2,
-    marginTop: spacing.xxs,
-  },
-  tagline: { fontFamily: fonts.regular, fontSize: fontSizes.md, lineHeight: fontSizes.md * 1.45, marginTop: spacing.sm },
-  metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginTop: spacing.lg },
-  sheet: {
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    padding: spacing.lg,
-    minHeight: 420,
-    gap: spacing.xs,
-  },
-  segment: {
-    flexDirection: 'row',
-    backgroundColor: colors.background,
-    borderRadius: radius.pill,
-    padding: spacing.xxs,
-    marginBottom: spacing.md,
-  },
-  segmentBtn: { flex: 1, paddingVertical: spacing.sm, borderRadius: radius.pill, alignItems: 'center' },
-  segmentBtnActive: { backgroundColor: colors.ink },
-  segmentText: { fontFamily: fonts.bold, fontSize: fontSizes.sm, color: colors.inkMuted },
-  segmentTextActive: { color: colors.white },
-  servingsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
-  sectionTitle: { fontFamily: fonts.extrabold, fontSize: fontSizes.lg, color: colors.ink },
-  muted: { fontFamily: fonts.regular, fontSize: fontSizes.xs, color: colors.inkMuted, marginTop: 2 },
-  stepper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    borderRadius: radius.pill,
-    padding: spacing.xxs,
-    gap: spacing.xs,
-  },
-  stepperBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepperValue: { fontFamily: fonts.extrabold, fontSize: fontSizes.lg, color: colors.ink, minWidth: 24, textAlign: 'center' },
-  ingredientRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  dot: { width: 10, height: 10, borderRadius: 5 },
-  ingredientName: { flex: 1, fontFamily: fonts.semibold, fontSize: fontSizes.md, color: colors.ink },
-  ingredientQty: { fontFamily: fonts.bold, fontSize: fontSizes.md, color: colors.inkMuted },
-  stepRow: { flexDirection: 'row', gap: spacing.md, paddingVertical: spacing.sm },
-  stepNum: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepNumText: { fontFamily: fonts.extrabold, fontSize: fontSizes.md, color: colors.ink },
-  stepText: { flex: 1, fontFamily: fonts.regular, fontSize: fontSizes.md, lineHeight: fontSizes.md * 1.5, color: colors.ink },
-  actions: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    backgroundColor: colors.surface,
-  },
-  primaryBtn: {
-    flex: 1,
-    height: 60,
-    borderRadius: radius.pill,
-    backgroundColor: colors.ink,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    ...shadow.button,
-  },
-  primaryBtnDone: { backgroundColor: colors.accent },
-  primaryBtnText: { fontFamily: fonts.bold, fontSize: fontSizes.lg, color: colors.white },
-  circleBtnLarge: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: colors.white,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  heroShade: { position: 'absolute', top: 0, left: 0, right: 0 },
+  body: { paddingHorizontal: 20, paddingTop: 24, borderBottomLeftRadius: 0, borderBottomRightRadius: 0, borderCurve: 'continuous' },
+  stats: { flexDirection: 'row', marginTop: 20, paddingVertical: 14, borderCurve: 'continuous' },
+  stat: { flex: 1, alignItems: 'center', gap: 3 },
+  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },
+  tag: { flexDirection: 'row', alignItems: 'center', gap: 5, minHeight: 36, paddingHorizontal: 14, borderRadius: 999 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginTop: 32, marginBottom: 12 },
+  card: { overflow: 'hidden', borderCurve: 'continuous' },
+  ingredient: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, minHeight: 48, gap: 12 },
+  step: { flexDirection: 'row', gap: 14, marginBottom: 18 },
+  stepNum: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginTop: -2 },
+  topBar: { position: 'absolute', top: 0, left: 0, right: 0, overflow: 'hidden' },
+  topTitle: { position: 'absolute', left: 72, right: 72, textAlign: 'center' },
+  controls: { position: 'absolute', left: 16, right: 16, flexDirection: 'row', justifyContent: 'space-between' },
+  glass: { width: 44, height: 44, borderRadius: 22, overflow: 'hidden' },
+  bottom: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingTop: 12, paddingHorizontal: 16, overflow: 'hidden' },
 });

@@ -1,71 +1,32 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router/js-tabs';
-import type { ComponentProps } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useGroceries } from '../../state/GroceryContext';
-import { colors, fonts, radius, shadow } from '../../theme';
+import { NativeTabs } from 'expo-router/native-tabs';
+import { useStore } from '../../state/store';
+import { useTheme } from '../../theme';
 
-type IconName = ComponentProps<typeof Ionicons>['name'];
-
-function TabIcon({ name, focused }: { name: IconName; focused: boolean }) {
-  return (
-    <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
-      <Ionicons name={focused ? name : (`${name}-outline` as IconName)} size={22} color={focused ? colors.white : colors.inkMuted} />
-    </View>
-  );
-}
-
+/** Real UITabBar on iOS (Material bottom navigation on Android). Four tabs. */
 export default function TabsLayout() {
-  const { items } = useGroceries();
-  const insets = useSafeAreaInsets();
-  const remaining = items.filter((i) => !i.checked).length;
+  const t = useTheme();
+  const { groceries } = useStore();
+  const remaining = groceries.filter((g) => !g.checked).length;
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        sceneStyle: { backgroundColor: colors.background },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.inkMuted,
-        tabBarLabelStyle: styles.label,
-        tabBarStyle: [styles.bar, { height: 78 + insets.bottom, paddingBottom: Math.max(insets.bottom, 10) }],
-        tabBarItemStyle: styles.item,
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{ title: 'Recipes', tabBarIcon: ({ focused }) => <TabIcon name="book" focused={focused} /> }}
-      />
-      <Tabs.Screen
-        name="plan"
-        options={{ title: 'Plan', tabBarIcon: ({ focused }) => <TabIcon name="calendar" focused={focused} /> }}
-      />
-      <Tabs.Screen
-        name="grocery"
-        options={{
-          title: 'Groceries',
-          tabBarIcon: ({ focused }) => <TabIcon name="basket" focused={focused} />,
-          tabBarBadge: remaining > 0 ? remaining : undefined,
-          tabBarBadgeStyle: styles.badge,
-        }}
-      />
-    </Tabs>
+    <NativeTabs tintColor={t.colors.tint} badgeBackgroundColor={t.colors.accent} minimizeBehavior="onScrollDown">
+      <NativeTabs.Trigger name="(recipes)">
+        <NativeTabs.Trigger.Icon sf={{ default: 'book', selected: 'book.fill' }} md="menu_book" />
+        <NativeTabs.Trigger.Label>Recipes</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="saved">
+        <NativeTabs.Trigger.Icon sf={{ default: 'heart', selected: 'heart.fill' }} md="favorite" />
+        <NativeTabs.Trigger.Label>Saved</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="plan">
+        <NativeTabs.Trigger.Icon sf="calendar" md="calendar_month" />
+        <NativeTabs.Trigger.Label>Plan</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="groceries">
+        <NativeTabs.Trigger.Icon sf={{ default: 'cart', selected: 'cart.fill' }} md="shopping_cart" />
+        <NativeTabs.Trigger.Label>Groceries</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Badge hidden={remaining === 0}>{String(remaining)}</NativeTabs.Trigger.Badge>
+      </NativeTabs.Trigger>
+    </NativeTabs>
   );
 }
-
-const styles = StyleSheet.create({
-  bar: {
-    backgroundColor: colors.white,
-    borderTopWidth: 0,
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
-    paddingTop: 8,
-    ...shadow.card,
-  },
-  item: { paddingVertical: 2 },
-  label: { fontFamily: fonts.bold, fontSize: 12 },
-  iconWrap: { width: 48, height: 30, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
-  iconWrapActive: { backgroundColor: colors.primary },
-  badge: { backgroundColor: colors.accent, color: colors.ink, fontFamily: fonts.bold, fontSize: 11 },
-});

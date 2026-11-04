@@ -1,6 +1,4 @@
-import type { RecipeColor } from '../theme';
-
-export type Aisle = 'Produce' | 'Dairy & Eggs' | 'Meat & Fish' | 'Pantry' | 'Bakery';
+export type Aisle = 'Produce' | 'Bakery' | 'Meat & Fish' | 'Dairy & Eggs' | 'Pantry' | 'Other';
 
 export type Ingredient = {
   id: string;
@@ -10,189 +8,354 @@ export type Ingredient = {
   aisle: Aisle;
 };
 
+export const categories = ['Breakfast', 'Lunch', 'Dinner', 'Snacks', 'Dessert'] as const;
+export type Category = (typeof categories)[number];
+
+export const dietTags = ['Vegetarian', 'Vegan', 'One pan', 'High protein', 'Gluten free', 'Kid friendly'] as const;
+export type DietTag = (typeof dietTags)[number];
+
+/** Filters shown on the Recipes screen. "Under 30 min" is computed from cook time. */
+export const QUICK_FILTER = 'Under 30 min';
+export type FilterTag = DietTag | typeof QUICK_FILTER;
+export const filterTags: FilterTag[] = [QUICK_FILTER, ...dietTags];
+
 export type Recipe = {
   id: string;
   title: string;
-  emoji: string; // stand-in for a photo until we have real images
-  color: RecipeColor;
-  tagline: string;
+  image: number; // a bundled require('...jpg')
+  description: string;
   category: Category;
   minutes: number;
   servings: number;
   calories: number;
   difficulty: 'Easy' | 'Medium' | 'Hard';
-  tags: string[];
+  tags: DietTag[];
   ingredients: Ingredient[];
   steps: string[];
 };
 
-export const categories = ['All', 'Breakfast', 'Lunch', 'Dinner', 'Snacks', 'Dessert'] as const;
-export type Category = Exclude<(typeof categories)[number], 'All'>;
-
+/**
+ * Placeholder photos are bundled in assets/recipes (from the MIT-licensed Foodish project).
+ * Replace them with your own photography before release.
+ */
 export const recipes: Recipe[] = [
   {
-    id: 'shakshuka',
-    title: 'Smoky Shakshuka',
-    emoji: '🍳',
-    color: 'coral',
-    tagline: 'Eggs poached in a spiced tomato and pepper sauce. One pan, zero fuss.',
-    category: 'Breakfast',
-    minutes: 25,
-    servings: 2,
-    calories: 380,
-    difficulty: 'Easy',
-    tags: ['Vegetarian', 'One pan'],
-    ingredients: [
-      { id: 'egg', name: 'Eggs', quantity: 4, unit: '', aisle: 'Dairy & Eggs' },
-      { id: 'tomato-can', name: 'Chopped tomatoes', quantity: 400, unit: 'g', aisle: 'Pantry' },
-      { id: 'pepper-red', name: 'Red pepper', quantity: 1, unit: '', aisle: 'Produce' },
-      { id: 'onion', name: 'Onion', quantity: 1, unit: '', aisle: 'Produce' },
-      { id: 'paprika', name: 'Smoked paprika', quantity: 1, unit: 'tsp', aisle: 'Pantry' },
-      { id: 'feta', name: 'Feta', quantity: 60, unit: 'g', aisle: 'Dairy & Eggs' },
-    ],
-    steps: [
-      'Soften the sliced onion and pepper in olive oil over medium heat for 8 minutes.',
-      'Stir in the paprika for 30 seconds, then add the tomatoes. Simmer for 10 minutes.',
-      'Make four wells and crack in the eggs. Cover and cook for 5 to 6 minutes.',
-      'Crumble over the feta and serve straight from the pan with bread.',
-    ],
-  },
-  {
-    id: 'green-curry',
-    title: 'Weeknight Green Curry',
-    emoji: '🍛',
-    color: 'green',
-    tagline: 'Fragrant coconut curry loaded with veg. Faster than takeaway.',
+    id: 'pepper-feta-penne',
+    title: 'Roasted Pepper & Feta Penne',
+    image: require('../../assets/recipes/pepper-feta-penne.jpg'),
+    description: 'Sweet roasted peppers, salty feta and basil tossed through penne. Weeknight dinner in 25 minutes.',
     category: 'Dinner',
-    minutes: 30,
+    minutes: 25,
     servings: 4,
     calories: 520,
-    difficulty: 'Medium',
-    tags: ['Dairy free', 'Spicy'],
-    ingredients: [
-      { id: 'chicken-thigh', name: 'Chicken thighs', quantity: 500, unit: 'g', aisle: 'Meat & Fish' },
-      { id: 'coconut-milk', name: 'Coconut milk', quantity: 400, unit: 'ml', aisle: 'Pantry' },
-      { id: 'curry-paste', name: 'Green curry paste', quantity: 3, unit: 'tbsp', aisle: 'Pantry' },
-      { id: 'green-beans', name: 'Green beans', quantity: 150, unit: 'g', aisle: 'Produce' },
-      { id: 'basil', name: 'Thai basil', quantity: 1, unit: 'bunch', aisle: 'Produce' },
-      { id: 'rice', name: 'Jasmine rice', quantity: 300, unit: 'g', aisle: 'Pantry' },
-    ],
-    steps: [
-      'Start the rice. Fry the curry paste in a splash of coconut milk until fragrant.',
-      'Add the sliced chicken and cook for 5 minutes until sealed.',
-      'Pour in the rest of the coconut milk and the beans. Simmer for 12 minutes.',
-      'Tear in the basil, season with lime and fish sauce, and serve over rice.',
-    ],
-  },
-  {
-    id: 'pancakes',
-    title: 'Fluffy Lemon Pancakes',
-    emoji: '🥞',
-    color: 'yellow',
-    tagline: 'Tall, tangy and golden. Sunday morning in a stack.',
-    category: 'Breakfast',
-    minutes: 20,
-    servings: 3,
-    calories: 410,
     difficulty: 'Easy',
     tags: ['Vegetarian', 'Kid friendly'],
     ingredients: [
-      { id: 'flour', name: 'Plain flour', quantity: 200, unit: 'g', aisle: 'Pantry' },
-      { id: 'milk', name: 'Milk', quantity: 250, unit: 'ml', aisle: 'Dairy & Eggs' },
-      { id: 'egg', name: 'Eggs', quantity: 2, unit: '', aisle: 'Dairy & Eggs' },
-      { id: 'lemon', name: 'Lemon', quantity: 1, unit: '', aisle: 'Produce' },
-      { id: 'baking-powder', name: 'Baking powder', quantity: 2, unit: 'tsp', aisle: 'Pantry' },
+      { id: 'penne', name: 'Penne', quantity: 400, unit: 'g', aisle: 'Pantry' },
+      { id: 'red-pepper', name: 'Red peppers', quantity: 3, unit: '', aisle: 'Produce' },
+      { id: 'feta', name: 'Feta', quantity: 150, unit: 'g', aisle: 'Dairy & Eggs' },
+      { id: 'garlic', name: 'Garlic cloves', quantity: 2, unit: '', aisle: 'Produce' },
+      { id: 'basil', name: 'Basil', quantity: 1, unit: 'bunch', aisle: 'Produce' },
+      { id: 'olive-oil', name: 'Olive oil', quantity: 3, unit: 'tbsp', aisle: 'Pantry' },
     ],
     steps: [
-      'Whisk the flour, baking powder, a pinch of salt and the lemon zest.',
-      'Beat in the milk and eggs until just combined. A few lumps are fine.',
-      'Cook ladlefuls in a buttered pan until bubbles appear, then flip.',
-      'Serve with a squeeze of lemon and a drizzle of honey.',
+      'Heat the oven to 220°C. Slice the peppers, toss with oil and roast for 18 minutes.',
+      'Cook the penne in well-salted water until al dente. Save a mug of pasta water.',
+      'Fry the sliced garlic in olive oil for 1 minute, then add the roasted peppers.',
+      'Toss in the pasta with a splash of pasta water. Crumble over feta and tear in basil.',
     ],
   },
   {
-    id: 'salmon-bowl',
-    title: 'Crispy Salmon Rice Bowl',
-    emoji: '🍣',
-    color: 'indigo',
-    tagline: 'Sticky glazed salmon, crunchy veg and a quick chilli mayo.',
+    id: 'masala-dosa',
+    title: 'Crispy Masala Dosa',
+    image: require('../../assets/recipes/masala-dosa.jpg'),
+    description: 'Golden, paper-thin crêpes filled with spiced potato, served with tomato chutney.',
+    category: 'Breakfast',
+    minutes: 40,
+    servings: 4,
+    calories: 360,
+    difficulty: 'Medium',
+    tags: ['Vegan', 'Gluten free'],
+    ingredients: [
+      { id: 'dosa-batter', name: 'Dosa batter', quantity: 500, unit: 'g', aisle: 'Other' },
+      { id: 'potato', name: 'Potatoes', quantity: 4, unit: '', aisle: 'Produce' },
+      { id: 'onion', name: 'Onion', quantity: 1, unit: '', aisle: 'Produce' },
+      { id: 'mustard-seeds', name: 'Mustard seeds', quantity: 1, unit: 'tsp', aisle: 'Pantry' },
+      { id: 'turmeric', name: 'Turmeric', quantity: 0.5, unit: 'tsp', aisle: 'Pantry' },
+      { id: 'tomato', name: 'Tomatoes', quantity: 3, unit: '', aisle: 'Produce' },
+    ],
+    steps: [
+      'Boil the potatoes until tender, then peel and roughly crush.',
+      'Pop the mustard seeds in hot oil, add the onion and turmeric, then fold in the potato.',
+      'Spread a ladle of batter thinly on a hot pan. Drizzle with oil and cook until crisp.',
+      'Spoon the potato down the middle, fold and serve with tomato chutney.',
+    ],
+  },
+  {
+    id: 'chicken-fried-rice',
+    title: 'Chicken Fried Rice',
+    image: require('../../assets/recipes/chicken-fried-rice.jpg'),
+    description: 'Smoky, savory and packed with peas and egg. Better than takeaway and done in 20.',
     category: 'Lunch',
-    minutes: 25,
+    minutes: 20,
+    servings: 2,
+    calories: 590,
+    difficulty: 'Easy',
+    tags: ['One pan', 'High protein'],
+    ingredients: [
+      { id: 'cooked-rice', name: 'Cooked rice', quantity: 400, unit: 'g', aisle: 'Pantry' },
+      { id: 'chicken-breast', name: 'Chicken breast', quantity: 300, unit: 'g', aisle: 'Meat & Fish' },
+      { id: 'egg', name: 'Eggs', quantity: 2, unit: '', aisle: 'Dairy & Eggs' },
+      { id: 'peas-carrots', name: 'Peas & carrots', quantity: 150, unit: 'g', aisle: 'Produce' },
+      { id: 'soy-sauce', name: 'Soy sauce', quantity: 3, unit: 'tbsp', aisle: 'Pantry' },
+    ],
+    steps: [
+      'Dice the chicken and stir-fry in a very hot pan until golden. Push to one side.',
+      'Scramble the eggs in the empty side of the pan.',
+      'Add the peas, carrots and cold rice. Fry for 4 minutes without stirring too often.',
+      'Season with soy sauce and a pinch of white pepper.',
+    ],
+  },
+  {
+    id: 'butter-chicken',
+    title: 'Butter Chicken',
+    image: require('../../assets/recipes/butter-chicken.jpg'),
+    description: 'Tender chicken in a silky, gently spiced tomato and butter sauce.',
+    category: 'Dinner',
+    minutes: 45,
+    servings: 4,
+    calories: 640,
+    difficulty: 'Medium',
+    tags: ['High protein', 'Gluten free'],
+    ingredients: [
+      { id: 'chicken-thigh', name: 'Chicken thighs', quantity: 700, unit: 'g', aisle: 'Meat & Fish' },
+      { id: 'yogurt', name: 'Greek yogurt', quantity: 150, unit: 'g', aisle: 'Dairy & Eggs' },
+      { id: 'butter', name: 'Butter', quantity: 60, unit: 'g', aisle: 'Dairy & Eggs' },
+      { id: 'passata', name: 'Passata', quantity: 500, unit: 'g', aisle: 'Pantry' },
+      { id: 'garam-masala', name: 'Garam masala', quantity: 2, unit: 'tsp', aisle: 'Pantry' },
+      { id: 'cream', name: 'Double cream', quantity: 100, unit: 'ml', aisle: 'Dairy & Eggs' },
+    ],
+    steps: [
+      'Marinate the chicken in yogurt, garam masala and salt for at least 15 minutes.',
+      'Sear the chicken in a hot pan until charred at the edges. Set aside.',
+      'Melt the butter, add the passata and simmer for 10 minutes until thick.',
+      'Stir in the cream and chicken. Simmer 10 minutes more and serve with rice.',
+    ],
+  },
+  {
+    id: 'crispy-chicken-burger',
+    title: 'Crunchy Chicken Burger',
+    image: require('../../assets/recipes/crispy-chicken-burger.jpg'),
+    description: 'Juicy chicken patties, melted cheese and a crisp, tangy slaw in a toasted bun.',
+    category: 'Lunch',
+    minutes: 35,
+    servings: 4,
+    calories: 690,
+    difficulty: 'Easy',
+    tags: ['High protein', 'Kid friendly'],
+    ingredients: [
+      { id: 'chicken-mince', name: 'Chicken mince', quantity: 500, unit: 'g', aisle: 'Meat & Fish' },
+      { id: 'burger-buns', name: 'Brioche buns', quantity: 4, unit: '', aisle: 'Bakery' },
+      { id: 'cheddar', name: 'Cheddar slices', quantity: 4, unit: '', aisle: 'Dairy & Eggs' },
+      { id: 'cabbage', name: 'Red cabbage', quantity: 0.25, unit: '', aisle: 'Produce' },
+      { id: 'red-onion', name: 'Red onion', quantity: 1, unit: '', aisle: 'Produce' },
+      { id: 'mayo', name: 'Mayonnaise', quantity: 3, unit: 'tbsp', aisle: 'Pantry' },
+    ],
+    steps: [
+      'Season the mince well and shape into 4 patties slightly wider than the buns.',
+      'Shred the cabbage and onion, then mix with mayo and a squeeze of lemon.',
+      'Cook the patties for 5 minutes per side. Add the cheese for the final minute.',
+      'Toast the buns and stack: slaw, patty, more slaw.',
+    ],
+  },
+  {
+    id: 'apple-turnovers',
+    title: 'Flaky Apple Turnovers',
+    image: require('../../assets/recipes/apple-turnovers.jpg'),
+    description: 'Buttery puff pastry wrapped around cinnamon apples. A weekend breakfast treat.',
+    category: 'Breakfast',
+    minutes: 35,
+    servings: 6,
+    calories: 310,
+    difficulty: 'Easy',
+    tags: ['Vegetarian', 'Kid friendly'],
+    ingredients: [
+      { id: 'puff-pastry', name: 'Puff pastry', quantity: 1, unit: 'sheet', aisle: 'Bakery' },
+      { id: 'apple', name: 'Apples', quantity: 3, unit: '', aisle: 'Produce' },
+      { id: 'brown-sugar', name: 'Brown sugar', quantity: 50, unit: 'g', aisle: 'Pantry' },
+      { id: 'cinnamon', name: 'Cinnamon', quantity: 1, unit: 'tsp', aisle: 'Pantry' },
+      { id: 'egg', name: 'Eggs', quantity: 1, unit: '', aisle: 'Dairy & Eggs' },
+    ],
+    steps: [
+      'Dice the apples and cook with sugar and cinnamon for 6 minutes. Let cool.',
+      'Cut the pastry into 6 squares and spoon filling onto one half of each.',
+      'Fold into triangles, press the edges and brush with beaten egg.',
+      'Bake at 200°C for 18 minutes until puffed and golden. Dust with sugar.',
+    ],
+  },
+  {
+    id: 'mushroom-spaghetti',
+    title: 'Creamy Mushroom Spaghetti',
+    image: require('../../assets/recipes/mushroom-spaghetti.jpg'),
+    description: 'Garlicky mushrooms and parmesan in a glossy sauce that clings to every strand.',
+    category: 'Dinner',
+    minutes: 30,
     servings: 2,
     calories: 610,
     difficulty: 'Easy',
-    tags: ['High protein'],
+    tags: ['Vegetarian'],
     ingredients: [
-      { id: 'salmon', name: 'Salmon fillets', quantity: 2, unit: '', aisle: 'Meat & Fish' },
-      { id: 'rice', name: 'Jasmine rice', quantity: 150, unit: 'g', aisle: 'Pantry' },
-      { id: 'cucumber', name: 'Cucumber', quantity: 1, unit: '', aisle: 'Produce' },
-      { id: 'avocado', name: 'Avocado', quantity: 1, unit: '', aisle: 'Produce' },
-      { id: 'soy', name: 'Soy sauce', quantity: 2, unit: 'tbsp', aisle: 'Pantry' },
+      { id: 'spaghetti', name: 'Spaghetti', quantity: 200, unit: 'g', aisle: 'Pantry' },
+      { id: 'mushrooms', name: 'Chestnut mushrooms', quantity: 250, unit: 'g', aisle: 'Produce' },
+      { id: 'garlic', name: 'Garlic cloves', quantity: 2, unit: '', aisle: 'Produce' },
+      { id: 'cream', name: 'Double cream', quantity: 100, unit: 'ml', aisle: 'Dairy & Eggs' },
+      { id: 'parmesan', name: 'Parmesan', quantity: 40, unit: 'g', aisle: 'Dairy & Eggs' },
     ],
     steps: [
-      'Cook the rice. Cube the salmon and toss with soy sauce and honey.',
-      'Air fry or pan fry the salmon cubes until crisp at the edges, about 8 minutes.',
-      'Slice the cucumber and avocado. Mix mayo with sriracha.',
-      'Build bowls: rice, salmon, veg, then a zigzag of chilli mayo.',
+      'Cook the spaghetti until 1 minute short of al dente.',
+      'Fry the sliced mushrooms in a hot pan until deeply browned, then add the garlic.',
+      'Pour in the cream and a ladle of pasta water. Bubble for 2 minutes.',
+      'Toss in the pasta and parmesan until glossy. Finish with black pepper.',
     ],
   },
   {
-    id: 'brownies',
-    title: 'Gooey Tahini Brownies',
-    emoji: '🍫',
-    color: 'purple',
-    tagline: 'Fudgy middles, crackly tops, and a nutty tahini swirl.',
-    category: 'Dessert',
-    minutes: 45,
-    servings: 12,
-    calories: 290,
+    id: 'margherita-pizza',
+    title: 'Margherita Pizza',
+    image: require('../../assets/recipes/margherita-pizza.jpg'),
+    description: 'A blistered, chewy crust with bright tomato, creamy mozzarella and fresh basil.',
+    category: 'Dinner',
+    minutes: 50,
+    servings: 2,
+    calories: 780,
     difficulty: 'Medium',
-    tags: ['Bake ahead'],
+    tags: ['Vegetarian', 'Kid friendly'],
     ingredients: [
-      { id: 'chocolate', name: 'Dark chocolate', quantity: 200, unit: 'g', aisle: 'Pantry' },
-      { id: 'butter', name: 'Butter', quantity: 150, unit: 'g', aisle: 'Dairy & Eggs' },
-      { id: 'egg', name: 'Eggs', quantity: 3, unit: '', aisle: 'Dairy & Eggs' },
-      { id: 'sugar', name: 'Caster sugar', quantity: 200, unit: 'g', aisle: 'Pantry' },
-      { id: 'tahini', name: 'Tahini', quantity: 4, unit: 'tbsp', aisle: 'Pantry' },
+      { id: 'pizza-dough', name: 'Pizza dough', quantity: 2, unit: 'balls', aisle: 'Bakery' },
+      { id: 'passata', name: 'Passata', quantity: 200, unit: 'g', aisle: 'Pantry' },
+      { id: 'mozzarella', name: 'Mozzarella', quantity: 250, unit: 'g', aisle: 'Dairy & Eggs' },
+      { id: 'cherry-tomato', name: 'Cherry tomatoes', quantity: 200, unit: 'g', aisle: 'Produce' },
+      { id: 'basil', name: 'Basil', quantity: 1, unit: 'bunch', aisle: 'Produce' },
     ],
     steps: [
-      'Melt the chocolate and butter together. Let cool slightly.',
-      'Whisk the eggs and sugar until pale and thick, about 4 minutes.',
-      'Fold in the chocolate, then the flour. Pour into a lined tin.',
-      'Swirl through the tahini and bake at 180°C for 22 to 25 minutes.',
+      'Heat the oven to its highest setting with a tray inside for 20 minutes.',
+      'Stretch each dough ball into a thin round on a floured surface.',
+      'Spread with passata, tear over mozzarella and scatter the halved tomatoes.',
+      'Bake for 8 to 10 minutes until blistered. Top with basil and olive oil.',
     ],
   },
   {
-    id: 'hummus-plate',
-    title: 'Loaded Hummus Plate',
-    emoji: '🥙',
-    color: 'sky',
-    tagline: 'Silky hummus, spiced chickpeas and warm flatbread for dipping.',
+    id: 'crispy-samosas',
+    title: 'Crispy Vegetable Samosas',
+    image: require('../../assets/recipes/crispy-samosas.jpg'),
+    description: 'Shatteringly crisp pastry around a spiced potato and pea filling.',
     category: 'Snacks',
-    minutes: 15,
-    servings: 4,
-    calories: 330,
-    difficulty: 'Easy',
-    tags: ['Vegan', 'No cook'],
+    minutes: 60,
+    servings: 12,
+    calories: 180,
+    difficulty: 'Medium',
+    tags: ['Vegan'],
     ingredients: [
-      { id: 'chickpeas', name: 'Chickpeas', quantity: 2, unit: 'cans', aisle: 'Pantry' },
-      { id: 'tahini', name: 'Tahini', quantity: 3, unit: 'tbsp', aisle: 'Pantry' },
-      { id: 'lemon', name: 'Lemon', quantity: 1, unit: '', aisle: 'Produce' },
-      { id: 'flatbread', name: 'Flatbreads', quantity: 4, unit: '', aisle: 'Bakery' },
-      { id: 'parsley', name: 'Parsley', quantity: 1, unit: 'bunch', aisle: 'Produce' },
+      { id: 'flour', name: 'Plain flour', quantity: 250, unit: 'g', aisle: 'Pantry' },
+      { id: 'potato', name: 'Potatoes', quantity: 3, unit: '', aisle: 'Produce' },
+      { id: 'peas', name: 'Frozen peas', quantity: 100, unit: 'g', aisle: 'Produce' },
+      { id: 'cumin', name: 'Cumin seeds', quantity: 1, unit: 'tsp', aisle: 'Pantry' },
+      { id: 'veg-oil', name: 'Vegetable oil', quantity: 500, unit: 'ml', aisle: 'Pantry' },
     ],
     steps: [
-      'Blend one can of chickpeas with tahini, lemon, garlic and ice water until silky.',
-      'Fry the second can of chickpeas with cumin until crisp.',
-      'Swoosh the hummus onto a plate and pile on the chickpeas and parsley.',
-      'Finish with olive oil and serve with warm flatbreads.',
+      'Rub 4 tbsp oil into the flour, add water to form a firm dough and rest 20 minutes.',
+      'Boil and crush the potatoes, then fry with cumin and peas.',
+      'Roll the dough into ovals, halve, shape into cones and fill. Seal the edges.',
+      'Fry at 160°C for 8 minutes until deep golden. Drain well.',
+    ],
+  },
+  {
+    id: 'chicken-biryani',
+    title: 'Chicken Biryani',
+    image: require('../../assets/recipes/chicken-biryani.jpg'),
+    description: 'Fragrant layered rice and spiced chicken, slow-cooked in one pot.',
+    category: 'Dinner',
+    minutes: 75,
+    servings: 6,
+    calories: 670,
+    difficulty: 'Hard',
+    tags: ['One pan', 'High protein', 'Gluten free'],
+    ingredients: [
+      { id: 'basmati', name: 'Basmati rice', quantity: 450, unit: 'g', aisle: 'Pantry' },
+      { id: 'chicken-thigh', name: 'Chicken thighs', quantity: 800, unit: 'g', aisle: 'Meat & Fish' },
+      { id: 'yogurt', name: 'Greek yogurt', quantity: 200, unit: 'g', aisle: 'Dairy & Eggs' },
+      { id: 'onion', name: 'Onion', quantity: 3, unit: '', aisle: 'Produce' },
+      { id: 'biryani-masala', name: 'Biryani masala', quantity: 3, unit: 'tbsp', aisle: 'Pantry' },
+      { id: 'saffron', name: 'Saffron', quantity: 1, unit: 'pinch', aisle: 'Pantry' },
+    ],
+    steps: [
+      'Marinate the chicken in yogurt and masala for 30 minutes.',
+      'Fry the sliced onions slowly until deep brown and crisp. Set half aside.',
+      'Par-boil the rice for 5 minutes. Layer chicken, onions and rice in a heavy pot.',
+      'Drizzle saffron milk on top, seal and cook on low heat for 35 minutes.',
+    ],
+  },
+  {
+    id: 'chocolate-raspberry-cake',
+    title: 'Chocolate Raspberry Cake',
+    image: require('../../assets/recipes/chocolate-raspberry-cake.jpg'),
+    description: 'A deep, fudgy bundt cake finished with fresh raspberries and a dusting of sugar.',
+    category: 'Dessert',
+    minutes: 70,
+    servings: 10,
+    calories: 420,
+    difficulty: 'Medium',
+    tags: ['Vegetarian'],
+    ingredients: [
+      { id: 'flour', name: 'Plain flour', quantity: 250, unit: 'g', aisle: 'Pantry' },
+      { id: 'cocoa', name: 'Cocoa powder', quantity: 75, unit: 'g', aisle: 'Pantry' },
+      { id: 'caster-sugar', name: 'Caster sugar', quantity: 300, unit: 'g', aisle: 'Pantry' },
+      { id: 'egg', name: 'Eggs', quantity: 3, unit: '', aisle: 'Dairy & Eggs' },
+      { id: 'butter', name: 'Butter', quantity: 200, unit: 'g', aisle: 'Dairy & Eggs' },
+      { id: 'raspberries', name: 'Raspberries', quantity: 150, unit: 'g', aisle: 'Produce' },
+    ],
+    steps: [
+      'Heat the oven to 180°C and grease a bundt tin well.',
+      'Melt the butter with the cocoa, then whisk in the sugar and eggs.',
+      'Fold in the flour and pour into the tin. Bake for 45 minutes.',
+      'Cool for 15 minutes, turn out and top with raspberries and icing sugar.',
+    ],
+  },
+  {
+    id: 'strawberry-cream-squares',
+    title: 'Strawberry Cream Squares',
+    image: require('../../assets/recipes/strawberry-cream-squares.jpg'),
+    description: 'Light sponge layered with vanilla cream and summer strawberries.',
+    category: 'Dessert',
+    minutes: 30,
+    servings: 9,
+    calories: 260,
+    difficulty: 'Easy',
+    tags: ['Vegetarian', 'Kid friendly'],
+    ingredients: [
+      { id: 'sponge', name: 'Sponge cake', quantity: 1, unit: '', aisle: 'Bakery' },
+      { id: 'cream', name: 'Double cream', quantity: 300, unit: 'ml', aisle: 'Dairy & Eggs' },
+      { id: 'strawberries', name: 'Strawberries', quantity: 400, unit: 'g', aisle: 'Produce' },
+      { id: 'vanilla', name: 'Vanilla extract', quantity: 1, unit: 'tsp', aisle: 'Pantry' },
+      { id: 'icing-sugar', name: 'Icing sugar', quantity: 2, unit: 'tbsp', aisle: 'Pantry' },
+    ],
+    steps: [
+      'Whip the cream with vanilla and icing sugar to soft peaks.',
+      'Slice the sponge in half horizontally and spread the bottom with cream.',
+      'Add a layer of sliced strawberries, then the top sponge and more cream.',
+      'Chill for 20 minutes, cut into squares and top with whole strawberries.',
     ],
   },
 ];
 
-export const getRecipe = (id: string) => recipes.find((r) => r.id === id);
+export const getRecipe = (id: string | undefined) => recipes.find((r) => r.id === id);
 
-/** Items already on the grocery list when the app opens. */
+export const matchesFilter = (recipe: Recipe, tag: FilterTag) => {
+  if (tag === QUICK_FILTER) return recipe.minutes <= 30;
+  // Vegan recipes are vegetarian too.
+  if (tag === 'Vegetarian') return recipe.tags.includes('Vegetarian') || recipe.tags.includes('Vegan');
+  return recipe.tags.includes(tag);
+};
+
 export type GroceryItem = {
   key: string; // ingredient id + unit, so "200 g flour" and "2 flour" stay separate
   name: string;
@@ -204,20 +367,28 @@ export type GroceryItem = {
 };
 
 export const initialGroceries: GroceryItem[] = [
-  { key: 'egg|', name: 'Eggs', quantity: 6, unit: '', aisle: 'Dairy & Eggs', recipeIds: ['shakshuka', 'pancakes'], checked: false },
-  { key: 'lemon|', name: 'Lemon', quantity: 2, unit: '', aisle: 'Produce', recipeIds: ['pancakes', 'hummus-plate'], checked: true },
-  { key: 'pepper-red|', name: 'Red pepper', quantity: 1, unit: '', aisle: 'Produce', recipeIds: ['shakshuka'], checked: false },
-  { key: 'feta|g', name: 'Feta', quantity: 60, unit: 'g', aisle: 'Dairy & Eggs', recipeIds: ['shakshuka'], checked: false },
-  { key: 'flatbread|', name: 'Flatbreads', quantity: 4, unit: '', aisle: 'Bakery', recipeIds: ['hummus-plate'], checked: false },
-  { key: 'coffee|', name: 'Coffee beans', quantity: 1, unit: 'bag', aisle: 'Pantry', recipeIds: [], checked: false },
+  { key: 'egg|', name: 'Eggs', quantity: 6, unit: '', aisle: 'Dairy & Eggs', recipeIds: ['chicken-fried-rice', 'apple-turnovers'], checked: false },
+  { key: 'red-pepper|', name: 'Red peppers', quantity: 3, unit: '', aisle: 'Produce', recipeIds: ['pepper-feta-penne'], checked: true },
+  { key: 'basil|bunch', name: 'Basil', quantity: 1, unit: 'bunch', aisle: 'Produce', recipeIds: ['pepper-feta-penne'], checked: false },
+  { key: 'feta|g', name: 'Feta', quantity: 150, unit: 'g', aisle: 'Dairy & Eggs', recipeIds: ['pepper-feta-penne'], checked: false },
+  { key: 'puff-pastry|sheet', name: 'Puff pastry', quantity: 1, unit: 'sheet', aisle: 'Bakery', recipeIds: ['apple-turnovers'], checked: false },
+  { key: 'custom-coffee|', name: 'Coffee beans', quantity: 1, unit: '', aisle: 'Other', recipeIds: [], checked: false },
 ];
 
-export const aisleOrder: Aisle[] = ['Produce', 'Bakery', 'Meat & Fish', 'Dairy & Eggs', 'Pantry'];
+export const aisleOrder: Aisle[] = ['Produce', 'Bakery', 'Meat & Fish', 'Dairy & Eggs', 'Pantry', 'Other'];
 
-export const aisleEmoji: Record<Aisle, string> = {
-  Produce: '🥕',
-  Bakery: '🥖',
-  'Meat & Fish': '🐟',
-  'Dairy & Eggs': '🧀',
-  Pantry: '🫙',
+export const meals = ['Breakfast', 'Lunch', 'Dinner'] as const;
+export type Meal = (typeof meals)[number];
+export type DayPlan = Partial<Record<Meal, string>>;
+/** Keyed by weekday index, 0 = Monday. */
+export type WeekPlan = Record<number, DayPlan>;
+
+export const initialPlan: WeekPlan = {
+  0: { Breakfast: 'apple-turnovers', Dinner: 'butter-chicken' },
+  1: { Lunch: 'chicken-fried-rice' },
+  2: { Breakfast: 'masala-dosa', Dinner: 'pepper-feta-penne' },
+  4: { Dinner: 'margherita-pizza' },
+  5: { Lunch: 'crispy-chicken-burger', Dinner: 'chicken-biryani' },
 };
+
+export const initialFavorites = ['butter-chicken', 'masala-dosa'];
