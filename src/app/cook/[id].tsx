@@ -25,7 +25,8 @@ const clock = (s: number) => {
 };
 
 export default function CookMode() {
-  useKeepAwake(); // the screen stays on while you cook
+  // The screen stays on while you cook. Leaving quickly can deactivate before activation finishes; that's harmless.
+  useKeepAwake(undefined, { suppressDeactivateWarnings: true });
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const toast = useToast();
