@@ -26,7 +26,15 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-image"
+      "expo-image",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Pick a photo for the recipes you add.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ]
     ],
     "scheme": "pantrypop"
   }

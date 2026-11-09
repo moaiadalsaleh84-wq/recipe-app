@@ -15,6 +15,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import type { HapticKind } from '../lib/haptics';
 import { useTheme } from '../theme';
+import { CatBuddy } from './cats/CatBuddy';
+import type { BuddyId, Mood } from './cats/types';
 import { Icon, type IconName } from './Icon';
 import { PressableScale } from './PressableScale';
 
@@ -41,10 +43,15 @@ export function Chip({
       aria-selected={selected}
       accessibilityLabel={`${label} filter`}
       hitSlop={{ top: 4, bottom: 4 }}
-      style={[styles.chip, { backgroundColor: selected ? t.colors.tintFill : t.colors.fill }]}
+      style={[
+        styles.chip,
+        selected
+          ? { backgroundColor: t.colors.tintFill, borderColor: t.colors.tintDeep, ...t.chunky.button() }
+          : { backgroundColor: t.colors.cell, borderColor: t.colors.border, ...t.chunky.lip },
+      ]}
     >
       {(selected || icon) && <Icon name={selected ? 'check' : icon!} size={14} color={fg} weight="bold" />}
-      <Text style={[t.type.subhead, { color: fg, fontWeight: '600' }]}>{label}</Text>
+      <Text style={[t.type.subhead, { color: fg, fontWeight: '700', fontFamily: t.fonts.rounded }]}>{label}</Text>
     </PressableScale>
   );
 }
@@ -55,7 +62,8 @@ type ButtonProps = {
   label: string;
   onPress: () => void;
   icon?: IconName;
-  variant?: 'filled' | 'tinted' | 'plain';
+  /** filled: terracotta. success: sage green. tinted: soft terracotta. plain: text only. */
+  variant?: 'filled' | 'success' | 'tinted' | 'plain';
   size?: 'large' | 'medium';
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
@@ -64,8 +72,17 @@ type ButtonProps = {
 
 export function Button({ label, onPress, icon, variant = 'filled', size = 'large', disabled, style, accessibilityLabel }: ButtonProps) {
   const t = useTheme();
-  const bg = variant === 'filled' ? t.colors.tintFill : variant === 'tinted' ? t.colors.tintSoft : 'transparent';
-  const fg = variant === 'filled' ? t.colors.onTint : t.colors.tint;
+  const bg =
+    variant === 'filled' ? t.colors.tintFill : variant === 'success' ? t.colors.success : variant === 'tinted' ? t.colors.tintSoft : 'transparent';
+  const fg = variant === 'filled' || variant === 'success' ? t.colors.onTint : t.colors.tint;
+  const chunky =
+    variant === 'filled'
+      ? t.chunky.button()
+      : variant === 'success'
+        ? t.chunky.button(t.isDark ? '#3E5A33' : '#4D6E40')
+        : variant === 'tinted'
+          ? { borderWidth: 2, borderColor: t.colors.border }
+          : null;
   return (
     <PressableScale
       onPress={onPress}
@@ -75,11 +92,12 @@ export function Button({ label, onPress, icon, variant = 'filled', size = 'large
         styles.button,
         size === 'large' ? styles.buttonLarge : styles.buttonMedium,
         { backgroundColor: bg },
+        chunky,
         style,
       ]}
     >
-      {icon && <Icon name={icon} size={size === 'large' ? 20 : 17} color={fg} weight="semibold" />}
-      <Text style={[size === 'large' ? t.type.headline : t.type.subhead, { color: fg, fontWeight: '600' }]}>{label}</Text>
+      {icon && <Icon name={icon} size={size === 'large' ? 20 : 17} color={fg} weight="bold" />}
+      <Text style={[size === 'large' ? t.type.headline : t.type.subhead, { color: fg, fontWeight: '700', fontFamily: t.fonts.rounded }]}>{label}</Text>
     </PressableScale>
   );
 }
@@ -135,6 +153,7 @@ export function Stepper({
   onChange,
   min = 1,
   max = 24,
+  step = 1,
   label,
 }: {
   value: number;
@@ -142,28 +161,30 @@ export function Stepper({
   min?: number;
   max?: number;
   label: string;
+  /** Amount per tap. */
+  step?: number;
 }) {
   const t = useTheme();
   return (
     <View
-      style={[styles.stepper, { backgroundColor: t.colors.fill }]}
+      style={[styles.stepper, { backgroundColor: t.colors.cell, ...t.chunky.card }]}
       accessible
       accessibilityRole="adjustable"
       accessibilityLabel={label}
       accessibilityValue={{ min, max, now: value, text: `${value}` }}
       accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
       onAccessibilityAction={(e) => {
-        if (e.nativeEvent.actionName === 'increment' && value < max) onChange(value + 1);
-        if (e.nativeEvent.actionName === 'decrement' && value > min) onChange(value - 1);
+        if (e.nativeEvent.actionName === 'increment' && value < max) onChange(Math.min(max, value + step));
+        if (e.nativeEvent.actionName === 'decrement' && value > min) onChange(Math.max(min, value - step));
       }}
     >
-      <IconButton icon="minus" haptic="select" accessibilityLabel={`Decrease ${label}`} disabled={value <= min} onPress={() => onChange(value - 1)} color={t.colors.label} />
+      <IconButton icon="minus" haptic="select" accessibilityLabel={`Decrease ${label}`} disabled={value <= min} onPress={() => onChange(Math.max(min, value - step))} color={t.colors.label} />
       <View style={[styles.stepperDivider, { backgroundColor: t.colors.separator }]} />
       <Text style={[t.type.headline, styles.stepperValue, { color: t.colors.label }]} testID="stepper-value">
         {value}
       </Text>
       <View style={[styles.stepperDivider, { backgroundColor: t.colors.separator }]} />
-      <IconButton icon="plus" haptic="select" accessibilityLabel={`Increase ${label}`} disabled={value >= max} onPress={() => onChange(value + 1)} color={t.colors.label} />
+      <IconButton icon="plus" haptic="select" accessibilityLabel={`Increase ${label}`} disabled={value >= max} onPress={() => onChange(Math.min(max, value + step))} color={t.colors.label} />
     </View>
   );
 }
@@ -217,21 +238,28 @@ export function EmptyState({
   title,
   message,
   action,
+  cat,
 }: {
   icon: IconName;
   title: string;
   message: string;
   action?: { label: string; onPress: () => void; icon?: IconName };
+  /** Show the user's cat acting out the empty state instead of an icon. */
+  cat?: { buddy: BuddyId; mood: Mood };
 }) {
   const t = useTheme();
   return (
     <View style={styles.empty} accessibilityRole="summary">
-      <View style={[styles.emptyIcon, { backgroundColor: t.colors.tintSoft }]}>
-        <Icon name={icon} size={30} color={t.colors.tint} weight="semibold" />
-      </View>
+      {cat ? (
+        <CatBuddy buddy={cat.buddy} mood={cat.mood} size={140} />
+      ) : (
+        <View style={[styles.emptyIcon, { backgroundColor: t.colors.tintSoft }]}>
+          <Icon name={icon} size={30} color={t.colors.tint} weight="semibold" />
+        </View>
+      )}
       <Text style={[t.type.title3, { color: t.colors.label, textAlign: 'center' }]}>{title}</Text>
       <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, textAlign: 'center', maxWidth: 280 }]}>{message}</Text>
-      {action && <Button label={action.label} icon={action.icon} onPress={action.onPress} variant="tinted" size="medium" style={{ marginTop: 8 }} />}
+      {action && <Button label={action.label} icon={action.icon} onPress={action.onPress} variant="filled" size="medium" style={{ marginTop: 8 }} />}
     </View>
   );
 }
@@ -248,7 +276,10 @@ export function Section({ title, footer, children, right }: { title?: string; fo
           {right}
         </View>
       )}
-      <View style={[styles.sectionBody, { backgroundColor: t.colors.cell, borderRadius: t.radius.lg }]}>{children}</View>
+      {/* Outer view draws the outline + lip; inner view clips rows to the rounded corners. */}
+      <View style={[styles.sectionBody, { backgroundColor: t.colors.cell, borderRadius: t.radius.lg, ...t.chunky.card }]}>
+        <View style={{ borderRadius: t.radius.lg - 2, overflow: 'hidden', borderCurve: 'continuous' }}>{children}</View>
+      </View>
       {footer && <Text style={[t.type.footnote, styles.sectionFooter, { color: t.colors.secondaryLabel }]}>{footer}</Text>}
     </View>
   );
@@ -264,7 +295,7 @@ export function Separator({ inset = 16 }: { inset?: number }) {
 export function SearchField({ value, onChangeText, placeholder, style, ...rest }: TextInputProps & { value: string; onChangeText: (s: string) => void }) {
   const t = useTheme();
   return (
-    <View style={[styles.search, { backgroundColor: t.colors.fill }, style]}>
+    <View style={[styles.search, { backgroundColor: t.colors.cell, borderWidth: 2, borderColor: t.colors.border }, style]}>
       <Icon name="search" size={17} color={t.colors.secondaryLabel} />
       <TextInput
         value={value}
@@ -313,8 +344,51 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', gap: 10, paddingVertical: 48, paddingHorizontal: 32 },
   emptyIcon: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4, marginBottom: 8, minHeight: 28 },
-  sectionBody: { overflow: 'hidden', borderCurve: 'continuous' },
+  sectionBody: { borderCurve: 'continuous' },
   sectionFooter: { paddingHorizontal: 16, marginTop: 8 },
-  search: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 10, borderCurve: 'continuous', paddingLeft: 10, minHeight: 44 },
+  search: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 14, borderCurve: 'continuous', paddingLeft: 10, minHeight: 44 },
   searchInput: { flex: 1, alignSelf: 'stretch', minHeight: 44, paddingVertical: 0, outlineStyle: 'none' } as never,
+});
+
+/* ---------- Segmented control ---------- */
+
+export function Segmented<T extends string>({
+  options,
+  value,
+  onChange,
+  label,
+}: {
+  options: { label: string; value: T }[];
+  value: T;
+  onChange: (v: T) => void;
+  label: string;
+}) {
+  const t = useTheme();
+  return (
+    <View style={[segStyles.wrap, { backgroundColor: t.colors.fill, borderColor: t.colors.border }]} accessibilityRole="radiogroup" accessibilityLabel={label}>
+      {options.map((o) => {
+        const selected = o.value === value;
+        return (
+          <PressableScale
+            key={o.value}
+            onPress={() => onChange(o.value)}
+            haptic="select"
+            scaleTo={0.95}
+            accessibilityRole="radio"
+            aria-checked={selected}
+            accessibilityLabel={o.label}
+            hitSlop={{ top: 4, bottom: 4 }}
+            style={[segStyles.item, selected && { backgroundColor: t.colors.cell, ...t.chunky.lip }]}
+          >
+            <Text style={[t.type.footnote, { color: selected ? t.colors.label : t.colors.secondaryLabel, fontWeight: '700', fontFamily: t.fonts.rounded }]}>{o.label}</Text>
+          </PressableScale>
+        );
+      })}
+    </View>
+  );
+}
+
+const segStyles = StyleSheet.create({
+  wrap: { flexDirection: 'row', borderRadius: 12, padding: 3, borderWidth: 1.5, borderCurve: 'continuous' },
+  item: { minHeight: 36, minWidth: 64, paddingHorizontal: 12, borderRadius: 9, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
 });

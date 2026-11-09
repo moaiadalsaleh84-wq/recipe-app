@@ -2,7 +2,7 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import type { Recipe } from '../data/mock';
-import { useStore } from '../state/store';
+import { useBuddy, useStore } from '../state/store';
 import { useTheme } from '../theme';
 import { Icon } from './Icon';
 import { PressableScale } from './PressableScale';
@@ -10,6 +10,19 @@ import { useToast } from './Toast';
 import { IconButton, Skeleton } from './ui';
 
 export const openRecipe = (id: string) => router.push({ pathname: '/recipe/[id]', params: { id } });
+
+/** The recipe's photo, or a cozy placeholder for recipes added without one. */
+export function RecipePhoto({ recipe, iconSize = 36 }: { recipe: Recipe; iconSize?: number }) {
+  const t = useTheme();
+  if (recipe.image) {
+    return <Image source={recipe.image} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} accessibilityIgnoresInvertColors />;
+  }
+  return (
+    <View style={[StyleSheet.absoluteFill, styles.noPhoto, { backgroundColor: t.colors.imagePlaceholder }]}>
+      <Icon name="pot" size={iconSize} color={t.colors.tertiaryLabel} />
+    </View>
+  );
+}
 
 /** Heart button used on cards and rows. Shows a toast with Undo. */
 export function FavoriteButton({ recipe, onPhoto }: { recipe: Recipe; onPhoto?: boolean }) {
@@ -20,7 +33,7 @@ export function FavoriteButton({ recipe, onPhoto }: { recipe: Recipe; onPhoto?: 
   return (
     <IconButton
       icon={fav ? 'heartFill' : 'heart'}
-      accessibilityLabel={fav ? `Remove ${recipe.title} from Saved` : `Save ${recipe.title}`}
+      accessibilityLabel={fav ? `Remove ${recipe.title} from Favorites` : `Add ${recipe.title} to Favorites`}
       color={fav ? t.colors.accent : onPhoto ? '#FFFFFF' : t.colors.secondaryLabel}
       background={onPhoto ? t.colors.scrim : undefined}
       size={onPhoto ? 34 : 44}
@@ -28,7 +41,7 @@ export function FavoriteButton({ recipe, onPhoto }: { recipe: Recipe; onPhoto?: 
       onPress={() => {
         const now = toggleFavorite(recipe.id);
         toast({
-          message: now ? 'Saved to your recipes' : 'Removed from Saved',
+          message: now ? 'Added to Favorites' : 'Removed from Favorites',
           icon: now ? 'heartFill' : 'heart',
           tone: now ? 'success' : 'info',
           action: { label: 'Undo', onPress: () => toggleFavorite(recipe.id) },
@@ -38,11 +51,16 @@ export function FavoriteButton({ recipe, onPhoto }: { recipe: Recipe; onPhoto?: 
   );
 }
 
-const meta = (r: Recipe) => `${r.minutes} min · ${r.calories} kcal`;
+/** Tank cares about protein; Biscuit about calories-of-joy. */
+const useMeta = () => {
+  const buddy = useBuddy();
+  return (r: Recipe) => (buddy === 'tank' ? `${r.minutes} min · ${r.nutrition.protein} g protein` : `${r.minutes} min · ${r.calories} kcal`);
+};
 
 /** Grid card: photo with title and meta below, App Store style. */
 export function RecipeCard({ recipe, width }: { recipe: Recipe; width: number }) {
   const t = useTheme();
+  const meta = useMeta();
   return (
     <PressableScale
       onPress={() => openRecipe(recipe.id)}
@@ -50,8 +68,8 @@ export function RecipeCard({ recipe, width }: { recipe: Recipe; width: number })
       accessibilityHint="Opens the recipe"
       style={{ width }}
     >
-      <View style={[styles.imageWrap, { borderRadius: t.radius.lg, backgroundColor: t.colors.imagePlaceholder }]}>
-        <Image source={recipe.image} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} />
+      <View style={[styles.imageWrap, { borderRadius: t.radius.lg, backgroundColor: t.colors.imagePlaceholder, borderColor: t.colors.border }]}>
+        <RecipePhoto recipe={recipe} />
         <View style={styles.favOnPhoto}>
           <FavoriteButton recipe={recipe} onPhoto />
         </View>
@@ -78,6 +96,7 @@ export function RecipeCardSkeleton({ width }: { width: number }) {
 /** Large featured card with the title over the photo. */
 export function FeaturedCard({ recipe, eyebrow }: { recipe: Recipe; eyebrow: string }) {
   const t = useTheme();
+  const meta = useMeta();
   return (
     <PressableScale
       onPress={() => openRecipe(recipe.id)}
@@ -86,7 +105,7 @@ export function FeaturedCard({ recipe, eyebrow }: { recipe: Recipe; eyebrow: str
       accessibilityHint="Opens the recipe"
       style={[styles.featured, { borderRadius: t.radius.xl, backgroundColor: t.colors.imagePlaceholder, ...t.shadow.card }]}
     >
-      <Image source={recipe.image} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} />
+      <RecipePhoto recipe={recipe} iconSize={56} />
       <View style={[StyleSheet.absoluteFill, styles.featuredShade]} />
       <View style={styles.featuredFav}>
         <FavoriteButton recipe={recipe} onPhoto />
@@ -117,6 +136,7 @@ export function RecipeRow({
   accessibilityHint?: string;
 }) {
   const t = useTheme();
+  const meta = useMeta();
   return (
     <View style={styles.row}>
       <PressableScale
@@ -127,7 +147,7 @@ export function RecipeRow({
         style={styles.rowMain}
       >
         <View style={[styles.thumb, { backgroundColor: t.colors.imagePlaceholder }]}>
-          <Image source={recipe.image} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />
+          <RecipePhoto recipe={recipe} iconSize={24} />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[t.type.headline, { color: t.colors.label }]} numberOfLines={1}>
@@ -145,7 +165,8 @@ export function RecipeRow({
 }
 
 const styles = StyleSheet.create({
-  imageWrap: { width: '100%', aspectRatio: 1, overflow: 'hidden', borderCurve: 'continuous' },
+  imageWrap: { width: '100%', aspectRatio: 1, overflow: 'hidden', borderCurve: 'continuous', borderWidth: 2 },
+  noPhoto: { alignItems: 'center', justifyContent: 'center' },
   favOnPhoto: { position: 'absolute', top: 6, right: 6 },
   featured: { height: 300, overflow: 'hidden', borderCurve: 'continuous', justifyContent: 'flex-end' },
   featuredShade: { backgroundColor: 'rgba(0,0,0,0.28)' },

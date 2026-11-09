@@ -7,9 +7,11 @@ import { PressableScale } from '../../../components/PressableScale';
 import { RecipeRow } from '../../../components/RecipeCard';
 import { useToast } from '../../../components/Toast';
 import { IconButton, Section } from '../../../components/ui';
-import { getRecipe, meals, type Meal } from '../../../data/mock';
+import { meals, type Meal } from '../../../data/mock';
+import { CatSays } from '../../../components/cats/CatSays';
+import { say } from '../../../components/cats/dialogue';
 import { ScreenTitle } from '../../../navigation/screenOptions';
-import { useStore } from '../../../state/store';
+import { totalsFor, useBuddy, useStore } from '../../../state/store';
 import { useTheme } from '../../../theme';
 import { weekDays } from '../../../lib/week';
 
@@ -17,10 +19,12 @@ import { weekDays } from '../../../lib/week';
 export default function PlanScreen() {
   const t = useTheme();
   const toast = useToast();
-  const { plan, setMeal, addIngredients } = useStore();
+  const buddy = useBuddy();
+  const { plan, setMeal, addIngredients, getRecipe, goals } = useStore();
   const [day, setDay] = useState(weekDays.find((d) => d.isToday)?.index ?? 0);
   const dayPlan = plan[day] ?? {};
   const plannedToday = meals.filter((m) => dayPlan[m]).length;
+  const dayTotals = totalsFor(meals.map((m) => dayPlan[m]), getRecipe);
 
   const weekRecipes = useMemo(
     () => Object.values(plan).flatMap((p) => meals.map((m) => p[m])).filter((id): id is string => !!id),
@@ -51,7 +55,7 @@ export default function PlanScreen() {
         }}
       />
     ),
-    [weekRecipes, addIngredients, toast],
+    [weekRecipes, addIngredients, toast, getRecipe],
   );
 
   const remove = (meal: Meal, recipeId: string) => {
@@ -72,7 +76,7 @@ export default function PlanScreen() {
     >
       <ScreenTitle title="Meal Plan" right={addWeek} />
 
-      <View style={[styles.week, { backgroundColor: t.colors.cell, borderRadius: t.radius.lg }]} accessibilityRole="tablist">
+      <View style={[styles.week, { backgroundColor: t.colors.cell, borderRadius: t.radius.lg, ...t.chunky.card }]} accessibilityRole="tablist">
         {weekDays.map((d) => {
           const selected = d.index === day;
           const count = meals.filter((m) => plan[d.index]?.[m]).length;
@@ -111,6 +115,25 @@ export default function PlanScreen() {
       <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, marginTop: 12, marginBottom: 20, paddingHorizontal: 4 }]}>
         {weekDays[day].full} · {plannedToday} of 3 meals planned
       </Text>
+
+      {/* The buddy sums up the day */}
+      <CatSays
+        buddy={buddy}
+        size={96}
+        style={{ marginBottom: 20 }}
+        line={
+          plannedToday === 0
+            ? say(buddy, 'planEmptyDay')
+            : say(buddy, 'planDay', {
+                calories: dayTotals.calories,
+                protein: dayTotals.protein,
+                goalNote:
+                  dayTotals.protein >= goals.protein
+                    ? 'Protein goal covered!'
+                    : `That’s ${Math.round((dayTotals.protein / goals.protein) * 100)}% of your ${goals.protein} g protein goal.`,
+              })
+        }
+      />
 
       {meals.map((meal) => {
         const id = dayPlan[meal];

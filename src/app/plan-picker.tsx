@@ -6,7 +6,7 @@ import { PressableScale } from '../components/PressableScale';
 import { RecipeRow } from '../components/RecipeCard';
 import { useToast } from '../components/Toast';
 import { SearchField, Section, Separator } from '../components/ui';
-import { meals, recipes, type Meal, type Recipe } from '../data/mock';
+import { meals, type Meal, type Recipe } from '../data/mock';
 import { isIOS } from '../navigation/screenOptions';
 import { useStore } from '../state/store';
 import { useTheme } from '../theme';
@@ -17,14 +17,14 @@ export default function PlanPicker() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const toast = useToast();
-  const { setMeal } = useStore();
+  const { setMeal, allRecipes } = useStore();
   const params = useLocalSearchParams<{ day: string; meal: string }>();
   const day = Math.min(6, Math.max(0, Number(params.day) || 0));
   const meal: Meal = meals.includes(params.meal as Meal) ? (params.meal as Meal) : 'Dinner';
   const [query, setQuery] = useState('');
 
   const q = query.trim().toLowerCase();
-  const matches = recipes.filter((r) => !q || r.title.toLowerCase().includes(q));
+  const matches = allRecipes.filter((r) => !q || r.title.toLowerCase().includes(q));
   const suggested = matches.filter((r) => r.category === meal);
   const others = matches.filter((r) => r.category !== meal);
 

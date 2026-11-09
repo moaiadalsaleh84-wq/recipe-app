@@ -1,92 +1,116 @@
 /**
  * The single source of design tokens for the app.
  *
- * - Colors come from the brand palette (indigo, green, yellow, coral, purple, navy)
- *   mapped onto iOS semantic roles (label, background, fill, separator...).
- *   Every color has a light and a dark value.
- * - Type uses the iOS system font (SF Pro) via Apple's Human Interface Guidelines
- *   text styles. No fontFamily is set, so iOS renders SF Pro and Android Roboto.
- * - Spacing, radius, hit targets and motion are tuned to iOS conventions.
+ * Look: a cozy kitchen. Warm cream and caramel, cocoa-brown text, terracotta
+ * buttons and sage-green success, with chunky outlined cards and buttons that
+ * sit on a solid "lip" like a game UI, but laid out the iOS way.
+ *
+ * - Colors: every token has a light and a dark (night kitchen) value.
+ * - Type: Apple's text styles. Headings use SF Pro Rounded ('ui-rounded'), body uses SF Pro.
+ * - Spacing, radius, tap targets and motion follow iOS conventions.
  *
  * Read tokens in components with `const t = useTheme()`.
  */
-import { useColorScheme, type TextStyle } from 'react-native';
+import { Platform, useColorScheme, type TextStyle, type ViewStyle } from 'react-native';
 
-// Brand palette from the design inspiration.
-const brand = {
-  indigo: '#4B3FE4',
-  green: '#3DB55A',
-  yellow: '#FFD23F',
-  coral: '#F25C54',
-  purple: '#7B5CF0',
-  navy: '#16124A',
+// Brand palette
+export const brand = {
+  cream: '#FFF6E9',
+  caramel: '#E9A93A',
+  terracotta: '#C25A30',
+  sage: '#6E9A5C',
+  cocoa: '#4A2E1F',
+  berry: '#E0605A',
+  lavender: '#7B6CD9',
 } as const;
 
 const light = {
-  tint: brand.indigo, // links, icons, text buttons
-  tintFill: brand.indigo, // filled buttons and selected chips (behind white text)
+  tint: '#B5512C', // links, icons, text buttons (4.7:1 on cream)
+  tintFill: brand.terracotta, // filled buttons and selected chips, behind white text
+  tintDeep: '#8E3E1F', // the solid lip under filled buttons
+  tintSoft: 'rgba(194,90,48,0.13)', // tinted buttons, tags
   onTint: '#FFFFFF',
-  tintSoft: 'rgba(75,63,228,0.12)', // tinted (secondary) buttons and selected chips
-  success: brand.green,
-  successSoft: 'rgba(61,181,90,0.14)',
-  warning: brand.yellow,
-  accent: brand.coral, // favorites
-  highlight: brand.purple,
-  destructive: '#FF3B30',
+  success: brand.sage,
+  successSoft: 'rgba(110,154,92,0.16)',
+  warning: brand.caramel,
+  accent: brand.berry, // favorites
+  highlight: brand.lavender,
+  destructive: '#D9423A',
+  // Macro colors
+  protein: brand.terracotta,
+  carbs: brand.caramel,
+  fat: brand.sage,
 
-  label: brand.navy,
-  secondaryLabel: 'rgba(22,18,74,0.62)',
-  tertiaryLabel: 'rgba(22,18,74,0.34)',
+  label: brand.cocoa,
+  secondaryLabel: 'rgba(74,46,31,0.68)',
+  tertiaryLabel: 'rgba(74,46,31,0.38)',
 
-  background: '#FFFFFF', // plain screens (recipes, detail)
-  groupedBackground: '#F2F2F7', // list screens (groceries, plan, saved)
-  cell: '#FFFFFF', // rows and cards on grouped backgrounds
-  elevated: '#FFFFFF', // toasts, floating bars
-  fill: 'rgba(120,120,128,0.12)', // unselected chips, steppers, skeletons
-  fillStrong: 'rgba(120,120,128,0.20)',
-  separator: 'rgba(60,60,67,0.18)',
-  imagePlaceholder: '#ECEBF5',
-  scrim: 'rgba(0,0,0,0.28)', // behind buttons floating on photos
-  shadow: '#16124A',
+  background: brand.cream,
+  groupedBackground: '#FBEEDC',
+  cell: '#FFFDF8',
+  elevated: '#FFFDF8',
+  fill: 'rgba(150,95,50,0.10)',
+  fillStrong: 'rgba(150,95,50,0.18)',
+  separator: 'rgba(120,75,40,0.16)',
+  border: 'rgba(110,62,30,0.22)', // chunky card outlines
+  lip: 'rgba(110,62,30,0.16)', // solid bottom edge under cards
+  imagePlaceholder: '#F3E3CC',
+  scrim: 'rgba(40,20,5,0.30)',
+  shadow: '#6B3A1F',
 };
 
 type Palette = Record<keyof typeof light, string>;
 
 const dark: Palette = {
-  tint: '#8A80FF', // lifted indigo, keeps contrast on black
-  tintFill: '#5A4EEB', // deeper, so white text on it stays readable (~6:1)
+  tint: '#F0905F',
+  tintFill: '#B5512C',
+  tintDeep: '#6E2E14',
+  tintSoft: 'rgba(240,144,95,0.18)',
   onTint: '#FFFFFF',
-  tintSoft: 'rgba(138,128,255,0.22)',
-  success: '#4CC46A',
-  successSoft: 'rgba(76,196,106,0.22)',
-  warning: '#FFD60A',
-  accent: '#FF6B63',
+  success: '#8DB97A',
+  successSoft: 'rgba(141,185,122,0.20)',
+  warning: '#F2C14E',
+  accent: '#FF7A72',
   highlight: '#A08BFF',
-  destructive: '#FF453A',
+  destructive: '#FF5A4F',
+  protein: '#F0905F',
+  carbs: '#F2C14E',
+  fat: '#8DB97A',
 
-  label: '#FFFFFF',
-  secondaryLabel: 'rgba(235,235,245,0.64)',
-  tertiaryLabel: 'rgba(235,235,245,0.32)',
+  label: '#FFF1E0',
+  secondaryLabel: 'rgba(255,241,224,0.66)',
+  tertiaryLabel: 'rgba(255,241,224,0.34)',
 
-  background: '#000000',
-  groupedBackground: '#000000',
-  cell: '#1C1C1E',
-  elevated: '#2C2C2E',
-  fill: 'rgba(120,120,128,0.24)',
-  fillStrong: 'rgba(120,120,128,0.36)',
-  separator: 'rgba(84,84,88,0.6)',
-  imagePlaceholder: '#1C1C1E',
-  scrim: 'rgba(0,0,0,0.38)',
+  background: '#1E1611',
+  groupedBackground: '#18110D',
+  cell: '#2A2019',
+  elevated: '#342820',
+  fill: 'rgba(255,214,170,0.10)',
+  fillStrong: 'rgba(255,214,170,0.18)',
+  separator: 'rgba(255,214,170,0.14)',
+  border: 'rgba(255,214,170,0.18)',
+  lip: 'rgba(0,0,0,0.55)',
+  imagePlaceholder: '#2A2019',
+  scrim: 'rgba(0,0,0,0.40)',
   shadow: '#000000',
 };
 
-/** Apple HIG text styles (default "Large" Dynamic Type size). */
+/** SF Pro Rounded on iOS; best available rounded face elsewhere. */
+export const fonts = {
+  rounded: Platform.select({
+    ios: 'ui-rounded',
+    web: 'ui-rounded, "SF Pro Rounded", "Nunito", system-ui, sans-serif',
+    default: undefined,
+  }),
+};
+
+/** Apple HIG text styles (default "Large" Dynamic Type size). Headings are rounded. */
 export const type = {
-  largeTitle: { fontSize: 34, lineHeight: 41, fontWeight: '700' },
-  title1: { fontSize: 28, lineHeight: 34, fontWeight: '700' },
-  title2: { fontSize: 22, lineHeight: 28, fontWeight: '700' },
-  title3: { fontSize: 20, lineHeight: 25, fontWeight: '600' },
-  headline: { fontSize: 17, lineHeight: 22, fontWeight: '600' },
+  largeTitle: { fontSize: 34, lineHeight: 41, fontWeight: '800', fontFamily: fonts.rounded },
+  title1: { fontSize: 28, lineHeight: 34, fontWeight: '800', fontFamily: fonts.rounded },
+  title2: { fontSize: 22, lineHeight: 28, fontWeight: '700', fontFamily: fonts.rounded },
+  title3: { fontSize: 20, lineHeight: 25, fontWeight: '700', fontFamily: fonts.rounded },
+  headline: { fontSize: 17, lineHeight: 22, fontWeight: '700', fontFamily: fonts.rounded },
   body: { fontSize: 17, lineHeight: 22, fontWeight: '400' },
   callout: { fontSize: 16, lineHeight: 21, fontWeight: '400' },
   subhead: { fontSize: 15, lineHeight: 20, fontWeight: '400' },
@@ -110,9 +134,9 @@ export const spacing = {
 export const radius = {
   xs: 6,
   sm: 10,
-  md: 12, // rows, inputs, buttons
-  lg: 16, // images and cards
-  xl: 22, // sheets, grouped sections
+  md: 14, // rows, inputs, buttons
+  lg: 18, // images and cards
+  xl: 24, // sheets, big cards
   pill: 999,
 } as const;
 
@@ -121,30 +145,43 @@ export const hitTarget = 44;
 
 export const motion = {
   /** Press-down feedback on cards and buttons. */
-  pressScale: 0.97,
-  press: { damping: 20, stiffness: 400, mass: 0.6 },
+  pressScale: 0.96,
+  press: { damping: 18, stiffness: 380, mass: 0.6 },
   /** Bouncy confirmation, e.g. checkmarks. */
   pop: { damping: 12, stiffness: 320, mass: 0.7 },
   toastDuration: 2600,
 } as const;
 
 function makeTheme(c: Palette, isDark: boolean) {
+  /** Solid bottom edge: the "chunky" game-like look. */
+  const lip = (color: string = c.lip, height = 3): ViewStyle => ({
+    shadowColor: color,
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height },
+    elevation: 0,
+  });
   return {
     isDark,
     colors: c,
+    fonts,
     type,
     spacing,
     radius,
     hitTarget,
     motion,
-    /** Very soft elevation; flat in dark mode, like iOS. */
+    chunky: {
+      lip: lip(),
+      /** Outlined card with a lip. */
+      card: { borderWidth: 2, borderColor: c.border, ...lip() } as ViewStyle,
+      /** Filled button with a darker lip underneath. */
+      button: (color: string = c.tintDeep): ViewStyle => lip(color, 4),
+    },
     shadow: {
-      card: isDark
-        ? {}
-        : { shadowColor: c.shadow, shadowOpacity: 0.08, shadowRadius: 14, shadowOffset: { width: 0, height: 6 } },
+      card: isDark ? {} : { shadowColor: c.shadow, shadowOpacity: 0.1, shadowRadius: 14, shadowOffset: { width: 0, height: 6 } },
       floating: {
         shadowColor: '#000',
-        shadowOpacity: isDark ? 0.5 : 0.14,
+        shadowOpacity: isDark ? 0.5 : 0.16,
         shadowRadius: 18,
         shadowOffset: { width: 0, height: 8 },
       },

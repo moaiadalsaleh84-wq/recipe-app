@@ -1,14 +1,40 @@
 # Recipe App
 
-A recipe manager and meal planner for iPhone, built with Expo (SDK 58), React Native and TypeScript.
-It runs on mock data for now; there is no backend yet.
+A cozy recipe manager and meal planner for iPhone, where a cat helps you cook.
+Built with Expo (SDK 58), React Native and TypeScript. It runs on mock data for now; there is no backend yet,
+but everything you do is saved on the device.
 
 <p>
-  <img src="screenshots/01-recipes.png" width="200" alt="Recipes" />
-  <img src="screenshots/02-recipe.png" width="200" alt="Recipe detail" />
-  <img src="screenshots/03-plan.png" width="200" alt="Meal plan" />
-  <img src="screenshots/04-groceries.png" width="200" alt="Grocery list" />
+  <img src="screenshots/01-onboarding.png" width="190" alt="Pick your kitchen buddy" />
+  <img src="screenshots/02-recipes.png" width="190" alt="Recipes with your buddy" />
+  <img src="screenshots/03-recipe.png" width="190" alt="Recipe with nutrition" />
+  <img src="screenshots/04-cook-mode.png" width="190" alt="Cook mode" />
 </p>
+
+## Your kitchen buddy
+
+Pick one of two cats when you first open the app. You can switch anytime from the Buddy tab.
+
+| | Personality | Helps with |
+| --- | --- | --- |
+| **Coach Tank** | Tough but kind. Short sentences, counts everything in reps, never shames food, respects rest days. Secretly soft: gets flustered when you pet him and has a weakness for cookies. | Getting in shape: protein on every card, macros, daily protein and calorie goals, protein tips |
+| **Chef Biscuit** | Funny, sweet and clumsy. Drops things, "taste tests" half the ingredients, makes terrible puns, naps in sunny spots. | Making cooking cozy: kitchen tips, encouragement, jokes |
+
+The cats are original vector drawings, rigged like puppets: arms bend at the shoulder and elbow, the tail swishes,
+eyes blink and the mouth moves while they talk. Every line they say is tagged with a mood, so the animation matches the words.
+For example, Tank flexes when a recipe is high in protein, Biscuit gets a sweat drop when a step says "hot pan", and both stir a bowl during a stirring step.
+Tap a cat to pet it.
+
+## Features
+
+- **Recipes:** search, category and diet filters, photo grid, featured "on the menu tonight", pull to refresh
+- **Cookbooks:** Favorites plus your own collections; save any recipe to several cookbooks
+- **Add your own recipe:** photo, link to the original (Instagram, TikTok, a website), ingredients one per line (amounts are understood), steps, tags
+- **Recipe page:** servings scaling, metric/US units (including oven temperatures), nutrition per serving, personal notes, share, buddy comments
+- **Cook Mode:** step by step with the screen kept on, timers picked up from the steps ("bake for 25 minutes"), and your buddy acting out each step. Log the meal at the end.
+- **Meal plan:** a week view with breakfast, lunch and dinner, a daily nutrition summary, and one tap to add the whole week to your list
+- **Groceries:** grouped by aisle, combined across recipes, tick off, swipe to delete, add your own items, share the list
+- **Buddy tab:** tricks, switch buddy, cooking streak and stats, daily goals, units
 
 ## Run it
 
@@ -19,48 +45,37 @@ npx expo start
 
 Scan the QR code with the Camera app to open it in Expo Go on your iPhone, or press `i` for the iOS Simulator (macOS only).
 
-## What's inside
-
-| Tab       | What it does |
-| --------- | ------------ |
-| Recipes   | Native search bar, category and diet filters, photo grid, pull to refresh, loading skeletons |
-| Saved     | Recipes you tapped the heart on |
-| Plan      | A week view. Tap a slot to pick a recipe, or the cart button to add the whole week to your list |
-| Groceries | Grouped by aisle. Tap to tick off, swipe left to delete, type to add your own items |
-
-The recipe screen has a stretchy hero photo, a servings stepper that rescales every ingredient,
-and tags (like **Vegetarian**) that take you back to the list with that filter applied.
-Every change shows a short toast, most with **Undo**.
-
 ## Project layout
 
 ```
 src/
-  app/                 Screens (Expo Router: every file is a route)
-    (tabs)/            The four tabs, each with its own large-title stack
-    recipe/[id].tsx    Recipe detail
-    plan-picker.tsx    Sheet for choosing a recipe for a meal slot
-  components/          Shared UI: buttons, chips, cards, toast, icons
-  data/mock.ts         Mock recipes, grocery list and meal plan
-  state/store.tsx      App state (favourites, plan, groceries, filters)
-  theme/index.ts       All colours, type, spacing, radius and motion
+  app/                   Screens (Expo Router: every file is a route)
+    (tabs)/              Recipes, Plan, Groceries and Buddy, each with its own large-title stack
+    onboarding.tsx       Pick your buddy
+    recipe/[id].tsx      Recipe page          recipe/new.tsx   Add your own recipe
+    cook/[id].tsx        Cook Mode            cookbook/[id].tsx  A cookbook
+    plan-picker.tsx, save-to-cookbook.tsx, cookbook-edit.tsx   Sheets
+  components/
+    cats/                The buddies: art, animation rig, moods, dialogue, speech bubble
+  data/mock.ts           Mock recipes, grocery list, plan and cookbooks
+  state/store.tsx        App state, saved on the device
+  lib/                   Units, ingredient parsing, timers, haptics
+  theme/index.ts         All colours, type, spacing, radius and motion
 ```
 
 ## Changing the look
 
-Everything visual lives in [`src/theme/index.ts`](src/theme/index.ts):
-
-- **Colours:** a light and a dark palette built from the brand colours. Change `brand` or the semantic roles below it.
-- **Type:** Apple's text styles (Large Title, Headline, Body...). The app uses the iOS system font, SF Pro.
-- **Spacing, radius, tap target size and animation springs.**
-
-Icons are defined once in [`src/components/Icon.tsx`](src/components/Icon.tsx), as an SF Symbol for iOS and a Material Symbol for Android and web.
+Everything visual lives in [`src/theme/index.ts`](src/theme/index.ts): the cozy light and dark palettes,
+Apple's text styles (headings use SF Pro Rounded), spacing, corner radius, the chunky card and button styles, and animation springs.
+The cats' colours live with their artwork in [`src/components/cats/art.tsx`](src/components/cats/art.tsx),
+and what they say lives in [`src/components/cats/dialogue.ts`](src/components/cats/dialogue.ts).
 
 ## Platform notes
 
-The app is designed for iOS. These parts use native iOS components, so they only look and behave fully native on an iPhone:
-the tab bar, large collapsing titles, the header search bar, the sheet, haptics and swipe-back.
-Android and web get working equivalents (the search field and titles are drawn in the page instead).
+The app is designed for iOS. The tab bar, large titles, header search, sheets, haptics and swipe-back are native iOS components,
+so they look and behave fully native only on an iPhone. Android and web get working equivalents.
+
+Importing a recipe automatically from a link (like ReciMe does) needs a server, so for now a link is saved with the recipe and you type the details.
 
 ## Placeholder photos
 

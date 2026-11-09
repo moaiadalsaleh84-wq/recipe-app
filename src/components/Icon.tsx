@@ -32,6 +32,23 @@ const icons = {
   warning: { ios: 'exclamationmark.circle.fill', md: 'error' },
   undo: { ios: 'arrow.uturn.backward', md: 'undo' },
   sparkles: { ios: 'sparkles', md: 'auto_awesome' },
+  paw: { ios: 'pawprint.fill', md: 'pets' },
+  bookmark: { ios: 'bookmark', md: 'bookmark_add' },
+  bookmarkFill: { ios: 'bookmark.fill', md: 'bookmark' },
+  share: { ios: 'square.and.arrow.up', md: 'share' },
+  edit: { ios: 'pencil', md: 'edit' },
+  timer: { ios: 'timer', md: 'timer' },
+  play: { ios: 'play.fill', md: 'play_arrow' },
+  pause: { ios: 'pause.fill', md: 'pause' },
+  restart: { ios: 'arrow.counterclockwise', md: 'restart_alt' },
+  camera: { ios: 'camera', md: 'photo_camera' },
+  link: { ios: 'link', md: 'link' },
+  notes: { ios: 'note.text', md: 'notes' },
+  dumbbell: { ios: 'dumbbell', md: 'fitness_center' },
+  shuffle: { ios: 'shuffle', md: 'shuffle' },
+  arrowRight: { ios: 'arrow.right', md: 'arrow_forward' },
+  chat: { ios: 'bubble.left', md: 'chat_bubble' },
+  pot: { ios: 'frying.pan', md: 'skillet' },
 } as const satisfies Record<string, { ios: SFSymbol; md: string }>;
 
 export type IconName = keyof typeof icons;

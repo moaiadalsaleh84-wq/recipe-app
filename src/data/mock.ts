@@ -19,19 +19,28 @@ export const QUICK_FILTER = 'Under 30 min';
 export type FilterTag = DietTag | typeof QUICK_FILTER;
 export const filterTags: FilterTag[] = [QUICK_FILTER, ...dietTags];
 
+/** A bundled photo (require), a picked photo ({ uri }), or none. */
+export type RecipeImage = number | { uri: string } | null;
+
 export type Recipe = {
   id: string;
   title: string;
-  image: number; // a bundled require('...jpg')
+  image: RecipeImage;
   description: string;
   category: Category;
   minutes: number;
   servings: number;
   calories: number;
+  /** Grams per serving. */
+  nutrition: { protein: number; carbs: number; fat: number };
   difficulty: 'Easy' | 'Medium' | 'Hard';
   tags: DietTag[];
   ingredients: Ingredient[];
   steps: string[];
+  /** Link to where the recipe came from, for recipes you add yourself. */
+  sourceUrl?: string;
+  /** True for recipes the user created. */
+  custom?: boolean;
 };
 
 /**
@@ -48,6 +57,7 @@ export const recipes: Recipe[] = [
     minutes: 25,
     servings: 4,
     calories: 520,
+    nutrition: { protein: 19, carbs: 72, fat: 17 },
     difficulty: 'Easy',
     tags: ['Vegetarian', 'Kid friendly'],
     ingredients: [
@@ -74,6 +84,7 @@ export const recipes: Recipe[] = [
     minutes: 40,
     servings: 4,
     calories: 360,
+    nutrition: { protein: 9, carbs: 58, fat: 10 },
     difficulty: 'Medium',
     tags: ['Vegan', 'Gluten free'],
     ingredients: [
@@ -100,6 +111,7 @@ export const recipes: Recipe[] = [
     minutes: 20,
     servings: 2,
     calories: 590,
+    nutrition: { protein: 38, carbs: 62, fat: 18 },
     difficulty: 'Easy',
     tags: ['One pan', 'High protein'],
     ingredients: [
@@ -125,6 +137,7 @@ export const recipes: Recipe[] = [
     minutes: 45,
     servings: 4,
     calories: 640,
+    nutrition: { protein: 42, carbs: 14, fat: 46 },
     difficulty: 'Medium',
     tags: ['High protein', 'Gluten free'],
     ingredients: [
@@ -151,6 +164,7 @@ export const recipes: Recipe[] = [
     minutes: 35,
     servings: 4,
     calories: 690,
+    nutrition: { protein: 39, carbs: 52, fat: 34 },
     difficulty: 'Easy',
     tags: ['High protein', 'Kid friendly'],
     ingredients: [
@@ -177,6 +191,7 @@ export const recipes: Recipe[] = [
     minutes: 35,
     servings: 6,
     calories: 310,
+    nutrition: { protein: 4, carbs: 38, fat: 16 },
     difficulty: 'Easy',
     tags: ['Vegetarian', 'Kid friendly'],
     ingredients: [
@@ -202,6 +217,7 @@ export const recipes: Recipe[] = [
     minutes: 30,
     servings: 2,
     calories: 610,
+    nutrition: { protein: 18, carbs: 74, fat: 27 },
     difficulty: 'Easy',
     tags: ['Vegetarian'],
     ingredients: [
@@ -227,6 +243,7 @@ export const recipes: Recipe[] = [
     minutes: 50,
     servings: 2,
     calories: 780,
+    nutrition: { protein: 32, carbs: 92, fat: 30 },
     difficulty: 'Medium',
     tags: ['Vegetarian', 'Kid friendly'],
     ingredients: [
@@ -252,6 +269,7 @@ export const recipes: Recipe[] = [
     minutes: 60,
     servings: 12,
     calories: 180,
+    nutrition: { protein: 4, carbs: 22, fat: 9 },
     difficulty: 'Medium',
     tags: ['Vegan'],
     ingredients: [
@@ -277,6 +295,7 @@ export const recipes: Recipe[] = [
     minutes: 75,
     servings: 6,
     calories: 670,
+    nutrition: { protein: 41, carbs: 72, fat: 22 },
     difficulty: 'Hard',
     tags: ['One pan', 'High protein', 'Gluten free'],
     ingredients: [
@@ -303,6 +322,7 @@ export const recipes: Recipe[] = [
     minutes: 70,
     servings: 10,
     calories: 420,
+    nutrition: { protein: 6, carbs: 54, fat: 21 },
     difficulty: 'Medium',
     tags: ['Vegetarian'],
     ingredients: [
@@ -329,6 +349,7 @@ export const recipes: Recipe[] = [
     minutes: 30,
     servings: 9,
     calories: 260,
+    nutrition: { protein: 4, carbs: 26, fat: 16 },
     difficulty: 'Easy',
     tags: ['Vegetarian', 'Kid friendly'],
     ingredients: [
@@ -392,3 +413,19 @@ export const initialPlan: WeekPlan = {
 };
 
 export const initialFavorites = ['butter-chicken', 'masala-dosa'];
+
+export type Cookbook = { id: string; name: string; recipeIds: string[] };
+export const FAVORITES_ID = 'favorites';
+export const initialCookbooks: Cookbook[] = [
+  { id: 'cb-gains', name: 'Gains', recipeIds: ['butter-chicken', 'chicken-biryani', 'chicken-fried-rice', 'crispy-chicken-burger'] },
+  { id: 'cb-cozy', name: 'Cozy nights', recipeIds: ['mushroom-spaghetti', 'margherita-pizza', 'apple-turnovers'] },
+];
+
+export type CookedEntry = { recipeId: string; date: string; servings: number };
+export type Goals = { calories: number; protein: number };
+export const defaultGoals: Goals = { calories: 2200, protein: 140 };
+export type Units = 'metric' | 'us';
+
+/** How the buddy should talk about a recipe. */
+export const recipeKind = (r: Recipe) =>
+  r.category === 'Dessert' ? 'recipeTreat' : r.nutrition.protein >= 30 ? 'recipeHighProtein' : r.calories < 400 ? 'recipeLight' : 'recipeComfort';

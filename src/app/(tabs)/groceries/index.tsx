@@ -1,22 +1,26 @@
 import { router } from 'expo-router';
-import { useMemo, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { Share, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Animated, { FadeIn, FadeOut, LinearTransition, useAnimatedStyle, withTiming, type SharedValue } from 'react-native-reanimated';
 import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
 import { useToast } from '../../../components/Toast';
 import { CheckCircle, EmptyState, IconButton, Section, Separator } from '../../../components/ui';
-import { aisleOrder, getRecipe, type GroceryItem } from '../../../data/mock';
+import { aisleOrder, type GroceryItem } from '../../../data/mock';
+import { CatSays } from '../../../components/cats/CatSays';
+import { say, type Line } from '../../../components/cats/dialogue';
 import { haptics } from '../../../lib/haptics';
 import { ScreenTitle } from '../../../navigation/screenOptions';
-import { formatQty, useStore } from '../../../state/store';
+import { formatQty, useBuddy, useStore } from '../../../state/store';
 import { useTheme } from '../../../theme';
 
 export default function GroceriesScreen() {
   const t = useTheme();
   const toast = useToast();
+  const buddy = useBuddy();
   const { groceries, toggleGrocery, removeGrocery, clearCompleted, addCustomItem, undoGroceries } = useStore();
+  const [reaction, setReaction] = useState<{ line: Line; n: number } | null>(null);
   const [draft, setDraft] = useState('');
 
   const done = groceries.filter((g) => g.checked).length;
@@ -27,9 +31,27 @@ export default function GroceriesScreen() {
     [groceries],
   );
 
-  const clearButton = useMemo(
-    () =>
-      done > 0 ? (
+  const shareList = useCallback(async () => {
+    const lines = aisleOrder.flatMap((aisle) => {
+      const items = groceries.filter((g) => g.aisle === aisle && !g.checked);
+      return items.length ? [aisle, ...items.map((g) => `• ${g.name} (${formatQty(g.quantity, g.unit)})`), ''] : [];
+    });
+    if (lines.length === 0) {
+      toast({ message: 'Nothing left to buy, nothing to share!', tone: 'info' });
+      return;
+    }
+    try {
+      await Share.share({ title: 'Grocery list', message: ['Grocery list', '', ...lines].join('\n').trim() });
+    } catch {
+      toast({ message: 'Sharing isn’t available on this device', tone: 'warning' });
+    }
+  }, [groceries, toast]);
+
+  // Memoized: ScreenTitle pushes this into the native header on iOS.
+  const headerRight = useMemo(() => (
+    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <IconButton icon="share" accessibilityLabel="Share grocery list" iconSize={19} onPress={shareList} />
+      {done > 0 && (
         <PressableScale
           onPress={() => {
             const n = clearCompleted();
@@ -45,9 +67,17 @@ export default function GroceriesScreen() {
         >
           <Text style={[t.type.body, { color: t.colors.tint }]}>Clear Done</Text>
         </PressableScale>
-      ) : null,
-    [done, clearCompleted, toast, undoGroceries, t],
-  );
+      )}
+    </View>
+  ), [shareList, done, clearCompleted, toast, undoGroceries, t]);
+
+  const toggle = (item: GroceryItem) => {
+    toggleGrocery(item.key);
+    if (item.checked) return;
+    const next = (reaction?.n ?? 0) + 1;
+    const willBeDone = done + 1 === total;
+    setReaction({ line: say(buddy, willBeDone ? 'listDone' : 'itemChecked', {}, next), n: next });
+  };
 
   const add = () => {
     const name = draft.trim();
@@ -74,10 +104,10 @@ export default function GroceriesScreen() {
       style={{ backgroundColor: t.colors.groupedBackground }}
       contentContainerStyle={[styles.content, { paddingHorizontal: t.spacing.md }]}
     >
-      <ScreenTitle title="Groceries" right={clearButton} />
+      <ScreenTitle title="Groceries" right={headerRight} />
 
       {/* Quick add */}
-      <View style={[styles.addRow, { backgroundColor: t.colors.cell, borderRadius: t.radius.lg }]}>
+      <View style={[styles.addRow, { backgroundColor: t.colors.cell, borderRadius: t.radius.lg, ...t.chunky.card }]}>
         <Icon name="plus" size={18} color={t.colors.tint} weight="bold" />
         <TextInput
           value={draft}
@@ -102,8 +132,9 @@ export default function GroceriesScreen() {
       {total === 0 ? (
         <EmptyState
           icon="cart"
+          cat={{ buddy, mood: 'worried' }}
           title="Your List Is Empty"
-          message="Add ingredients from any recipe, or type an item above."
+          message={say(buddy, 'listEmpty').text}
           action={{ label: 'Browse Recipes', icon: 'book', onPress: () => router.navigate('/') }}
         />
       ) : (
@@ -117,13 +148,20 @@ export default function GroceriesScreen() {
             </View>
           </View>
 
+          <CatSays
+            buddy={buddy}
+            size={90}
+            style={{ marginBottom: 20 }}
+            line={done === total ? say(buddy, 'listDone') : reaction?.line ?? say(buddy, 'addedToList')}
+          />
+
           {groups.map((g) => (
             <Animated.View key={g.aisle} layout={LinearTransition.duration(220)}>
               <Section title={g.aisle}>
                 {g.items.map((item, i) => (
                   <Animated.View key={item.key} layout={LinearTransition.duration(220)} entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)}>
                     {i > 0 && <Separator inset={58} />}
-                    <GroceryRow item={item} onToggle={() => toggleGrocery(item.key)} onDelete={() => remove(item)} />
+                    <GroceryRow item={item} onToggle={() => toggle(item)} onDelete={() => remove(item)} />
                   </Animated.View>
                 ))}
               </Section>
@@ -138,6 +176,7 @@ export default function GroceriesScreen() {
 
 function GroceryRow({ item, onToggle, onDelete }: { item: GroceryItem; onToggle: () => void; onDelete: () => void }) {
   const t = useTheme();
+  const { getRecipe } = useStore();
   const sources = item.recipeIds.map((id) => getRecipe(id)?.title).filter(Boolean).join(', ');
   // A swipe must never also count as a tap that ticks the item.
   const swiping = useRef(false);
