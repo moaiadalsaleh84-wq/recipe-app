@@ -221,7 +221,7 @@ export default function CookMode() {
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16), borderTopColor: t.colors.separator, backgroundColor: t.colors.background }]}>
         {page > 0 && <Button label="Back" icon="back" variant="tinted" onPress={() => go(page - 1)} style={{ flex: 1 }} accessibilityLabel="Previous step" />}
         {page < last ? (
-          <Button label={page === 0 ? 'Let’s Cook' : page === steps.length ? 'Finish' : 'Next'} icon="arrowRight" onPress={() => go(page + 1)} style={{ flex: 2 }} accessibilityLabel={page === 0 ? 'Start the first step' : 'Next step'} />
+          <Button label={page === 0 ? 'Let’s Cook' : page === steps.length ? 'Finish' : 'Next'} icon="arrowRight" onPress={() => go(page + 1)} style={{ flex: 2 }} accessibilityLabel={page === 0 ? 'Start the first step' : page === steps.length ? 'Finish cooking' : 'Next step'} />
         ) : (
           <Button label="Log Meal & Finish" icon="check" variant="success" onPress={finish} style={{ flex: 2 }} />
         )}
