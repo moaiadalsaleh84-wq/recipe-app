@@ -25,12 +25,13 @@ export default function RecipesScreen() {
   const toast = useToast();
   const buddy = useBuddy();
   const { width } = useWindowDimensions();
-  const { category, setCategory, tags, toggleTag, clearFilters, plan, allRecipes, getRecipe, favorites, cookbooks } = useStore();
+  const { category, setCategory, tags, toggleTag, clearFilters, plan, allRecipes, getRecipe, favorites, cookbooks, profile } = useStore();
 
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [tip, setTip] = useState(-1); // -1 = greeting, then cycles tips
+  const [petLine, setPetLine] = useState<ReturnType<typeof say> | null>(null);
   const refreshTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // Mock network load so the skeletons have something to stand in for.
@@ -47,7 +48,7 @@ export default function RecipesScreen() {
     refreshTimer.current = setTimeout(() => {
       setRefreshing(false);
       setTip((n) => n + 1);
-      toast({ message: 'Recipes are up to date', tone: 'info', icon: 'sparkles' });
+      toast({ message: 'Recipes are up to date', tone: 'info', icon: 'checkCircle' });
     }, 1100);
   }, [toast]);
 
@@ -97,7 +98,8 @@ export default function RecipesScreen() {
   const showExtras = !hasFilters && !q;
   const tonight = getRecipe(plan[todayIndex]?.Dinner);
   const featured = tonight ?? allRecipes.find((r) => r.id === 'masala-dosa') ?? allRecipes[0];
-  const line = tip < 0 ? say(buddy, greetingSituation()) : say(buddy, 'tip', {}, tip);
+  const firstName = profile.name.trim().split(/\s+/)[0] ?? '';
+  const line = tip < 0 ? say(buddy, greetingSituation(), { name: firstName }) : say(buddy, 'tip', {}, tip);
 
   const margin = t.spacing.md;
   const contentWidth = Math.min(width, 900);
@@ -140,14 +142,34 @@ export default function RecipesScreen() {
       )}
 
       {showExtras && (
-        <CatSays
-          buddy={buddy}
-          line={line}
-          size={112}
-          hint="Tap for a tip"
-          onNext={() => setTip((n) => n + 1)}
-          style={{ marginBottom: t.spacing.md }}
-        />
+        <>
+          <CatSays
+            buddy={buddy}
+            line={petLine ?? line}
+            size={112}
+            hint="Tap for a tip"
+            onNext={() => {
+              setPetLine(null);
+              setTip((n) => n + 1);
+            }}
+            onPet={() => setPetLine(say(buddy, 'pet', {}, tip + 1))}
+            style={{ marginBottom: t.spacing.sm }}
+          />
+          <PressableScale
+            onPress={() => router.push('/buddy-pick')}
+            accessibilityLabel={`Can't decide? Let ${buddy === 'tank' ? 'Tank' : 'Biscuit'} pick`}
+            style={[styles.pickBtn, { backgroundColor: t.colors.cell, ...t.chunky.card }]}
+          >
+            <View style={[styles.pickIcon, { backgroundColor: t.colors.tintFill }]}>
+              <Icon name="shuffle" size={18} color={t.colors.onTint} weight="bold" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[t.type.headline, { color: t.colors.label }]}>Can’t decide?</Text>
+              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>Let {buddy === 'tank' ? 'Tank' : 'Biscuit'} pick something for you</Text>
+            </View>
+            <Icon name="chevronRight" size={14} color={t.colors.tertiaryLabel} weight="semibold" />
+          </PressableScale>
+        </>
       )}
 
       {!isIOS && (
@@ -301,6 +323,8 @@ const styles = StyleSheet.create({
   content: { paddingBottom: 120, width: '100%', alignSelf: 'center' },
   reminder: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingLeft: 14, paddingRight: 2, paddingVertical: 6, borderRadius: 16, borderWidth: 2, marginBottom: 14, borderCurve: 'continuous' },
   reminderBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 6 },
+  pickBtn: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 18, marginBottom: 16, borderCurve: 'continuous' },
+  pickIcon: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
   rowHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
   books: { gap: 12, paddingBottom: 6 },
   book: { width: 148, borderRadius: 18, borderCurve: 'continuous', paddingBottom: 10 },

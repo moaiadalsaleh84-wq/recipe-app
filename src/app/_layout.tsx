@@ -2,6 +2,7 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useMemo, type ReactNode } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { ProgressWatcher } from '../components/ProgressWatcher';
 import { ToastProvider } from '../components/Toast';
 import { StoreProvider, useStore } from '../state/store';
 import { useTheme } from '../theme';
@@ -46,6 +47,7 @@ export default function RootLayout() {
           <ToastProvider>
             <StatusBar style="auto" />
             <Hydrated>
+              <ProgressWatcher />
               <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: t.colors.background } }}>
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="onboarding" options={{ gestureEnabled: false, animation: 'fade' }} />
@@ -57,6 +59,7 @@ export default function RootLayout() {
                 <Stack.Screen name="cookbook/[id]" />
                 <Stack.Screen name="plan-picker" options={sheet} />
                 <Stack.Screen name="save-to-cookbook" options={sheet} />
+                <Stack.Screen name="buddy-pick" options={{ ...sheet, sheetAllowedDetents: [0.85] }} />
                 <Stack.Screen name="cookbook-edit" options={{ ...sheet, sheetAllowedDetents: [0.45] }} />
               </Stack>
             </Hydrated>

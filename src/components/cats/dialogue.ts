@@ -54,15 +54,15 @@ const tank: Record<Situation, Line[]> = {
     { text: "I'm Tank. I'll help you eat well and get strong. No crash diets, no excuses. Deal?", mood: 'flex' },
   ],
   greetMorning: [
-    { text: 'Morning, champ. Breakfast is rep one of the day. Let’s get it.', mood: 'wave' },
+    { text: 'Morning, {name}. Breakfast is rep one of the day. Let’s get it.', mood: 'wave' },
     { text: 'Up early? Good. Protein in the first meal keeps you strong till lunch.', mood: 'flex' },
   ],
   greetAfternoon: [
-    { text: 'Afternoon check-in. Hydrated? Drink some water. I’ll wait.', mood: 'wait' },
+    { text: 'Afternoon check-in, {name}. Hydrated? Drink some water. I’ll wait.', mood: 'wait' },
     { text: 'Halfway through the day. Fuel up right and finish strong.', mood: 'lift' },
   ],
   greetEvening: [
-    { text: 'Evening, champ. Good dinner, good sleep, good gains. That’s the program.', mood: 'proud' },
+    { text: 'Evening, {name}. Good dinner, good sleep, good gains. That’s the program.', mood: 'proud' },
     { text: 'Long day? Cook something simple. Consistency beats perfect.', mood: 'idle' },
   ],
   tip: [
@@ -124,15 +124,15 @@ const biscuit: Record<Situation, Line[]> = {
     { text: 'Hiii! I’m Biscuit, your chef! I’m great at cooking and only a little bit at dropping things. Mostly great!', mood: 'wave' },
   ],
   greetMorning: [
-    { text: 'Good morning! I already taste-tested breakfast. For safety reasons.', mood: 'eat' },
+    { text: 'Good morning, {name}! I already taste-tested breakfast. For safety reasons.', mood: 'eat' },
     { text: 'Morning! I made coffee! …I think I made coffee. Something is bubbling.', mood: 'worried' },
   ],
   greetAfternoon: [
-    { text: 'Afternoon snack o’clock! That’s a real time. I checked.', mood: 'happy' },
+    { text: 'Hi {name}! It’s afternoon snack o’clock. That’s a real time. I checked.', mood: 'happy' },
     { text: 'I was napping in the sunny spot. I’m awake! I’m awake.', mood: 'sleepy' },
   ],
   greetEvening: [
-    { text: 'Dinner time! Let’s make something cozy. I’ll hold the spoon!', mood: 'stir' },
+    { text: 'Dinner time, {name}! Let’s make something cozy. I’ll hold the spoon!', mood: 'stir' },
     { text: 'Evening! I only dropped two things today. New record!', mood: 'proud' },
   ],
   tip: [
@@ -206,7 +206,9 @@ export const buddyInfo: Record<BuddyId, { name: string; title: string; tagline: 
 export function say(buddy: BuddyId, situation: Situation, vars: Vars = {}, n = 0): Line {
   const options = scripts[buddy][situation];
   const line = options[Math.abs(n) % options.length];
-  return { mood: line.mood, text: line.text.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? '')).replace(/\s+/g, ' ').trim() };
+  const defaults: Vars = { name: buddy === 'tank' ? 'champ' : 'friend' };
+  const all = { ...defaults, ...Object.fromEntries(Object.entries(vars).filter(([, v]) => v !== '' && v !== undefined)) };
+  return { mood: line.mood, text: line.text.replace(/\{(\w+)\}/g, (_, k: string) => String(all[k] ?? '')).replace(/\s+/g, ' ').trim() };
 }
 
 export const greetingSituation = (date = new Date()): Situation => {

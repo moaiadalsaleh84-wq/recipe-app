@@ -34,7 +34,14 @@ Tap a cat to pet it.
 - **Cook Mode:** step by step with the screen kept on, timers picked up from the steps ("bake for 25 minutes") that ring with a chime and vibration until you tap Stop, and your buddy acting out each step. Log the meal at the end.
 - **Meal plan:** a week view with breakfast, lunch and dinner, a daily nutrition summary, and one tap to add the whole week to your list
 - **Groceries:** grouped by aisle, combined across recipes, tick off, swipe to delete, add your own items, share the list
-- **Buddy tab:** tricks, switch buddy, cooking streak and stats, daily goals, units
+- **Buddy tab:** tricks, switch buddy, cooking streak and stats, chef level and badges, daily goals, units
+<p>
+  <img src="screenshots/14-buddy-pick.png" width="160" alt="Let Tank pick" />
+  <img src="screenshots/15-badges.png" width="160" alt="Chef level and badges" />
+  <img src="screenshots/16-confetti.png" width="160" alt="Confetti when you finish" />
+</p>
+
+- **Just for fun:** "Can't decide?" lets your buddy shuffle through recipes and pick dinner (it respects your diet and filters). You earn XP for cooking, adding recipes, finishing lists and petting your buddy, level up from Kitchen Kitten to Legendary Chef, unlock 9 badges, and get confetti when you finish a meal.
 
 ## Onboarding and Pro
 
@@ -42,12 +49,13 @@ Tap a cat to pet it.
   <img src="screenshots/08-onboarding-welcome.png" width="160" alt="Welcome" />
   <img src="screenshots/09-onboarding-goals.png" width="160" alt="Goals question" />
   <img src="screenshots/10-onboarding-buddy.png" width="160" alt="Buddy recommendation" />
+  <img src="screenshots/13-onboarding-commit.png" width="160" alt="Commit to your plan" />
   <img src="screenshots/11-onboarding-plan.png" width="160" alt="Your first week" />
   <img src="screenshots/12-paywall.png" width="160" alt="Paywall" />
 </p>
 
-New users answer a short quiz (goals, how often they cook, what gets in the way, diet, household),
-get a buddy recommended for their goals, watch their plan being built, and see their first week
+New users answer a personal quiz (name, goals, what they want to achieve in 4 weeks and why, how often they cook now, a weekly target, what gets in the way, skill, time, diet, household),
+get a buddy recommended for their goals, commit with a hold-to-commit pledge, watch their plan being built, and see their first week
 before any price appears. Every answer is used: plan picks match the diet and goals, recipes open
 sized for the household, and the paywall lists the most relevant benefits first.
 

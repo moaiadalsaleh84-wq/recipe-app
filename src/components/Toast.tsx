@@ -12,6 +12,8 @@ type ToastOptions = {
   icon?: IconName;
   tone?: 'success' | 'info' | 'warning';
   action?: { label: string; onPress: () => void };
+  /** Wait for the current toast to finish instead of replacing it (for celebrations). */
+  queue?: boolean;
 };
 type ToastState = ToastOptions & { id: number };
 
@@ -24,17 +26,41 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const [toast, setToast] = useState<ToastState | null>(null);
   const seq = useRef(0);
 
-  const show = useCallback((t: ToastOptions) => {
+  const waiting = useRef<ToastOptions[]>([]);
+  const current = useRef<ToastState | null>(null);
+
+  const present = useCallback((t: ToastOptions) => {
     if (t.tone === 'warning') haptics.warning();
     else if (t.tone !== 'info') haptics.success();
     seq.current += 1;
-    setToast({ ...t, id: seq.current });
+    const next = { ...t, id: seq.current };
+    current.current = next;
+    setToast(next);
   }, []);
+
+  const show = useCallback(
+    (t: ToastOptions) => {
+      if (t.queue && current.current) waiting.current.push(t);
+      else present(t);
+    },
+    [present],
+  );
+
+  const finished = useCallback(
+    (id: number) => {
+      if (current.current?.id !== id) return;
+      current.current = null;
+      setToast(null);
+      const queued = waiting.current.shift();
+      if (queued) setTimeout(() => present(queued), 250);
+    },
+    [present],
+  );
 
   return (
     <ToastContext.Provider value={show}>
       {children}
-      {toast && <ToastView key={toast.id} toast={toast} onDone={() => setToast((cur) => (cur?.id === toast.id ? null : cur))} />}
+      {toast && <ToastView key={toast.id} toast={toast} onDone={() => finished(toast.id)} />}
     </ToastContext.Provider>
   );
 }

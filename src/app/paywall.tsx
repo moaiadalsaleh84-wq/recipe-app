@@ -22,7 +22,7 @@ import { Icon, type IconName } from '../components/Icon';
 import { PressableScale } from '../components/PressableScale';
 import { useToast } from '../components/Toast';
 import { Button, IconButton } from '../components/ui';
-import { benefitsFor, goalPhrase } from '../data/onboarding';
+import { benefitsFor, goalPhrase, whyLabel } from '../data/onboarding';
 import { haptics } from '../lib/haptics';
 import {
   MANAGE_SUBSCRIPTIONS_URL,
@@ -64,8 +64,10 @@ export default function Paywall() {
   const selected = PLANS[plan];
   const trial = selected.trialDays;
 
-  const copy = headline(source, goalPhrase(profile));
-  const line = buddyLine(buddy, source);
+  // Their own reason, turned to second person: "for my family" → "for your family".
+  const reason = whyLabel(profile.why)[0]?.replace(/\bmy\b/g, 'your');
+  const copy = headline(source, goalPhrase(profile), profile.name.trim().split(/\s+/)[0] ?? '', reason);
+  const line = buddyLine(buddy, source, profile.name.trim().split(/\s+/)[0] ?? '');
   const benefits = benefitsFor(profile);
 
   const buy = async () => {
@@ -88,7 +90,7 @@ export default function Paywall() {
     setBusy(null);
     if (ent) {
       setPro(ent);
-      toast({ message: 'Pro restored. Welcome back!', icon: 'sparkles' });
+      toast({ message: 'Pro restored. Welcome back!', icon: 'crown' });
       close();
     } else {
       toast({ message: 'No previous purchase found on this account', tone: 'info' });
@@ -150,7 +152,7 @@ export default function Paywall() {
         {trial > 0 && (
           <Animated.View entering={FadeIn.duration(250)} style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
             <Text style={[t.type.headline, { color: t.colors.label, marginBottom: 10 }]}>How your free trial works</Text>
-            <TimelineRow icon="sparkles" title="Today" detail="Everything unlocked. Cook, plan and track with no limits." first />
+            <TimelineRow icon="crown" title="Today" detail="Everything unlocked. Cook, plan and track with no limits." first />
             <TimelineRow icon="notes" title={`Day ${Math.max(1, trial - 2)}`} detail="We’ll remind you in the app that your trial is ending." />
             <TimelineRow icon="calendar" title={`Day ${trial}`} detail={`Your subscription starts at ${money(selected.price)} per ${selected.period}. Cancel before then and you pay nothing.`} last />
           </Animated.View>
@@ -178,7 +180,6 @@ export default function Paywall() {
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: t.colors.background, borderTopColor: t.colors.separator }]}>
         <Button
           label={busy === 'buy' ? 'One moment…' : trial ? `Start My ${trial}-Day Free Trial` : `Subscribe for ${money(selected.price)}/${selected.period}`}
-          icon={busy === 'buy' ? undefined : 'sparkles'}
           onPress={buy}
           disabled={!!busy}
         />
@@ -195,10 +196,13 @@ export default function Paywall() {
   );
 }
 
-function headline(source: Source, goal: string): { title: string; subtitle: string } {
+function headline(source: Source, goal: string, name: string, why?: string): { title: string; subtitle: string } {
   switch (source) {
     case 'onboarding':
-      return { title: 'Unlock your full kitchen', subtitle: `Your plan to ${goal} is ready. Pro gives you every tool to stick with it.` };
+      return {
+        title: name ? `${name}, unlock your full kitchen` : 'Unlock your full kitchen',
+        subtitle: `Your plan to ${goal} is ready${why ? `, ${why}` : ''}. Pro gives you every tool to stick with it.`,
+      };
     case 'recipes':
       return { title: 'Keep every recipe you love', subtitle: `You’ve saved ${FREE_LIMITS.customRecipes} recipes, the free limit. Pro saves as many as you like.` };
     case 'cookbooks':
@@ -210,10 +214,11 @@ function headline(source: Source, goal: string): { title: string; subtitle: stri
   }
 }
 
-function buddyLine(buddy: string, source: Source): Line {
+function buddyLine(buddy: string, source: Source, name: string): Line {
+  const n = name || (buddy === 'tank' ? 'champ' : 'friend');
   if (buddy === 'tank') {
-    if (source === 'goals') return { text: 'Goals you can see are goals you hit. Let’s track them, champ.', mood: 'flex' };
-    return { text: 'You did the warm-up. Pro is the full workout. No pressure, champ.', mood: 'proud' };
+    if (source === 'goals') return { text: `Goals you can see are goals you hit. Let’s track them, ${n}.`, mood: 'flex' };
+    return { text: `You did the warm-up, ${n}. Pro is the full workout. No pressure.`, mood: 'proud' };
   }
   if (source === 'recipes') return { text: 'Our recipe box is full! I tried to squeeze one more in. It didn’t fit.', mood: 'oops' };
   return { text: 'Pro is like the big kitchen! All the recipes, all the cookbooks, all the fun.', mood: 'happy' };

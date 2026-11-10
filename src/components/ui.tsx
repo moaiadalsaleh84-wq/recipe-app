@@ -179,11 +179,9 @@ export function Stepper({
       }}
     >
       <IconButton icon="minus" haptic="select" accessibilityLabel={`Decrease ${label}`} disabled={value <= min} onPress={() => onChange(Math.max(min, value - step))} color={t.colors.label} />
-      <View style={[styles.stepperDivider, { backgroundColor: t.colors.separator }]} />
       <Text style={[t.type.headline, styles.stepperValue, { color: t.colors.label }]} testID="stepper-value">
         {value}
       </Text>
-      <View style={[styles.stepperDivider, { backgroundColor: t.colors.separator }]} />
       <IconButton icon="plus" haptic="select" accessibilityLabel={`Increase ${label}`} disabled={value >= max} onPress={() => onChange(Math.min(max, value + step))} color={t.colors.label} />
     </View>
   );

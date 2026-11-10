@@ -43,6 +43,8 @@ type Saved = {
   profile: Profile;
   /** Active Pro subscription (or trial), if any. */
   pro: Entitlement | null;
+  /** Fun stuff: counters behind XP, levels and badges. */
+  fun: { pets: number; listsDone: number; badges: string[]; lastLevel: number };
 };
 
 const STORAGE_KEY = 'recipe-app-state-v1';
@@ -61,6 +63,7 @@ const initialSaved: Saved = {
   onboarded: false,
   profile: emptyProfile,
   pro: null,
+  fun: { pets: 0, listsDone: 0, badges: [], lastLevel: 1 },
 };
 
 /** What the free version includes. */
@@ -76,6 +79,11 @@ type Store = Saved & {
   setProfile: (p: Partial<Profile>) => void;
   completeOnboarding: () => void;
   setPro: (e: Entitlement | null) => void;
+  /** Fun counters */
+  addPet: () => void;
+  addListDone: () => void;
+  unlockBadges: (ids: string[]) => void;
+  setLastLevel: (n: number) => void;
   isPro: boolean;
 
   // Recipes
@@ -155,7 +163,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY)
       .then((raw) => {
-        if (raw) setSaved({ ...initialSaved, ...(JSON.parse(raw) as Partial<Saved>) });
+        if (raw) {
+          const parsed = JSON.parse(raw) as Partial<Saved>;
+          setSaved({ ...initialSaved, ...parsed, fun: { ...initialSaved.fun, ...parsed.fun }, profile: { ...initialSaved.profile, ...parsed.profile } });
+        }
       })
       .catch(() => {
         // Corrupt or unavailable storage: start fresh rather than crash.
@@ -220,6 +231,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const setProfile = useCallback((p: Partial<Profile>) => update((s) => ({ profile: { ...s.profile, ...p } })), [update]);
   const completeOnboarding = useCallback(() => update(() => ({ onboarded: true })), [update]);
   const setPro = useCallback((pro: Entitlement | null) => update(() => ({ pro })), [update]);
+  const addPet = useCallback(() => update((s) => ({ fun: { ...s.fun, pets: s.fun.pets + 1 } })), [update]);
+  const addListDone = useCallback(() => update((s) => ({ fun: { ...s.fun, listsDone: s.fun.listsDone + 1 } })), [update]);
+  const unlockBadges = useCallback(
+    (ids: string[]) => update((s) => ({ fun: { ...s.fun, badges: [...s.fun.badges, ...ids.filter((id) => !s.fun.badges.includes(id))] } })),
+    [update],
+  );
+  const setLastLevel = useCallback((n: number) => update((s) => ({ fun: { ...s.fun, lastLevel: n } })), [update]);
   const logCooked = useCallback(
     (recipeId: string, servings: number) => update((s) => ({ cooked: [{ recipeId, servings, date: new Date().toISOString() }, ...s.cooked] })),
     [update],
@@ -362,6 +380,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setProfile,
       completeOnboarding,
       setPro,
+      addPet,
+      addListDone,
+      unlockBadges,
+      setLastLevel,
       isPro: !!saved.pro,
       allRecipes,
       getRecipe,
@@ -393,7 +415,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       undoGroceries,
     }),
     [
-      saved, hydrated, setBuddy, setProfile, completeOnboarding, setPro, allRecipes, getRecipe, addRecipe, deleteRecipe, setNote, setUnits, setGoals, logCooked,
+      saved, hydrated, setBuddy, setProfile, completeOnboarding, setPro, addPet, addListDone, unlockBadges, setLastLevel, allRecipes, getRecipe, addRecipe, deleteRecipe, setNote, setUnits, setGoals, logCooked,
       category, tags, toggleTag, showOnlyTag, clearFilters, isFavorite, toggleFavorite, addCookbook, renameCookbook,
       deleteCookbook, restoreCookbook, toggleInCookbook, setMeal, toggleGrocery, addIngredients, addCustomItem,
       removeGrocery, clearCompleted, undoGroceries,

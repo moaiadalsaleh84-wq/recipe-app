@@ -15,29 +15,17 @@ import { MANAGE_SUBSCRIPTIONS_URL } from '../../../lib/purchases';
 import { showPaywall, useProGate } from '../../../lib/pro';
 import type { Units } from '../../../data/mock';
 import { ScreenTitle } from '../../../navigation/screenOptions';
+import { BADGES, levelFor, streakOf, xpFor } from '../../../lib/progress';
 import { totalsFor, useBuddy, useStore } from '../../../state/store';
 import { useTheme } from '../../../theme';
 
 const dayKey = (d: Date) => d.toDateString();
 
-/** Consecutive days with at least one cooked meal, ending today or yesterday. */
-function streakOf(dates: string[]) {
-  const days = new Set(dates.map((d) => dayKey(new Date(d))));
-  const cursor = new Date();
-  if (!days.has(dayKey(cursor))) cursor.setDate(cursor.getDate() - 1);
-  let n = 0;
-  while (days.has(dayKey(cursor))) {
-    n += 1;
-    cursor.setDate(cursor.getDate() - 1);
-  }
-  return n;
-}
-
 export default function BuddyScreen() {
   const t = useTheme();
   const toast = useToast();
   const buddy = useBuddy();
-  const { setBuddy, cooked, getRecipe, goals, setGoals, units, setUnits, pro } = useStore();
+  const { setBuddy, cooked, getRecipe, goals, setGoals, units, setUnits, pro, profile, customRecipes, plan, favorites, fun } = useStore();
   const { isPro, trialDaysLeft } = useProGate();
   const info = buddyInfo[buddy];
 
@@ -51,6 +39,8 @@ export default function BuddyScreen() {
   const weekAgo = new Date(now.getTime() - 7 * 24 * 3600 * 1000);
   const thisWeek = cooked.filter((c) => new Date(c.date) >= weekAgo).length;
   const streak = streakOf(cooked.map((c) => c.date));
+  const xp = xpFor({ cooked, customRecipes, plan, favorites, fun, streak });
+  const lvl = levelFor(xp);
   const today = cooked.filter((c) => dayKey(new Date(c.date)) === dayKey(now));
   const eaten = totalsFor(today.map((c) => c.recipeId), getRecipe);
   const recent = useMemo(() => cooked.slice(0, 5), [cooked]);
@@ -68,7 +58,7 @@ export default function BuddyScreen() {
         ]
       : [
           { label: 'Snack!', icon: 'heart', line: { text: 'Taste test! For science! Nom nom nom.', mood: 'eat' } },
-          { label: 'Oopsie', icon: 'sparkles', line: { text: 'Whoa whoa whoa… I’m okay! The flour is not okay.', mood: 'oops' } },
+          { label: 'Oopsie', icon: 'fork', line: { text: 'Whoa whoa whoa… I’m okay! The flour is not okay.', mood: 'oops' } },
         ];
 
   const switchTo = (b: BuddyId) => {
@@ -140,9 +130,55 @@ export default function BuddyScreen() {
         Your cooking
       </Text>
       <View style={styles.stats}>
-        <Stat value={thisWeek} label="this week" icon="pot" />
+        <Stat value={thisWeek} label={`of ${profile.weeklyTarget} this week`} icon="pot" />
         <Stat value={streak} label={streak === 1 ? 'day streak' : 'day streak'} icon="flame" />
         <Stat value={cooked.length} label="cooked total" icon="checkCircle" />
+      </View>
+
+      {/* Chef level */}
+      <Text style={[t.type.title3, styles.h, { color: t.colors.label }]} accessibilityRole="header">
+        Chef level
+      </Text>
+      <View style={[styles.levelCard, { backgroundColor: t.colors.cell, ...t.chunky.card }]} accessible accessibilityLabel={`Level ${lvl.level}, ${lvl.title}. ${xp} XP${lvl.next ? `, ${lvl.toNext} to the next level` : ''}`}>
+        <View style={[styles.levelBadge, { backgroundColor: t.colors.tintFill }]}>
+          <Text style={[t.type.title2, { color: t.colors.onTint }]} testID="chef-level">
+            {lvl.level}
+          </Text>
+        </View>
+        <View style={{ flex: 1, gap: 6 }}>
+          <Text style={[t.type.headline, { color: t.colors.label }]}>{lvl.title}</Text>
+          <View style={[styles.track, { backgroundColor: t.colors.fill }]}>
+            <View style={[styles.bar, { width: `${Math.max(3, lvl.progress * 100)}%`, backgroundColor: t.colors.warning }]} />
+          </View>
+          <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]} testID="xp-label">
+            {xp} XP{lvl.next ? ` · ${lvl.toNext} XP to ${lvl.next.title}` : ' · Top level!'}
+          </Text>
+        </View>
+      </View>
+
+      {/* Badges */}
+      <Text style={[t.type.title3, styles.h, { color: t.colors.label }]} accessibilityRole="header">
+        Badges · {fun.badges.length}/{BADGES.length}
+      </Text>
+      <View style={styles.badges}>
+        {BADGES.map((b) => {
+          const got = fun.badges.includes(b.id);
+          return (
+            <PressableScale
+              key={b.id}
+              onPress={() => toast({ message: got ? `${b.title}: earned! ${b.hint}.` : `${b.title}: ${b.hint} to unlock it.`, icon: got ? b.icon : 'lock', tone: 'info' })}
+              accessibilityLabel={`${b.title}, ${got ? 'earned' : 'locked'}`}
+              style={[styles.badgeTile, { backgroundColor: got ? t.colors.cell : t.colors.fill, borderColor: got ? t.colors.warning : t.colors.border }, got && t.chunky.lip]}
+            >
+              <View style={[styles.badgeIcon, { backgroundColor: got ? t.colors.tintSoft : 'transparent' }]}>
+                <Icon name={got ? b.icon : 'lock'} size={20} color={got ? t.colors.tint : t.colors.tertiaryLabel} weight="bold" />
+              </View>
+              <Text style={[t.type.caption1, { color: got ? t.colors.label : t.colors.tertiaryLabel, fontWeight: '700', textAlign: 'center' }]} numberOfLines={2}>
+                {b.title}
+              </Text>
+            </PressableScale>
+          );
+        })}
       </View>
 
       {/* Goals */}
@@ -295,6 +331,11 @@ const styles = StyleSheet.create({
   switchRow: { flexDirection: 'row', gap: 10 },
   switchCard: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4, padding: 8, borderRadius: 20, borderWidth: 2.5, borderCurve: 'continuous' },
   stats: { flexDirection: 'row', gap: 10 },
+  levelCard: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 20, borderCurve: 'continuous' },
+  levelBadge: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
+  badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  badgeTile: { width: '31%', flexGrow: 1, alignItems: 'center', gap: 6, paddingVertical: 12, paddingHorizontal: 6, borderRadius: 16, borderWidth: 2, minHeight: 92, borderCurve: 'continuous' },
+  badgeIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   stat: { flex: 1, alignItems: 'center', paddingVertical: 14, borderRadius: 18, borderCurve: 'continuous' },
   goal: { padding: 16, gap: 10 },
   goalTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },

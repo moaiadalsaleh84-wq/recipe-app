@@ -11,9 +11,22 @@ import { matchesFilter, type DietTag, type Recipe } from './mock';
 export type Goal = 'healthier' | 'muscle' | 'save' | 'home' | 'waste' | 'learn';
 export type Frequency = 'rarely' | 'some' | 'often' | 'daily';
 export type Struggle = 'time' | 'ideas' | 'shopping' | 'scattered' | 'tracking';
+export type Achieve = 'lose' | 'muscle' | 'energy' | 'nutrition' | 'takeaway' | 'basics' | 'variety' | 'budget' | 'family';
+export type Why = 'health' | 'family' | 'confidence' | 'money' | 'fun' | 'planet';
+export type Skill = 'beginner' | 'comfortable' | 'confident';
 
 export type Profile = {
+  /** What the cats call you. */
+  name: string;
   goals: Goal[];
+  /** The one outcome they care most about in the next 4 weeks. */
+  achieve: Achieve | null;
+  why: Why[];
+  /** Home-cooked meals per week they're aiming for. */
+  weeklyTarget: number;
+  skill: Skill | null;
+  /** Longest they usually want to spend on a weekday meal. null = any time; undefined = not answered yet. */
+  maxMinutes?: number | null;
   frequency: Frequency | null;
   struggles: Struggle[];
   diets: DietTag[];
@@ -21,14 +34,79 @@ export type Profile = {
   household: number | null;
 };
 
-export const emptyProfile: Profile = { goals: [], frequency: null, struggles: [], diets: [], household: null };
+export const emptyProfile: Profile = {
+  name: '',
+  goals: [],
+  achieve: null,
+  why: [],
+  weeklyTarget: 3,
+  skill: null,
+  frequency: null,
+  struggles: [],
+  diets: [],
+  household: null,
+};
+
+/** Outcomes, shown for the goals the user picked (most relevant first). */
+export const achieveOptions: { id: Achieve; label: string; hint: string; icon: IconName; goals: Goal[] }[] = [
+  { id: 'muscle', label: 'Build muscle', hint: 'More protein, stronger every week', icon: 'dumbbell', goals: ['muscle'] },
+  { id: 'lose', label: 'Lose some weight', hint: 'Filling meals, sensible portions', icon: 'chart', goals: ['muscle', 'healthier'] },
+  { id: 'energy', label: 'Have more energy', hint: 'Fewer slumps, better fuel', icon: 'flame', goals: ['healthier', 'muscle'] },
+  { id: 'nutrition', label: 'Hit my nutrition targets', hint: 'Protein and calories that add up', icon: 'chart', goals: ['healthier', 'muscle'] },
+  { id: 'takeaway', label: 'Stop ordering takeaway', hint: 'Cook at home most nights', icon: 'pot', goals: ['home', 'save'] },
+  { id: 'basics', label: 'Master the basics', hint: 'Confident with everyday dishes', icon: 'book', goals: ['learn', 'home'] },
+  { id: 'variety', label: 'Try new recipes', hint: 'Break out of the same five meals', icon: 'shuffle', goals: ['learn', 'home'] },
+  { id: 'budget', label: 'Spend less on food', hint: 'Plan, shop once, use it all', icon: 'cart', goals: ['save', 'waste'] },
+  { id: 'family', label: 'Feed my family well', hint: 'Meals everyone actually eats', icon: 'people', goals: ['home', 'healthier'] },
+];
+
+export const whyOptions: { id: Why; label: string; icon: IconName }[] = [
+  { id: 'health', label: 'For my health', icon: 'heart' },
+  { id: 'family', label: 'For my family', icon: 'people' },
+  { id: 'confidence', label: 'To feel confident', icon: 'crown' },
+  { id: 'money', label: 'To save money', icon: 'cart' },
+  { id: 'fun', label: 'Because cooking is fun', icon: 'pot' },
+  { id: 'planet', label: 'To waste less', icon: 'trash' },
+];
+
+export const skillOptions: { id: Skill; label: string; hint: string }[] = [
+  { id: 'beginner', label: 'Just starting out', hint: 'Toast counts, right?' },
+  { id: 'comfortable', label: 'Comfortable', hint: 'I can follow most recipes' },
+  { id: 'confident', label: 'Confident', hint: 'Bring on the challenge' },
+];
+
+export const timeOptions: { minutes: number | null; label: string; hint: string }[] = [
+  { minutes: 20, label: '20 minutes or less', hint: 'Quick and done' },
+  { minutes: 30, label: 'About 30 minutes', hint: 'A relaxed weeknight' },
+  { minutes: 45, label: 'Up to 45 minutes', hint: 'I enjoy the process' },
+  { minutes: null, label: 'Time isn’t an issue', hint: 'Slow-cooked, why not' },
+];
+
+/** Achieve options relevant to the chosen goals; everything if none match. */
+export function achieveFor(goals: Goal[]) {
+  const relevant = achieveOptions.filter((a) => a.goals.some((g) => goals.includes(g)));
+  return relevant.length ? relevant : achieveOptions;
+}
+
+/** A sensible starting target: a bit more than they cook now. */
+export function suggestedTarget(f: Frequency | null) {
+  return f === 'rarely' ? 2 : f === 'some' ? 3 : f === 'often' ? 5 : f === 'daily' ? 6 : 3;
+}
+
+/** How many home-cooked meals a week they cook today, for the 4-week path. */
+export const currentPerWeek = (f: Frequency | null) => (f === 'rarely' ? 0.5 : f === 'some' ? 1.5 : f === 'often' ? 4 : f === 'daily' ? 6 : 1);
+
+export const achieveLabel = (a: Achieve | null) => achieveOptions.find((o) => o.id === a)?.label ?? null;
+export const whyLabel = (w: Why[]) => whyOptions.filter((o) => w.includes(o.id)).map((o) => o.label.toLowerCase());
+/** Name for the cats to use, or a friendly fallback. */
+export const displayName = (p: Profile, fallback: string) => (p.name.trim() ? p.name.trim().split(/\s+/)[0] : fallback);
 
 export const goalOptions: { id: Goal; label: string; icon: IconName }[] = [
   { id: 'healthier', label: 'Eat healthier', icon: 'heart' },
   { id: 'muscle', label: 'Get in shape', icon: 'dumbbell' },
   { id: 'home', label: 'Cook more at home', icon: 'pot' },
   { id: 'save', label: 'Save money on food', icon: 'cart' },
-  { id: 'waste', label: 'Waste less food', icon: 'sparkles' },
+  { id: 'waste', label: 'Waste less food', icon: 'trash' },
   { id: 'learn', label: 'Learn to cook', icon: 'book' },
 ];
 
@@ -73,6 +151,15 @@ export function pickRecipes(p: Profile, all: Recipe[]): Recipe[] {
       if ((p.goals.includes('learn') || p.frequency === 'rarely') && r.difficulty === 'Easy') score += 2;
       if (p.goals.includes('save') && r.tags.includes('One pan')) score += 1;
       if (r.category === 'Dinner') score += 1;
+      if (p.skill === 'beginner' && r.difficulty === 'Easy') score += 2;
+      if (p.skill === 'beginner' && r.difficulty === 'Hard') score -= 3;
+      if (p.skill === 'confident' && r.difficulty !== 'Easy') score += 1;
+      if (p.maxMinutes && r.minutes <= p.maxMinutes) score += 3;
+      if (p.maxMinutes && r.minutes > p.maxMinutes + 15) score -= 3;
+      if (p.achieve === 'muscle' && r.nutrition.protein >= 35) score += 2;
+      if (p.achieve === 'lose' && r.calories <= 550) score += 2;
+      if (p.achieve === 'family' && r.tags.includes('Kid friendly')) score += 2;
+      if (p.achieve === 'budget' && r.tags.includes('One pan')) score += 1;
       return { r, score };
     })
     .sort((a, b) => b.score - a.score);
@@ -96,8 +183,10 @@ export function benefitsFor(p: Profile): Benefit[] {
   return [...proBenefits].sort((a, b) => Number(b.for.some((x) => mine.has(x))) - Number(a.for.some((x) => mine.has(x))));
 }
 
-/** A short phrase echoing their main goal back, e.g. "eat healthier". */
+/** A short phrase echoing their main goal back, e.g. "build muscle". */
 export function goalPhrase(p: Profile): string {
+  const a = achieveLabel(p.achieve);
+  if (a) return a.charAt(0).toLowerCase() + a.slice(1);
   const first = goalOptions.find((g) => g.id === p.goals[0]);
   return first ? first.label.charAt(0).toLowerCase() + first.label.slice(1) : 'cook with less stress';
 }

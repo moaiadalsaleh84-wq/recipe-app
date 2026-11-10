@@ -21,6 +21,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { haptics } from '../../lib/haptics';
+import { useStore } from '../../state/store';
 import { arts, bowlArt, type CatArt } from './art';
 import { moodSpecs, settle } from './moods';
 import type { BuddyId, Eyes, Mood } from './types';
@@ -56,6 +57,7 @@ export function CatBuddy({ buddy, mood = 'idle', talking = false, size = 160, on
   const art = arts[buddy];
   const reduceMotion = useReducedMotion();
   const [petted, setPetted] = useState(false);
+  const { addPet } = useStore();
   const baseMood: Mood = petted ? 'love' : mood;
   // Energetic moods calm down after a few loops (see `settle` in moods.ts).
   const playId = `${baseMood}|${playKey}|${petted}`;
@@ -302,6 +304,7 @@ export function CatBuddy({ buddy, mood = 'idle', talking = false, size = 160, on
     <Pressable
       onPress={() => {
         haptics.select();
+        addPet();
         setPetted(true);
         setTimeout(() => setPetted(false), 1600);
         onPet?.();

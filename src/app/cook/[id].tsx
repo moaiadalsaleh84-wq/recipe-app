@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeInRight, LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CatSays } from '../../components/cats/CatSays';
+import { ConfettiBurst } from '../../components/ConfettiBurst';
 import { say, stepSituation, type Line } from '../../components/cats/dialogue';
 import { Icon } from '../../components/Icon';
 import { PressableScale } from '../../components/PressableScale';
@@ -117,11 +118,12 @@ export default function CookMode() {
 
   const finish = () => {
     logCooked(recipe.id, servings);
-    toast({ message: `Logged ${recipe.title}. Nice cooking!`, icon: 'checkCircle' });
-    router.back();
+    toast({ message: `Logged ${recipe.title}. +50 XP, nice cooking!`, icon: 'checkCircle' });
+    close();
   };
 
-  const close = () => router.back();
+  // Opened from a link there is nothing to go back to, so land on the recipe instead.
+  const close = () => (router.canGoBack() ? router.back() : router.replace({ pathname: '/recipe/[id]', params: { id: recipe.id } }));
   const stepText = page >= 1 && page <= steps.length ? convertStepText(steps[page - 1], units) : '';
   const timers = stepText ? findTimers(stepText) : [];
 
@@ -254,6 +256,9 @@ export default function CookMode() {
 
         <CatSays buddy={buddy} line={line} size={128} style={{ marginTop: 20 }} />
       </ScrollView>
+
+      {/* Celebrate the finish */}
+      {page === last && <ConfettiBurst />}
 
       {/* Navigation */}
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16), borderTopColor: t.colors.separator, backgroundColor: t.colors.background }]}>
