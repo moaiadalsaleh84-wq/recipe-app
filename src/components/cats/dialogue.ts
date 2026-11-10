@@ -40,6 +40,7 @@ export type Situation =
   | 'stepOther'
   | 'timerStart'
   | 'timerDone'
+  | 'timerStopped'
   | 'cookDone'
   | 'planEmptyDay'
   | 'planDay'
@@ -107,7 +108,8 @@ const tank: Record<Situation, Line[]> = {
   stepServe: [{ text: 'Plate it up. You earned this.', mood: 'proud' }],
   stepOther: [{ text: 'Next rep. You’ve got this.', mood: 'idle' }],
   timerStart: [{ text: 'Timer’s running. I’ll keep watch.', mood: 'wait' }],
-  timerDone: [{ text: 'Time! Check it now, champ!', mood: 'worried' }],
+  timerDone: [{ text: 'TIME! Check it now, champ! Tap Stop when you’ve got it.', mood: 'alarm' }],
+  timerStopped: [{ text: 'Good timing. That’s discipline. Next rep.', mood: 'proud' }],
   cookDone: [{ text: 'Meal complete! Proud of you. Now eat and recover.', mood: 'celebrate' }],
   planEmptyDay: [{ text: 'Empty day? Plan it now and you won’t panic-order later.', mood: 'think' }],
   planDay: [{ text: '{calories} kcal and {protein} g protein planned today. {goalNote}', mood: 'proud' }],
@@ -172,7 +174,8 @@ const biscuit: Record<Situation, Line[]> = {
   stepServe: [{ text: 'Plating time! Make it pretty! I’ll do the taste test.', mood: 'eat' }],
   stepOther: [{ text: 'You’re doing amazing! I believe in you!', mood: 'happy' }],
   timerStart: [{ text: 'Timer on! I’ll watch it! …I’ll try not to fall asleep.', mood: 'wait' }],
-  timerDone: [{ text: 'DING DING! The timer! Go go go!', mood: 'worried' }],
+  timerDone: [{ text: 'DING DING DING! The timer! Go go go! Tap Stop when you’re there!', mood: 'alarm' }],
+  timerStopped: [{ text: 'Phew! Saved it! I didn’t even drop anything!', mood: 'happy' }],
   cookDone: [{ text: 'You did it! It smells AMAZING. Can I have a little bite? Pleeease?', mood: 'celebrate' }],
   planEmptyDay: [{ text: 'Nothing planned yet! Want me to pick? I always pick dessert.', mood: 'think' }],
   planDay: [{ text: '{calories} kcal of yummy planned today! {goalNote}', mood: 'happy' }],

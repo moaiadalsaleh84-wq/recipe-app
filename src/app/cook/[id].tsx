@@ -10,13 +10,15 @@ import { Icon } from '../../components/Icon';
 import { PressableScale } from '../../components/PressableScale';
 import { useToast } from '../../components/Toast';
 import { Button, CheckCircle, EmptyState, IconButton } from '../../components/ui';
+import { useAlarm } from '../../lib/alarm';
 import { haptics } from '../../lib/haptics';
 import { findTimers } from '../../lib/timers';
 import { convertQty, convertStepText } from '../../lib/units';
 import { formatQty, roundQty, useBuddy, useStore } from '../../state/store';
 import { useTheme } from '../../theme';
 
-type Timer = { label: string; total: number; endsAt: number | null; remaining: number };
+/** `step` is where it was started; `ringing` means it hit 0:00 and the alarm is going. */
+type Timer = { label: string; total: number; endsAt: number | null; remaining: number; step: number; ringing: boolean };
 
 const clock = (s: number) => {
   const m = Math.floor(s / 60);
@@ -42,6 +44,7 @@ export default function CookMode() {
   const [override, setOverride] = useState<Line | null>(null);
   const tick = useRef<ReturnType<typeof setInterval>>(undefined);
   const timerRef = useRef<Timer | null>(null);
+  const alarm = useAlarm();
   useEffect(() => {
     timerRef.current = timer;
   }, [timer]);
@@ -59,15 +62,15 @@ export default function CookMode() {
       const remaining = Math.max(0, Math.round((cur.endsAt - Date.now()) / 1000));
       if (remaining === 0) {
         clearInterval(tick.current);
-        setTimer({ ...cur, endsAt: null, remaining: 0 });
+        setTimer({ ...cur, endsAt: null, remaining: 0, ringing: true });
+        alarm.start(); // sound + vibration; the red bar and the cat show it on screen
         setOverride(say(buddy, 'timerDone'));
-        toast({ message: `${cur.label} timer is done!`, icon: 'timer', tone: 'warning' });
       } else if (remaining !== cur.remaining) {
         setTimer({ ...cur, remaining });
       }
     }, 250);
     return () => clearInterval(tick.current);
-  }, [timer?.endsAt, buddy, toast]);
+  }, [timer?.endsAt, buddy, toast, alarm]);
 
   const line: Line = override
     ? override
@@ -85,14 +88,29 @@ export default function CookMode() {
     );
   }
 
+  /** Stop the alarm and remove the timer. */
+  const clearTimer = () => {
+    alarm.stop();
+    setTimer(null);
+  };
+
+  const stopAlarm = () => {
+    clearTimer();
+    setOverride(say(buddy, 'timerStopped'));
+    haptics.success();
+  };
+
   const go = (p: number) => {
     haptics.select();
     setOverride(null);
+    // A finished timer doesn't follow you to the next step. A running one keeps counting.
+    if (timer && (timer.ringing || timer.remaining === 0)) clearTimer();
     setPage(Math.max(0, Math.min(last, p)));
   };
 
   const startTimer = (label: string, seconds: number) => {
-    setTimer({ label, total: seconds, remaining: seconds, endsAt: Date.now() + seconds * 1000 });
+    alarm.stop();
+    setTimer({ label, total: seconds, remaining: seconds, endsAt: Date.now() + seconds * 1000, step: page, ringing: false });
     setOverride(say(buddy, 'timerStart'));
     toast({ message: `Timer set for ${label}`, icon: 'timer', tone: 'info' });
   };
@@ -130,13 +148,32 @@ export default function CookMode() {
         ))}
       </View>
 
+      {/* Ringing timer: big, red, one obvious Stop button */}
+      {timer?.ringing && (
+        <Animated.View entering={FadeIn} layout={LinearTransition} style={[styles.timerBar, styles.ringing, { backgroundColor: t.colors.destructive }]} accessibilityRole="alert">
+          <Icon name="timer" size={22} color="#FFFFFF" weight="bold" />
+          <View style={{ flex: 1 }}>
+            <Text style={[t.type.title3, { color: '#FFFFFF' }]} testID="timer-done">
+              Time’s up!
+            </Text>
+            <Text style={[t.type.footnote, { color: 'rgba(255,255,255,0.9)' }]}>{timer.label} · Step {timer.step}</Text>
+          </View>
+          <PressableScale onPress={stopAlarm} accessibilityLabel="Stop alarm" style={styles.stopBtn}>
+            <Text style={[t.type.headline, { color: t.colors.destructive }]}>Stop</Text>
+          </PressableScale>
+        </Animated.View>
+      )}
+
       {/* Running timer */}
-      {timer && (
+      {timer && !timer.ringing && (
         <Animated.View entering={FadeIn} layout={LinearTransition} style={[styles.timerBar, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
-          <Icon name="timer" size={20} color={timer.remaining === 0 ? t.colors.destructive : t.colors.tint} weight="bold" />
-          <Text style={[t.type.title2, { color: t.colors.label, fontVariant: ['tabular-nums'], flex: 1 }]} testID="timer-display">
-            {clock(timer.remaining)}
-          </Text>
+          <Icon name="timer" size={20} color={t.colors.tint} weight="bold" />
+          <View style={{ flex: 1 }}>
+            <Text style={[t.type.title2, { color: t.colors.label, fontVariant: ['tabular-nums'] }]} testID="timer-display">
+              {clock(timer.remaining)}
+            </Text>
+            {timer.step !== page && <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]}>Timer from step {timer.step}</Text>}
+          </View>
           <IconButton
             icon={timer.endsAt ? 'pause' : 'play'}
             accessibilityLabel={timer.endsAt ? 'Pause timer' : 'Resume timer'}
@@ -146,7 +183,7 @@ export default function CookMode() {
             }
           />
           <IconButton icon="restart" accessibilityLabel="Restart timer" onPress={() => startTimer(timer.label, timer.total)} />
-          <IconButton icon="close" accessibilityLabel="Stop timer" color={t.colors.secondaryLabel} onPress={() => setTimer(null)} />
+          <IconButton icon="close" accessibilityLabel="Stop timer" color={t.colors.secondaryLabel} onPress={clearTimer} />
         </Animated.View>
       )}
 
@@ -235,6 +272,8 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingBottom: 8, gap: 8 },
   segments: { flexDirection: 'row', gap: 5, paddingHorizontal: 16, marginBottom: 8 },
   segment: { flex: 1, height: 6, borderRadius: 3 },
+  ringing: { paddingRight: 8, borderWidth: 0 },
+  stopBtn: { minHeight: 44, minWidth: 84, paddingHorizontal: 18, borderRadius: 999, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
   timerBar: { flexDirection: 'row', alignItems: 'center', gap: 4, marginHorizontal: 16, marginBottom: 4, paddingLeft: 14, paddingRight: 4, borderRadius: 18, borderCurve: 'continuous', minHeight: 56 },
   content: { padding: 16, paddingBottom: 140, width: '100%', maxWidth: 640, alignSelf: 'center' },
   card: { borderRadius: 24, padding: 20, gap: 6, borderCurve: 'continuous' },

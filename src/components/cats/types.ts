@@ -17,9 +17,10 @@ export type Mood =
   | 'oops' // Biscuit: clumsy wobble
   | 'proud'
   | 'wait' // timers
-  | 'content'; // calm and happy: where energetic moods settle
+  | 'content' // calm and happy: where energetic moods settle
+  | 'alarm'; // a timer is ringing: jumps and waves until stopped
 
 export type Eyes = 'default' | 'normal' | 'happy' | 'closed' | 'wide' | 'determined' | 'wink';
 export type Mouth = 'cat' | 'open' | 'smile' | 'flat' | 'o' | 'chew' | 'tongue';
 export type Prop = 'none' | 'spoon' | 'dumbbell' | 'cookie';
-export type Effect = 'sweat' | 'sparkle' | 'hearts' | 'zzz' | 'dots' | 'crumbs' | 'poof' | 'steam' | 'confetti' | 'bowl';
+export type Effect = 'sweat' | 'sparkle' | 'hearts' | 'zzz' | 'dots' | 'crumbs' | 'poof' | 'steam' | 'confetti' | 'bowl' | 'exclaim' | 'ring';

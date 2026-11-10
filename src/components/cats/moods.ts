@@ -29,6 +29,7 @@ export const moodSpecs: Record<Mood, MoodSpec> = {
   proud: { eyes: 'closed', mouth: 'smile', L: [-40, -105], R: [-40, -105], fx: ['sparkle'] },
   wait: { eyes: 'normal', mouth: 'cat', L: [-30, -120], R: [10, 0], fx: [] },
   content: { eyes: 'happy', mouth: 'cat', L: [10, 0], R: [10, 0], fx: [] },
+  alarm: { eyes: 'wide', mouth: 'open', L: [150, 25], R: [150, 25], fx: ['exclaim', 'ring'] },
 };
 
 /**
