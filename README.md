@@ -36,6 +36,44 @@ Tap a cat to pet it.
 - **Groceries:** grouped by aisle, combined across recipes, tick off, swipe to delete, add your own items, share the list
 - **Buddy tab:** tricks, switch buddy, cooking streak and stats, daily goals, units
 
+## Onboarding and Pro
+
+<p>
+  <img src="screenshots/08-onboarding-welcome.png" width="160" alt="Welcome" />
+  <img src="screenshots/09-onboarding-goals.png" width="160" alt="Goals question" />
+  <img src="screenshots/10-onboarding-buddy.png" width="160" alt="Buddy recommendation" />
+  <img src="screenshots/11-onboarding-plan.png" width="160" alt="Your first week" />
+  <img src="screenshots/12-paywall.png" width="160" alt="Paywall" />
+</p>
+
+New users answer a short quiz (goals, how often they cook, what gets in the way, diet, household),
+get a buddy recommended for their goals, watch their plan being built, and see their first week
+before any price appears. Every answer is used: plan picks match the diet and goals, recipes open
+sized for the household, and the paywall lists the most relevant benefits first.
+
+The flow uses honest persuasion: endowed progress, small commitments, personalization, a recommended
+default, a short "building your plan" moment, value before price (reciprocity), a celebrated reveal,
+a context-matched paywall, a preselected yearly plan with truthful per-week pricing, and a transparent
+trial timeline. It deliberately avoids fake timers or scarcity, invented reviews, guilt-tripping,
+hidden prices and hidden close buttons (App Store guideline 3.1.2 and EU consumer law).
+
+| Free | Pro |
+| --- | --- |
+| Everything else in the app | Unlimited own recipes (free: 5) |
+| | Unlimited cookbooks (free: 3) |
+| | Daily nutrition goals and tracking |
+
+### Before release: real payments
+
+Purchases are **mocked** so the flow can be tested. To sell Pro:
+
+1. Create the subscriptions (`pro_yearly`, `pro_monthly`) and the free trial in App Store Connect.
+2. Replace `purchase` and `restore` in [`src/lib/purchases.ts`](src/lib/purchases.ts) with a real SDK
+   (RevenueCat's `react-native-purchases` works well with Expo; it needs a development build, not Expo Go),
+   and set `PURCHASES_ARE_MOCK` to `false`.
+3. Put your real Terms of Use and Privacy Policy links in the same file. Apple requires both.
+4. Prices, trial length and free limits are set in `purchases.ts` and `FREE_LIMITS` in `src/state/store.tsx`.
+
 ## Run it
 
 ```bash
