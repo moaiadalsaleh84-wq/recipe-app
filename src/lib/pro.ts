@@ -10,7 +10,8 @@ export const showPaywall = (source: PaywallSource) => router.push({ pathname: '/
 export function useProGate() {
   const { isPro, customRecipes, cookbooks, pro } = useStore();
   const [now] = useState(() => Date.now()); // read the clock once per screen, not on every render
-  const trialDaysLeft = pro?.trialEndsAt ? Math.ceil((new Date(pro.trialEndsAt).getTime() - now) / (24 * 3600 * 1000)) : null;
+  // Rounded, not ceil'd: the screen's clock may be read a moment before the trial started (would show 8 of 7 days).
+  const trialDaysLeft = pro?.trialEndsAt ? Math.round((new Date(pro.trialEndsAt).getTime() - now) / (24 * 3600 * 1000)) : null;
   return {
     isPro,
     canAddRecipe: isPro || customRecipes.length < FREE_LIMITS.customRecipes,
