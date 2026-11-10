@@ -1,5 +1,5 @@
-import { router, useNavigation } from 'expo-router';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { router } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Linking, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
 import { CatSays } from '../../../components/cats/CatSays';
@@ -13,7 +13,7 @@ import { FAVORITES_ID, categories, filterTags, matchesFilter, type Recipe } from
 import { haptics } from '../../../lib/haptics';
 import { showPaywall, useProGate } from '../../../lib/pro';
 import { MANAGE_SUBSCRIPTIONS_URL } from '../../../lib/purchases';
-import { ScreenTitle, isIOS } from '../../../navigation/screenOptions';
+import { ScreenTitle } from '../../../navigation/screenOptions';
 import { useBuddy, useStore } from '../../../state/store';
 import { useTheme } from '../../../theme';
 
@@ -21,7 +21,6 @@ const todayIndex = (new Date().getDay() + 6) % 7; // Monday = 0
 
 export default function RecipesScreen() {
   const t = useTheme();
-  const navigation = useNavigation();
   const toast = useToast();
   const buddy = useBuddy();
   const { width } = useWindowDimensions();
@@ -68,19 +67,6 @@ export default function RecipesScreen() {
     [canAddRecipe],
   );
 
-  // iOS: the native search bar lives in the navigation bar.
-  useLayoutEffect(() => {
-    if (!isIOS) return;
-    navigation.setOptions({
-      headerSearchBarOptions: {
-        placeholder: 'Search recipes or ingredients',
-        onChangeText: (e: { nativeEvent: { text: string } }) => setQuery(e.nativeEvent.text),
-        onCancelButtonPress: () => setQuery(''),
-        hideWhenScrolling: false,
-        tintColor: t.colors.tint,
-      },
-    });
-  }, [navigation, t.colors.tint]);
 
   const q = query.trim().toLowerCase();
   const filtered = useMemo(
@@ -172,9 +158,7 @@ export default function RecipesScreen() {
         </>
       )}
 
-      {!isIOS && (
-        <SearchField value={query} onChangeText={setQuery} placeholder="Search recipes or ingredients" style={{ marginBottom: t.spacing.sm }} />
-      )}
+      <SearchField value={query} onChangeText={setQuery} placeholder="Search recipes or ingredients" style={{ marginBottom: t.spacing.sm }} />
 
       {/* Cookbooks */}
       {showExtras && (
