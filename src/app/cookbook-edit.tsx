@@ -4,6 +4,7 @@ import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { PageHeader } from '../components/PageHeader';
 import { useToast } from '../components/Toast';
 import { Button } from '../components/ui';
+import { showPaywall, useProGate } from '../lib/pro';
 import { useStore } from '../state/store';
 import { useTheme } from '../theme';
 
@@ -19,6 +20,7 @@ export default function CookbookEdit() {
   const existing = cookbooks.find((c) => c.id === id);
   const [name, setName] = useState(existing?.name ?? '');
   const valid = name.trim().length > 0;
+  const { canAddCookbook } = useProGate();
 
   const save = () => {
     if (!valid) return;
@@ -26,6 +28,11 @@ export default function CookbookEdit() {
       renameCookbook(existing.id, name);
       toast({ message: `Renamed to ${name.trim()}`, icon: 'edit' });
     } else {
+      if (!canAddCookbook) {
+        router.back();
+        showPaywall('cookbooks');
+        return;
+      }
       const newId = addCookbook(name);
       if (addRecipe) toggleInCookbook(newId, addRecipe);
       toast({ message: `Created ${name.trim()}`, icon: 'book' });

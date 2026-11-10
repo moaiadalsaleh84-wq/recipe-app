@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { CatBuddy } from '../../../components/cats/CatBuddy';
 import { CatSays } from '../../../components/cats/CatSays';
@@ -10,7 +10,9 @@ import { Icon, type IconName } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
 import { RecipeRow } from '../../../components/RecipeCard';
 import { useToast } from '../../../components/Toast';
-import { Section, Segmented, Separator, Stepper } from '../../../components/ui';
+import { Button, Section, Segmented, Separator, Stepper } from '../../../components/ui';
+import { MANAGE_SUBSCRIPTIONS_URL } from '../../../lib/purchases';
+import { showPaywall, useProGate } from '../../../lib/pro';
 import type { Units } from '../../../data/mock';
 import { ScreenTitle } from '../../../navigation/screenOptions';
 import { totalsFor, useBuddy, useStore } from '../../../state/store';
@@ -35,7 +37,8 @@ export default function BuddyScreen() {
   const t = useTheme();
   const toast = useToast();
   const buddy = useBuddy();
-  const { setBuddy, cooked, getRecipe, goals, setGoals, units, setUnits } = useStore();
+  const { setBuddy, cooked, getRecipe, goals, setGoals, units, setUnits, pro } = useStore();
+  const { isPro, trialDaysLeft } = useProGate();
   const info = buddyInfo[buddy];
 
   // Remember who said the line, so switching buddies elsewhere never shows the old cat's words.
@@ -146,6 +149,22 @@ export default function BuddyScreen() {
       <Text style={[t.type.title3, styles.h, { color: t.colors.label }]} accessibilityRole="header">
         Daily goals
       </Text>
+      {!isPro ? (
+        <View style={[styles.locked, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
+          <View style={styles.lockedTop}>
+            <View style={[styles.lockIcon, { backgroundColor: t.colors.tintSoft }]}>
+              <Icon name="lock" size={16} color={t.colors.tint} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[t.type.headline, { color: t.colors.label }]}>Set goals, see your progress</Text>
+              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 1 }]}>
+                Today so far: {eaten.protein} g protein, {eaten.calories} kcal. With Pro, {buddy === 'tank' ? 'Tank tracks' : 'you track'} these against daily targets.
+              </Text>
+            </View>
+          </View>
+          <Button label="Unlock Goals with Pro" icon="crown" size="medium" onPress={() => showPaywall('goals')} style={{ alignSelf: 'stretch' }} />
+        </View>
+      ) : (
       <Section footer={buddy === 'tank' ? 'Tank tracks meals you log at the end of Cook Mode. One serving each.' : 'Meals you log at the end of Cook Mode count toward today. One serving each.'}>
         <GoalRow label="Protein" unit="g" eaten={eaten.protein} goal={goals.protein} pct={proteinPct} color={t.colors.protein}>
           <Stepper value={goals.protein} onChange={(v) => setGoals({ ...goals, protein: v })} min={40} max={300} step={5} label="protein goal" />
@@ -155,6 +174,7 @@ export default function BuddyScreen() {
           <Stepper value={goals.calories} onChange={(v) => setGoals({ ...goals, calories: v })} min={1000} max={5000} step={50} label="calorie goal" />
         </GoalRow>
       </Section>
+      )}
 
       {/* Recently cooked */}
       {recent.length > 0 && (
@@ -182,12 +202,38 @@ export default function BuddyScreen() {
         Settings
       </Text>
       <Section>
+        {isPro ? (
+          <PressableScale
+            onPress={() => Linking.openURL(MANAGE_SUBSCRIPTIONS_URL).catch(() => toast({ message: 'Couldn’t open the link', tone: 'warning' }))}
+            style={styles.settingRow}
+            accessibilityLabel="Manage your Pro subscription"
+            scaleTo={0.99}
+          >
+            <Icon name="crown" size={18} color={t.colors.warning} />
+            <View style={{ flex: 1 }}>
+              <Text style={[t.type.body, { color: t.colors.label }]}>Pro</Text>
+              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]} testID="pro-status">
+                {trialDaysLeft !== null && trialDaysLeft >= 0
+                  ? `Free trial · ${trialDaysLeft} ${trialDaysLeft === 1 ? 'day' : 'days'} left`
+                  : `${pro?.plan === 'yearly' ? 'Yearly' : 'Monthly'} plan`}
+              </Text>
+            </View>
+            <Text style={[t.type.subhead, { color: t.colors.tint }]}>Manage</Text>
+          </PressableScale>
+        ) : (
+          <PressableScale onPress={() => showPaywall('settings')} style={styles.settingRow} accessibilityLabel="Upgrade to Pro" scaleTo={0.99}>
+            <Icon name="crown" size={18} color={t.colors.warning} />
+            <Text style={[t.type.body, { color: t.colors.tint, flex: 1 }]}>Upgrade to Pro</Text>
+            <Icon name="chevronRight" size={14} color={t.colors.tertiaryLabel} weight="semibold" />
+          </PressableScale>
+        )}
+        <Separator />
         <View style={styles.settingRow}>
           <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>Units</Text>
           <Segmented label="Units" value={units} onChange={(u: Units) => setUnits(u)} options={[{ label: 'Metric', value: 'metric' }, { label: 'US', value: 'us' }]} />
         </View>
         <Separator />
-        <PressableScale onPress={() => router.push('/onboarding')} style={styles.settingRow} accessibilityLabel="Meet the buddies again" scaleTo={0.99}>
+        <PressableScale onPress={() => router.push('/buddy-picker')} style={styles.settingRow} accessibilityLabel="Meet the buddies again" scaleTo={0.99}>
           <Text style={[t.type.body, { color: t.colors.tint, flex: 1 }]}>Meet the buddies again</Text>
           <Icon name="chevronRight" size={14} color={t.colors.tertiaryLabel} weight="semibold" />
         </PressableScale>
@@ -254,5 +300,8 @@ const styles = StyleSheet.create({
   goalTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   track: { height: 10, borderRadius: 5, overflow: 'hidden' },
   bar: { height: 10, borderRadius: 5 },
+  locked: { borderRadius: 18, padding: 16, gap: 14, borderCurve: 'continuous', marginBottom: 24 },
+  lockedTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  lockIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   settingRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, minHeight: 56, gap: 10 },
 });

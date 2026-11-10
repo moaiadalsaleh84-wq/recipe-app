@@ -13,6 +13,7 @@ import { Chip, Stepper } from '../../components/ui';
 import { categories, dietTags, type Category, type DietTag } from '../../data/mock';
 import { haptics } from '../../lib/haptics';
 import { parseIngredient } from '../../lib/parseIngredient';
+import { showPaywall, useProGate } from '../../lib/pro';
 import { useBuddy, useStore } from '../../state/store';
 import { useTheme } from '../../theme';
 
@@ -22,6 +23,7 @@ export default function NewRecipe() {
   const toast = useToast();
   const buddy = useBuddy();
   const { addRecipe } = useStore();
+  const { canAddRecipe } = useProGate();
 
   const [title, setTitle] = useState('');
   const [link, setLink] = useState('');
@@ -53,6 +55,10 @@ export default function NewRecipe() {
   };
 
   const save = () => {
+    if (!canAddRecipe) {
+      showPaywall('recipes');
+      return;
+    }
     if (!valid) {
       toast({ message: `Add ${missing.join(', ')} to save`, tone: 'warning' });
       return;

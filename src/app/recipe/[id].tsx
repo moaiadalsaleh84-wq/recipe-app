@@ -36,11 +36,12 @@ export default function RecipeScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const {
     getRecipe, isFavorite, toggleFavorite, addIngredients, showOnlyTag, units, setUnits, notes, setNote,
-    cookbooks, favorites, deleteRecipe, goals,
+    cookbooks, favorites, deleteRecipe, goals, profile, isPro,
   } = useStore();
   const recipe = getRecipe(id);
 
-  const [servings, setServings] = useState(recipe?.servings ?? 2);
+  // Opens sized for your household (from onboarding), or the recipe's own servings.
+  const [servings, setServings] = useState(profile.household ?? recipe?.servings ?? 2);
   const [justAdded, setJustAdded] = useState(false);
   const [barVisible, setBarVisible] = useState(false);
   const [lineN, setLineN] = useState(0);
@@ -227,7 +228,7 @@ export default function RecipeScreen() {
             Nutrition
           </Text>
           <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: -8, marginBottom: 10 }]}>Per serving, estimated</Text>
-          <Nutrition recipe={recipe} proteinGoal={buddy === 'tank' ? goals.protein : undefined} />
+          <Nutrition recipe={recipe} proteinGoal={buddy === 'tank' && isPro ? goals.protein : undefined} />
 
           {/* Ingredients */}
           <View style={styles.sectionHeader}>

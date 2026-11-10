@@ -5,6 +5,7 @@ import { PageHeader } from '../components/PageHeader';
 import { PressableScale } from '../components/PressableScale';
 import { CheckCircle, Section, Separator } from '../components/ui';
 import { FAVORITES_ID } from '../data/mock';
+import { showPaywall, useProGate } from '../lib/pro';
 import { useStore } from '../state/store';
 import { useTheme } from '../theme';
 
@@ -14,6 +15,7 @@ export default function SaveToCookbook() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { getRecipe, cookbooks, favorites, toggleInCookbook } = useStore();
   const recipe = getRecipe(id);
+  const { canAddCookbook } = useProGate();
 
   const rows = [{ id: FAVORITES_ID, name: 'Favorites', recipeIds: favorites }, ...cookbooks];
 
@@ -56,7 +58,7 @@ export default function SaveToCookbook() {
             })}
             <Separator inset={56} />
             <PressableScale
-              onPress={() => router.push({ pathname: '/cookbook-edit', params: { addRecipe: recipe.id } })}
+              onPress={() => (canAddCookbook ? router.push({ pathname: '/cookbook-edit', params: { addRecipe: recipe.id } }) : showPaywall('cookbooks'))}
               accessibilityLabel="New cookbook with this recipe"
               scaleTo={0.99}
               style={styles.row}

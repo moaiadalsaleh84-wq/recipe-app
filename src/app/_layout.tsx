@@ -49,6 +49,8 @@ export default function RootLayout() {
               <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: t.colors.background } }}>
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="onboarding" options={{ gestureEnabled: false, animation: 'fade' }} />
+                <Stack.Screen name="buddy-picker" />
+                <Stack.Screen name="paywall" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
                 <Stack.Screen name="recipe/[id]" />
                 <Stack.Screen name="recipe/new" options={{ presentation: 'modal', contentStyle: { backgroundColor: t.colors.groupedBackground } }} />
                 <Stack.Screen name="cook/[id]" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />

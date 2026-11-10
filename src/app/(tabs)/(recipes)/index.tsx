@@ -1,6 +1,6 @@
 import { router, useNavigation } from 'expo-router';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Linking, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
 import { CatSays } from '../../../components/cats/CatSays';
 import { greetingSituation, say } from '../../../components/cats/dialogue';
@@ -11,6 +11,8 @@ import { useToast } from '../../../components/Toast';
 import { Chip, EmptyState, IconButton, SearchField, Skeleton } from '../../../components/ui';
 import { FAVORITES_ID, categories, filterTags, matchesFilter, type Recipe } from '../../../data/mock';
 import { haptics } from '../../../lib/haptics';
+import { showPaywall, useProGate } from '../../../lib/pro';
+import { MANAGE_SUBSCRIPTIONS_URL } from '../../../lib/purchases';
 import { ScreenTitle, isIOS } from '../../../navigation/screenOptions';
 import { useBuddy, useStore } from '../../../state/store';
 import { useTheme } from '../../../theme';
@@ -49,9 +51,20 @@ export default function RecipesScreen() {
     }, 1100);
   }, [toast]);
 
+  const { canAddRecipe, canAddCookbook, trialDaysLeft } = useProGate();
+  const [reminderHidden, setReminderHidden] = useState(false);
+  // Keeps the paywall's promise: a reminder in the app before the trial ends.
+  const showTrialReminder = !reminderHidden && trialDaysLeft !== null && trialDaysLeft >= 0 && trialDaysLeft <= 2;
   const addButton = useMemo(
-    () => <IconButton icon="plus" accessibilityLabel="Add your own recipe" iconSize={20} onPress={() => router.push('/recipe/new')} />,
-    [],
+    () => (
+      <IconButton
+        icon="plus"
+        accessibilityLabel="Add your own recipe"
+        iconSize={20}
+        onPress={() => (canAddRecipe ? router.push('/recipe/new') : showPaywall('recipes'))}
+      />
+    ),
+    [canAddRecipe],
   );
 
   // iOS: the native search bar lives in the navigation bar.
@@ -109,6 +122,23 @@ export default function RecipesScreen() {
     >
       <ScreenTitle title="Recipes" right={addButton} />
 
+      {showTrialReminder && (
+        <View style={[styles.reminder, { backgroundColor: t.colors.cell, borderColor: t.colors.warning }]} accessibilityRole="alert">
+          <Icon name="crown" size={18} color={t.colors.warning} />
+          <Text style={[t.type.subhead, { color: t.colors.label, flex: 1 }]} testID="trial-reminder">
+            Your free trial ends {trialDaysLeft === 0 ? 'today' : `in ${trialDaysLeft} ${trialDaysLeft === 1 ? 'day' : 'days'}`}. Keep Pro, or cancel anytime before then.
+          </Text>
+          <PressableScale
+            onPress={() => Linking.openURL(MANAGE_SUBSCRIPTIONS_URL).catch(() => toast({ message: 'Couldn’t open the link', tone: 'warning' }))}
+            accessibilityLabel="Manage subscription"
+            style={styles.reminderBtn}
+          >
+            <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: '700' }]}>Manage</Text>
+          </PressableScale>
+          <IconButton icon="close" accessibilityLabel="Dismiss trial reminder" iconSize={13} color={t.colors.secondaryLabel} onPress={() => setReminderHidden(true)} />
+        </View>
+      )}
+
       {showExtras && (
         <CatSays
           buddy={buddy}
@@ -137,7 +167,7 @@ export default function RecipesScreen() {
               <CookbookTile key={b.id} id={b.id} name={b.name} recipes={b.recipeIds.map((id) => getRecipe(id)).filter((r): r is Recipe => !!r)} />
             ))}
             <PressableScale
-              onPress={() => router.push('/cookbook-edit')}
+              onPress={() => (canAddCookbook ? router.push('/cookbook-edit') : showPaywall('cookbooks'))}
               accessibilityLabel="New cookbook"
               style={[styles.book, styles.newBook, { borderColor: t.colors.border }]}
             >
@@ -269,6 +299,8 @@ function CookbookTile({ id, name, recipes }: { id: string; name: string; recipes
 
 const styles = StyleSheet.create({
   content: { paddingBottom: 120, width: '100%', alignSelf: 'center' },
+  reminder: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingLeft: 14, paddingRight: 2, paddingVertical: 6, borderRadius: 16, borderWidth: 2, marginBottom: 14, borderCurve: 'continuous' },
+  reminderBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 6 },
   rowHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
   books: { gap: 12, paddingBottom: 6 },
   book: { width: 148, borderRadius: 18, borderCurve: 'continuous', paddingBottom: 10 },

@@ -6,11 +6,11 @@ import { useTheme } from '../../theme';
 /** Real UITabBar on iOS (Material bottom navigation on Android). Four tabs. */
 export default function TabsLayout() {
   const t = useTheme();
-  const { groceries, buddy } = useStore();
+  const { groceries, onboarded } = useStore();
   const remaining = groceries.filter((g) => !g.checked).length;
 
-  // First launch: meet the buddies.
-  if (!buddy) return <Redirect href="/onboarding" />;
+  // First launch: the welcome quiz.
+  if (!onboarded) return <Redirect href="/onboarding" />;
 
   return (
     <NativeTabs tintColor={t.colors.tint} badgeBackgroundColor={t.colors.accent} minimizeBehavior="onScrollDown">

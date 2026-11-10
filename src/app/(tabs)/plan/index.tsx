@@ -20,7 +20,7 @@ export default function PlanScreen() {
   const t = useTheme();
   const toast = useToast();
   const buddy = useBuddy();
-  const { plan, setMeal, addIngredients, getRecipe, goals } = useStore();
+  const { plan, setMeal, addIngredients, getRecipe, goals, isPro } = useStore();
   const [day, setDay] = useState(weekDays.find((d) => d.isToday)?.index ?? 0);
   const dayPlan = plan[day] ?? {};
   const plannedToday = meals.filter((m) => dayPlan[m]).length;
@@ -127,8 +127,9 @@ export default function PlanScreen() {
             : say(buddy, 'planDay', {
                 calories: dayTotals.calories,
                 protein: dayTotals.protein,
-                goalNote:
-                  dayTotals.protein >= goals.protein
+                goalNote: !isPro
+                  ? ''
+                  : dayTotals.protein >= goals.protein
                     ? 'Protein goal covered!'
                     : `That’s ${Math.round((dayTotals.protein / goals.protein) * 100)}% of your ${goals.protein} g protein goal.`,
               })

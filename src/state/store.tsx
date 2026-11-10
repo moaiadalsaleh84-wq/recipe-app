@@ -1,6 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { BuddyId } from '../components/cats/types';
+import { emptyProfile, type Profile } from '../data/onboarding';
+import type { Entitlement } from '../lib/purchases';
 import {
   FAVORITES_ID,
   defaultGoals,
@@ -35,6 +37,12 @@ type Saved = {
   cooked: CookedEntry[];
   units: Units;
   goals: Goals;
+  /** Finished the welcome quiz. */
+  onboarded: boolean;
+  /** Answers from onboarding. */
+  profile: Profile;
+  /** Active Pro subscription (or trial), if any. */
+  pro: Entitlement | null;
 };
 
 const STORAGE_KEY = 'recipe-app-state-v1';
@@ -50,7 +58,13 @@ const initialSaved: Saved = {
   cooked: [],
   units: 'metric',
   goals: defaultGoals,
+  onboarded: false,
+  profile: emptyProfile,
+  pro: null,
 };
+
+/** What the free version includes. */
+export const FREE_LIMITS = { customRecipes: 5, cookbooks: 3 };
 
 /**
  * App state, saved on the device. Screens only use the functions exposed here,
@@ -59,6 +73,10 @@ const initialSaved: Saved = {
 type Store = Saved & {
   hydrated: boolean;
   setBuddy: (b: BuddyId) => void;
+  setProfile: (p: Partial<Profile>) => void;
+  completeOnboarding: () => void;
+  setPro: (e: Entitlement | null) => void;
+  isPro: boolean;
 
   // Recipes
   allRecipes: Recipe[];
@@ -199,6 +217,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const setUnits = useCallback((units: Units) => update(() => ({ units })), [update]);
   const setGoals = useCallback((goals: Goals) => update(() => ({ goals })), [update]);
   const setBuddy = useCallback((buddy: BuddyId) => update(() => ({ buddy })), [update]);
+  const setProfile = useCallback((p: Partial<Profile>) => update((s) => ({ profile: { ...s.profile, ...p } })), [update]);
+  const completeOnboarding = useCallback(() => update(() => ({ onboarded: true })), [update]);
+  const setPro = useCallback((pro: Entitlement | null) => update(() => ({ pro })), [update]);
   const logCooked = useCallback(
     (recipeId: string, servings: number) => update((s) => ({ cooked: [{ recipeId, servings, date: new Date().toISOString() }, ...s.cooked] })),
     [update],
@@ -338,6 +359,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       ...saved,
       hydrated,
       setBuddy,
+      setProfile,
+      completeOnboarding,
+      setPro,
+      isPro: !!saved.pro,
       allRecipes,
       getRecipe,
       addRecipe,
@@ -368,7 +393,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       undoGroceries,
     }),
     [
-      saved, hydrated, setBuddy, allRecipes, getRecipe, addRecipe, deleteRecipe, setNote, setUnits, setGoals, logCooked,
+      saved, hydrated, setBuddy, setProfile, completeOnboarding, setPro, allRecipes, getRecipe, addRecipe, deleteRecipe, setNote, setUnits, setGoals, logCooked,
       category, tags, toggleTag, showOnlyTag, clearFilters, isFavorite, toggleFavorite, addCookbook, renameCookbook,
       deleteCookbook, restoreCookbook, toggleInCookbook, setMeal, toggleGrocery, addIngredients, addCustomItem,
       removeGrocery, clearCompleted, undoGroceries,
