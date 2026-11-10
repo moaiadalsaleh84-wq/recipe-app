@@ -22,7 +22,7 @@ import Animated, {
 import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { haptics } from '../../lib/haptics';
 import { arts, bowlArt, type CatArt } from './art';
-import { moodSpecs } from './moods';
+import { moodSpecs, settle } from './moods';
 import type { BuddyId, Eyes, Mood } from './types';
 
 type Props = {
@@ -36,6 +36,8 @@ type Props = {
   petable?: boolean;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
+  /** Change this (e.g. to the line being said) to replay an energetic mood that already settled. */
+  playKey?: string;
 };
 
 const origin = (x: number, y: number) => `${x / 2}% ${y / 2}%`;
@@ -50,11 +52,21 @@ function Art({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function CatBuddy({ buddy, mood = 'idle', talking = false, size = 160, onPet, petable = true, style, accessibilityLabel }: Props) {
+export function CatBuddy({ buddy, mood = 'idle', talking = false, size = 160, onPet, petable = true, style, accessibilityLabel, playKey = '' }: Props) {
   const art = arts[buddy];
   const reduceMotion = useReducedMotion();
   const [petted, setPetted] = useState(false);
-  const activeMood: Mood = petted ? 'love' : mood;
+  const baseMood: Mood = petted ? 'love' : mood;
+  // Energetic moods calm down after a few loops (see `settle` in moods.ts).
+  const playId = `${baseMood}|${playKey}|${petted}`;
+  const [settledId, setSettledId] = useState<string | null>(null);
+  const rule = settle[baseMood];
+  const activeMood: Mood = rule && settledId === playId ? rule.to : baseMood;
+  useEffect(() => {
+    if (!rule) return;
+    const id = setTimeout(() => setSettledId(playId), rule.after);
+    return () => clearTimeout(id);
+  }, [playId, rule]);
   const spec = moodSpecs[activeMood];
   const eyes: Eyes = spec.eyes === 'default' ? art.defaultEyes : spec.eyes === 'determined' && buddy === 'biscuit' ? 'normal' : spec.eyes;
 
@@ -243,6 +255,7 @@ export function CatBuddy({ buddy, mood = 'idle', talking = false, size = 160, on
             {art.ears}
             {art.head}
             {art.blush}
+            {art.brows(eyes)}
           </Art>
           <Animated.View style={[StyleSheet.absoluteFill, { transformOrigin: origin(100, art.pivots.eyeLine) }, eyesStyle]}>
             <Art>{art.eyes(eyes)}</Art>

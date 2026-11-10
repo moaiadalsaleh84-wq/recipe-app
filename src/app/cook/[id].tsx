@@ -151,7 +151,7 @@ export default function CookMode() {
       )}
 
       <ScrollView contentContainerStyle={styles.content}>
-        <Animated.View key={page} entering={FadeInRight.springify().damping(18)} style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
+        <Animated.View key={page} entering={FadeInRight.duration(240)} style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
           {page === 0 && (
             <>
               <Text style={[t.type.title2, { color: t.colors.label }]}>Gather your ingredients</Text>

@@ -25,6 +25,8 @@ export type CatArt = {
   head: ReactNode;
   hat?: ReactNode;
   eyes: (e: Eyes) => ReactNode;
+  /** Eyebrows, drawn outside the blinking eye layer so they stay put. */
+  brows: (e: Eyes) => ReactNode;
   mouth: (m: Mouth) => ReactNode;
   blush: ReactNode;
   upperArm: ReactNode;
@@ -84,7 +86,7 @@ export const bowlArt = (cx: number, cy: number, outline: string) => (
 /* Tank: the gym coach. Huge dark-grey torso, tiny serious face, sweatband */
 /* ------------------------------------------------------------------ */
 
-const T = { o: '#17141C', fur: '#55545F', furShade: '#47464F', inner: '#2B2933', blush: '#F59AA6', band: '#E2634A', bandStripe: '#FFF3E0', mouth: '#7A2E3A' };
+const T = { o: '#17141C', fur: '#55545F', furShade: '#47464F', light: '#6E6D7A', inner: '#3A3442', innerPink: '#8E6477', blush: '#F59AA6', band: '#E2634A', bandDark: '#B9452F', bandStripe: '#FFF3E0', mouth: '#7A2E3A', pad: '#F2A0AE' };
 
 const tankEyes = (e: Eyes): ReactNode => {
   const o = T.o;
@@ -140,6 +142,24 @@ const tankEyes = (e: Eyes): ReactNode => {
   }
 };
 
+const tankBrows = (e: Eyes): ReactNode => {
+  const line = (d: string) => <Path d={d} stroke={T.o} strokeWidth={3.4} fill="none" strokeLinecap="round" />;
+  switch (e) {
+    case 'happy':
+      return <G>{line('M82 51 Q 88 47.5 94 51')}{line('M106 51 Q 112 47.5 118 51')}</G>;
+    case 'wide': // worried: brows tilt up toward the middle
+      return <G>{line('M82 53 L 94 49.5')}{line('M118 53 L 106 49.5')}</G>;
+    case 'closed':
+      return <G>{line('M82.5 52.5 Q 88 51 93.5 52.5')}{line('M106.5 52.5 Q 112 51 117.5 52.5')}</G>;
+    case 'normal':
+      return <G>{line('M82 52 Q 88 50.5 94 52')}{line('M106 52 Q 112 50.5 118 52')}</G>;
+    case 'wink':
+      return <G>{line('M82 51 Q 88 47.5 94 51')}{line('M119 51 L 107 54')}</G>;
+    default: // determined: angled down toward the middle
+      return <G>{line('M81 51 L 93.5 54')}{line('M119 51 L 106.5 54')}</G>;
+  }
+};
+
 const tankMouth = (m: Mouth): ReactNode => {
   const o = T.o;
   const nose = <Path d="M97.5 65 L102.5 65 L100 67.5 Z" fill={o} />;
@@ -149,6 +169,7 @@ const tankMouth = (m: Mouth): ReactNode => {
         <G>
           {nose}
           <Path d="M95 69 Q 100 78 105 69 Z" fill={T.mouth} stroke={o} strokeWidth={2.5} strokeLinejoin="round" />
+          <Path d="M96.5 69.5 L 98.5 69.5 L 97.5 72 Z" fill="#fff" />
         </G>
       );
     case 'smile':
@@ -156,6 +177,7 @@ const tankMouth = (m: Mouth): ReactNode => {
         <G>
           {nose}
           <Path d="M93 68.5 Q 100 80 107 68.5 Z" fill={T.mouth} stroke={o} strokeWidth={2.5} strokeLinejoin="round" />
+          <Path d="M95 69 L 97.5 69 L 96.2 72.2 Z" fill="#fff" />
           <Ellipse cx={100} cy={74.5} rx={3.5} ry={2} fill="#F28B9B" />
         </G>
       );
@@ -201,7 +223,8 @@ const tankMouth = (m: Mouth): ReactNode => {
 const tankEarL = (
   <G>
     <Path d="M78 46 L 74 13 Q 76 10 80 13 L 98 32 Z" fill={T.fur} stroke={T.o} strokeWidth={4} strokeLinejoin="round" />
-    <Path d="M80 39 L 78 20 L 91 32 Z" fill={T.inner} />
+    <Path d="M80 39 L 78 20 L 91 32 Z" fill={T.innerPink} />
+    <Path d="M81 36 l2 -5 M84 37 l2 -4" stroke={T.light} strokeWidth={1.6} strokeLinecap="round" />
   </G>
 );
 
@@ -226,12 +249,21 @@ const tank: CatArt = {
       {/* legs */}
       <Path d="M80 160 L78 186 Q78 192 86 192 L94 192 Q98 192 98 186 L98 162 Z" fill={T.fur} strokeWidth={4} />
       <Path d="M120 160 L122 186 Q122 192 114 192 L106 192 Q102 192 102 186 L102 162 Z" fill={T.fur} strokeWidth={4} />
+      <Path d="M84 189 l0 3 M89 189.5 l0 2.5 M111 189.5 l0 2.5 M116 189 l0 3" strokeWidth={2} />
       {/* torso */}
       <Path
         d="M84 70 C 58 70, 32 76, 30 100 C 28 120, 50 128, 64 132 C 68 150, 74 162, 80 170 L 120 170 C 126 162, 132 150, 136 132 C 150 128, 172 120, 170 100 C 168 76, 142 70, 116 70 Z"
         fill={T.fur}
         strokeWidth={4}
       />
+      {/* lighter chest and abs give the muscles some shape */}
+      <G stroke="none" fill={T.light}>
+        <Path d="M68 102 Q 84 96 98 104 Q 92 116 80 114 Q 70 112 68 102 Z" />
+        <Path d="M132 102 Q 116 96 102 104 Q 108 116 120 114 Q 130 112 132 102 Z" />
+        <Path d="M90 122 Q 100 118 110 122 L 108 158 Q 100 162 92 158 Z" opacity={0.7} />
+        <Path d="M40 90 Q 50 84 58 90 Q 50 94 42 96 Z" />
+        <Path d="M160 90 Q 150 84 142 90 Q 150 94 158 96 Z" />
+      </G>
       {/* muscle lines */}
       <G fill="none" strokeWidth={2.8}>
         <Path d="M66 106 Q 84 121 100 109 Q 116 121 134 106" />
@@ -239,7 +271,12 @@ const tank: CatArt = {
         <Path d="M88 129 Q94 133 98.5 130 M101.5 130 Q106 133 112 129" />
         <Path d="M90 143 Q95 146 98.5 144 M101.5 144 Q105 146 110 143" />
         <Path d="M92 156 Q96 158 98.5 157 M101.5 157 Q104 158 108 156" />
+        <Path d="M76 120 Q 72 128 70 134 M124 120 Q 128 128 130 134" strokeWidth={2.2} />
       </G>
+      {/* gym shorts, matching the sweatband */}
+      <Path d="M75 160 Q 100 166 125 160 L 128 179 L 104 180 L 100 171 L 96 180 L 72 179 Z" fill={T.band} strokeWidth={3.5} />
+      <Path d="M75.5 164 Q 100 170 124.5 164" stroke={T.bandDark} strokeWidth={2.5} fill="none" />
+      <Path d="M73.5 172 L 76 179 M126.5 172 L 124 179" stroke={T.bandStripe} strokeWidth={2.5} />
     </G>
   ),
   ears: (
@@ -250,17 +287,24 @@ const tank: CatArt = {
   ),
   head: (
     <G>
+      {/* sweatband tails hang BEHIND the head, so they never cover the ear */}
+      <Path d="M118 47 C 128 49, 135 55, 139 65 L 133 67 C 130 59, 125 55, 117 53 Z" fill={T.band} stroke={T.o} strokeWidth={2.5} strokeLinejoin="round" />
+      <Path d="M117 50 C 124 56, 127 63, 128 73 L 122 73 C 122 65, 120 59, 115 55 Z" fill={T.bandDark} stroke={T.o} strokeWidth={2.5} strokeLinejoin="round" />
       <Path d="M74 58 C 72 40, 84 30, 100 30 C 116 30, 128 40, 126 58 C 126 72, 114 80, 100 80 C 86 80, 74 72, 74 58 Z" fill={T.fur} stroke={T.o} strokeWidth={4} />
-      {/* sweatband */}
+      {/* cheek fur */}
+      <Path d="M75.5 64 l-3.5 3 l4 1 M124.5 64 l3.5 3 l-4 1" stroke={T.o} strokeWidth={2} fill="none" strokeLinejoin="round" strokeLinecap="round" />
+      {/* lighter muzzle */}
+      <Ellipse cx={100} cy={69.5} rx={12.5} ry={7.5} fill={T.light} />
+      {/* sweatband with a neat knot at the side */}
       <Path d="M75.5 44 Q 100 33 124.5 44 L 125.5 51 Q 100 40 74.5 51 Z" fill={T.band} stroke={T.o} strokeWidth={3} strokeLinejoin="round" />
       <Path d="M76 47.5 Q 100 36.5 124.5 47.5" stroke={T.bandStripe} strokeWidth={1.6} fill="none" />
-      <Path d="M124 45 L 135 40 L 132 49 Z" fill={T.band} stroke={T.o} strokeWidth={2.5} strokeLinejoin="round" />
-      <Path d="M124 49 L 133 55 L 123 56 Z" fill={T.band} stroke={T.o} strokeWidth={2.5} strokeLinejoin="round" />
+      <Path d="M121 43.5 Q 127 43 127.5 47.5 Q 127 52 121 51.5 Q 119 47.5 121 43.5 Z" fill={T.bandDark} stroke={T.o} strokeWidth={2.4} strokeLinejoin="round" />
       {/* face stitches, like whiskers */}
       <Path d="M74 63 L 67 62 M74 67 L 67 68 M126 63 L 133 62 M126 67 L 133 68" stroke={T.o} strokeWidth={2.4} strokeLinecap="round" />
     </G>
   ),
   eyes: tankEyes,
+  brows: tankBrows,
   mouth: tankMouth,
   blush: (
     <G>
@@ -272,14 +316,23 @@ const tank: CatArt = {
   upperArm: (
     <G>
       <Ellipse cx={45} cy={114} rx={16} ry={21} fill={T.fur} stroke={T.o} strokeWidth={4} />
+      <Path d="M38 104 Q 42 98 50 100 Q 46 106 40 110 Z" fill={T.light} />
       <Path d="M37 106 Q 44 101 51 106" stroke={T.o} strokeWidth={2.5} fill="none" strokeLinecap="round" />
+      <Path d="M52 116 Q 54 122 51 128" stroke={T.o} strokeWidth={2} fill="none" strokeLinecap="round" />
     </G>
   ),
   foreArm: (
     <G>
       <Ellipse cx={45} cy={144} rx={11.5} ry={15} fill={T.fur} stroke={T.o} strokeWidth={4} />
+      <Path d="M40 139 Q 45 136 50 139" stroke={T.light} strokeWidth={2.2} fill="none" strokeLinecap="round" />
+      {/* wristband */}
+      <Rect x={33.5} y={147} width={23} height={7} rx={3.5} fill={T.band} stroke={T.o} strokeWidth={2.6} />
       <Circle cx={45} cy={158} r={10.5} fill={T.fur} stroke={T.o} strokeWidth={4} />
-      <Path d="M41 163 l0 3 M45 164 l0 3 M49 163 l0 3" stroke={T.o} strokeWidth={2} strokeLinecap="round" />
+      {/* paw beans */}
+      <Ellipse cx={45} cy={161} rx={4} ry={3} fill={T.pad} />
+      <Circle cx={39.5} cy={157} r={1.8} fill={T.pad} />
+      <Circle cx={45} cy={155} r={1.8} fill={T.pad} />
+      <Circle cx={50.5} cy={157} r={1.8} fill={T.pad} />
     </G>
   ),
   prop: (p) => propArt(p, [45, 160], T.o),
@@ -336,6 +389,22 @@ const biscuitEyes = (e: Eyes): ReactNode => {
           <Circle cx={118} cy={86} r={1.2} fill="#fff" />
         </G>
       );
+  }
+};
+
+const biscuitBrows = (e: Eyes): ReactNode => {
+  const line = (d: string) => <Path d={d} stroke={B.o} strokeWidth={2.8} fill="none" strokeLinecap="round" />;
+  switch (e) {
+    case 'happy':
+      return <G>{line('M73 67 Q 80 62.5 87 67')}{line('M113 67 Q 120 62.5 127 67')}</G>;
+    case 'wide': // worried
+      return <G>{line('M73 66.5 L 86 63')}{line('M127 66.5 L 114 63')}</G>;
+    case 'closed':
+      return <G>{line('M74 69 Q 80 67 86 69')}{line('M114 69 Q 120 67 126 69')}</G>;
+    case 'wink':
+      return <G>{line('M73 67 Q 80 62.5 87 67')}{line('M114 68 Q 120 65.5 126 68')}</G>;
+    default:
+      return <G>{line('M74 68 Q 80 65.5 86 68')}{line('M114 68 Q 120 65.5 126 68')}</G>;
   }
 };
 
@@ -403,6 +472,7 @@ const biscuitEarL = (
   <G>
     <Path d="M58 68 Q 51 34 59 25 Q 66 22 93 44 Z" fill={B.fur} stroke={B.o} strokeWidth={4} strokeLinejoin="round" />
     <Path d="M62 59 Q 58 39 62 33 Q 68 33 84 46 Z" fill={B.inner} />
+    <Path d="M64 54 l4 -4 M66 58 l5 -3" stroke={B.cream} strokeWidth={2} strokeLinecap="round" />
   </G>
 );
 
@@ -431,8 +501,12 @@ const biscuit: CatArt = {
       <Ellipse cx={117} cy={185} rx={14} ry={8} fill={B.fur} stroke={B.o} strokeWidth={4} />
       <Path d="M79 186 l0 4 M84 187 l0 4 M116 187 l0 4 M121 186 l0 4" stroke={B.o} strokeWidth={2} strokeLinecap="round" />
       <Path d="M62 130 C 54 160, 66 186, 100 186 C 134 186, 146 160, 138 130 C 132 110, 68 110, 62 130 Z" fill={B.fur} stroke={B.o} strokeWidth={4} strokeLinejoin="round" />
-      <Path d="M79 154 C 79 136, 121 136, 121 154 C 121 175, 79 175, 79 154 Z" fill={B.cream} />
-      <Path d="M65 148 l11 2 M64 160 l11 1 M135 148 l-11 2 M136 160 l-11 1" stroke={B.stripe} strokeWidth={3.5} strokeLinecap="round" />
+      <Path d="M65 148 l11 2 M64 160 l11 1 M66 172 l9 -1 M135 148 l-11 2 M136 160 l-11 1 M134 172 l-9 -1" stroke={B.stripe} strokeWidth={3.5} strokeLinecap="round" />
+      {/* chef apron */}
+      <Path d="M77 136 Q 100 142 123 136 L 122 176 Q 100 184 78 176 Z" fill={B.cream} stroke={B.o} strokeWidth={3} strokeLinejoin="round" />
+      <Path d="M90 158 L 110 158 L 109 169 Q 100 172 91 169 Z" fill="none" stroke={B.stripe} strokeWidth={2.4} strokeLinejoin="round" />
+      <Path d="M100 166 C 96 163, 96.5 160, 98.5 160.5 C 99.5 160.8, 100 161.6, 100 162.2 C 100 161.6, 100.5 160.8, 101.5 160.5 C 103.5 160, 104 163, 100 166 Z" fill="#E0605A" />
+      <Path d="M80 148 Q 100 152 120 148" stroke={B.hatShade} strokeWidth={2} fill="none" strokeLinecap="round" />
       {/* scarf */}
       <Path d="M70 118 Q 100 133 130 118 L 128 128 Q 100 142 72 128 Z" fill={B.scarf} stroke={B.o} strokeWidth={3} strokeLinejoin="round" />
       <Path d="M93 133 L100 148 L107 133 Z" fill={B.scarf} stroke={B.o} strokeWidth={3} strokeLinejoin="round" />
@@ -446,6 +520,9 @@ const biscuit: CatArt = {
   ),
   head: (
     <G>
+      {/* fluffy cheeks poke out behind the head */}
+      <Path d="M58 90 L 45 95 L 56 99 L 47 106 L 62 106 Z" fill={B.fur} stroke={B.o} strokeWidth={3} strokeLinejoin="round" />
+      <Path d="M142 90 L 155 95 L 144 99 L 153 106 L 138 106 Z" fill={B.fur} stroke={B.o} strokeWidth={3} strokeLinejoin="round" />
       <Path
         d="M52 86 C 50 58, 72 42, 100 42 C 128 42, 150 58, 148 86 C 150 100, 140 114, 120 118 C 108 121, 92 121, 80 118 C 60 114, 50 100, 52 86 Z"
         fill={B.fur}
@@ -455,7 +532,13 @@ const biscuit: CatArt = {
       />
       <Path d="M100 46 L100 58 M89 48 L91.5 57 M111 48 L108.5 57" stroke={B.stripe} strokeWidth={4} strokeLinecap="round" />
       <Path d="M52 92 l-7 -1 M53 98 l-6 2 M148 92 l7 -1 M147 98 l6 2" stroke={B.o} strokeWidth={2.5} strokeLinecap="round" />
+      <Path d="M56 74 Q 62 70 66 74 M144 74 Q 138 70 134 74" stroke={B.stripe} strokeWidth={3} fill="none" strokeLinecap="round" />
       <Ellipse cx={100} cy={99} rx={17} ry={11} fill={B.cream} />
+      {/* whisker dots */}
+      <Circle cx={90} cy={98} r={1.2} fill={B.stripe} />
+      <Circle cx={92.5} cy={102} r={1.2} fill={B.stripe} />
+      <Circle cx={110} cy={98} r={1.2} fill={B.stripe} />
+      <Circle cx={107.5} cy={102} r={1.2} fill={B.stripe} />
     </G>
   ),
   hat: (
@@ -469,9 +552,11 @@ const biscuit: CatArt = {
       />
       <Path d="M86 30 Q 88 38 87 45 M110 30 Q 108 38 109 45" stroke={B.hatShade} strokeWidth={3} fill="none" strokeLinecap="round" />
       <Rect x={75} y={41} width={49} height={9} rx={3} fill={B.hat} stroke={B.o} strokeWidth={3.5} />
+      <Circle cx={86} cy={45.5} r={2.6} fill="#E0605A" stroke={B.o} strokeWidth={1.6} />
     </G>
   ),
   eyes: biscuitEyes,
+  brows: biscuitBrows,
   mouth: biscuitMouth,
   blush: (
     <G>
@@ -479,7 +564,12 @@ const biscuit: CatArt = {
       <Ellipse cx={132} cy={97} rx={8} ry={4.5} fill={B.blush} opacity={0.55} />
     </G>
   ),
-  upperArm: <Ellipse cx={67} cy={132} rx={10.5} ry={12.5} fill={B.fur} stroke={B.o} strokeWidth={4} />,
+  upperArm: (
+    <G>
+      <Ellipse cx={67} cy={132} rx={10.5} ry={12.5} fill={B.fur} stroke={B.o} strokeWidth={4} />
+      <Path d="M59 130 l6 1.5 M59.5 136 l6 1" stroke={B.stripe} strokeWidth={2.8} strokeLinecap="round" />
+    </G>
+  ),
   foreArm: (
     <G>
       <Ellipse cx={66} cy={147} rx={9} ry={9} fill={B.fur} stroke={B.o} strokeWidth={4} />

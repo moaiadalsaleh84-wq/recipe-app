@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
-import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { haptics } from '../../lib/haptics';
 import { useTheme } from '../../theme';
 import { PressableScale } from '../PressableScale';
@@ -90,9 +90,9 @@ export function CatSays({ buddy, line, onNext, size = 110, layout = 'row', style
 
   return (
     <View style={[layout === 'row' ? styles.row : styles.column, style]}>
-      {layout === 'column' && <Animated.View key={line.text} entering={ZoomIn.springify().damping(14)}>{bubble}</Animated.View>}
-      {!hideCat && <CatBuddy buddy={buddy} mood={line.mood} talking={!done} size={size} onPet={onPet} />}
-      {layout === 'row' && <Animated.View key={line.text} entering={ZoomIn.springify().damping(14)} style={{ flex: 1 }}>{bubble}</Animated.View>}
+      {layout === 'column' && <Animated.View key={line.text} entering={FadeIn.duration(180)}>{bubble}</Animated.View>}
+      {!hideCat && <CatBuddy buddy={buddy} mood={line.mood} talking={!done} size={size} onPet={onPet} playKey={line.text} />}
+      {layout === 'row' && <Animated.View key={line.text} entering={FadeIn.duration(180)} style={{ flex: 1 }}>{bubble}</Animated.View>}
     </View>
   );
 }

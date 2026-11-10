@@ -28,4 +28,21 @@ export const moodSpecs: Record<Mood, MoodSpec> = {
   oops: { eyes: 'wide', mouth: 'tongue', L: [120, 30], R: [60, -20], fx: ['poof', 'sweat'] },
   proud: { eyes: 'closed', mouth: 'smile', L: [-40, -105], R: [-40, -105], fx: ['sparkle'] },
   wait: { eyes: 'normal', mouth: 'cat', L: [-30, -120], R: [10, 0], fx: [] },
+  content: { eyes: 'happy', mouth: 'cat', L: [10, 0], R: [10, 0], fx: [] },
+};
+
+/**
+ * Energetic moods play their big motion a few times, then settle into a calm pose
+ * instead of looping forever. `after` is how long the big motion plays (ms).
+ */
+export const settle: Partial<Record<Mood, { after: number; to: Mood }>> = {
+  celebrate: { after: 1950, to: 'content' }, // 4 jumps
+  happy: { after: 2700, to: 'content' }, // 3 hops
+  wave: { after: 2300, to: 'content' }, // a few waves
+  flex: { after: 2500, to: 'proud' }, // 4 pumps
+  lift: { after: 5300, to: 'proud' }, // 4 curls
+  oops: { after: 1800, to: 'idle' },
+  worried: { after: 1800, to: 'idle' },
+  eat: { after: 3000, to: 'content' },
+  love: { after: 2600, to: 'content' },
 };

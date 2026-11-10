@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CatBuddy } from '../components/cats/CatBuddy';
 import { CatSays } from '../components/cats/CatSays';
@@ -45,7 +45,7 @@ export default function Onboarding() {
             const info = buddyInfo[id];
             const selected = picked === id;
             return (
-              <Animated.View key={id} entering={FadeInDown.delay(200 + i * 120).springify().damping(16)} style={{ flex: 1 }}>
+              <Animated.View key={id} entering={FadeInDown.delay(150 + i * 100).duration(320)} style={{ flex: 1 }}>
                 <PressableScale
                   onPress={() => setPicked(id)}
                   haptic="select"
@@ -72,7 +72,7 @@ export default function Onboarding() {
         </View>
 
         {picked && (
-          <Animated.View key={picked} entering={FadeInDown.springify().damping(16)} style={{ marginTop: 20 }}>
+          <Animated.View key={picked} entering={FadeIn.duration(200)} style={{ marginTop: 20 }}>
             <CatSays buddy={picked} line={say(picked, 'intro')} layout="column" hideCat />
           </Animated.View>
         )}

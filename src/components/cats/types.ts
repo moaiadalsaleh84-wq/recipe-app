@@ -16,7 +16,8 @@ export type Mood =
   | 'lift' // Tank: dumbbell curls
   | 'oops' // Biscuit: clumsy wobble
   | 'proud'
-  | 'wait'; // timers
+  | 'wait' // timers
+  | 'content'; // calm and happy: where energetic moods settle
 
 export type Eyes = 'default' | 'normal' | 'happy' | 'closed' | 'wide' | 'determined' | 'wink';
 export type Mouth = 'cat' | 'open' | 'smile' | 'flat' | 'o' | 'chew' | 'tongue';
