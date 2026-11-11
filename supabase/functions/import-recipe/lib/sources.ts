@@ -127,21 +127,58 @@ async function fromWebsite(url: URL, fetchImpl: Fetcher | undefined, warnings: s
 
 /* ---------------- TikTok ---------------- */
 
+/**
+ * The video's description from a TikTok page. The page embeds its data as JSON
+ * (__UNIVERSAL_DATA_FOR_REHYDRATION__, older pages SIGI_STATE). The video's own "desc" comes
+ * after "itemStruct" / "ItemModule"; other "desc" fields on the page belong to music or other videos.
+ */
+export function tikTokDescription(html: string): string | null {
+  const read = (from: number) => {
+    const m = html.slice(from).match(/"desc":"((?:[^"\\]|\\.)*)"/);
+    if (!m) return null;
+    try {
+      return (JSON.parse(`"${m[1]}"`) as string).trim() || null;
+    } catch {
+      return null;
+    }
+  };
+  for (const anchor of ['"itemStruct"', '"ItemModule"']) {
+    const at = html.indexOf(anchor);
+    if (at >= 0) {
+      const d = read(at);
+      if (d) return d;
+    }
+  }
+  return null;
+}
+
 async function fromTikTok(url: URL, fetchImpl: Fetcher | undefined): Promise<SourceMaterial> {
-  const oembed = await getJson(`https://www.tiktok.com/oembed?url=${encodeURIComponent(url.toString())}`, fetchImpl);
-  const caption = typeof oembed?.title === 'string' ? oembed.title.trim() : '';
+  // Open the page too: it resolves share links (tiktok.com/t/…, vm.tiktok.com/…) to the real
+  // video address, and usually carries the full description, which oEmbed may shorten.
+  let page: { url: string; body: string } | null = null;
+  try {
+    page = await safeFetch(url.toString(), { fetchImpl });
+  } catch {
+    // TikTok sometimes refuses servers; oEmbed alone may still work
+  }
+  const videoUrl = page && /\/video\/|\/photo\//.test(page.url) ? page.url.split('?')[0] : url.toString();
+  const oembed = await getJson(`https://www.tiktok.com/oembed?url=${encodeURIComponent(videoUrl)}`, fetchImpl);
+  const fromOembed = typeof oembed?.title === 'string' ? oembed.title.trim() : '';
+  const fromPage = page ? (tikTokDescription(page.body) ?? metaContent(page.body, ['og:description', 'description']) ?? '') : '';
+  // Whichever source has more of the caption.
+  const caption = fromPage.length > fromOembed.length ? fromPage : fromOembed;
   const author = typeof oembed?.author_name === 'string' ? oembed.author_name : null;
-  const imageUrl = typeof oembed?.thumbnail_url === 'string' ? oembed.thumbnail_url : null;
-  if (!oembed) throw new SourceError('TikTok didn’t share this video’s details. It may be private or deleted.', 'fetch_failed', { sourceUrl: url.toString() }, 'tiktok');
+  const imageUrl = (typeof oembed?.thumbnail_url === 'string' ? oembed.thumbnail_url : null) ?? (page ? metaContent(page.body, ['og:image']) : null);
+  if (!oembed && !caption) throw new SourceError('TikTok didn’t share this video’s details. It may be private or deleted.', 'fetch_failed', { sourceUrl: videoUrl }, 'tiktok');
   if (caption.length < 40) {
     throw new SourceError(
-      'This TikTok’s caption doesn’t include the recipe, and we can’t watch videos. Paste the recipe text if the creator shared it elsewhere.',
+      'We couldn’t read a recipe in this TikTok’s caption, and we can’t watch videos. If the recipe is in the caption, copy it in TikTok and paste it here.',
       'no_text',
-      { title: caption || undefined, sourceUrl: url.toString(), imageUrl: imageUrl ?? undefined },
+      { title: caption || undefined, sourceUrl: videoUrl, imageUrl: imageUrl ?? undefined },
       'tiktok',
     );
   }
-  return { kind: 'tiktok', url: url.toString(), host: 'tiktok.com', title: null, text: `TikTok caption${author ? ` by ${author}` : ''}:\n${caption}`, imageUrl, structured: null };
+  return { kind: 'tiktok', url: videoUrl, host: 'tiktok.com', title: null, text: `TikTok caption${author ? ` by ${author}` : ''}:\n${caption}`, imageUrl, structured: null };
 }
 
 /* ---------------- YouTube ---------------- */

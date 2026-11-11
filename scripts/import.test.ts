@@ -14,7 +14,7 @@ import { assertPublicUrl } from '../supabase/functions/import-recipe/lib/http.ts
 import { isGrounded, normalize, parseLine } from '../supabase/functions/import-recipe/lib/ingredients.ts';
 import { isoMinutes, recipeFromHtml, yieldNumber } from '../supabase/functions/import-recipe/lib/jsonld.ts';
 import { MemoryCache, MemoryLimiter, pickServerKey, serverHeaders } from '../supabase/functions/import-recipe/lib/limits.ts';
-import { findUrl, instagramCaption, youTubeDescription } from '../supabase/functions/import-recipe/lib/sources.ts';
+import { findUrl, instagramCaption, tikTokDescription, youTubeDescription } from '../supabase/functions/import-recipe/lib/sources.ts';
 import type { ImportResponse, SourceMaterial } from '../supabase/functions/import-recipe/lib/types.ts';
 
 /* ---------------- fixtures ---------------- */
@@ -301,4 +301,40 @@ test('server key: new secret keys preferred, legacy fallback; JWTs also go in Au
   assert.equal(serverHeaders('sb_secret_abc').authorization, undefined);
   assert.equal(serverHeaders('sb_secret_abc').apikey, 'sb_secret_abc');
   assert.equal(serverHeaders('eyJabc').authorization, 'Bearer eyJabc');
+});
+
+const TIKTOK_PAGE = `<html><head><meta property="og:description" content="Chicken shawarma at home…"></head><body>
+<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application/json">{"__DEFAULT_SCOPE__":{"webapp.video-detail":{"itemInfo":{"itemStruct":{"id":"7300000000000000001","desc":"Chicken shawarma at home 🔥\\nIngredients:\\n500g chicken thighs\\n2 tbsp yogurt\\n1 tsp cumin\\n1 tsp paprika\\n3 garlic cloves\\nMarinate 1 hour, then roast at 220C for 25 min. #shawarma #fyp","music":{"desc":"original sound"}}}}}}</script></body></html>`;
+
+test('TikTok page description: the video desc, not music or other videos', () => {
+  const d = tikTokDescription(TIKTOK_PAGE)!;
+  assert.match(d, /500g chicken thighs\n2 tbsp yogurt/);
+  assert.equal(tikTokDescription('<html>"desc":"other video"</html>'), null);
+});
+
+test('TikTok share links are resolved and the full page caption beats a shortened oEmbed title', async () => {
+  const seen: string[] = [];
+  const ai: AiCaller = async (m) => {
+    seen.push(m.text);
+    return fakeAi({ title: 'Chicken shawarma', ingredients: [{ original: '500g chicken thighs', amount: 500, unit: 'g', name: 'chicken thighs' }] })(m);
+  };
+  const full = 'https://www.tiktok.com/@cook/video/7300000000000000001';
+  const fetchImpl = fakeFetch({
+    'https://www.tiktok.com/t/ZTabc123/': { status: 301, body: '', headers: { location: `${full}?_r=1` } },
+    [full]: { body: TIKTOK_PAGE },
+    [`https://www.tiktok.com/oembed?url=${encodeURIComponent(full)}`]: { body: JSON.stringify({ title: 'Chicken shawarma at home 🔥', author_name: 'cook' }), headers: { 'content-type': 'application/json' } },
+  });
+  const { json } = await post(deps({ ai, fetchImpl }), { url: 'https://www.tiktok.com/t/ZTabc123/' });
+  assert.ok(json.ok, JSON.stringify(json));
+  assert.match(seen[0], /2 tbsp yogurt/);
+  if (json.ok) assert.equal(json.recipe.sourceUrl, full);
+});
+
+test('TikTok page blocked: oEmbed caption alone still works', async () => {
+  const d = deps({
+    ai: fakeAi({ ingredients: [{ original: '1 block feta', amount: 1, unit: '', name: 'feta' }] }),
+    fetchImpl: fakeFetch({ 'https://www.tiktok.com/@a/video/9': { status: 403, body: 'no' }, 'https://www.tiktok.com/oembed': { body: TIKTOK_OEMBED } }),
+  });
+  const r = await post(d, { url: 'https://www.tiktok.com/@a/video/9' });
+  assert.ok(r.json.ok, JSON.stringify(r.json));
 });
