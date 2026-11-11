@@ -56,10 +56,12 @@ supabase db push --remote
 That last command creates the rate-limit and cache tables (`supabase/migrations/`). Answer `y` when
 asked. (`--remote` is needed with Supabase CLI 3 and later, which otherwise targets a local database.)
 
-4. Set the secrets (they live on Supabase's servers, not in the app):
+4. Set the secrets (they live on Supabase's servers, not in the app). Easiest is the website,
+   so the key never goes into your Terminal history: your project → Edge Functions → Secrets.
+   For the salt, run `openssl rand -hex 32 | pbcopy` and paste with ⌘V. Or from Terminal:
 
 ```bash
-supabase secrets set ANTHROPIC_API_KEY=sk-ant-PASTE-YOUR-KEY RATE_LIMIT_SALT=$(openssl rand -hex 32) IMPORT_DAILY_CAP=200
+supabase secrets set ANTHROPIC_API_KEY=sk-ant-PASTE-YOUR-KEY RATE_LIMIT_SALT=$(openssl rand -hex 32) IMPORT_DAILY_CAP=30 --remote=YOUR-PROJECT-REF
 ```
 
 | Secret | Required | What it does |
@@ -72,8 +74,11 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-PASTE-YOUR-KEY RATE_LIMIT_SALT=$(o
 5. Deploy the function:
 
 ```bash
-supabase functions deploy import-recipe
+supabase functions deploy import-recipe --remote=YOUR-PROJECT-REF
 ```
+Choose **Yes** when asked (← arrow, then Enter). A "Docker is not running" warning is fine: Supabase
+bundles the code on its servers. Check it's up: `curl https://YOUR-PROJECT-REF.supabase.co/functions/v1/import-recipe`
+should print `{"ok":true,"pong":true}`.
 
 6. Turn on daily cleanup: Supabase dashboard → Integrations → Cron → new job, daily, SQL:
    `select import_cleanup();`
