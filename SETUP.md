@@ -51,9 +51,10 @@ supabase login
 supabase link --project-ref YOUR-PROJECT-REF
 ```
 ```bash
-supabase db push
+supabase db push --remote
 ```
-That last command creates the rate-limit and cache tables (`supabase/migrations/`).
+That last command creates the rate-limit and cache tables (`supabase/migrations/`). Answer `y` when
+asked. (`--remote` is needed with Supabase CLI 3 and later, which otherwise targets a local database.)
 
 4. Set the secrets (they live on Supabase's servers, not in the app):
 
