@@ -3,7 +3,7 @@ import { NativeTabs } from 'expo-router/native-tabs';
 import { useStore } from '../../state/store';
 import { useTheme } from '../../theme';
 
-/** Real UITabBar on iOS (Material bottom navigation on Android). Four tabs. */
+/** Real UITabBar on iOS (Material bottom navigation on Android). Five tabs, the iOS maximum before "More". */
 export default function TabsLayout() {
   const t = useTheme();
   const { groceries, onboarded } = useStore();
@@ -22,10 +22,14 @@ export default function TabsLayout() {
         <NativeTabs.Trigger.Icon sf="calendar" md="calendar_month" />
         <NativeTabs.Trigger.Label>Plan</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="pantry">
+        <NativeTabs.Trigger.Icon sf={{ default: 'refrigerator', selected: 'refrigerator.fill' }} md="kitchen" />
+        <NativeTabs.Trigger.Label>Pantry</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="groceries">
         <NativeTabs.Trigger.Icon sf={{ default: 'cart', selected: 'cart.fill' }} md="shopping_cart" />
         <NativeTabs.Trigger.Label>Groceries</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Badge hidden={remaining === 0}>{String(remaining)}</NativeTabs.Trigger.Badge>
+        {remaining > 0 ? <NativeTabs.Trigger.Badge>{String(remaining)}</NativeTabs.Trigger.Badge> : null}
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="buddy">
         <NativeTabs.Trigger.Icon sf={{ default: 'pawprint', selected: 'pawprint.fill' }} md="pets" />

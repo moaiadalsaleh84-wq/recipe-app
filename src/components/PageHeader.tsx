@@ -21,7 +21,8 @@ export function PageHeader({
   title: string;
   subtitle?: string;
   right?: ReactNode;
-  mode?: 'back' | 'cancel';
+  /** 'none' hides the left button (the screen offers its own way out). */
+  mode?: 'back' | 'cancel' | 'none';
   onBack?: () => void;
   /** Sheets on iOS already sit below the status bar. */
   inSheet?: boolean;
@@ -32,7 +33,7 @@ export function PageHeader({
   return (
     <View style={[styles.header, { paddingTop: inSheet ? 14 : insets.top + 6, borderBottomColor: t.colors.separator }]}>
       <View style={styles.side}>
-        {mode === 'back' ? (
+        {mode === 'none' ? null : mode === 'back' ? (
           <IconButton icon="back" accessibilityLabel="Back" onPress={back} color={t.colors.tint} iconSize={19} />
         ) : (
           <PressableScale onPress={back} style={styles.textButton} accessibilityLabel="Cancel">

@@ -1,23 +1,26 @@
 import { router } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Linking, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
 import { CatSays } from '../../../components/cats/CatSays';
 import { greetingSituation, say } from '../../../components/cats/dialogue';
 import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
-import { FeaturedCard, RecipeCard, RecipeCardSkeleton, RecipePhoto } from '../../../components/RecipeCard';
+import { FeaturedCard, RecipeCard, RecipePhoto } from '../../../components/RecipeCard';
 import { useToast } from '../../../components/Toast';
-import { Chip, EmptyState, IconButton, SearchField, Skeleton } from '../../../components/ui';
+import { Chip, EmptyState, IconButton, SearchField } from '../../../components/ui';
 import { FAVORITES_ID, categories, filterTags, matchesFilter, type Recipe } from '../../../data/mock';
 import { haptics } from '../../../lib/haptics';
 import { showPaywall, useProGate } from '../../../lib/pro';
 import { MANAGE_SUBSCRIPTIONS_URL } from '../../../lib/purchases';
 import { ScreenTitle } from '../../../navigation/screenOptions';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBuddy, useStore } from '../../../state/store';
 import { useTheme } from '../../../theme';
 
 const todayIndex = (new Date().getDay() + 6) % 7; // Monday = 0
+/** Days since 1970, so the recipe of the day really changes daily. */
+const dayNumber = Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 86400000);
 
 export default function RecipesScreen() {
   const t = useTheme();
@@ -27,44 +30,18 @@ export default function RecipesScreen() {
   const { category, setCategory, tags, toggleTag, clearFilters, plan, allRecipes, getRecipe, favorites, cookbooks, profile } = useStore();
 
   const [query, setQuery] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [tip, setTip] = useState(-1); // -1 = greeting, then cycles tips
   const [petLine, setPetLine] = useState<ReturnType<typeof say> | null>(null);
-  const refreshTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-
-  // Mock network load so the skeletons have something to stand in for.
-  useEffect(() => {
-    const id = setTimeout(() => setLoading(false), 900);
-    return () => {
-      clearTimeout(id);
-      clearTimeout(refreshTimer.current);
-    };
-  }, []);
-
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    refreshTimer.current = setTimeout(() => {
-      setRefreshing(false);
-      setTip((n) => n + 1);
-      toast({ message: 'Recipes are up to date', tone: 'info', icon: 'checkCircle' });
-    }, 1100);
-  }, [toast]);
-
-  const { canAddRecipe, canAddCookbook, trialDaysLeft } = useProGate();
+  const { canAddRecipe, canAddCookbook, canImport, trialDaysLeft } = useProGate();
   const [reminderHidden, setReminderHidden] = useState(false);
   // Keeps the paywall's promise: a reminder in the app before the trial ends.
   const showTrialReminder = !reminderHidden && trialDaysLeft !== null && trialDaysLeft >= 0 && trialDaysLeft <= 2;
   const addButton = useMemo(
     () => (
-      <IconButton
-        icon="plus"
-        accessibilityLabel="Add your own recipe"
-        iconSize={20}
-        onPress={() => (canAddRecipe ? router.push('/recipe/new') : showPaywall('recipes'))}
-      />
+      <IconButton icon="plus" accessibilityLabel="Add a recipe" iconSize={20} onPress={() => setMenuOpen(true)} />
     ),
-    [canAddRecipe],
+    [],
   );
 
 
@@ -83,7 +60,8 @@ export default function RecipesScreen() {
   const hasFilters = !!category || tags.length > 0;
   const showExtras = !hasFilters && !q;
   const tonight = getRecipe(plan[todayIndex]?.Dinner);
-  const featured = tonight ?? allRecipes.find((r) => r.id === 'masala-dosa') ?? allRecipes[0];
+  const mains = allRecipes.filter((r) => r.category !== 'Dessert');
+  const featured = tonight ?? mains[dayNumber % Math.max(1, mains.length)] ?? allRecipes[0];
   const firstName = profile.name.trim().split(/\s+/)[0] ?? '';
   const line = tip < 0 ? say(buddy, greetingSituation(), { name: firstName }) : say(buddy, 'tip', {}, tip);
 
@@ -106,7 +84,6 @@ export default function RecipesScreen() {
       keyboardShouldPersistTaps="handled"
       style={{ backgroundColor: t.colors.background }}
       contentContainerStyle={[styles.content, { paddingHorizontal: margin, maxWidth: 900 }]}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={t.colors.tint} colors={[t.colors.tint]} />}
     >
       <ScreenTitle title="Recipes" right={addButton} />
 
@@ -212,18 +189,7 @@ export default function RecipesScreen() {
         ))}
       </ScrollView>
 
-      {loading ? (
-        <View accessibilityLabel="Loading recipes">
-          <Skeleton style={[styles.featuredSkeleton, { borderRadius: t.radius.xl }]} />
-          <Skeleton style={{ height: 22, width: 140, marginTop: t.spacing.xl, marginBottom: t.spacing.sm }} />
-          <View style={[styles.grid, { gap }]}>
-            {Array.from({ length: columns * 2 }).map((_, i) => (
-              <RecipeCardSkeleton key={i} width={cardWidth} />
-            ))}
-          </View>
-        </View>
-      ) : (
-        <Animated.View entering={FadeIn.duration(250)}>
+      <Animated.View entering={FadeIn.duration(250)}>
           {showExtras && featured && (
             <View style={{ marginTop: t.spacing.md }}>
               <FeaturedCard recipe={featured} eyebrow={tonight ? 'On the menu tonight' : 'Recipe of the day'} />
@@ -264,9 +230,50 @@ export default function RecipesScreen() {
               ))}
             </View>
           )}
-        </Animated.View>
-      )}
+      </Animated.View>
+      <AddMenu
+        visible={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        onImport={() => {
+          setMenuOpen(false);
+          if (canImport) router.push('/import');
+          else showPaywall('imports');
+        }}
+        onWrite={() => {
+          setMenuOpen(false);
+          if (canAddRecipe) router.push('/recipe/new');
+          else showPaywall('recipes');
+        }}
+      />
     </ScrollView>
+  );
+}
+
+/** The + menu: import from a link, or write a recipe by hand. */
+function AddMenu({ visible, onClose, onImport, onWrite }: { visible: boolean; onClose: () => void; onImport: () => void; onWrite: () => void }) {
+  const t = useTheme();
+  const insets = useSafeAreaInsets();
+  const rows = [
+    { label: 'Import from link', hint: 'TikTok, YouTube, Instagram or any recipe site', icon: 'link' as const, onPress: onImport },
+    { label: 'Write my own', hint: 'Type in a family favorite', icon: 'edit' as const, onPress: onWrite },
+  ];
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} supportedOrientations={['portrait', 'landscape']}>
+      <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: t.colors.scrim }]} onPress={onClose} accessibilityLabel="Close menu" />
+      <View style={[styles.menu, { top: insets.top + 64, backgroundColor: t.colors.elevated, ...t.chunky.card }]} accessibilityRole="menu">
+        {rows.map((r, i) => (
+          <PressableScale key={r.label} onPress={r.onPress} accessibilityLabel={r.label} accessibilityRole="menuitem" style={[styles.menuRow, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.colors.separator }]} scaleTo={0.98}>
+            <View style={[styles.pickIcon, { backgroundColor: t.colors.tintSoft }]}>
+              <Icon name={r.icon} size={18} color={t.colors.tint} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[t.type.headline, { color: t.colors.label }]}>{r.label}</Text>
+              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{r.hint}</Text>
+            </View>
+          </PressableScale>
+        ))}
+      </View>
+    </Modal>
   );
 }
 
@@ -318,7 +325,8 @@ const styles = StyleSheet.create({
   bookText: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, marginTop: 2 },
   chips: { gap: 8, paddingVertical: 6, alignItems: 'center', minHeight: 48 },
   chipDivider: { width: 2, height: 22, marginHorizontal: 4, borderRadius: 1 },
-  featuredSkeleton: { height: 300, marginTop: 8 },
+  menu: { position: 'absolute', right: 16, width: 300, maxWidth: '92%', borderRadius: 18, overflow: 'hidden', borderCurve: 'continuous' },
+  menuRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12, minHeight: 60 },
   listHeader: { flexDirection: 'row', alignItems: 'baseline', marginTop: 28, marginBottom: 12 },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
 });

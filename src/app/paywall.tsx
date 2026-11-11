@@ -22,13 +22,14 @@ import { Icon, type IconName } from '../components/Icon';
 import { PressableScale } from '../components/PressableScale';
 import { useToast } from '../components/Toast';
 import { Button, IconButton } from '../components/ui';
-import { benefitsFor, goalPhrase, whyLabel } from '../data/onboarding';
+import { benefitsFor, goalPhrase } from '../data/onboarding';
 import { haptics } from '../lib/haptics';
+import type { PaywallSource } from '../lib/pro';
 import {
   MANAGE_SUBSCRIPTIONS_URL,
   PLANS,
-  PRIVACY_URL,
   PURCHASES_ARE_MOCK,
+  PurchaseCancelled,
   TERMS_URL,
   money,
   perWeek,
@@ -40,7 +41,7 @@ import {
 import { FREE_LIMITS, useBuddy, useStore } from '../state/store';
 import { useTheme } from '../theme';
 
-type Source = 'onboarding' | 'recipes' | 'cookbooks' | 'goals' | 'settings';
+type Source = PaywallSource;
 
 export default function Paywall() {
   const t = useTheme();
@@ -64,9 +65,7 @@ export default function Paywall() {
   const selected = PLANS[plan];
   const trial = selected.trialDays;
 
-  // Their own reason, turned to second person: "for my family" → "for your family".
-  const reason = whyLabel(profile.why)[0]?.replace(/\bmy\b/g, 'your');
-  const copy = headline(source, goalPhrase(profile), profile.name.trim().split(/\s+/)[0] ?? '', reason);
+  const copy = headline(source, goalPhrase(profile), profile.name.trim().split(/\s+/)[0] ?? '');
   const line = buddyLine(buddy, source, profile.name.trim().split(/\s+/)[0] ?? '');
   const benefits = benefitsFor(profile);
 
@@ -77,8 +76,8 @@ export default function Paywall() {
       setPro(ent);
       haptics.success();
       setWelcome(true);
-    } catch {
-      toast({ message: 'The purchase didn’t go through. You weren’t charged.', tone: 'warning' });
+    } catch (e) {
+      if (!(e instanceof PurchaseCancelled)) toast({ message: 'The purchase didn’t go through. You weren’t charged.', tone: 'warning' });
     } finally {
       setBusy(null);
     }
@@ -86,7 +85,14 @@ export default function Paywall() {
 
   const onRestore = async () => {
     setBusy('restore');
-    const ent = await restore(pro);
+    let ent: Awaited<ReturnType<typeof restore>> = null;
+    try {
+      ent = await restore(pro);
+    } catch {
+      setBusy(null);
+      toast({ message: 'Couldn’t reach the App Store. Check your connection.', tone: 'warning' });
+      return;
+    }
     setBusy(null);
     if (ent) {
       setPro(ent);
@@ -162,7 +168,7 @@ export default function Paywall() {
           <PressableScale onPress={() => open(TERMS_URL)} style={styles.link} accessibilityRole="link" accessibilityLabel="Terms of use">
             <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, textDecorationLine: 'underline' }]}>Terms</Text>
           </PressableScale>
-          <PressableScale onPress={() => open(PRIVACY_URL)} style={styles.link} accessibilityRole="link" accessibilityLabel="Privacy policy">
+          <PressableScale onPress={() => router.push('/privacy')} style={styles.link} accessibilityRole="link" accessibilityLabel="Privacy policy">
             <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, textDecorationLine: 'underline' }]}>Privacy</Text>
           </PressableScale>
           <PressableScale onPress={() => open(MANAGE_SUBSCRIPTIONS_URL)} style={styles.link} accessibilityRole="link" accessibilityLabel="Manage subscriptions">
@@ -196,21 +202,25 @@ export default function Paywall() {
   );
 }
 
-function headline(source: Source, goal: string, name: string, why?: string): { title: string; subtitle: string } {
+function headline(source: Source, goal: string, name: string): { title: string; subtitle: string } {
   switch (source) {
     case 'onboarding':
       return {
-        title: name ? `${name}, unlock your full kitchen` : 'Unlock your full kitchen',
-        subtitle: `Your plan to ${goal} is ready${why ? `, ${why}` : ''}. Pro gives you every tool to stick with it.`,
+        title: name ? `${name}, save every recipe you find` : 'Save every recipe you find',
+        subtitle: `The free version includes ${FREE_LIMITS.imports} imports. Pro imports without limits and adds the tools to help you ${goal}.`,
       };
+    case 'imports':
+      return { title: 'Import without limits', subtitle: `You’ve used your ${FREE_LIMITS.imports} free imports. Pro imports as many recipes as you like from TikTok, YouTube, Instagram and any website.` };
+    case 'pantry':
+      return { title: 'Your whole pantry, working for you', subtitle: `The free pantry holds ${FREE_LIMITS.pantry} items. Pro has no limit, and shows which one item would let you cook the most recipes.` };
     case 'recipes':
-      return { title: 'Keep every recipe you love', subtitle: `You’ve saved ${FREE_LIMITS.customRecipes} recipes, the free limit. Pro saves as many as you like.` };
+      return { title: 'Keep every recipe you love', subtitle: `You’ve written ${FREE_LIMITS.customRecipes} recipes by hand, the free limit. Pro saves as many as you like.` };
     case 'cookbooks':
       return { title: 'Organize without limits', subtitle: `The free version holds ${FREE_LIMITS.cookbooks} cookbooks. Pro lets you make as many as you need.` };
     case 'goals':
       return { title: 'Hit your goals with Tank', subtitle: 'Set daily protein and calorie targets and see your progress from every meal you cook.' };
     default:
-      return { title: 'Cook with everything unlocked', subtitle: 'Unlimited recipes and cookbooks, plus nutrition goals and tracking.' };
+      return { title: 'Cook with everything unlocked', subtitle: 'Unlimited imports, pantry and cookbooks, plus nutrition goals.' };
   }
 }
 
@@ -218,9 +228,11 @@ function buddyLine(buddy: string, source: Source, name: string): Line {
   const n = name || (buddy === 'tank' ? 'champ' : 'friend');
   if (buddy === 'tank') {
     if (source === 'goals') return { text: `Goals you can see are goals you hit. Let’s track them, ${n}.`, mood: 'flex' };
+    if (source === 'imports') return { text: `Good taste, ${n}. That’s three already. Pro keeps the playbook growing.`, mood: 'proud' };
     return { text: `You did the warm-up, ${n}. Pro is the full workout. No pressure.`, mood: 'proud' };
   }
-  if (source === 'recipes') return { text: 'Our recipe box is full! I tried to squeeze one more in. It didn’t fit.', mood: 'oops' };
+  if (source === 'recipes' || source === 'imports') return { text: 'Our recipe box is full! I tried to squeeze one more in. It didn’t fit.', mood: 'oops' };
+  if (source === 'pantry') return { text: 'The pantry shelf is full! I’m guarding the snacks, just in case.', mood: 'eat' };
   return { text: 'Pro is like the big kitchen! All the recipes, all the cookbooks, all the fun.', mood: 'happy' };
 }
 

@@ -25,7 +25,7 @@ export default function BuddyScreen() {
   const t = useTheme();
   const toast = useToast();
   const buddy = useBuddy();
-  const { setBuddy, cooked, getRecipe, goals, setGoals, units, setUnits, pro, profile, customRecipes, plan, favorites, fun } = useStore();
+  const { setBuddy, cooked, getRecipe, goals, setGoals, units, setUnits, pro, customRecipes, plan, favorites, fun } = useStore();
   const { isPro, trialDaysLeft } = useProGate();
   const info = buddyInfo[buddy];
 
@@ -130,7 +130,7 @@ export default function BuddyScreen() {
         Your cooking
       </Text>
       <View style={styles.stats}>
-        <Stat value={thisWeek} label={`of ${profile.weeklyTarget} this week`} icon="pot" />
+        <Stat value={thisWeek} label="cooked this week" icon="pot" />
         <Stat value={streak} label={streak === 1 ? 'day streak' : 'day streak'} icon="flame" />
         <Stat value={cooked.length} label="cooked total" icon="checkCircle" />
       </View>
@@ -194,14 +194,14 @@ export default function BuddyScreen() {
             <View style={{ flex: 1 }}>
               <Text style={[t.type.headline, { color: t.colors.label }]}>Set goals, see your progress</Text>
               <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 1 }]}>
-                Today so far: {eaten.protein} g protein, {eaten.calories} kcal. With Pro, {buddy === 'tank' ? 'Tank tracks' : 'you track'} these against daily targets.
+                Today so far (estimated): {eaten.protein} g protein, {eaten.calories} kcal. With Pro, {buddy === 'tank' ? 'Tank tracks' : 'you track'} these against daily targets.
               </Text>
             </View>
           </View>
           <Button label="Unlock Goals with Pro" icon="crown" size="medium" onPress={() => showPaywall('goals')} style={{ alignSelf: 'stretch' }} />
         </View>
       ) : (
-      <Section footer={buddy === 'tank' ? 'Tank tracks meals you log at the end of Cook Mode. One serving each.' : 'Meals you log at the end of Cook Mode count toward today. One serving each.'}>
+      <Section footer={buddy === 'tank' ? 'Tank tracks meals you log at the end of Cook Mode, one serving each. Recipe nutrition is estimated.' : 'Meals you log at the end of Cook Mode count toward today, one serving each. Recipe nutrition is estimated.'}>
         <GoalRow label="Protein" unit="g" eaten={eaten.protein} goal={goals.protein} pct={proteinPct} color={t.colors.protein}>
           <Stepper value={goals.protein} onChange={(v) => setGoals({ ...goals, protein: v })} min={40} max={300} step={5} label="protein goal" />
         </GoalRow>
@@ -271,6 +271,11 @@ export default function BuddyScreen() {
         <Separator />
         <PressableScale onPress={() => router.push('/buddy-picker')} style={styles.settingRow} accessibilityLabel="Meet the buddies again" scaleTo={0.99}>
           <Text style={[t.type.body, { color: t.colors.tint, flex: 1 }]}>Meet the buddies again</Text>
+          <Icon name="chevronRight" size={14} color={t.colors.tertiaryLabel} weight="semibold" />
+        </PressableScale>
+        <Separator />
+        <PressableScale onPress={() => router.push('/privacy')} style={styles.settingRow} accessibilityLabel="Privacy" scaleTo={0.99}>
+          <Text style={[t.type.body, { color: t.colors.tint, flex: 1 }]}>Privacy</Text>
           <Icon name="chevronRight" size={14} color={t.colors.tertiaryLabel} weight="semibold" />
         </PressableScale>
       </Section>

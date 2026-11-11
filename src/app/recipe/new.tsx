@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
 import { CatSays } from '../../components/cats/CatSays';
@@ -22,20 +22,24 @@ export default function NewRecipe() {
   const t = useTheme();
   const toast = useToast();
   const buddy = useBuddy();
-  const { addRecipe } = useStore();
+  const { addRecipe, draft: storedDraft, setDraft } = useStore();
   const { canAddRecipe } = useProGate();
+  const params = useLocalSearchParams<{ draft?: string; next?: string }>();
+  // An import that needs finishing (or "Edit before saving") opens the form pre-filled.
+  const [draft] = useState(() => (params.draft === '1' ? storedDraft : null));
 
-  const [title, setTitle] = useState('');
-  const [link, setLink] = useState('');
-  const [photo, setPhoto] = useState<string | null>(null);
-  const [category, setCategory] = useState<Category>('Dinner');
-  const [minutes, setMinutes] = useState(30);
-  const [servings, setServings] = useState(2);
-  const [calories, setCalories] = useState('');
-  const [protein, setProtein] = useState('');
-  const [ingredientsText, setIngredientsText] = useState('');
-  const [stepsText, setStepsText] = useState('');
-  const [tags, setTags] = useState<DietTag[]>([]);
+  const [title, setTitle] = useState(draft?.title ?? '');
+  const [link, setLink] = useState(draft?.link ?? '');
+  const [photo, setPhoto] = useState<string | null>(draft?.photoUrl ?? null);
+  const [category, setCategory] = useState<Category>(draft?.category ?? 'Dinner');
+  const [minutes, setMinutes] = useState(draft?.minutes ?? 30);
+  const [servings, setServings] = useState(draft?.servings ?? 2);
+  const [calories, setCalories] = useState(draft?.calories ?? '');
+  const [protein, setProtein] = useState(draft?.protein ?? '');
+  const [ingredientsText, setIngredientsText] = useState(draft?.ingredientsText ?? '');
+  const [stepsText, setStepsText] = useState(draft?.stepsText ?? '');
+  const [tags, setTags] = useState<DietTag[]>(draft?.tags ?? []);
+  const fromImport = !!draft?.fromImport;
 
   const ingredients = ingredientsText.split('\n').map((l, i) => parseIngredient(l, i)).filter((x) => x !== null);
   const steps = stepsText.split('\n').map((s) => s.trim().replace(/^\d+[.)]\s*/, '')).filter(Boolean);
@@ -55,7 +59,8 @@ export default function NewRecipe() {
   };
 
   const save = () => {
-    if (!canAddRecipe) {
+    // Imports have their own allowance (already counted); the free limit is for hand-written recipes.
+    if (!fromImport && !canAddRecipe) {
       showPaywall('recipes');
       return;
     }
@@ -64,6 +69,9 @@ export default function NewRecipe() {
       return;
     }
     const url = link.trim();
+    const kept = draft?.importedNutrition;
+    // Keep the imported carbs and fat unless the user changed the numbers they can see.
+    const keepNutrition = kept && String(kept.calories) === calories && String(kept.protein) === protein;
     const id = addRecipe({
       title: title.trim(),
       image: photo ? { uri: photo } : null,
@@ -72,23 +80,27 @@ export default function NewRecipe() {
       minutes,
       servings,
       calories: Number(calories) || 0,
-      nutrition: { protein: Number(protein) || 0, carbs: 0, fat: 0 },
+      nutrition: { protein: Number(protein) || 0, carbs: keepNutrition ? kept.carbs : 0, fat: keepNutrition ? kept.fat : 0 },
       difficulty: 'Easy',
       tags,
       ingredients,
       steps,
       sourceUrl: url ? (/^https?:\/\//i.test(url) ? url : `https://${url}`) : undefined,
+      origin: fromImport ? 'import' : 'manual',
     });
+    setDraft(null);
     toast({ message: `${title.trim()} saved to your recipes`, icon: 'book' });
-    router.replace({ pathname: '/recipe/[id]', params: { id } });
+    if (params.next === 'onboarding') router.replace({ pathname: '/paywall', params: { source: 'onboarding' } });
+    else router.replace({ pathname: '/recipe/[id]', params: { id } });
   };
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: t.colors.groupedBackground }}>
       <PageHeader
-        title="New Recipe"
+        title={fromImport ? 'Check Recipe' : 'New Recipe'}
         mode="cancel"
         inSheet={Platform.OS === 'ios'}
+        onBack={params.next === 'onboarding' ? () => router.replace({ pathname: '/paywall', params: { source: 'onboarding' } }) : undefined}
         right={
           <PressableScale onPress={save} style={styles.save} accessibilityLabel="Save recipe" aria-disabled={!valid}>
             <Text style={[t.type.headline, { color: valid ? t.colors.tint : t.colors.tertiaryLabel }]}>Save</Text>
@@ -96,7 +108,14 @@ export default function NewRecipe() {
         }
       />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
-        <CatSays buddy={buddy} line={say(buddy, 'newRecipe')} size={86} style={{ marginBottom: 16 }} />
+        {draft?.notice ? (
+          <View style={[styles.notice, { backgroundColor: t.colors.cell, borderColor: t.colors.warning }]} testID="draft-notice" accessibilityRole="alert">
+            <Icon name="info" size={18} color={t.colors.warning} />
+            <Text style={[t.type.subhead, { color: t.colors.label, flex: 1 }]}>{draft.notice}</Text>
+          </View>
+        ) : (
+          <CatSays buddy={buddy} line={say(buddy, 'newRecipe')} size={86} style={{ marginBottom: 16 }} />
+        )}
 
         <PressableScale
           onPress={pickPhoto}
@@ -142,10 +161,10 @@ export default function NewRecipe() {
 
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <View style={{ flex: 1 }}>
-            <Field label="Calories / serving" value={calories} onChangeText={(v) => setCalories(v.replace(/[^0-9]/g, ''))} placeholder="Optional" keyboardType="number-pad" />
+            <Field label="Calories / serving (estimate)" value={calories} onChangeText={(v) => setCalories(v.replace(/[^0-9]/g, ''))} placeholder="Optional" keyboardType="number-pad" />
           </View>
           <View style={{ flex: 1 }}>
-            <Field label="Protein (g)" value={protein} onChangeText={(v) => setProtein(v.replace(/[^0-9]/g, ''))} placeholder="Optional" keyboardType="number-pad" />
+            <Field label="Protein g (estimate)" value={protein} onChangeText={(v) => setProtein(v.replace(/[^0-9]/g, ''))} placeholder="Optional" keyboardType="number-pad" />
           </View>
         </View>
 
@@ -210,4 +229,5 @@ const styles = StyleSheet.create({
   chips: { gap: 8, paddingVertical: 6, minHeight: 48, alignItems: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', paddingLeft: 16, paddingRight: 6, minHeight: 56, borderRadius: 16, marginTop: 18, borderCurve: 'continuous' },
   tagWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  notice: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', padding: 14, borderRadius: 16, borderWidth: 1.5, marginBottom: 16 },
 });

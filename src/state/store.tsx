@@ -2,14 +2,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { BuddyId } from '../components/cats/types';
 import { emptyProfile, type Profile } from '../data/onboarding';
+import type { RecipeDraft } from '../lib/importApi';
 import type { Entitlement } from '../lib/purchases';
 import {
   FAVORITES_ID,
   defaultGoals,
-  initialCookbooks,
-  initialFavorites,
-  initialGroceries,
-  initialPlan,
   recipes as builtInRecipes,
   type Aisle,
   type Category,
@@ -45,16 +42,21 @@ type Saved = {
   pro: Entitlement | null;
   /** Fun stuff: counters behind XP, levels and badges. */
   fun: { pets: number; listsDone: number; badges: string[]; lastLevel: number };
+  /** Successful imports so far (the free version includes FREE_LIMITS.imports). */
+  importsUsed: number;
+  /** Ingredients the user has at home, as typed. */
+  pantry: string[];
 };
 
 const STORAGE_KEY = 'recipe-app-state-v1';
 
 const initialSaved: Saved = {
   buddy: null,
-  favorites: initialFavorites,
-  plan: initialPlan,
-  groceries: initialGroceries,
-  cookbooks: initialCookbooks,
+  // A new user starts empty: no pretend favorites, plans or shopping lists.
+  favorites: [],
+  plan: {},
+  groceries: [],
+  cookbooks: [],
   customRecipes: [],
   notes: {},
   cooked: [],
@@ -64,10 +66,12 @@ const initialSaved: Saved = {
   profile: emptyProfile,
   pro: null,
   fun: { pets: 0, listsDone: 0, badges: [], lastLevel: 1 },
+  importsUsed: 0,
+  pantry: [],
 };
 
-/** What the free version includes. */
-export const FREE_LIMITS = { customRecipes: 5, cookbooks: 3 };
+/** What the free version includes. `customRecipes` counts recipes written by hand, not imports. */
+export const FREE_LIMITS = { customRecipes: 5, cookbooks: 3, imports: 3, pantry: 10 };
 
 /**
  * App state, saved on the device. Screens only use the functions exposed here,
@@ -86,10 +90,23 @@ type Store = Saved & {
   setLastLevel: (n: number) => void;
   isPro: boolean;
 
+  // Import
+  countImport: () => void;
+  /** Pre-fill for the recipe form (not saved across restarts). */
+  draft: RecipeDraft | null;
+  setDraft: (d: RecipeDraft | null) => void;
+
+  // Pantry
+  addPantry: (name: string) => boolean;
+  removePantry: (name: string) => void;
+  restorePantry: (items: string[]) => void;
+
   // Recipes
   allRecipes: Recipe[];
   getRecipe: (id: string | undefined) => Recipe | undefined;
   addRecipe: (r: Omit<Recipe, 'id' | 'custom'>) => string;
+  /** Hand-written recipes, the ones the free limit counts. */
+  manualRecipeCount: number;
   deleteRecipe: (id: string) => void;
   setNote: (id: string, text: string) => void;
   setUnits: (u: Units) => void;
@@ -137,6 +154,8 @@ const METRIC = ['g', 'ml'];
  * everything else (spoons, counts, cups, oz) to the nearest quarter, shown as a fraction.
  */
 export const formatQty = (quantity: number, unit: string) => {
+  // 0 means the recipe gives no amount ("salt to taste").
+  if (!(quantity > 0)) return '';
   let text: string;
   if (METRIC.includes(unit)) {
     const step = quantity >= 100 ? 5 : 1;
@@ -157,6 +176,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   const [category, setCategory] = useState<Category | null>(null);
   const [tags, setTags] = useState<FilterTag[]>([]);
+  const [draft, setDraft] = useState<RecipeDraft | null>(null);
   const lastGroceries = useRef<GroceryItem[] | null>(null);
 
   /* ---------- persistence ---------- */
@@ -201,11 +221,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const addRecipe = useCallback(
     (r: Omit<Recipe, 'id' | 'custom'>) => {
       const id = uid('my');
-      update((s) => ({ customRecipes: [{ ...r, id, custom: true }, ...s.customRecipes] }));
+      update((s) => ({ customRecipes: [{ ...r, origin: r.origin ?? 'manual', id, custom: true }, ...s.customRecipes] }));
       return id;
     },
     [update],
   );
+  const manualRecipeCount = useMemo(() => saved.customRecipes.filter((r) => r.origin !== 'import').length, [saved.customRecipes]);
+  const countImport = useCallback(() => update((s) => ({ importsUsed: s.importsUsed + 1 })), [update]);
+
+  /* ---------- pantry ---------- */
+  const addPantry = useCallback(
+    (name: string) => {
+      const clean = name.trim().replace(/\s+/g, ' ');
+      if (!clean || saved.pantry.some((p) => p.toLowerCase() === clean.toLowerCase())) return false;
+      update((s) => ({ pantry: [clean.charAt(0).toUpperCase() + clean.slice(1), ...s.pantry] }));
+      return true;
+    },
+    [saved.pantry, update],
+  );
+  const removePantry = useCallback((name: string) => update((s) => ({ pantry: s.pantry.filter((p) => p !== name) })), [update]);
+  const restorePantry = useCallback((items: string[]) => update(() => ({ pantry: items })), [update]);
 
   const deleteRecipe = useCallback(
     (id: string) =>
@@ -385,9 +420,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       unlockBadges,
       setLastLevel,
       isPro: !!saved.pro,
+      countImport,
+      draft,
+      setDraft,
+      addPantry,
+      removePantry,
+      restorePantry,
       allRecipes,
       getRecipe,
       addRecipe,
+      manualRecipeCount,
       deleteRecipe,
       setNote,
       setUnits,
@@ -415,7 +457,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       undoGroceries,
     }),
     [
-      saved, hydrated, setBuddy, setProfile, completeOnboarding, setPro, addPet, addListDone, unlockBadges, setLastLevel, allRecipes, getRecipe, addRecipe, deleteRecipe, setNote, setUnits, setGoals, logCooked,
+      saved, hydrated, setBuddy, setProfile, completeOnboarding, setPro, addPet, addListDone, unlockBadges, setLastLevel, countImport, draft, addPantry, removePantry, restorePantry, allRecipes, getRecipe, addRecipe, manualRecipeCount, deleteRecipe, setNote, setUnits, setGoals, logCooked,
       category, tags, toggleTag, showOnlyTag, clearFilters, isFavorite, toggleFavorite, addCookbook, renameCookbook,
       deleteCookbook, restoreCookbook, toggleInCookbook, setMeal, toggleGrocery, addIngredients, addCustomItem,
       removeGrocery, clearCompleted, undoGroceries,

@@ -171,7 +171,7 @@ export default function RecipeScreen() {
         <View style={[styles.body, { backgroundColor: t.colors.background, borderRadius: t.radius.xl, marginTop: -t.radius.xl }]}>
           <Text style={[t.type.footnote, { color: t.colors.tint, fontWeight: '700', letterSpacing: 0.6, fontFamily: t.fonts.rounded }]}>
             {recipe.category.toUpperCase()}
-            {recipe.custom ? ' · MY RECIPE' : ''}
+            {recipe.custom ? (recipe.origin === 'import' ? ' · IMPORTED' : ' · MY RECIPE') : ''}
           </Text>
           <Text style={[t.type.largeTitle, { color: t.colors.label, marginTop: 4 }]} accessibilityRole="header">
             {recipe.title}
@@ -227,7 +227,7 @@ export default function RecipeScreen() {
           <Text style={[t.type.title2, styles.h2, { color: t.colors.label }]} accessibilityRole="header">
             Nutrition
           </Text>
-          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: -8, marginBottom: 10 }]}>Per serving, estimated</Text>
+          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: -8, marginBottom: 10 }]}>Estimated per serving, from the ingredients</Text>
           <Nutrition recipe={recipe} proteinGoal={buddy === 'tank' && isPro ? goals.protein : undefined} />
 
           {/* Ingredients */}
@@ -416,7 +416,7 @@ function shareText(r: Recipe, servings: number, units: Units) {
   const scale = servings / r.servings;
   const ingredients = r.ingredients.map((i) => {
     const c = convertQty(roundQty(i.quantity * scale), i.unit, units);
-    return `• ${formatQty(c.quantity, c.unit)} ${i.name}`;
+    return `• ${formatQty(c.quantity, c.unit)} ${i.name}`.replace("•  ", "• ");
   });
   const steps = r.steps.map((s, i) => `${i + 1}. ${convertStepText(s, units)}`);
   return [`${r.title} (serves ${servings})`, '', 'Ingredients', ...ingredients, '', 'Method', ...steps].join('\n');

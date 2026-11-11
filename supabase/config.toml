@@ -1,0 +1,5 @@
+# Supabase project settings used by `supabase functions deploy`.
+# The app has no user accounts, so the function does its own protection
+# (per-device and per-IP rate limits, a daily cap) instead of requiring a login token.
+[functions.import-recipe]
+verify_jwt = false

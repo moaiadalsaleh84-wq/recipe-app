@@ -31,7 +31,11 @@ export type Recipe = {
   minutes: number;
   servings: number;
   calories: number;
-  /** Grams per serving. */
+  /**
+   * Grams per serving. ALL nutrition in the app is an estimate: for the sample recipes it was
+   * worked out from the listed ingredients with standard food values (audited Nov 2026); for
+   * imports it comes from the source or an AI estimate. Shown as "estimated per serving".
+   */
   nutrition: { protein: number; carbs: number; fat: number };
   difficulty: 'Easy' | 'Medium' | 'Hard';
   tags: DietTag[];
@@ -41,6 +45,8 @@ export type Recipe = {
   sourceUrl?: string;
   /** True for recipes the user created. */
   custom?: boolean;
+  /** How a custom recipe got here. Older saved recipes have none: treat as 'manual'. */
+  origin?: 'manual' | 'import';
 };
 
 /**
@@ -56,8 +62,8 @@ export const recipes: Recipe[] = [
     category: 'Dinner',
     minutes: 25,
     servings: 4,
-    calories: 520,
-    nutrition: { protein: 19, carbs: 72, fat: 17 },
+    calories: 580,
+    nutrition: { protein: 19, carbs: 81, fat: 20 },
     difficulty: 'Easy',
     tags: ['Vegetarian', 'Kid friendly'],
     ingredients: [
@@ -83,8 +89,8 @@ export const recipes: Recipe[] = [
     category: 'Breakfast',
     minutes: 40,
     servings: 4,
-    calories: 360,
-    nutrition: { protein: 9, carbs: 58, fat: 10 },
+    calories: 410,
+    nutrition: { protein: 10, carbs: 74, fat: 8 },
     difficulty: 'Medium',
     tags: ['Vegan', 'Gluten free'],
     ingredients: [
@@ -94,6 +100,7 @@ export const recipes: Recipe[] = [
       { id: 'mustard-seeds', name: 'Mustard seeds', quantity: 1, unit: 'tsp', aisle: 'Pantry' },
       { id: 'turmeric', name: 'Turmeric', quantity: 0.5, unit: 'tsp', aisle: 'Pantry' },
       { id: 'tomato', name: 'Tomatoes', quantity: 3, unit: '', aisle: 'Produce' },
+      { id: 'vegetable-oil', name: 'Vegetable oil', quantity: 2, unit: 'tbsp', aisle: 'Pantry' },
     ],
     steps: [
       'Boil the potatoes until tender, then peel and roughly crush.',
@@ -110,8 +117,8 @@ export const recipes: Recipe[] = [
     category: 'Lunch',
     minutes: 20,
     servings: 2,
-    calories: 590,
-    nutrition: { protein: 38, carbs: 62, fat: 18 },
+    calories: 610,
+    nutrition: { protein: 50, carbs: 65, fat: 17 },
     difficulty: 'Easy',
     tags: ['One pan', 'High protein'],
     ingredients: [
@@ -120,6 +127,7 @@ export const recipes: Recipe[] = [
       { id: 'egg', name: 'Eggs', quantity: 2, unit: '', aisle: 'Dairy & Eggs' },
       { id: 'peas-carrots', name: 'Peas & carrots', quantity: 150, unit: 'g', aisle: 'Produce' },
       { id: 'soy-sauce', name: 'Soy sauce', quantity: 3, unit: 'tbsp', aisle: 'Pantry' },
+      { id: 'vegetable-oil', name: 'Vegetable oil', quantity: 1, unit: 'tbsp', aisle: 'Pantry' },
     ],
     steps: [
       'Dice the chicken and stir-fry in a very hot pan until golden. Push to one side.',
@@ -136,8 +144,8 @@ export const recipes: Recipe[] = [
     category: 'Dinner',
     minutes: 45,
     servings: 4,
-    calories: 640,
-    nutrition: { protein: 42, carbs: 14, fat: 46 },
+    calories: 520,
+    nutrition: { protein: 40, carbs: 10, fat: 36 },
     difficulty: 'Medium',
     tags: ['High protein', 'Gluten free'],
     ingredients: [
@@ -163,8 +171,8 @@ export const recipes: Recipe[] = [
     category: 'Lunch',
     minutes: 35,
     servings: 4,
-    calories: 690,
-    nutrition: { protein: 39, carbs: 52, fat: 34 },
+    calories: 630,
+    nutrition: { protein: 37, carbs: 50, fat: 31 },
     difficulty: 'Easy',
     tags: ['High protein', 'Kid friendly'],
     ingredients: [
@@ -216,8 +224,8 @@ export const recipes: Recipe[] = [
     category: 'Dinner',
     minutes: 30,
     servings: 2,
-    calories: 610,
-    nutrition: { protein: 18, carbs: 74, fat: 27 },
+    calories: 740,
+    nutrition: { protein: 25, carbs: 75, fat: 38 },
     difficulty: 'Easy',
     tags: ['Vegetarian'],
     ingredients: [
@@ -226,6 +234,7 @@ export const recipes: Recipe[] = [
       { id: 'garlic', name: 'Garlic cloves', quantity: 2, unit: '', aisle: 'Produce' },
       { id: 'cream', name: 'Double cream', quantity: 100, unit: 'ml', aisle: 'Dairy & Eggs' },
       { id: 'parmesan', name: 'Parmesan', quantity: 40, unit: 'g', aisle: 'Dairy & Eggs' },
+      { id: 'olive-oil', name: 'Olive oil', quantity: 1, unit: 'tbsp', aisle: 'Pantry' },
     ],
     steps: [
       'Cook the spaghetti until 1 minute short of al dente.',
@@ -242,16 +251,17 @@ export const recipes: Recipe[] = [
     category: 'Dinner',
     minutes: 50,
     servings: 2,
-    calories: 780,
-    nutrition: { protein: 32, carbs: 92, fat: 30 },
+    calories: 910,
+    nutrition: { protein: 39, carbs: 105, fat: 37 },
     difficulty: 'Medium',
     tags: ['Vegetarian', 'Kid friendly'],
     ingredients: [
-      { id: 'pizza-dough', name: 'Pizza dough', quantity: 2, unit: 'balls', aisle: 'Bakery' },
+      { id: 'pizza-dough', name: 'Pizza dough (200 g balls)', quantity: 2, unit: 'balls', aisle: 'Bakery' },
       { id: 'passata', name: 'Passata', quantity: 200, unit: 'g', aisle: 'Pantry' },
       { id: 'mozzarella', name: 'Mozzarella', quantity: 250, unit: 'g', aisle: 'Dairy & Eggs' },
       { id: 'cherry-tomato', name: 'Cherry tomatoes', quantity: 200, unit: 'g', aisle: 'Produce' },
       { id: 'basil', name: 'Basil', quantity: 1, unit: 'bunch', aisle: 'Produce' },
+      { id: 'olive-oil', name: 'Olive oil', quantity: 1, unit: 'tbsp', aisle: 'Pantry' },
     ],
     steps: [
       'Heat the oven to its highest setting with a tray inside for 20 minutes.',
@@ -294,8 +304,8 @@ export const recipes: Recipe[] = [
     category: 'Dinner',
     minutes: 75,
     servings: 6,
-    calories: 670,
-    nutrition: { protein: 41, carbs: 72, fat: 22 },
+    calories: 570,
+    nutrition: { protein: 36, carbs: 67, fat: 17 },
     difficulty: 'Hard',
     tags: ['One pan', 'High protein', 'Gluten free'],
     ingredients: [
@@ -305,6 +315,7 @@ export const recipes: Recipe[] = [
       { id: 'onion', name: 'Onion', quantity: 3, unit: '', aisle: 'Produce' },
       { id: 'biryani-masala', name: 'Biryani masala', quantity: 3, unit: 'tbsp', aisle: 'Pantry' },
       { id: 'saffron', name: 'Saffron', quantity: 1, unit: 'pinch', aisle: 'Pantry' },
+      { id: 'vegetable-oil', name: 'Vegetable oil', quantity: 3, unit: 'tbsp', aisle: 'Pantry' },
     ],
     steps: [
       'Marinate the chicken in yogurt and masala for 30 minutes.',
@@ -348,8 +359,8 @@ export const recipes: Recipe[] = [
     category: 'Dessert',
     minutes: 30,
     servings: 9,
-    calories: 260,
-    nutrition: { protein: 4, carbs: 26, fat: 16 },
+    calories: 300,
+    nutrition: { protein: 3, carbs: 28, fat: 19 },
     difficulty: 'Easy',
     tags: ['Vegetarian', 'Kid friendly'],
     ingredients: [

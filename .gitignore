@@ -39,3 +39,10 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# local env files (EXPO_PUBLIC_* values; never put secret keys in the app)
+.env
+.env.local
+# Supabase CLI local state
+supabase/.temp/
+supabase/.branches/

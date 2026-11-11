@@ -2,6 +2,7 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useMemo, type ReactNode } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { EntitlementSync } from '../components/EntitlementSync';
 import { ProgressWatcher } from '../components/ProgressWatcher';
 import { ToastProvider } from '../components/Toast';
 import { StoreProvider, useStore } from '../state/store';
@@ -48,6 +49,7 @@ export default function RootLayout() {
             <StatusBar style="auto" />
             <Hydrated>
               <ProgressWatcher />
+              <EntitlementSync />
               <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: t.colors.background } }}>
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="onboarding" options={{ gestureEnabled: false, animation: 'fade' }} />
@@ -55,6 +57,8 @@ export default function RootLayout() {
                 <Stack.Screen name="paywall" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
                 <Stack.Screen name="recipe/[id]" />
                 <Stack.Screen name="recipe/new" options={{ presentation: 'modal', contentStyle: { backgroundColor: t.colors.groupedBackground } }} />
+                <Stack.Screen name="import" options={{ presentation: 'modal', contentStyle: { backgroundColor: t.colors.groupedBackground } }} />
+                <Stack.Screen name="privacy" options={{ presentation: 'modal', contentStyle: { backgroundColor: t.colors.groupedBackground } }} />
                 <Stack.Screen name="cook/[id]" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
                 <Stack.Screen name="cookbook/[id]" />
                 <Stack.Screen name="plan-picker" options={sheet} />

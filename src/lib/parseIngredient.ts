@@ -48,13 +48,13 @@ const fraction = (s: string) => {
   return Number(s.replace(',', '.'));
 };
 
-/** "200 g flour" → { quantity: 200, unit: 'g', name: 'Flour' }. Lines without a number count as 1. */
+/** "200 g flour" → { quantity: 200, unit: 'g', name: 'Flour' }. Lines without a number get quantity 0 (no amount, e.g. "salt to taste"). */
 export function parseIngredient(line: string, index: number): Ingredient | null {
   const text = line.trim().replace(/^[-•*]\s*/, '');
   if (!text) return null;
   // Mixed and plain fractions first, so "1/2" isn't read as "1".
   const m = text.match(/^(\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:[.,]\d+)?|[½¼¾⅓⅔])\s*([a-zA-Z]+\.?)?\s*(?:of\s+)?(.*)$/);
-  let quantity = 1;
+  let quantity = 0;
   let unit = '';
   let name = text;
   if (m) {
@@ -70,10 +70,13 @@ export function parseIngredient(line: string, index: number): Ingredient | null 
       name = `${m[2] ?? ''} ${m[3]}`.trim();
     }
   }
-  if (!Number.isFinite(quantity) || quantity <= 0) quantity = 1;
+  if (m && (!Number.isFinite(quantity) || quantity <= 0)) quantity = 1;
   name = name.trim() || text;
   name = name.charAt(0).toUpperCase() + name.slice(1);
-  const aisle = AISLES.find(([, re]) => re.test(name))?.[0] ?? 'Other';
+  const aisle = aisleFor(name);
   const id = `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'item'}-${index}`;
   return { id, name, quantity, unit, aisle };
 }
+
+/** Which grocery aisle an ingredient belongs in. */
+export const aisleFor = (name: string): Aisle => AISLES.find(([, re]) => re.test(name))?.[0] ?? 'Other';

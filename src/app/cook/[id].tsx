@@ -200,7 +200,7 @@ export default function CookMode() {
               {recipe.ingredients.map((ing, i) => {
                 const key = `${ing.id}-${i}`;
                 const c = convertQty(roundQty(ing.quantity * (servings / recipe.servings)), ing.unit, units);
-                const label = `${formatQty(c.quantity, c.unit)} ${ing.name}`;
+                const label = `${formatQty(c.quantity, c.unit)} ${ing.name}`.trim();
                 return (
                   <PressableScale
                     key={key}
