@@ -1,5 +1,4 @@
 import { Image } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
@@ -9,10 +8,11 @@ import { Icon } from '../../components/Icon';
 import { PageHeader } from '../../components/PageHeader';
 import { PressableScale } from '../../components/PressableScale';
 import { useToast } from '../../components/Toast';
-import { Chip, Stepper } from '../../components/ui';
+import { Button, Chip, Stepper } from '../../components/ui';
 import { categories, dietTags, type Category, type DietTag } from '../../data/mock';
 import { haptics } from '../../lib/haptics';
 import { parseIngredient } from '../../lib/parseIngredient';
+import { downloadPhoto, photoUri, pickPhoto as pickLibraryPhoto } from '../../lib/photos';
 import { showPaywall, useProGate } from '../../lib/pro';
 import { useBuddy, useStore } from '../../state/store';
 import { useTheme } from '../../theme';
@@ -48,9 +48,9 @@ export default function NewRecipe() {
 
   const pickPhoto = async () => {
     try {
-      const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [4, 3], quality: 0.8 });
-      if (!res.canceled && res.assets[0]) {
-        setPhoto(res.assets[0].uri);
+      const uri = await pickLibraryPhoto();
+      if (uri) {
+        setPhoto(uri);
         haptics.success();
       }
     } catch {
@@ -58,7 +58,7 @@ export default function NewRecipe() {
     }
   };
 
-  const save = () => {
+  const save = async () => {
     // Imports have their own allowance (already counted); the free limit is for hand-written recipes.
     if (!fromImport && !canAddRecipe) {
       showPaywall('recipes');
@@ -69,12 +69,14 @@ export default function NewRecipe() {
       return;
     }
     const url = link.trim();
+    // An imported cover is a web link that may expire (TikTok's do): keep a copy on the phone.
+    const image = photo && /^https?:\/\//i.test(photo) ? ((await downloadPhoto(photo)) ?? photo) : photo;
     const kept = draft?.importedNutrition;
     // Keep the imported carbs and fat unless the user changed the numbers they can see.
     const keepNutrition = kept && String(kept.calories) === calories && String(kept.protein) === protein;
     const id = addRecipe({
       title: title.trim(),
-      image: photo ? { uri: photo } : null,
+      image: image ? { uri: image } : null,
       description: '',
       category,
       minutes,
@@ -123,7 +125,7 @@ export default function NewRecipe() {
           style={[styles.photo, { backgroundColor: t.colors.cell, ...t.chunky.card }]}
         >
           {photo ? (
-            <Image source={{ uri: photo }} style={StyleSheet.absoluteFill} contentFit="cover" />
+            <Image source={{ uri: photoUri(photo) }} style={StyleSheet.absoluteFill} contentFit="cover" onError={() => setPhoto(null)} />
           ) : (
             <>
               <Icon name="camera" size={28} color={t.colors.tint} />
@@ -193,6 +195,8 @@ export default function NewRecipe() {
         </View>
 
         {!valid && <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, textAlign: 'center', marginTop: 24 }]}>Add {missing.join(', ')} to save.</Text>}
+        {/* The header Save is easy to miss, so there's a big one at the end of the form too. */}
+        <Button label="Save recipe" icon="check" onPress={save} style={{ marginTop: valid ? 28 : 12 }} accessibilityLabel="Save recipe (bottom)" />
       </ScrollView>
     </KeyboardAvoidingView>
   );

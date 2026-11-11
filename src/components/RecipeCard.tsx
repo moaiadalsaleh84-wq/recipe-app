@@ -1,7 +1,9 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
-import type { Recipe } from '../data/mock';
+import { useState } from 'react';
+import type { Recipe, RecipeImage } from '../data/mock';
+import { photoUri } from '../lib/photos';
 import { useBuddy, useStore } from '../state/store';
 import { useTheme } from '../theme';
 import { Icon } from './Icon';
@@ -14,8 +16,12 @@ export const openRecipe = (id: string) => router.push({ pathname: '/recipe/[id]'
 /** The recipe's photo, or a cozy placeholder for recipes added without one. */
 export function RecipePhoto({ recipe, iconSize = 36 }: { recipe: Recipe; iconSize?: number }) {
   const t = useTheme();
-  if (recipe.image) {
-    return <Image source={recipe.image} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} accessibilityIgnoresInvertColors />;
+  // Remembers which image failed (an expired link), so a new photo gets a fresh try.
+  const [failed, setFailed] = useState<RecipeImage>(null);
+  const image = recipe.image;
+  if (image && image !== failed) {
+    const source = typeof image === 'number' ? image : { uri: photoUri(image.uri) };
+    return <Image source={source} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} onError={() => setFailed(image)} accessibilityIgnoresInvertColors />;
   }
   return (
     <View style={[StyleSheet.absoluteFill, styles.noPhoto, { backgroundColor: t.colors.imagePlaceholder }]}>

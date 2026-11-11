@@ -23,6 +23,8 @@ import { RecipePhoto } from '../../components/RecipeCard';
 import { useToast } from '../../components/Toast';
 import { Button, EmptyState, IconButton, Segmented, Separator, Stepper } from '../../components/ui';
 import { recipeKind, type DietTag, type Recipe, type Units } from '../../data/mock';
+import { haptics } from '../../lib/haptics';
+import { pickPhoto } from '../../lib/photos';
 import { convertQty, convertStepText } from '../../lib/units';
 import { formatQty, roundQty, useBuddy, useStore } from '../../state/store';
 import { useTheme } from '../../theme';
@@ -36,7 +38,7 @@ export default function RecipeScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const {
     getRecipe, isFavorite, toggleFavorite, addIngredients, showOnlyTag, units, setUnits, notes, setNote,
-    cookbooks, favorites, deleteRecipe, goals, profile, isPro,
+    cookbooks, favorites, deleteRecipe, setRecipeImage, goals, profile, isPro,
   } = useStore();
   const recipe = getRecipe(id);
 
@@ -166,6 +168,27 @@ export default function RecipeScreen() {
         <Animated.View style={[{ height: heroHeight, backgroundColor: t.colors.imagePlaceholder }, heroStyle]}>
           <RecipePhoto recipe={recipe} iconSize={72} />
           <LinearGradient colors={['rgba(0,0,0,0.35)', 'rgba(0,0,0,0)']} style={[styles.heroShade, { height: insets.top + 90 }]} pointerEvents="none" />
+          {recipe.custom && (
+            <PressableScale
+              onPress={async () => {
+                try {
+                  const uri = await pickPhoto();
+                  if (uri) {
+                    setRecipeImage(recipe.id, { uri });
+                    haptics.success();
+                    toast({ message: 'Photo saved', icon: 'camera' });
+                  }
+                } catch {
+                  toast({ message: 'Couldn’t open your photos', tone: 'warning' });
+                }
+              }}
+              accessibilityLabel={recipe.image ? 'Change photo' : 'Add a photo'}
+              style={[styles.photoBtn, { bottom: t.radius.xl + 12, backgroundColor: t.colors.scrim }]}
+            >
+              <Icon name="camera" size={16} color="#FFFFFF" />
+              <Text style={[t.type.subhead, { color: '#FFFFFF', fontWeight: '700' }]}>{recipe.image ? 'Change photo' : 'Add photo'}</Text>
+            </PressableScale>
+          )}
         </Animated.View>
 
         <View style={[styles.body, { backgroundColor: t.colors.background, borderRadius: t.radius.xl, marginTop: -t.radius.xl }]}>
@@ -424,6 +447,7 @@ function shareText(r: Recipe, servings: number, units: Units) {
 
 const styles = StyleSheet.create({
   heroShade: { position: 'absolute', top: 0, left: 0, right: 0 },
+  photoBtn: { position: 'absolute', right: 16, flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 14, borderRadius: 22 },
   body: { paddingHorizontal: 20, paddingTop: 24, borderBottomLeftRadius: 0, borderBottomRightRadius: 0, borderCurve: 'continuous' },
   source: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, alignSelf: 'flex-start' },
   stats: { flexDirection: 'row', marginTop: 16, paddingVertical: 14, borderCurve: 'continuous' },

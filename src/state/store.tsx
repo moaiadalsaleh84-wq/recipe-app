@@ -108,6 +108,8 @@ type Store = Saved & {
   /** Hand-written recipes, the ones the free limit counts. */
   manualRecipeCount: number;
   deleteRecipe: (id: string) => void;
+  /** Your own recipes only. */
+  setRecipeImage: (id: string, image: Recipe['image']) => void;
   setNote: (id: string, text: string) => void;
   setUnits: (u: Units) => void;
   setGoals: (g: Goals) => void;
@@ -256,6 +258,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           plan,
         };
       }),
+    [update],
+  );
+
+  const setRecipeImage = useCallback(
+    (id: string, image: Recipe['image']) => update((s) => ({ customRecipes: s.customRecipes.map((r) => (r.id === id ? { ...r, image } : r)) })),
     [update],
   );
 
@@ -431,6 +438,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addRecipe,
       manualRecipeCount,
       deleteRecipe,
+      setRecipeImage,
       setNote,
       setUnits,
       setGoals,
@@ -457,7 +465,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       undoGroceries,
     }),
     [
-      saved, hydrated, setBuddy, setProfile, completeOnboarding, setPro, addPet, addListDone, unlockBadges, setLastLevel, countImport, draft, addPantry, removePantry, restorePantry, allRecipes, getRecipe, addRecipe, manualRecipeCount, deleteRecipe, setNote, setUnits, setGoals, logCooked,
+      saved, hydrated, setBuddy, setProfile, completeOnboarding, setPro, addPet, addListDone, unlockBadges, setLastLevel, countImport, draft, addPantry, removePantry, restorePantry, allRecipes, getRecipe, addRecipe, manualRecipeCount, deleteRecipe, setRecipeImage, setNote, setUnits, setGoals, logCooked,
       category, tags, toggleTag, showOnlyTag, clearFilters, isFavorite, toggleFavorite, addCookbook, renameCookbook,
       deleteCookbook, restoreCookbook, toggleInCookbook, setMeal, toggleGrocery, addIngredients, addCustomItem,
       removeGrocery, clearCompleted, undoGroceries,

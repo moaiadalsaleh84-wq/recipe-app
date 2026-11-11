@@ -24,6 +24,7 @@ import {
   type ImportFailure,
   type ImportSuccess,
 } from '../lib/importApi';
+import { downloadPhoto } from '../lib/photos';
 import { showPaywall, useProGate } from '../lib/pro';
 import { isIOS } from '../navigation/screenOptions';
 import { FREE_LIMITS, useBuddy, useStore } from '../state/store';
@@ -106,8 +107,14 @@ export default function ImportScreen() {
     }
   };
 
-  const save = (result: ImportSuccess) => {
-    const id = addRecipe(toRecipe(result.recipe));
+  const save = async (result: ImportSuccess) => {
+    const recipe = toRecipe(result.recipe);
+    // Covers are web links that can expire (TikTok's do within hours): keep a copy on the phone.
+    if (result.recipe.imageUrl) {
+      const local = await downloadPhoto(result.recipe.imageUrl);
+      if (local) recipe.image = { uri: local };
+    }
+    const id = addRecipe(recipe);
     toast({ message: `${result.recipe.title} saved to your recipes`, icon: 'book' });
     finish(id);
   };
