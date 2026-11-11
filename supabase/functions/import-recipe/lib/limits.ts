@@ -64,7 +64,32 @@ export class MemoryCache implements ResultCache {
 }
 
 /**
- * Postgres-backed versions (see supabase/migrations). Uses the service role key, which
+ * Headers for Supabase's REST API. New-style secret keys (sb_secret_...) go in `apikey` only;
+ * legacy service-role keys are JWTs and also go in Authorization.
+ */
+export function serverHeaders(key: string): Record<string, string> {
+  const h: Record<string, string> = { apikey: key, 'content-type': 'application/json' };
+  if (key.startsWith('eyJ')) h.authorization = `Bearer ${key}`;
+  return h;
+}
+
+/**
+ * Picks the server key Supabase gives Edge Functions: the new SUPABASE_SECRET_KEYS
+ * (a JSON object of named keys) when present, else the legacy SUPABASE_SERVICE_ROLE_KEY.
+ */
+export function pickServerKey(secretKeysJson: string, legacyServiceRole: string): string {
+  try {
+    const keys = JSON.parse(secretKeysJson || '{}') as Record<string, string>;
+    const key = keys.default ?? Object.values(keys).find((v) => typeof v === 'string' && v);
+    if (key) return key;
+  } catch {
+    // not JSON: fall through to the legacy key
+  }
+  return legacyServiceRole;
+}
+
+/**
+ * Postgres-backed versions (see supabase/migrations). Uses the project's server key, which
  * Supabase provides to Edge Functions automatically. It never leaves the server.
  */
 export class SupabaseLimiter implements Limiter {
@@ -77,7 +102,7 @@ export class SupabaseLimiter implements Limiter {
   async hit(key: string, windowSeconds: number, max: number): Promise<HitResult> {
     const res = await fetch(`${this.url}/rest/v1/rpc/import_hit`, {
       method: 'POST',
-      headers: { apikey: this.serviceKey, authorization: `Bearer ${this.serviceKey}`, 'content-type': 'application/json' },
+      headers: serverHeaders(this.serviceKey),
       body: JSON.stringify({ p_key: key, p_window_seconds: windowSeconds, p_max: max }),
     });
     if (!res.ok) throw new Error(`rate limit store error ${res.status}`);
@@ -94,7 +119,7 @@ export class SupabaseCache implements ResultCache {
     this.serviceKey = serviceKey;
   }
   private headers() {
-    return { apikey: this.serviceKey, authorization: `Bearer ${this.serviceKey}`, 'content-type': 'application/json' };
+    return serverHeaders(this.serviceKey);
   }
   async get(key: string) {
     const since = new Date(Date.now() - LIMITS.cacheDays * 86400_000).toISOString();

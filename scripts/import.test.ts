@@ -13,7 +13,7 @@ import { handle, type Deps } from '../supabase/functions/import-recipe/lib/handl
 import { assertPublicUrl } from '../supabase/functions/import-recipe/lib/http.ts';
 import { isGrounded, normalize, parseLine } from '../supabase/functions/import-recipe/lib/ingredients.ts';
 import { isoMinutes, recipeFromHtml, yieldNumber } from '../supabase/functions/import-recipe/lib/jsonld.ts';
-import { MemoryCache, MemoryLimiter } from '../supabase/functions/import-recipe/lib/limits.ts';
+import { MemoryCache, MemoryLimiter, pickServerKey, serverHeaders } from '../supabase/functions/import-recipe/lib/limits.ts';
 import { findUrl, instagramCaption, youTubeDescription } from '../supabase/functions/import-recipe/lib/sources.ts';
 import type { ImportResponse, SourceMaterial } from '../supabase/functions/import-recipe/lib/types.ts';
 
@@ -291,4 +291,14 @@ test('site errors become friendly messages', async () => {
   assert.ok(!blocked.json.ok && blocked.json.code === 'blocked');
   const gone = await post(d, { url: 'https://gone.example.com/' });
   assert.ok(!gone.json.ok && gone.json.code === 'fetch_failed');
+});
+
+test('server key: new secret keys preferred, legacy fallback; JWTs also go in Authorization', () => {
+  assert.equal(pickServerKey('{"default":"sb_secret_abc"}', 'eyJlegacy'), 'sb_secret_abc');
+  assert.equal(pickServerKey('{"other":"sb_secret_x"}', 'eyJlegacy'), 'sb_secret_x');
+  assert.equal(pickServerKey('', 'eyJlegacy'), 'eyJlegacy');
+  assert.equal(pickServerKey('not json', 'eyJlegacy'), 'eyJlegacy');
+  assert.equal(serverHeaders('sb_secret_abc').authorization, undefined);
+  assert.equal(serverHeaders('sb_secret_abc').apikey, 'sb_secret_abc');
+  assert.equal(serverHeaders('eyJabc').authorization, 'Bearer eyJabc');
 });
