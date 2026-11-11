@@ -7,7 +7,8 @@
  * Or in-process on your computer (needs internet; uses Claude if ANTHROPIC_API_KEY is set):
  *   ANTHROPIC_API_KEY=sk-ant-... node scripts/test-import.ts
  *
- * Each import costs one AI call. Replace the list with links your users actually share.
+ * Each import costs one AI call and counts toward IMPORT_DAILY_CAP. Links imported in the last
+ * 7 days come from the server's cache for free. Replace the list with links your users share.
  * "expect" says what an honest result is: some videos simply don't have the recipe in text.
  */
 import { claudeCaller } from '../supabase/functions/import-recipe/lib/extract.ts';
@@ -35,10 +36,11 @@ const endpoint = args.includes('--endpoint') ? args[args.indexOf('--endpoint') +
 
 const key = process.env.ANTHROPIC_API_KEY;
 const deps = { ai: key ? claudeCaller(key, process.env.IMPORT_MODEL || undefined) : null, limiter: new MemoryLimiter(), cache: new MemoryCache(), salt: 'test', dailyAiCap: 100 };
-const installId = `test-script-${Math.random().toString(36).slice(2, 14)}`;
+/** A new id per link, so the 10 links don't trip the server's per-device limit (6 per 10 minutes). */
+const newInstallId = () => `test-script-${Math.random().toString(36).slice(2, 14)}`;
 
 async function run(url: string): Promise<ImportResponse> {
-  const init = { method: 'POST', headers: { 'content-type': 'application/json', 'x-install-id': installId }, body: JSON.stringify({ url }) };
+  const init = { method: 'POST', headers: { 'content-type': 'application/json', 'x-install-id': newInstallId() }, body: JSON.stringify({ url }) };
   if (endpoint) return (await (await fetch(endpoint, init)).json()) as ImportResponse;
   // In-process: give each case its own limiter window so 10 links don't trip the per-device limit.
   deps.limiter = new MemoryLimiter();
