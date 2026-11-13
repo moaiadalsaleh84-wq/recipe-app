@@ -11,14 +11,14 @@ import { AskNotifications } from '../state/timers';
  * Only enabled in builds made with EXPO_PUBLIC_DEV_ROUTES=1.
  */
 export default function DevCat() {
-  const { buddy = 'tank', mood = 'happy', view } = useLocalSearchParams<{ buddy?: BuddyId; mood?: Mood; view?: string }>();
+  const { buddy = 'tank', mood = 'happy', view, live } = useLocalSearchParams<{ buddy?: BuddyId; mood?: Mood; view?: string; live?: string }>();
   if (process.env.EXPO_PUBLIC_DEV_ROUTES !== '1') return null;
   // The notification permission prompt, to check its design (it can't open on the web).
   if (view === 'ask') return <AskNotifications open onAnswer={() => {}} />;
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-start', backgroundColor: 'transparent', paddingTop: 20 }}>
       <View testID="cat" style={{ width: 360, height: 360, alignItems: 'center', justifyContent: 'center' }}>
-        <CatBuddy buddy={buddy} mood={mood} size={340} petable={false} />
+        <CatBuddy buddy={buddy} mood={mood} size={340} petable={false} hold={live !== '1'} />
       </View>
     </View>
   );

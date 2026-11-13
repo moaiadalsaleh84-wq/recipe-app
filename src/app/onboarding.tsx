@@ -173,7 +173,7 @@ function narratorLine(step: Step, b: BuddyId, p: Profile): Line {
     case 'goal':
       return p.name.trim() ? { text: `Nice to meet you, ${n}! What are we cooking for?`, mood: 'wave' } : { text: 'Hi! I’m Biscuit, and the big one is Tank. What are we cooking for?', mood: 'wave' };
     case 'diet':
-      return tank ? { text: 'Fuel matters. Tell me what works for your body.', mood: 'idle' } : { text: 'Tell me what you love. Or what you don’t. I love everything.', mood: 'eat' };
+      return tank ? { text: 'Fuel matters. Tell me what works for your body.', mood: 'nod' } : { text: 'Tell me what you love. Or what you don’t. I love everything.', mood: 'eat' };
     case 'household':
       return tank ? { text: 'Feeding a team or flying solo? I’ll size every recipe.', mood: 'proud' } : { text: 'A table for one, or a big family feast? Both are cozy!', mood: 'happy' };
     default:

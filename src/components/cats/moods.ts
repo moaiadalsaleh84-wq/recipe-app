@@ -31,20 +31,43 @@ export const moodSpecs: Record<Mood, MoodSpec> = {
   content: { eyes: 'happy', mouth: 'cat', L: [10, 0], R: [10, 0], fx: [] },
   // Time's up: a friendly wave and a soft chime, not panic.
   alarm: { eyes: 'wide', mouth: 'smile', L: [10, 0], R: [150, 25], fx: ['ring'] },
+  nod: { eyes: 'normal', mouth: 'smile', L: [8, 0], R: [8, 0], fx: [] },
+  point: { eyes: 'normal', mouth: 'smile', L: [8, 0], R: [125, 45], fx: [] },
+  drink: { eyes: 'closed', mouth: 'cat', L: [8, 0], R: [-80, -90], prop: 'bottle', fx: [] },
+  shrug: { eyes: 'normal', mouth: 'smile', L: [5, 50], R: [5, 50], fx: [] },
 };
 
+/** How a cat stands when it isn't saying anything: relaxed, arms loose. */
+export const restSpec: MoodSpec = { eyes: 'default', mouth: 'cat', L: [7, 0], R: [7, 0], fx: [] };
+
 /**
- * Energetic moods play their big motion a few times, then settle into a calm pose
- * instead of looping forever. `after` is how long the big motion plays (ms).
+ * Moods that are a state, not a line to act out: they keep going instead of relaxing.
+ * Everything else acts while the bubble types, holds for a beat, then rests.
  */
-export const settle: Partial<Record<Mood, { after: number; to: Mood }>> = {
-  celebrate: { after: 1950, to: 'content' }, // 4 jumps
-  happy: { after: 2700, to: 'content' }, // 3 hops
-  wave: { after: 2300, to: 'content' }, // a few waves
-  flex: { after: 2500, to: 'proud' }, // 4 pumps
-  lift: { after: 5300, to: 'proud' }, // 4 curls
-  oops: { after: 1800, to: 'idle' },
-  worried: { after: 1800, to: 'idle' },
-  eat: { after: 3000, to: 'content' },
-  love: { after: 2600, to: 'content' },
+export const sustained: Partial<Record<Mood, true>> = { sleepy: true, alarm: true };
+
+
+/** Roughly how long each mood's act takes (ms), so the cat relaxes only after it's done. */
+export const actMs: Record<Mood, number> = {
+  idle: 0,
+  content: 0,
+  wave: 2600,
+  happy: 1400,
+  celebrate: 2300,
+  love: 2200,
+  think: 2600,
+  worried: 1600,
+  sleepy: 0,
+  stir: 3200,
+  eat: 2400,
+  flex: 1600,
+  lift: 2700,
+  oops: 900,
+  proud: 1300,
+  wait: 3000,
+  alarm: 0,
+  nod: 900,
+  point: 1100,
+  drink: 2400,
+  shrug: 1300,
 };

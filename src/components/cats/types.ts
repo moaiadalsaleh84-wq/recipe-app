@@ -18,9 +18,13 @@ export type Mood =
   | 'proud'
   | 'wait' // timers
   | 'content' // calm and happy: where energetic moods settle
-  | 'alarm'; // a timer is ringing: jumps and waves until stopped
+  | 'alarm' // a timer is ringing: waves until stopped
+  | 'nod' // agreeing, encouraging
+  | 'point' // pointing at the speech bubble / something on screen
+  | 'drink' // a sip of water
+  | 'shrug'; // "eh, no big deal"
 
 export type Eyes = 'default' | 'normal' | 'happy' | 'closed' | 'wide' | 'determined' | 'wink';
 export type Mouth = 'cat' | 'open' | 'smile' | 'flat' | 'o' | 'chew' | 'tongue';
-export type Prop = 'none' | 'spoon' | 'dumbbell' | 'cookie';
+export type Prop = 'none' | 'spoon' | 'dumbbell' | 'cookie' | 'bottle';
 export type Effect = 'sweat' | 'sparkle' | 'hearts' | 'zzz' | 'dots' | 'crumbs' | 'poof' | 'steam' | 'confetti' | 'bowl' | 'exclaim' | 'ring';

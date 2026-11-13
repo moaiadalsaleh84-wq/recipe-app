@@ -69,6 +69,16 @@ const propArt = (p: Prop, paw: Pt, outline: string): ReactNode => {
           <Circle cx={x + 3} cy={y - 2} r={1.4} fill="#5A3420" />
         </G>
       );
+    case 'bottle':
+      // A water bottle, cap at the paw: raised to the mouth, the bottom tips up.
+      return (
+        <G transform={`rotate(-40 ${x} ${y})`}>
+          <Rect x={x - 3.5} y={y - 4} width={7} height={7} rx={2} fill="#FFFDF7" stroke={outline} strokeWidth={2.5} />
+          <Rect x={x - 7} y={y + 3} width={14} height={30} rx={5} fill="#8FD0F2" stroke={outline} strokeWidth={2.5} />
+          <Rect x={x - 5.8} y={y + 13} width={11.6} height={8} fill="#E2634A" />
+          <Path d={`M${x - 3} ${y + 24} L${x - 3} ${y + 29}`} stroke="#FFFFFF" strokeWidth={2} strokeLinecap="round" />
+        </G>
+      );
     default:
       return null;
   }

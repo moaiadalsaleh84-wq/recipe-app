@@ -61,7 +61,7 @@ export default function PantryScreen() {
     ? { text: buddy === 'tank' ? 'What’s in the fridge, champ? Let’s use it before it goes off.' : 'Ooh, what’s in the cupboards? Tell me and I’ll find a recipe!', mood: 'think' as const }
     : ready
       ? { text: buddy === 'tank' ? `You can cook ${ready} ${ready === 1 ? 'recipe' : 'recipes'} right now. No excuses.` : `Yay! ${ready} ${ready === 1 ? 'recipe is' : 'recipes are'} ready to cook right now!`, mood: 'happy' as const }
-      : { text: buddy === 'tank' ? 'Close on a few. One quick shop and you’re cooking.' : 'So close! A couple of things and we’re cooking.', mood: 'idle' as const };
+      : { text: buddy === 'tank' ? 'Close on a few. One quick shop and you’re cooking.' : 'So close! A couple of things and we’re cooking.', mood: 'nod' as const };
 
   return (
     <ScrollView
