@@ -189,6 +189,40 @@ function makeTheme(c: Palette, isDark: boolean) {
   };
 }
 
+/**
+ * Lock screen and Dynamic Island timer (Live Activity). The Live Activity runs in a separate
+ * iOS extension that can't import this file, so the app sends these values along with each timer.
+ * Plain hex colors only: the extension draws them with SwiftUI.
+ */
+export const liveActivity = {
+  light: {
+    background: brand.cream,
+    card: '#FFFDF8',
+    label: brand.cocoa,
+    secondaryLabel: '#8A6A57',
+    accent: brand.terracotta,
+    track: '#F1DFC8',
+    alarm: '#D9423A',
+    border: '#E7CFB3',
+  },
+  dark: {
+    background: '#1E1611',
+    card: '#2A2019',
+    label: '#FFF1E0',
+    secondaryLabel: '#D9BFA6',
+    accent: '#F0905F',
+    track: '#3A2C22',
+    alarm: '#FF5A4F',
+    border: '#4A372A',
+  },
+  /** The Dynamic Island is always black, so it uses the dark accent in both modes. */
+  island: { accent: '#F0905F', label: '#FFF1E0', secondaryLabel: '#D9BFA6', alarm: '#FF5A4F' },
+  /** The cat looks worried for this long before the timer ends. */
+  worriedSeconds: 10,
+} as const;
+
+export type LiveActivityPalette = typeof liveActivity;
+
 export const lightTheme = makeTheme(light, false);
 export const darkTheme = makeTheme(dark, true);
 export type Theme = typeof lightTheme;

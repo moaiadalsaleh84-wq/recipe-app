@@ -147,8 +147,9 @@ export function CatBuddy({ buddy, mood = 'idle', talking = false, size = 160, on
         tail.set(loop(-4, 6, 1300));
         break;
       case 'worried':
-        shake.set(withRepeat(withSequence(withTiming(-2.5, { duration: 50 }), withTiming(2.5, { duration: 50 })), -1, true));
-        tail.set(withSpring(-20, pose));
+        // A small, gentle head tilt (it used to shake, which looked panicky).
+        headRot.set(withSpring(-6, pose));
+        tail.set(loop(-8, 4, 900));
         break;
       case 'sleepy':
         headRot.set(withSpring(12, { damping: 30, stiffness: 30 }));
@@ -186,15 +187,12 @@ export function CatBuddy({ buddy, mood = 'idle', talking = false, size = 160, on
         pump.set(withSpring(1.03, pose));
         break;
       case 'alarm':
-        // Ringing! Quick hops, both paws waving overhead, a little shake.
-        jump.set(withRepeat(withSequence(withTiming(-12, { duration: 150, easing: Easing.out(Easing.quad) }), withTiming(0, { duration: 170, easing: Easing.in(Easing.quad) })), -1));
-        lU.set(withDelay(150, loop(165, 135, 160)));
-        rU.set(withDelay(150, loop(135, 165, 160)));
-        lF.set(withDelay(150, loop(40, 5, 160)));
-        rF.set(withDelay(150, loop(5, 40, 160)));
-        headRot.set(loop(-6, 6, 160));
-        tail.set(loop(-20, 24, 140));
-        hat.set(loop(-6, 6, 160));
+        // Time's up: a cheerful wave and a little bounce to get your attention, without the panic.
+        jump.set(withRepeat(withSequence(withTiming(-5, { duration: 260, easing: Easing.out(Easing.quad) }), withTiming(0, { duration: 300, easing: Easing.in(Easing.quad) })), -1));
+        rU.set(withDelay(150, loop(160, 130, 420)));
+        rF.set(withDelay(150, loop(10, 35, 420)));
+        headRot.set(loop(-3, 3, 560));
+        tail.set(loop(-10, 14, 420));
         break;
       case 'wait':
         headRot.set(loop(-7, 7, 900));
@@ -412,13 +410,11 @@ function Effects({ kind, art, clock, k }: { kind: string; art: CatArt; clock: Sh
       // Sound waves just outside the head, at eye level.
       const cy = my - 14;
       const a = art.anchors.headHalf + 8;
-      const b2 = a + 11;
       return (
         <>
           {[0, 0.5].map((ph) => (
             <Particle key={ph} k={k} clock={clock} phase={ph} from={[hx, cy]} to={[hx, cy]} pop>
-              <Path d={`M${hx - a} ${cy - 12} Q ${hx - a - 8} ${cy} ${hx - a} ${cy + 12} M${hx + a} ${cy - 12} Q ${hx + a + 8} ${cy} ${hx + a} ${cy + 12}`} stroke="#E2634A" strokeWidth={3.5} fill="none" strokeLinecap="round" />
-              <Path d={`M${hx - b2} ${cy - 18} Q ${hx - b2 - 11} ${cy} ${hx - b2} ${cy + 18} M${hx + b2} ${cy - 18} Q ${hx + b2 + 11} ${cy} ${hx + b2} ${cy + 18}`} stroke="#F2C14E" strokeWidth={3} fill="none" strokeLinecap="round" />
+              <Path d={`M${hx - a} ${cy - 12} Q ${hx - a - 8} ${cy} ${hx - a} ${cy + 12} M${hx + a} ${cy - 12} Q ${hx + a + 8} ${cy} ${hx + a} ${cy + 12}`} stroke="#F2C14E" strokeWidth={2.5} fill="none" strokeLinecap="round" opacity={0.85} />
             </Particle>
           ))}
         </>

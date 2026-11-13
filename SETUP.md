@@ -1,7 +1,8 @@
 # Pantry Pop setup
 
-What you have to do by hand to turn on the two real services: **recipe import** (needs a
-server and an AI key) and **payments** (needs Apple and RevenueCat). Until you do, the app
+What you have to do by hand to turn on the real services: **recipe import** (needs a
+server and an AI key), **payments** (needs Apple and RevenueCat) and **background timers**
+(needs a development build, section 3). Until you do, the app
 works with import switched off (it says so) and payments in test mode (nothing is charged).
 
 You need:
@@ -219,3 +220,63 @@ Install it, sign in with the sandbox tester when asked, and check:
 
 The "Test mode" note on the paywall disappears automatically when `PURCHASES_MODE` is
 `revenuecat`, so don't ship that setting until these checks pass.
+
+---
+
+## 3. Development build (timers on the Lock Screen)
+
+Background timers (notifications, Live Activity, Dynamic Island) use native code that **Expo Go
+doesn't include**. In Expo Go the app still works; timers then only ring while it's open, and Cook
+Mode says so. To get the full timers on your iPhone you install your own build of the app once.
+How the timers work and what's tested: [TIMERS.md](TIMERS.md).
+
+### What you need
+
+- **Apple Developer Program** ($99/year): required to install your own builds on an iPhone.
+  Join at <https://developer.apple.com/programs/>. Approval can take a day or two.
+- **A free Expo account**: <https://expo.dev/signup>.
+- Your iPhone, iOS 16.4 or later (Live Activities buttons need iOS 17).
+
+The bundle ID is set to `com.moaiadalsaleh.pantrypop` in `app.json`. Change it now if you want a
+different one: it can't be changed after the app is in the App Store.
+
+### Commands (on your Mac, in the `recipe-app` folder)
+
+1. Log in to Expo:
+```bash
+npx eas-cli@latest login
+```
+2. Link the project to your Expo account (adds a project ID to `app.json`, answer **Y**):
+```bash
+npx eas-cli@latest init
+```
+3. Register your iPhone. It shows a QR code: scan it with the iPhone camera and install the profile
+   it offers (Settings → General → VPN & Device Management):
+```bash
+npx eas-cli@latest device:create
+```
+4. Build. It asks to log in to your Apple account (answer **Y** to let EAS handle certificates,
+   provisioning profiles, the App Group and the widget extension). The build runs on Expo's
+   servers and takes about 15–25 minutes:
+```bash
+npx eas-cli@latest build --profile development --platform ios
+```
+5. When it's done, open the link or scan the QR code it shows **on your iPhone** and install.
+   The first time, iOS asks you to turn on **Developer Mode** (Settings → Privacy & Security →
+   Developer Mode, then restart).
+6. Start the app server as usual and open the **Pantry Pop** app you installed (not Expo Go):
+```bash
+npx expo start
+```
+
+You only rebuild (step 4) when native things change: new packages with native code, `app.json`
+plugins, the Live Activity layout, sounds or images in `assets/live-activity`. Everyday code
+changes load from `npx expo start` like before.
+
+### Try it
+
+1. Open a recipe → **Cook Now** → start a timer. The cat asks about notifications: **Allow**.
+2. Lock the phone. The Lock Screen shows the timer with the cat; on iPhones with a Dynamic Island,
+   swipe home to see it in the island.
+3. Wait for it to end: the alarm notification rings (also through Focus, if you allow
+   time-sensitive notifications for Pantry Pop when iOS asks).

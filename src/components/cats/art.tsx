@@ -107,12 +107,15 @@ const tankEyes = (e: Eyes): ReactNode => {
         </G>
       );
     case 'wide':
+      // Big, round, shiny eyes: a cute "oh!" instead of a startled stare.
       return (
         <G>
-          <Circle cx={88.5} cy={60} r={6.5} fill="#fff" stroke={o} strokeWidth={2.5} />
-          <Circle cx={111.5} cy={60} r={6.5} fill="#fff" stroke={o} strokeWidth={2.5} />
-          <Circle cx={88.5} cy={60.5} r={2.6} fill={o} />
-          <Circle cx={111.5} cy={60.5} r={2.6} fill={o} />
+          <Ellipse cx={88.5} cy={60} rx={5.6} ry={6.6} fill={o} />
+          <Ellipse cx={111.5} cy={60} rx={5.6} ry={6.6} fill={o} />
+          <Circle cx={90.4} cy={57.6} r={2} fill="#fff" />
+          <Circle cx={113.4} cy={57.6} r={2} fill="#fff" />
+          <Circle cx={87} cy={62.6} r={0.9} fill="#fff" />
+          <Circle cx={110} cy={62.6} r={0.9} fill="#fff" />
         </G>
       );
     case 'normal':
@@ -148,8 +151,8 @@ const tankBrows = (e: Eyes): ReactNode => {
   switch (e) {
     case 'happy':
       return <G>{line('M82 51 Q 88 47.5 94 51')}{line('M106 51 Q 112 47.5 118 51')}</G>;
-    case 'wide': // worried: brows tilt up toward the middle
-      return <G>{line('M82 53 L 94 49.5')}{line('M118 53 L 106 49.5')}</G>;
+    case 'wide': // a soft, slightly concerned curve (never angry or alarmed)
+      return <G>{line('M82.5 52.5 Q 88 50 93.5 50.5')}{line('M117.5 52.5 Q 112 50 106.5 50.5')}</G>;
     case 'closed':
       return <G>{line('M82.5 52.5 Q 88 51 93.5 52.5')}{line('M106.5 52.5 Q 112 51 117.5 52.5')}</G>;
     case 'normal':
@@ -374,12 +377,15 @@ const biscuitEyes = (e: Eyes): ReactNode => {
         </G>
       );
     case 'wide':
+      // Big, round, shiny eyes: a cute "oh!" instead of a startled stare.
       return (
         <G>
-          <Ellipse cx={80} cy={81} rx={11} ry={12} fill="#fff" stroke={B.o} strokeWidth={3} />
-          <Ellipse cx={120} cy={81} rx={11} ry={12} fill="#fff" stroke={B.o} strokeWidth={3} />
-          <Circle cx={80} cy={82} r={4} fill={o} />
-          <Circle cx={120} cy={82} r={4} fill={o} />
+          <Ellipse cx={80} cy={82} rx={9} ry={10.5} fill={o} />
+          <Ellipse cx={120} cy={82} rx={9} ry={10.5} fill={o} />
+          <Circle cx={83} cy={77.5} r={3.3} fill="#fff" />
+          <Circle cx={123} cy={77.5} r={3.3} fill="#fff" />
+          <Circle cx={77.5} cy={86.5} r={1.5} fill="#fff" />
+          <Circle cx={117.5} cy={86.5} r={1.5} fill="#fff" />
         </G>
       );
     case 'wink':
@@ -409,8 +415,8 @@ const biscuitBrows = (e: Eyes): ReactNode => {
   switch (e) {
     case 'happy':
       return <G>{line('M73 67 Q 80 62.5 87 67')}{line('M113 67 Q 120 62.5 127 67')}</G>;
-    case 'wide': // worried
-      return <G>{line('M73 66.5 L 86 63')}{line('M127 66.5 L 114 63')}</G>;
+    case 'wide': // a soft, slightly concerned curve
+      return <G>{line('M74 67.5 Q 80 64.5 86 65')}{line('M126 67.5 Q 120 64.5 114 65')}</G>;
     case 'closed':
       return <G>{line('M74 69 Q 80 67 86 69')}{line('M114 69 Q 120 67 126 69')}</G>;
     case 'wink':

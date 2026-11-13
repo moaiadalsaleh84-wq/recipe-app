@@ -1,6 +1,6 @@
 import { useKeepAwake } from 'expo-keep-awake';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeInRight, LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,21 +11,13 @@ import { Icon } from '../../components/Icon';
 import { PressableScale } from '../../components/PressableScale';
 import { useToast } from '../../components/Toast';
 import { Button, CheckCircle, EmptyState, IconButton } from '../../components/ui';
-import { useAlarm } from '../../lib/alarm';
 import { haptics } from '../../lib/haptics';
+import { clock, secondsLeft, type CookTimer } from '../../lib/cookTimers';
 import { findTimers } from '../../lib/timers';
 import { convertQty, convertStepText } from '../../lib/units';
 import { formatQty, roundQty, useBuddy, useStore } from '../../state/store';
+import { useTimers } from '../../state/timers';
 import { useTheme } from '../../theme';
-
-/** `step` is where it was started; `ringing` means it hit 0:00 and the alarm is going. */
-type Timer = { label: string; total: number; endsAt: number | null; remaining: number; step: number; ringing: boolean };
-
-const clock = (s: number) => {
-  const m = Math.floor(s / 60);
-  const sec = Math.floor(s % 60);
-  return `${m}:${sec.toString().padStart(2, '0')}`;
-};
 
 export default function CookMode() {
   // The screen stays on while you cook. Leaving quickly can deactivate before activation finishes; that's harmless.
@@ -41,45 +33,24 @@ export default function CookMode() {
 
   const [page, setPage] = useState(0); // 0 = get ready, 1..n = steps, n+1 = done
   const [gathered, setGathered] = useState<Record<string, boolean>>({});
-  const [timer, setTimer] = useState<Timer | null>(null);
   const [override, setOverride] = useState<Line | null>(null);
-  const tick = useRef<ReturnType<typeof setInterval>>(undefined);
-  const timerRef = useRef<Timer | null>(null);
-  const alarm = useAlarm();
-  useEffect(() => {
-    timerRef.current = timer;
-  }, [timer]);
+  // Timers live app-wide (src/state/timers.tsx): they keep going outside Cook Mode and ring when the app is closed.
+  const { timers, now, support, start, pause, resume, restart, stop } = useTimers();
+  const ringing = timers.filter((tm) => tm.status === 'ringing');
 
   const steps = recipe?.steps ?? [];
   const last = steps.length + 1;
 
-  // Countdown
-  useEffect(() => {
-    clearInterval(tick.current);
-    if (!timer?.endsAt) return;
-    tick.current = setInterval(() => {
-      const cur = timerRef.current;
-      if (!cur?.endsAt) return;
-      const remaining = Math.max(0, Math.round((cur.endsAt - Date.now()) / 1000));
-      if (remaining === 0) {
-        clearInterval(tick.current);
-        setTimer({ ...cur, endsAt: null, remaining: 0, ringing: true });
-        alarm.start(); // sound + vibration; the red bar and the cat show it on screen
-        setOverride(say(buddy, 'timerDone'));
-      } else if (remaining !== cur.remaining) {
-        setTimer({ ...cur, remaining });
-      }
-    }, 250);
-    return () => clearInterval(tick.current);
-  }, [timer?.endsAt, buddy, toast, alarm]);
-
-  const line: Line = override
-    ? override
-    : page === 0
-      ? say(buddy, 'cookStart')
-      : page === last
-        ? say(buddy, 'cookDone')
-        : say(buddy, stepSituation(steps[page - 1] ?? ''));
+  // A ringing timer always gets the cat's attention.
+  const line: Line = ringing.length
+    ? say(buddy, 'timerDone')
+    : override
+      ? override
+      : page === 0
+        ? say(buddy, 'cookStart')
+        : page === last
+          ? say(buddy, 'cookDone')
+          : say(buddy, stepSituation(steps[page - 1] ?? ''));
 
   if (!recipe) {
     return (
@@ -89,14 +60,8 @@ export default function CookMode() {
     );
   }
 
-  /** Stop the alarm and remove the timer. */
-  const clearTimer = () => {
-    alarm.stop();
-    setTimer(null);
-  };
-
-  const stopAlarm = () => {
-    clearTimer();
+  const stopAlarm = (id: string) => {
+    stop(id);
     setOverride(say(buddy, 'timerStopped'));
     haptics.success();
   };
@@ -104,14 +69,13 @@ export default function CookMode() {
   const go = (p: number) => {
     haptics.select();
     setOverride(null);
-    // A finished timer doesn't follow you to the next step. A running one keeps counting.
-    if (timer && (timer.ringing || timer.remaining === 0)) clearTimer();
+    // A finished timer doesn't follow you to the next step. Running ones keep counting.
+    for (const tm of timers) if (tm.status === 'ringing' || tm.status === 'done') stop(tm.id);
     setPage(Math.max(0, Math.min(last, p)));
   };
 
   const startTimer = (label: string, seconds: number) => {
-    alarm.stop();
-    setTimer({ label, total: seconds, remaining: seconds, endsAt: Date.now() + seconds * 1000, step: page, ringing: false });
+    start({ label, total: seconds, recipeId: recipe.id, recipeTitle: recipe.title, step: page, stepText: shortStep(steps[page - 1] ?? '') });
     setOverride(say(buddy, 'timerStart'));
     toast({ message: `Timer set for ${label}`, icon: 'timer', tone: 'info' });
   };
@@ -125,7 +89,7 @@ export default function CookMode() {
   // Opened from a link there is nothing to go back to, so land on the recipe instead.
   const close = () => (router.canGoBack() ? router.back() : router.replace({ pathname: '/recipe/[id]', params: { id: recipe.id } }));
   const stepText = page >= 1 && page <= steps.length ? convertStepText(steps[page - 1], units) : '';
-  const timers = stepText ? findTimers(stepText) : [];
+  const stepTimers = stepText ? findTimers(stepText) : [];
 
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.background }}>
@@ -150,43 +114,27 @@ export default function CookMode() {
         ))}
       </View>
 
-      {/* Ringing timer: big, red, one obvious Stop button */}
-      {timer?.ringing && (
-        <Animated.View entering={FadeIn} layout={LinearTransition} style={[styles.timerBar, styles.ringing, { backgroundColor: t.colors.destructive }]} accessibilityRole="alert">
-          <Icon name="timer" size={22} color="#FFFFFF" weight="bold" />
-          <View style={{ flex: 1 }}>
-            <Text style={[t.type.title3, { color: '#FFFFFF' }]} testID="timer-done">
-              Time’s up!
-            </Text>
-            <Text style={[t.type.footnote, { color: 'rgba(255,255,255,0.9)' }]}>{timer.label} · Step {timer.step}</Text>
-          </View>
-          <PressableScale onPress={stopAlarm} accessibilityLabel="Stop alarm" style={styles.stopBtn}>
-            <Text style={[t.type.headline, { color: t.colors.destructive }]}>Stop</Text>
-          </PressableScale>
-        </Animated.View>
-      )}
-
-      {/* Running timer */}
-      {timer && !timer.ringing && (
-        <Animated.View entering={FadeIn} layout={LinearTransition} style={[styles.timerBar, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
-          <Icon name="timer" size={20} color={t.colors.tint} weight="bold" />
-          <View style={{ flex: 1 }}>
-            <Text style={[t.type.title2, { color: t.colors.label, fontVariant: ['tabular-nums'] }]} testID="timer-display">
-              {clock(timer.remaining)}
-            </Text>
-            {timer.step !== page && <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]}>Timer from step {timer.step}</Text>}
-          </View>
-          <IconButton
-            icon={timer.endsAt ? 'pause' : 'play'}
-            accessibilityLabel={timer.endsAt ? 'Pause timer' : 'Resume timer'}
-            disabled={timer.remaining === 0}
-            onPress={() =>
-              setTimer((c) => (c ? (c.endsAt ? { ...c, endsAt: null } : { ...c, endsAt: Date.now() + c.remaining * 1000 }) : c))
-            }
-          />
-          <IconButton icon="restart" accessibilityLabel="Restart timer" onPress={() => startTimer(timer.label, timer.total)} />
-          <IconButton icon="close" accessibilityLabel="Stop timer" color={t.colors.secondaryLabel} onPress={clearTimer} />
-        </Animated.View>
+      {/* Timers: ringing ones first, big and red with one obvious Stop button */}
+      {[...ringing, ...timers.filter((tm) => tm.status !== 'ringing')].map((tm, i) => (
+        <TimerBar
+          key={tm.id}
+          timer={tm}
+          now={now}
+          first={i === 0}
+          page={page}
+          recipeId={recipe.id}
+          onStop={() => (tm.status === 'ringing' ? stopAlarm(tm.id) : stop(tm.id))}
+          onPause={() => pause(tm.id)}
+          onResume={() => resume(tm.id)}
+          onRestart={() => restart(tm.id)}
+        />
+      ))}
+      {support.reason && timers.some((tm) => tm.status === 'running') && (
+        <Text style={[t.type.caption1, styles.note, { color: t.colors.secondaryLabel }]} testID="timer-foreground-note">
+          {support.reason === 'expo-go'
+            ? 'In Expo Go timers only ring while Pantry Pop is open. The full app also rings when your phone is locked.'
+            : 'On the web, timers only ring while this page is open.'}
+        </Text>
       )}
 
       <ScrollView contentContainerStyle={styles.content}>
@@ -226,9 +174,9 @@ export default function CookMode() {
               <Text style={[styles.stepText, { color: t.colors.label }]} testID="cook-step">
                 {stepText}
               </Text>
-              {timers.length > 0 && (
+              {stepTimers.length > 0 && (
                 <View style={styles.timerChips}>
-                  {timers.map((tm) => (
+                  {stepTimers.map((tm) => (
                     <PressableScale
                       key={tm.label}
                       onPress={() => startTimer(tm.label, tm.seconds)}
@@ -273,7 +221,67 @@ export default function CookMode() {
   );
 }
 
+/** First sentence of a step, short enough for the Lock Screen. */
+const shortStep = (step: string) => {
+  const first = step.split(/(?<=[.!?])\s/)[0] ?? step;
+  return first.length > 48 ? `${first.slice(0, 46).trimEnd()}…` : first;
+};
+
+function TimerBar({ timer: tm, now, first, page, recipeId, onStop, onPause, onResume, onRestart }: { timer: CookTimer; now: number; first: boolean; page: number; recipeId: string; onStop: () => void; onPause: () => void; onResume: () => void; onRestart: () => void }) {
+  const t = useTheme();
+  const where = tm.recipeId !== recipeId ? tm.recipeTitle : tm.step !== page ? `Timer from step ${tm.step}` : null;
+  if (tm.status === 'ringing') {
+    return (
+      <Animated.View entering={FadeIn} layout={LinearTransition} style={[styles.timerBar, styles.ringing, { backgroundColor: t.colors.destructive }]} accessibilityRole="alert">
+        <Icon name="timer" size={22} color="#FFFFFF" weight="bold" />
+        <View style={{ flex: 1 }}>
+          <Text style={[t.type.title3, { color: '#FFFFFF' }]} testID={first ? 'timer-done' : undefined}>
+            Time’s up!
+          </Text>
+          <Text style={[t.type.footnote, { color: 'rgba(255,255,255,0.9)' }]} numberOfLines={1}>
+            {tm.label} · {tm.recipeId !== recipeId ? tm.recipeTitle : `Step ${tm.step}`}
+          </Text>
+        </View>
+        <PressableScale onPress={onStop} accessibilityLabel="Stop alarm" style={styles.stopBtn}>
+          <Text style={[t.type.headline, { color: t.colors.destructive }]}>Stop</Text>
+        </PressableScale>
+      </Animated.View>
+    );
+  }
+  if (tm.status === 'done') {
+    // Ended while the app was closed: the notification already rang.
+    return (
+      <Animated.View entering={FadeIn} layout={LinearTransition} style={[styles.timerBar, { backgroundColor: t.colors.cell, ...t.chunky.card }]} testID="timer-finished-away">
+        <Icon name="checkCircle" size={20} color={t.colors.success} weight="bold" />
+        <View style={{ flex: 1 }}>
+          <Text style={[t.type.headline, { color: t.colors.label }]}>{tm.label} timer finished</Text>
+          <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]} numberOfLines={1}>
+            {where ?? `Step ${tm.step}`} · while you were away
+          </Text>
+        </View>
+        <IconButton icon="close" accessibilityLabel="Dismiss finished timer" color={t.colors.secondaryLabel} onPress={onStop} />
+      </Animated.View>
+    );
+  }
+  const running = tm.status === 'running';
+  return (
+    <Animated.View entering={FadeIn} layout={LinearTransition} style={[styles.timerBar, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
+      <Icon name="timer" size={20} color={t.colors.tint} weight="bold" />
+      <View style={{ flex: 1 }}>
+        <Text style={[t.type.title2, { color: t.colors.label, fontVariant: ['tabular-nums'] }]} testID={first ? 'timer-display' : undefined}>
+          {clock(secondsLeft(tm, now))}
+        </Text>
+        {where && <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]} numberOfLines={1}>{where}</Text>}
+      </View>
+      <IconButton icon={running ? 'pause' : 'play'} accessibilityLabel={running ? 'Pause timer' : 'Resume timer'} onPress={running ? onPause : onResume} />
+      <IconButton icon="restart" accessibilityLabel="Restart timer" onPress={onRestart} />
+      <IconButton icon="close" accessibilityLabel="Stop timer" color={t.colors.secondaryLabel} onPress={onStop} />
+    </Animated.View>
+  );
+}
+
 const styles = StyleSheet.create({
+  note: { marginHorizontal: 20, marginBottom: 6, textAlign: 'center' },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingBottom: 8, gap: 8 },
   segments: { flexDirection: 'row', gap: 5, paddingHorizontal: 16, marginBottom: 8 },
   segment: { flex: 1, height: 6, borderRadius: 3 },

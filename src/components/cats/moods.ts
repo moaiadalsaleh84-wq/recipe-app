@@ -18,7 +18,7 @@ export const moodSpecs: Record<Mood, MoodSpec> = {
   happy: { eyes: 'happy', mouth: 'smile', L: [45, 20], R: [45, 20], fx: ['sparkle'] },
   love: { eyes: 'happy', mouth: 'cat', L: [-25, -70], R: [-25, -70], fx: ['hearts'] },
   think: { eyes: 'normal', mouth: 'flat', L: [10, 0], R: [-35, -135], fx: ['dots'] },
-  worried: { eyes: 'wide', mouth: 'o', L: [-30, -125], R: [-30, -125], fx: ['sweat'] },
+  worried: { eyes: 'wide', mouth: 'cat', L: [-30, -125], R: [-30, -125], fx: ['sweat'] },
   celebrate: { eyes: 'happy', mouth: 'smile', L: [160, 15], R: [160, 15], fx: ['confetti', 'sparkle'] },
   sleepy: { eyes: 'closed', mouth: 'cat', L: [4, 0], R: [4, 0], fx: ['zzz'] },
   stir: { eyes: 'default', mouth: 'cat', L: [-20, -55], R: [-12, -70], prop: 'spoon', fx: ['bowl', 'steam'] },
@@ -29,7 +29,8 @@ export const moodSpecs: Record<Mood, MoodSpec> = {
   proud: { eyes: 'closed', mouth: 'smile', L: [-40, -105], R: [-40, -105], fx: ['sparkle'] },
   wait: { eyes: 'normal', mouth: 'cat', L: [-30, -120], R: [10, 0], fx: [] },
   content: { eyes: 'happy', mouth: 'cat', L: [10, 0], R: [10, 0], fx: [] },
-  alarm: { eyes: 'wide', mouth: 'open', L: [150, 25], R: [150, 25], fx: ['exclaim', 'ring'] },
+  // Time's up: a friendly wave and a soft chime, not panic.
+  alarm: { eyes: 'wide', mouth: 'smile', L: [10, 0], R: [150, 25], fx: ['ring'] },
 };
 
 /**

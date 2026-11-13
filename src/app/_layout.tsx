@@ -6,6 +6,7 @@ import { EntitlementSync } from '../components/EntitlementSync';
 import { ProgressWatcher } from '../components/ProgressWatcher';
 import { ToastProvider } from '../components/Toast';
 import { StoreProvider, useStore } from '../state/store';
+import { TimersProvider } from '../state/timers';
 import { useTheme } from '../theme';
 
 /** Waits for saved data to load so screens never flash default content. */
@@ -48,6 +49,7 @@ export default function RootLayout() {
           <ToastProvider>
             <StatusBar style="auto" />
             <Hydrated>
+              <TimersProvider>
               <ProgressWatcher />
               <EntitlementSync />
               <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: t.colors.background } }}>
@@ -66,6 +68,7 @@ export default function RootLayout() {
                 <Stack.Screen name="buddy-pick" options={{ ...sheet, sheetAllowedDetents: [0.85] }} />
                 <Stack.Screen name="cookbook-edit" options={{ ...sheet, sheetAllowedDetents: [0.45] }} />
               </Stack>
+              </TimersProvider>
             </Hydrated>
           </ToastProvider>
         </StoreProvider>

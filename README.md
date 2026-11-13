@@ -61,7 +61,8 @@ Free: up to 10 items. Pro: unlimited, plus **Buy one thing, cook more**, which s
 - **Cookbooks:** Favorites plus your own collections; save any recipe to several cookbooks
 - **Write your own recipe:** photo, link to the original, ingredients one per line (amounts are understood), steps, tags
 - **Recipe page:** servings scaling, metric/US units (including oven temperatures), estimated nutrition per serving, personal notes, share, buddy comments
-- **Cook Mode:** step by step with the screen kept on, timers picked up from the steps ("bake for 25 minutes") that ring with a chime and vibration until you tap Stop, and your buddy acting out each step. Log the meal at the end.
+- **Cook Mode:** step by step with the screen kept on, timers picked up from the steps ("bake for 25 minutes"), several at once, and your buddy acting out each step. Log the meal at the end.
+- **Timers that keep going:** they survive leaving Cook Mode and closing the app. With a development build they ring as a time-sensitive notification when the phone is locked, and show on the Lock Screen and in the Dynamic Island with a live countdown and the cat's face (see [TIMERS.md](TIMERS.md); Expo Go rings only while the app is open).
 - **Meal plan:** a week view with breakfast, lunch and dinner, a daily nutrition summary, and one tap to add the whole week to your list
 - **Groceries:** grouped by aisle, combined across recipes, tick off, swipe to delete, add your own items, share the list
 - **Buddy tab:** tricks, switch buddy, cooking streak and stats, chef level and badges, daily goals, units
