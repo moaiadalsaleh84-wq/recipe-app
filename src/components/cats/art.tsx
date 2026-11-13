@@ -30,14 +30,24 @@ export type CatArt = {
   brows: (e: Eyes) => ReactNode;
   mouth: (m: Mouth) => ReactNode;
   blush: ReactNode;
-  upperArm: ReactNode;
-  foreArm: ReactNode;
+  /**
+   * Arms are drawn in two passes so each arm reads as one smooth piece: first every part's
+   * outline ('outline'), then every part's fill on top ('fill'). Where parts overlap (the elbow,
+   * the wristband, the paw) the inner outlines are covered, leaving one line around the outside.
+   */
+  upperArm: (pass: Pass) => ReactNode;
+  foreArm: (pass: Pass) => ReactNode;
   prop: (p: Prop) => ReactNode;
 };
 
 /* ------------------------------------------------------------------ */
 /* Shared bits                                                          */
 /* ------------------------------------------------------------------ */
+
+export type Pass = 'outline' | 'fill';
+/** Props for one silhouette shape in the given pass: a thick outline behind, or a plain fill on top. */
+const sil = (pass: Pass, fill: string, outline: string, width = 4.5) =>
+  pass === 'outline' ? { fill: outline, stroke: outline, strokeWidth: width, strokeLinejoin: 'round' as const } : { fill, stroke: 'none' };
 
 const mirror = (node: ReactNode) => <G transform="translate(200,0) scale(-1,1)">{node}</G>;
 
@@ -332,32 +342,34 @@ const tank: CatArt = {
     </G>
   ),
   // One muscular piece from shoulder cap to elbow: deltoid, biceps (front) and triceps (outside).
-  upperArm: (
-    <G strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M46 80 C 34 80, 26 90, 27 104 C 28 118, 33 130, 45 136 C 57 130, 63 118, 63 104 C 63 90, 58 80, 46 80 Z" fill={T.fur} stroke={T.o} strokeWidth={4} />
-      <Path d="M34 86 C 40 82, 50 82, 56 87 C 50 90, 40 92, 34 86 Z" fill={T.light} />
-      <Path d="M50 104 C 58 106, 60 116, 56 125 C 52 120, 49 112, 50 104 Z" fill={T.light} />
-      <Path d="M29 99 C 36 104, 44 104, 51 98" stroke={T.o} strokeWidth={2.6} fill="none" />
-      <Path d="M31 112 Q 34 122 40 129" stroke={T.o} strokeWidth={2.2} fill="none" />
+  upperArm: (pass) => (
+    <G>
+      <Path d="M46 80 C 34 80, 26 90, 27 104 C 28 118, 33 130, 45 136 C 57 130, 63 118, 63 104 C 63 90, 58 80, 46 80 Z" {...sil(pass, T.fur, T.o)} />
+      {pass === 'fill' && (
+        <G>
+          <Path d="M34 86 C 40 82, 50 82, 56 87 C 50 90, 40 92, 34 86 Z" fill={T.light} />
+          <Path d="M50 104 C 58 106, 60 116, 56 125 C 52 120, 49 112, 50 104 Z" fill={T.light} />
+        </G>
+      )}
     </G>
   ),
   // Forearm tapering into a wristband and a mitten-shaped cat paw with three toe bumps.
-  foreArm: (
-    <G strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M36 126 C 33 136, 33 146, 35 154 L 55 154 C 57 146, 57 136, 54 126 Z" fill={T.fur} stroke={T.o} strokeWidth={4} />
-      <Path d="M39 136 Q 42 144 41 150" stroke={T.light} strokeWidth={2.4} fill="none" />
-      {/* wristband */}
-      <Rect x={32.5} y={147.5} width={25} height={8.5} rx={4} fill={T.band} stroke={T.o} strokeWidth={2.6} />
-      <Path d="M34.5 151.75 L 55.5 151.75" stroke={T.bandStripe} strokeWidth={1.4} />
-      {/* paw */}
+  foreArm: (pass) => (
+    <G>
+      <Path d="M36 126 C 33 136, 33 146, 35 154 L 55 154 C 57 146, 57 136, 54 126 Z" {...sil(pass, T.fur, T.o)} />
       <Path
         d="M33.5 156 C 30 161, 31 169, 36 172 Q 39 175 42.5 173 Q 45 175.5 47.5 173 Q 51 175 54 172 C 59 169, 60 161, 56.5 156 Z"
-        fill={T.fur}
-        stroke={T.o}
-        strokeWidth={4}
+        {...sil(pass, T.fur, T.o)}
       />
-      <Path d="M42.5 173 l 0 -3.5 M47.5 173 l 0 -3.5" stroke={T.o} strokeWidth={2} />
-      <Path d="M37 160 Q 45 157 53 160" stroke={T.light} strokeWidth={2.2} fill="none" />
+      <Rect x={32.5} y={147.5} width={25} height={8.5} rx={4} {...sil(pass, T.band, T.o)} />
+      {pass === 'fill' && (
+        <G strokeLinecap="round">
+          <Path d="M39 136 Q 42 144 41 150" stroke={T.light} strokeWidth={2.4} fill="none" />
+          <Path d="M34.5 151.75 L 55.5 151.75" stroke={T.bandStripe} strokeWidth={1.4} />
+          <Path d="M42.5 173 l 0 -3 M47.5 173 l 0 -3" stroke={T.o} strokeWidth={1.8} />
+          <Path d="M37 160 Q 45 157 53 160" stroke={T.light} strokeWidth={2.2} fill="none" />
+        </G>
+      )}
     </G>
   ),
   prop: (p) => propArt(p, [45, 165], T.o),
@@ -592,17 +604,17 @@ const biscuit: CatArt = {
       <Ellipse cx={132} cy={97} rx={8} ry={4.5} fill={B.blush} opacity={0.55} />
     </G>
   ),
-  upperArm: (
+  upperArm: (pass) => (
     <G>
-      <Ellipse cx={67} cy={132} rx={10.5} ry={12.5} fill={B.fur} stroke={B.o} strokeWidth={4} />
-      <Path d="M59 130 l6 1.5 M59.5 136 l6 1" stroke={B.stripe} strokeWidth={2.8} strokeLinecap="round" />
+      <Ellipse cx={67} cy={132} rx={10.5} ry={12.5} {...sil(pass, B.fur, B.o)} />
+      {pass === 'fill' && <Path d="M59 130 l6 1.5 M59.5 136 l6 1" stroke={B.stripe} strokeWidth={2.8} strokeLinecap="round" />}
     </G>
   ),
-  foreArm: (
+  foreArm: (pass) => (
     <G>
-      <Ellipse cx={66} cy={147} rx={9} ry={9} fill={B.fur} stroke={B.o} strokeWidth={4} />
-      <Circle cx={66} cy={155} r={8.5} fill={B.cream} stroke={B.o} strokeWidth={4} />
-      <Circle cx={66} cy={157} r={2.4} fill={B.inner} />
+      <Ellipse cx={66} cy={147} rx={9} ry={9} {...sil(pass, B.fur, B.o)} />
+      <Circle cx={66} cy={155} r={8.5} {...sil(pass, B.cream, B.o)} />
+      {pass === 'fill' && <Circle cx={66} cy={157} r={2.4} fill={B.inner} />}
     </G>
   ),
   prop: (p) => propArt(p, [66, 157], B.o),

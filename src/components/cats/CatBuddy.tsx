@@ -29,7 +29,7 @@ import Animated, {
 import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { haptics } from '../../lib/haptics';
 import { useStore } from '../../state/store';
-import { arts, bowlArt, type CatArt } from './art';
+import { arts, bowlArt, type CatArt, type Pass } from './art';
 import { actMs, moodSpecs, restSpec, sustained } from './moods';
 import type { BuddyId, Eyes, Mood } from './types';
 
@@ -496,16 +496,24 @@ function Arm({
   prop?: string;
 }) {
   const flip = (node: React.ReactNode) => (side === 'R' ? <G transform="translate(200,0) scale(-1,1)">{node}</G> : node);
-  return (
+  // Two passes with the same joints: all outlines first, then all fills on top, so the elbow,
+  // wristband and paw join without lines between them (see `upperArm` in art.tsx).
+  const pass = (p: Pass) => (
     <Animated.View style={[StyleSheet.absoluteFill, { transformOrigin: origin(shoulder[0], shoulder[1]) }, upperStyle]}>
       <Animated.View style={[StyleSheet.absoluteFill, { transformOrigin: origin(elbow[0], elbow[1]) }, foreStyle]}>
         <Art>
-          {flip(art.foreArm)}
-          {prop && prop !== 'none' && flip(art.prop(prop as never))}
+          {flip(art.foreArm(p))}
+          {p === 'fill' && prop && prop !== 'none' && flip(art.prop(prop as never))}
         </Art>
       </Animated.View>
-      <Art>{flip(art.upperArm)}</Art>
+      <Art>{flip(art.upperArm(p))}</Art>
     </Animated.View>
+  );
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      {pass('outline')}
+      {pass('fill')}
+    </View>
   );
 }
 
