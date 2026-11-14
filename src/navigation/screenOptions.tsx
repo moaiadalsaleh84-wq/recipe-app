@@ -21,8 +21,7 @@ export function ScreenTitle({ title, right }: { title: string; right?: ReactNode
   const t = useTheme();
   const insets = useSafeAreaInsets();
   // On iOS the scroll view's automatic insets already clear the status bar.
-  // On web, Expo's tab bar floats over the top of the page, so leave room for it.
-  const top = isIOS ? t.spacing.xs : insets.top + t.spacing.xs + (Platform.OS === 'web' ? 64 : 0);
+  const top = isIOS ? t.spacing.xs : insets.top + t.spacing.sm;
   return (
     <View style={[styles.row, { paddingTop: top }]}>
       <Text style={[t.type.largeTitle, { color: t.colors.label, flex: 1 }]} accessibilityRole="header">

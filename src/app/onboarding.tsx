@@ -245,7 +245,7 @@ function BuddyStep({ recommended, chosen, onChoose }: { recommended: BuddyId; ch
             >
               {id === recommended && (
                 <View style={[styles.badge, { backgroundColor: t.colors.success }]}>
-                  <Text style={[t.type.caption1, { color: '#fff', fontWeight: '800', fontFamily: t.fonts.rounded }]}>Fits your goal</Text>
+                  <Text style={[t.type.caption1, { color: '#fff', fontWeight: 'normal', fontFamily: t.fonts.rounded }]}>Fits your goal</Text>
                 </View>
               )}
               <CatBuddy buddy={id} mood={selected ? (id === 'tank' ? 'flex' : 'happy') : 'idle'} size={120} petable={false} />

@@ -170,7 +170,7 @@ export default function CookMode() {
 
           {page >= 1 && page <= steps.length && (
             <>
-              <Text style={[t.type.footnote, { color: t.colors.tint, fontWeight: '800', fontFamily: t.fonts.rounded, letterSpacing: 0.6 }]}>STEP {page}</Text>
+              <Text style={[t.type.footnote, { color: t.colors.tint, fontWeight: 'normal', fontFamily: t.fonts.rounded, letterSpacing: 0.6 }]}>STEP {page}</Text>
               <Text style={[styles.stepText, { color: t.colors.label }]} testID="cook-step">
                 {stepText}
               </Text>
@@ -184,7 +184,7 @@ export default function CookMode() {
                       style={[styles.timerChip, { backgroundColor: t.colors.tintSoft, borderColor: t.colors.border }]}
                     >
                       <Icon name="timer" size={16} color={t.colors.tint} weight="bold" />
-                      <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: '700', fontFamily: t.fonts.rounded }]}>Start {tm.label}</Text>
+                      <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: 'normal', fontFamily: t.fonts.rounded }]}>Start {tm.label}</Text>
                     </PressableScale>
                   ))}
                 </View>

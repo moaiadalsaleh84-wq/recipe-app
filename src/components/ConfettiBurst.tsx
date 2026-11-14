@@ -3,7 +3,7 @@ import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import { brand } from '../theme';
 
-const COLORS = [brand.terracotta, brand.caramel, brand.sage, brand.berry, brand.lavender, '#4FA3F7'];
+const COLORS = [brand.tomato, brand.yellow, brand.green, brand.berry, brand.blue, '#FF9F1C'];
 
 /** Cheap hash-based pseudo-random in [0, 1). */
 function rand(n: number) {

@@ -1,9 +1,11 @@
 import { Redirect } from 'expo-router';
-import { NativeTabs } from 'expo-router/native-tabs';
+import { Tabs } from 'expo-router/tabs';
+import { View } from 'react-native';
+import { StatusBarShade, TabBar } from '../../components/TabBar';
 import { useStore } from '../../state/store';
 import { useTheme } from '../../theme';
 
-/** Real UITabBar on iOS (Material bottom navigation on Android). Five tabs, the iOS maximum before "More". */
+/** Five tabs with the app's own tab bar (see components/TabBar). */
 export default function TabsLayout() {
   const t = useTheme();
   const { groceries, onboarded } = useStore();
@@ -13,28 +15,15 @@ export default function TabsLayout() {
   if (!onboarded) return <Redirect href="/onboarding" />;
 
   return (
-    <NativeTabs tintColor={t.colors.tint} badgeBackgroundColor={t.colors.accent} minimizeBehavior="onScrollDown">
-      <NativeTabs.Trigger name="(recipes)">
-        <NativeTabs.Trigger.Icon sf={{ default: 'book', selected: 'book.fill' }} md="menu_book" />
-        <NativeTabs.Trigger.Label>Recipes</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="plan">
-        <NativeTabs.Trigger.Icon sf="calendar" md="calendar_month" />
-        <NativeTabs.Trigger.Label>Plan</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="pantry">
-        <NativeTabs.Trigger.Icon sf={{ default: 'refrigerator', selected: 'refrigerator.fill' }} md="kitchen" />
-        <NativeTabs.Trigger.Label>Pantry</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="groceries">
-        <NativeTabs.Trigger.Icon sf={{ default: 'cart', selected: 'cart.fill' }} md="shopping_cart" />
-        <NativeTabs.Trigger.Label>Groceries</NativeTabs.Trigger.Label>
-        {remaining > 0 ? <NativeTabs.Trigger.Badge>{String(remaining)}</NativeTabs.Trigger.Badge> : null}
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="buddy">
-        <NativeTabs.Trigger.Icon sf={{ default: 'pawprint', selected: 'pawprint.fill' }} md="pets" />
-        <NativeTabs.Trigger.Label>Buddy</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
-    </NativeTabs>
+    <View style={{ flex: 1, backgroundColor: t.colors.background }}>
+      <Tabs screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: t.colors.background } }} tabBar={(props) => <TabBar {...props} badges={{ groceries: remaining }} />}>
+        <Tabs.Screen name="(recipes)" />
+        <Tabs.Screen name="plan" />
+        <Tabs.Screen name="pantry" />
+        <Tabs.Screen name="groceries" />
+        <Tabs.Screen name="buddy" />
+      </Tabs>
+      <StatusBarShade />
+    </View>
   );
 }

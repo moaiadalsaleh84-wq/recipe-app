@@ -155,7 +155,7 @@ export default function RecipesScreen() {
               style={[styles.book, styles.newBook, { borderColor: t.colors.border }]}
             >
               <Icon name="plus" size={22} color={t.colors.tint} weight="bold" />
-              <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: '700', fontFamily: t.fonts.rounded }]}>New cookbook</Text>
+              <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: 'normal', fontFamily: t.fonts.rounded }]}>New cookbook</Text>
             </PressableScale>
           </ScrollView>
         </>
@@ -299,7 +299,7 @@ function CookbookTile({ id, name, recipes }: { id: string; name: string; recipes
       </View>
       <View style={styles.bookText}>
         {id === FAVORITES_ID && <Icon name="heartFill" size={13} color={t.colors.accent} />}
-        <Text style={[t.type.subhead, { color: t.colors.label, fontWeight: '700', fontFamily: t.fonts.rounded, flexShrink: 1 }]} numberOfLines={1}>
+        <Text style={[t.type.subhead, { color: t.colors.label, fontWeight: 'normal', fontFamily: t.fonts.rounded, flexShrink: 1 }]} numberOfLines={1}>
           {name}
         </Text>
       </View>

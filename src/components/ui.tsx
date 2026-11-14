@@ -18,6 +18,7 @@ import { useTheme } from '../theme';
 import { CatBuddy } from './cats/CatBuddy';
 import type { BuddyId, Mood } from './cats/types';
 import { Icon, type IconName } from './Icon';
+import { Chunky } from './Chunky';
 import { PressableScale } from './PressableScale';
 
 /* ---------- Chip: a toggleable filter with a clear selected state ---------- */
@@ -34,25 +35,26 @@ export function Chip({
   icon?: IconName;
 }) {
   const t = useTheme();
-  const fg = selected ? t.colors.onTint : t.colors.label;
+  // Selected chips are green ("this is on"), so tomato stays reserved for the screen's main action.
+  const fg = selected ? '#FFFFFF' : t.colors.label;
   return (
-    <PressableScale
+    <Chunky
       onPress={onPress}
       haptic="select"
       accessibilityRole="togglebutton"
       aria-selected={selected}
       accessibilityLabel={`${label} filter`}
-      hitSlop={{ top: 4, bottom: 4 }}
-      style={[
-        styles.chip,
-        selected
-          ? { backgroundColor: t.colors.tintFill, borderColor: t.colors.tintDeep, ...t.chunky.button() }
-          : { backgroundColor: t.colors.cell, borderColor: t.colors.border, ...t.chunky.lip },
-      ]}
+      hitSlop={{ top: 2, bottom: 2 }}
+      depth={t.depth.small}
+      radius={t.radius.pill}
+      face={selected ? t.colors.success : t.colors.cell}
+      lip={selected ? t.colors.successDeep : t.colors.lip}
+      border={selected ? undefined : t.colors.border}
+      faceStyle={styles.chip}
     >
       {(selected || icon) && <Icon name={selected ? 'check' : icon!} size={14} color={fg} weight="bold" />}
-      <Text style={[t.type.subhead, { color: fg, fontWeight: '700', fontFamily: t.fonts.rounded }]}>{label}</Text>
-    </PressableScale>
+      <Text style={[t.type.subhead, { color: fg, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>{label}</Text>
+    </Chunky>
   );
 }
 
@@ -62,8 +64,11 @@ type ButtonProps = {
   label: string;
   onPress: () => void;
   icon?: IconName;
-  /** filled: terracotta. success: sage green. tinted: soft terracotta. plain: text only. */
-  variant?: 'filled' | 'success' | 'tinted' | 'plain';
+  /**
+   * filled: the ONE main action on a screen (tomato). success: finishing something (green).
+   * reward: claiming a reward (yellow). tinted: every other action (white). plain: text only.
+   */
+  variant?: 'filled' | 'success' | 'reward' | 'tinted' | 'plain';
   size?: 'large' | 'medium';
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
@@ -72,33 +77,33 @@ type ButtonProps = {
 
 export function Button({ label, onPress, icon, variant = 'filled', size = 'large', disabled, style, accessibilityLabel }: ButtonProps) {
   const t = useTheme();
-  const bg =
-    variant === 'filled' ? t.colors.tintFill : variant === 'success' ? t.colors.success : variant === 'tinted' ? t.colors.tintSoft : 'transparent';
-  const fg = variant === 'filled' || variant === 'success' ? t.colors.onTint : t.colors.tint;
-  const chunky =
-    variant === 'filled'
-      ? t.chunky.button()
-      : variant === 'success'
-        ? t.chunky.button(t.isDark ? '#3E5A33' : '#4D6E40')
-        : variant === 'tinted'
-          ? { borderWidth: 2, borderColor: t.colors.border }
-          : null;
+  const large = size === 'large';
+  const text = [large ? t.type.button : t.type.subhead, large ? null : { fontFamily: t.fonts.display, fontWeight: 'normal' as const }];
+  if (variant === 'plain') {
+    return (
+      <PressableScale onPress={onPress} disabled={disabled} accessibilityLabel={accessibilityLabel ?? label} style={[styles.button, large ? styles.buttonLarge : styles.buttonMedium, !large && { alignSelf: 'center' }, style]}>
+        {icon && <Icon name={icon} size={large ? 20 : 17} color={t.colors.tint} weight="bold" />}
+        <Text style={[text, { color: t.colors.tint }]}>{label}</Text>
+      </PressableScale>
+    );
+  }
+  const kind = t.buttons[variant === 'filled' ? 'primary' : variant === 'tinted' ? 'secondary' : variant];
   return (
-    <PressableScale
+    <Chunky
       onPress={onPress}
       disabled={disabled}
       accessibilityLabel={accessibilityLabel ?? label}
-      style={[
-        styles.button,
-        size === 'large' ? styles.buttonLarge : styles.buttonMedium,
-        { backgroundColor: bg },
-        chunky,
-        style,
-      ]}
+      face={kind.face}
+      lip={kind.lip}
+      border={kind.border}
+      depth={large ? t.depth.button : t.depth.small}
+      radius={large ? t.radius.md : 14}
+      style={[!large && { alignSelf: 'center' }, style]}
+      faceStyle={[styles.button, large ? styles.buttonLarge : styles.buttonMedium]}
     >
-      {icon && <Icon name={icon} size={size === 'large' ? 20 : 17} color={fg} weight="bold" />}
-      <Text style={[size === 'large' ? t.type.headline : t.type.subhead, { color: fg, fontWeight: '700', fontFamily: t.fonts.rounded }]}>{label}</Text>
-    </PressableScale>
+      {icon && <Icon name={icon} size={large ? 20 : 17} color={kind.label} weight="bold" />}
+      <Text style={[text, { color: kind.label }]}>{label}</Text>
+    </Chunky>
   );
 }
 
@@ -293,7 +298,7 @@ export function Separator({ inset = 16 }: { inset?: number }) {
 export function SearchField({ value, onChangeText, placeholder, style, ...rest }: TextInputProps & { value: string; onChangeText: (s: string) => void }) {
   const t = useTheme();
   return (
-    <View style={[styles.search, { backgroundColor: t.colors.cell, borderWidth: 2, borderColor: t.colors.border }, style]}>
+    <View style={[styles.search, { backgroundColor: t.colors.cell, ...t.chunky.card }, style]}>
       <Icon name="search" size={17} color={t.colors.secondaryLabel} />
       <TextInput
         value={value}
@@ -319,32 +324,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    minHeight: 36,
-    paddingHorizontal: 14,
-    borderRadius: 999,
-    // Visual height 36; hitSlop extends the touch area to 44.
+    minHeight: 38,
+    paddingHorizontal: 16,
+    // With the lip the chip is 42 tall; hitSlop extends the touch area past 44.
   },
   button: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    borderRadius: 14,
-    borderCurve: 'continuous',
   },
-  buttonLarge: { minHeight: 50, paddingHorizontal: 20 },
-  buttonMedium: { minHeight: 44, paddingHorizontal: 16, alignSelf: 'center' },
-  stepper: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, borderCurve: 'continuous' },
+  buttonLarge: { minHeight: 52, paddingHorizontal: 22 },
+  buttonMedium: { minHeight: 44, paddingHorizontal: 18 },
+  stepper: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, borderCurve: 'continuous' },
   stepperDivider: { width: StyleSheet.hairlineWidth, height: 18 },
   stepperValue: { minWidth: 36, textAlign: 'center', fontVariant: ['tabular-nums'] },
-  check: { width: 26, height: 26, borderRadius: 13, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
-  checkFill: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+  check: { width: 28, height: 28, borderRadius: 14, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
+  checkFill: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   empty: { alignItems: 'center', gap: 10, paddingVertical: 48, paddingHorizontal: 32 },
-  emptyIcon: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
+  emptyIcon: { width: 72, height: 72, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4, marginBottom: 8, minHeight: 28 },
   sectionBody: { borderCurve: 'continuous' },
   sectionFooter: { paddingHorizontal: 16, marginTop: 8 },
-  search: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 14, borderCurve: 'continuous', paddingLeft: 10, minHeight: 44 },
+  search: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 16, borderCurve: 'continuous', paddingLeft: 14, minHeight: 50 },
   searchInput: { flex: 1, alignSelf: 'stretch', minHeight: 44, paddingVertical: 0, outlineStyle: 'none' } as never,
 });
 
@@ -363,7 +365,7 @@ export function Segmented<T extends string>({
 }) {
   const t = useTheme();
   return (
-    <View style={[segStyles.wrap, { backgroundColor: t.colors.fill, borderColor: t.colors.border }]} accessibilityRole="radiogroup" accessibilityLabel={label}>
+    <View style={[segStyles.wrap, { backgroundColor: t.colors.fillStrong }]} accessibilityRole="radiogroup" accessibilityLabel={label}>
       {options.map((o) => {
         const selected = o.value === value;
         return (
@@ -378,7 +380,7 @@ export function Segmented<T extends string>({
             hitSlop={{ top: 4, bottom: 4 }}
             style={[segStyles.item, selected && { backgroundColor: t.colors.cell, ...t.chunky.lip }]}
           >
-            <Text style={[t.type.footnote, { color: selected ? t.colors.label : t.colors.secondaryLabel, fontWeight: '700', fontFamily: t.fonts.rounded }]}>{o.label}</Text>
+            <Text style={[t.type.footnote, { color: selected ? t.colors.label : t.colors.secondaryLabel, fontWeight: 'normal', fontFamily: t.fonts.rounded, fontSize: 14 }]}>{o.label}</Text>
           </PressableScale>
         );
       })}
@@ -387,6 +389,6 @@ export function Segmented<T extends string>({
 }
 
 const segStyles = StyleSheet.create({
-  wrap: { flexDirection: 'row', borderRadius: 12, padding: 3, borderWidth: 1.5, borderCurve: 'continuous' },
-  item: { minHeight: 36, minWidth: 64, paddingHorizontal: 12, borderRadius: 9, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
+  wrap: { flexDirection: 'row', borderRadius: 16, padding: 4, paddingBottom: 6, borderCurve: 'continuous' },
+  item: { minHeight: 38, minWidth: 64, paddingHorizontal: 14, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
 });

@@ -192,7 +192,7 @@ export default function RecipeScreen() {
         </Animated.View>
 
         <View style={[styles.body, { backgroundColor: t.colors.background, borderRadius: t.radius.xl, marginTop: -t.radius.xl }]}>
-          <Text style={[t.type.footnote, { color: t.colors.tint, fontWeight: '700', letterSpacing: 0.6, fontFamily: t.fonts.rounded }]}>
+          <Text style={[t.type.footnote, { color: t.colors.tint, fontWeight: 'normal', letterSpacing: 0.6, fontFamily: t.fonts.rounded }]}>
             {recipe.category.toUpperCase()}
             {recipe.custom ? (recipe.origin === 'import' ? ' · IMPORTED' : ' · MY RECIPE') : ''}
           </Text>
@@ -236,7 +236,7 @@ export default function RecipeScreen() {
                   accessibilityLabel={`${tag}. Show all ${tag.toLowerCase()} recipes`}
                   style={[styles.tag, { backgroundColor: t.colors.tintSoft, borderColor: t.colors.border }]}
                 >
-                  <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: '700', fontFamily: t.fonts.rounded }]}>{tag}</Text>
+                  <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: 'normal', fontFamily: t.fonts.rounded }]}>{tag}</Text>
                   <Icon name="chevronRight" size={11} color={t.colors.tint} weight="bold" />
                 </PressableScale>
               ))}
@@ -292,7 +292,7 @@ export default function RecipeScreen() {
           {recipe.steps.map((step, i) => (
             <View key={i} style={styles.step} accessible accessibilityLabel={`Step ${i + 1}. ${convertStepText(step, units)}`}>
               <View style={[styles.stepNum, { backgroundColor: t.colors.tintSoft, borderColor: t.colors.border }]}>
-                <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: '800', fontFamily: t.fonts.rounded }]}>{i + 1}</Text>
+                <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: 'normal', fontFamily: t.fonts.rounded }]}>{i + 1}</Text>
               </View>
               <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>{convertStepText(step, units)}</Text>
             </View>

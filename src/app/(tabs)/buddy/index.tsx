@@ -17,12 +17,13 @@ import type { Units } from '../../../data/mock';
 import { ScreenTitle } from '../../../navigation/screenOptions';
 import { BADGES, levelFor, streakOf, xpFor } from '../../../lib/progress';
 import { totalsFor, useBuddy, useStore } from '../../../state/store';
-import { useTheme } from '../../../theme';
+import { setAppearance, useAppearance, useTheme } from '../../../theme';
 
 const dayKey = (d: Date) => d.toDateString();
 
 export default function BuddyScreen() {
   const t = useTheme();
+  const appearance = useAppearance();
   const toast = useToast();
   const buddy = useBuddy();
   const { setBuddy, cooked, getRecipe, goals, setGoals, units, setUnits, pro, customRecipes, plan, favorites, fun } = useStore();
@@ -269,6 +270,11 @@ export default function BuddyScreen() {
           <Segmented label="Units" value={units} onChange={(u: Units) => setUnits(u)} options={[{ label: 'Metric', value: 'metric' }, { label: 'US', value: 'us' }]} />
         </View>
         <Separator />
+        <View style={styles.settingRow}>
+          <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>Look</Text>
+          <Segmented label="Look" value={appearance} onChange={setAppearance} options={[{ label: 'Light', value: 'light' }, { label: 'Dark', value: 'dark' }, { label: 'Auto', value: 'system' }]} />
+        </View>
+        <Separator />
         <PressableScale onPress={() => router.push('/buddy-picker')} style={styles.settingRow} accessibilityLabel="Meet the buddies again" scaleTo={0.99}>
           <Text style={[t.type.body, { color: t.colors.tint, flex: 1 }]}>Meet the buddies again</Text>
           <Icon name="chevronRight" size={14} color={t.colors.tertiaryLabel} weight="semibold" />
@@ -288,7 +294,7 @@ function Trick({ label, icon, onPress }: { label: string; icon: IconName; onPres
   return (
     <PressableScale onPress={onPress} accessibilityLabel={label} style={[styles.trick, { backgroundColor: t.colors.tintSoft, borderColor: t.colors.border }]}>
       <Icon name={icon} size={16} color={t.colors.tint} weight="bold" />
-      <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: '700', fontFamily: t.fonts.rounded }]}>{label}</Text>
+      <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: 'normal', fontFamily: t.fonts.rounded }]}>{label}</Text>
     </PressableScale>
   );
 }

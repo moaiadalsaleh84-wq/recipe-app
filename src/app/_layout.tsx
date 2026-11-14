@@ -1,13 +1,14 @@
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useMemo, type ReactNode } from 'react';
+import { Fredoka_500Medium, Fredoka_600SemiBold, Fredoka_700Bold, useFonts } from '@expo-google-fonts/fredoka';
+import { useEffect, useMemo, type ReactNode } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { EntitlementSync } from '../components/EntitlementSync';
 import { ProgressWatcher } from '../components/ProgressWatcher';
 import { ToastProvider } from '../components/Toast';
 import { StoreProvider, useStore } from '../state/store';
 import { TimersProvider } from '../state/timers';
-import { useTheme } from '../theme';
+import { loadAppearance, useTheme } from '../theme';
 
 /** Waits for saved data to load so screens never flash default content. */
 function Hydrated({ children }: { children: ReactNode }) {
@@ -17,6 +18,9 @@ function Hydrated({ children }: { children: ReactNode }) {
 
 export default function RootLayout() {
   const t = useTheme();
+  // Titles and buttons use Fredoka. If it fails to load, the system font takes over.
+  const [fontsLoaded, fontError] = useFonts({ Fredoka_500Medium, Fredoka_600SemiBold, Fredoka_700Bold });
+  useEffect(loadAppearance, []);
 
   const navTheme = useMemo(() => {
     const base = t.isDark ? DarkTheme : DefaultTheme;
@@ -42,12 +46,14 @@ export default function RootLayout() {
     contentStyle: { backgroundColor: t.colors.groupedBackground },
   };
 
+  if (!fontsLoaded && !fontError) return null;
+
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: t.colors.background }}>
       <ThemeProvider value={navTheme}>
         <StoreProvider>
           <ToastProvider>
-            <StatusBar style="auto" />
+            <StatusBar style={t.isDark ? 'light' : 'dark'} />
             <Hydrated>
               <TimersProvider>
               <ProgressWatcher />

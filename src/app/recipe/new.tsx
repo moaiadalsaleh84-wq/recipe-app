@@ -129,7 +129,7 @@ export default function NewRecipe() {
           ) : (
             <>
               <Icon name="camera" size={28} color={t.colors.tint} />
-              <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: '700', fontFamily: t.fonts.rounded }]}>Add a photo</Text>
+              <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: 'normal', fontFamily: t.fonts.rounded }]}>Add a photo</Text>
             </>
           )}
         </PressableScale>
