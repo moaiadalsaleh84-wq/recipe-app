@@ -208,7 +208,7 @@ function RingingBanner({ timers, onStop }: { timers: engine.CookTimer[]; onStop:
 /** Biscuit explains why notifications help, before iOS asks. */
 export function AskNotifications({ open, onAnswer }: { open: boolean; onAnswer: (allow: boolean) => void }) {
   const t = useTheme();
-  const line = { text: 'Can I ring you when the timer’s done, even if your phone is locked? Allow notifications and I’ll only use them for timers!', mood: 'wave' as const };
+  const line = { text: 'Can I ring you when it’s done?', more: 'Allow notifications and I’ll ring when a timer finishes, even if your phone is locked. I only use them for timers.', mood: 'wave' as const };
   return (
     <Modal visible={open} transparent animationType="fade" onRequestClose={() => onAnswer(false)}>
       <View style={[styles.scrim, { backgroundColor: t.colors.scrim }]}>

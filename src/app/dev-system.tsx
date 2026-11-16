@@ -18,7 +18,7 @@ export default function DevSystem() {
     ['Tomato', 'The main action', c.tintFill, c.tintDeep, c.tintSoft],
     ['Green', 'Success, progress', c.success, c.successDeep, c.successSoft],
     ['Yellow', 'Rewards', c.reward, c.rewardDeep, c.rewardSoft],
-    ['Blue', 'Information', c.info, c.infoDeep, c.infoSoft],
+    ['Plum', 'Calm accent', c.info, c.infoDeep, c.infoSoft],
   ];
   return (
     <ScrollView style={{ backgroundColor: c.background }} contentContainerStyle={{ padding: t.spacing.lg, gap: t.spacing.lg }}>

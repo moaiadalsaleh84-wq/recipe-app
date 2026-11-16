@@ -224,9 +224,9 @@ function headline(source: Source, goal: string, name: string): { title: string; 
 }
 
 function mascotLine(source: Source): Line {
-  if (source === 'recipes' || source === 'imports') return { text: 'Our recipe box is full! I tried to squeeze one more in. It didn’t fit.', mood: 'oops' };
-  if (source === 'pantry') return { text: 'The pantry shelf is full! I’m guarding the snacks, just in case.', mood: 'watch' };
-  return { text: 'Pro is like the big kitchen! All the recipes, all the cookbooks, all the fun.', mood: 'happy' };
+  if (source === 'recipes' || source === 'imports') return { text: 'Our recipe box is full!', mood: 'oops' };
+  if (source === 'pantry') return { text: 'The pantry shelf is full!', mood: 'watch' };
+  return { text: 'Pro is the big kitchen!', mood: 'happy' };
 }
 
 function PlanCard({ id, selected, onPress, title, price, note, badge }: { id: PlanId; selected: boolean; onPress: () => void; title: string; price: string; note: string; badge?: string }) {

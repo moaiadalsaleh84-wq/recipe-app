@@ -55,12 +55,12 @@ export default function ProgressScreen() {
   const line: Line =
     petLine ??
     (streak >= 3
-      ? { text: `${streak} days in a row! You’re on fire. The good kind.`, mood: 'cheering' }
+      ? { text: `${streak} days in a row! You’re on fire.`, mood: 'cheering' }
       : cookedToday
-        ? { text: 'You cooked today! I’m so proud. Same time tomorrow?', mood: 'proud' }
+        ? { text: 'You cooked today! I’m so proud.', mood: 'proud' }
         : streak > 0
-          ? { text: 'Cook something today to keep your streak going. I’ll help!', mood: 'excited' }
-          : { text: 'Cook one meal and your streak begins. I’ll be right here.', mood: 'wave' });
+          ? { text: 'Cook today to keep your streak!', mood: 'excited' }
+          : { text: 'Cook one meal to start a streak!', mood: 'wave' });
 
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" style={{ backgroundColor: t.colors.background }} contentContainerStyle={[styles.content, { paddingHorizontal: t.spacing.lg }]}>
@@ -127,8 +127,8 @@ export default function ProgressScreen() {
         <View style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card }]} accessible accessibilityLabel={`Next badge: ${next.badge.title}. ${next.badge.hint}. ${next.done} of ${next.needed}.`}>
           <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>Next badge</Text>
           <View style={styles.row}>
-            <View style={[styles.medal, { backgroundColor: t.colors.infoSoft }]}>
-              <Icon name={next.badge.icon} size={24} color={t.colors.infoText} weight="bold" />
+            <View style={[styles.medal, { backgroundColor: t.colors.rewardSoft }]}>
+              <Icon name={next.badge.icon} size={24} color={t.colors.rewardText} weight="bold" />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[t.type.title3, { color: t.colors.label }]} testID="next-badge">

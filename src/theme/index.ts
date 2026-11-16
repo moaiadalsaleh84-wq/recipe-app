@@ -27,7 +27,7 @@ export const brand = {
   tomato: '#F2431F',
   green: '#1F9A45',
   yellow: '#FFC933',
-  blue: '#1E88E5',
+  plum: '#7A5C8E', // the one calm accent, for information
   berry: '#F0546B',
 } as const;
 
@@ -49,15 +49,15 @@ const light = {
   rewardSoft: '#FFF2C7',
   rewardText: '#8A5A00',
   onReward: brand.cocoa,
-  /* Information (blue) */
-  info: brand.blue,
-  infoDeep: '#1565B0',
-  infoSoft: '#DDEEFC',
-  infoText: '#1769B8',
+  /* Information: one calm accent (a soft plum). Used sparingly. */
+  info: brand.plum,
+  infoDeep: '#5C4370',
+  infoSoft: '#F1E8F4',
+  infoText: '#6A4E7D',
   /* Older names, kept so screens keep working */
   warning: '#E0A100',
   accent: brand.berry, // favorites (hearts)
-  highlight: brand.blue,
+  highlight: brand.plum,
   destructive: '#E5342B',
   // Nutrition bars: three calm browns, so they never read as "good" (green) or "bad" (red).
   protein: '#5C4033',
@@ -66,7 +66,7 @@ const light = {
 
   label: brand.cocoa,
   secondaryLabel: '#7A5E4D',
-  tertiaryLabel: '#A08A7B',
+  tertiaryLabel: '#8D7462', // placeholders and quiet icons (4.5:1 on white)
 
   background: brand.cream,
   groupedBackground: brand.cream,
@@ -101,13 +101,13 @@ const dark: Palette = {
   rewardSoft: '#4A3A12',
   rewardText: '#FFD666',
   onReward: brand.cocoa,
-  info: '#3D9BEF',
-  infoDeep: '#1B5E9E',
-  infoSoft: '#1F3549',
-  infoText: '#7DBEF7',
+  info: '#A98BBD',
+  infoDeep: '#6E5482',
+  infoSoft: '#3A2D40',
+  infoText: '#CDB4DC',
   warning: '#FFC933',
   accent: '#FF7F92',
-  highlight: '#7DBEF7',
+  highlight: '#CDB4DC',
   destructive: '#FF6A5E',
   protein: '#F3DEC9',
   carbs: '#C99B77',
@@ -115,7 +115,7 @@ const dark: Palette = {
 
   label: '#FFF3E4',
   secondaryLabel: '#C9AE98',
-  tertiaryLabel: '#94796A',
+  tertiaryLabel: '#A68C7C',
 
   // Warm darks. Cards are clearly lighter than the page.
   background: '#211713',
@@ -149,7 +149,23 @@ export const fonts = {
  * Type scale. Titles and buttons are Fredoka (its weights are separate font files, so
  * `fontWeight` stays 'normal' to stop the system from faking a bolder one).
  */
-const display = (fontSize: number, lineHeight: number, family: string = fonts.display): TextStyle => ({ fontSize, lineHeight, fontFamily: family, fontWeight: 'normal' });
+const display = (fontSize: number, lineHeight: number, family: string = fonts.display): TextStyle => ({
+  fontSize,
+  lineHeight,
+  fontFamily: family,
+  fontWeight: 'normal',
+  // On the web, titles wrap into lines of similar length, so no word is left alone.
+  ...(Platform.OS === 'web' ? ({ textWrap: 'balance' } as object) : null),
+});
+
+/**
+ * Stops a single word from sitting alone on the last line. Spread both onto a <Text>:
+ *   <Text style={[..., t.noWidows.style]} {...t.noWidows.props}>
+ */
+export const noWidows = {
+  style: (Platform.OS === 'web' ? { textWrap: 'pretty' } : {}) as TextStyle,
+  props: { lineBreakStrategyIOS: 'push-out', textBreakStrategy: 'balanced' } as const,
+};
 export const type = {
   largeTitle: display(34, 40, fonts.displayBold),
   title1: display(28, 34, fonts.displayBold),
@@ -166,15 +182,30 @@ export const type = {
   caption2: { fontSize: 11, lineHeight: 13, fontWeight: '500' },
 } as const satisfies Record<string, TextStyle>;
 
+/** An 8pt grid (4 and 12 are the only half steps). */
 export const spacing = {
   xxs: 4,
   xs: 8,
   sm: 12,
   md: 16,
-  lg: 20, // screen margin
+  lg: 16, // kept for older code; same as md
   xl: 24,
   xxl: 32,
   xxxl: 48,
+} as const;
+
+/** One set of numbers for every screen and card, so the whole app lines up. */
+export const layout = {
+  /** Left and right margin of every screen. */
+  screen: 16,
+  /** Space between cards and between sections. */
+  gap: 16,
+  section: 24,
+  /** Inside every card. */
+  cardPadding: 16,
+  cardRadius: 20,
+  /** Bottom padding of scrolling screens. */
+  bottom: 32,
 } as const;
 
 /** Use with `borderCurve: 'continuous'` for Apple-style squircle corners. */
@@ -234,6 +265,8 @@ function makeTheme(c: Palette, isDark: boolean) {
     hitTarget,
     motion,
     depth,
+    layout,
+    noWidows,
     buttons,
     chunky: {
       lip: lip(),

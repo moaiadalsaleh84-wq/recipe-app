@@ -7,7 +7,11 @@
  */
 import type { Mood } from './moods';
 
-export type Line = { text: string; mood: Mood };
+/**
+ * `text` is one short line (about 8 words at most). `more` is the longer version, shown only when
+ * the bubble is tapped.
+ */
+export type Line = { text: string; mood: Mood; more?: string };
 type Vars = Record<string, string | number>;
 
 export type Situation =
@@ -45,85 +49,104 @@ export type Situation =
   | 'recipeSaved'
   | 'newRecipe';
 
-const script: Record<Situation, Line[]> = {
-  intro: [{ text: 'Hi! I’m Biscuit, your kitchen buddy. I’m great at cooking and only a little bit at dropping things.', mood: 'wave' }],
-  greetMorning: [
-    { text: 'Good morning, {name}! I already taste-tested breakfast. For safety reasons.', mood: 'wave' },
-    { text: 'Morning, {name}! Something smells good. Oh wait, nothing’s cooking yet. Let’s fix that!', mood: 'happy' },
-  ],
-  greetAfternoon: [
-    { text: 'Hi {name}! It’s snack o’clock. That’s a real time. I checked.', mood: 'wave' },
-    { text: 'Afternoon, {name}! I was napping in the sunny spot. I’m awake! I’m awake.', mood: 'sleepy' },
-  ],
-  greetEvening: [
-    { text: 'Dinner time, {name}! Let’s make something cozy.', mood: 'wave' },
-    { text: 'Evening, {name}! I only dropped two things today. New record!', mood: 'proud' },
-  ],
-  tip: [
-    { text: 'Read the whole recipe before you start. I learned that the hard way. Twice.', mood: 'oops' },
-    { text: 'Taste as you go! It’s my favorite cooking rule.', mood: 'happy' },
-    { text: 'Salt your pasta water like the sea. But don’t drink the sea.', mood: 'thinking' },
-    { text: 'Let meat rest before you slice it. Like me after lunch.', mood: 'sleepy' },
-    { text: 'Put everything out before you start. Fewer surprises, fewer oopsies!', mood: 'proud' },
-    { text: 'A sharp knife is a safe knife. A dull one slips. Ask my whiskers.', mood: 'worried' },
-    { text: 'I knead you to know you’re doing great. Get it? Knead? Like bread?', mood: 'love' },
-  ],
-  pet: [
-    { text: 'Purrrr… okay, I’m melting. This is fine.', mood: 'love' },
-    { text: 'Hehe, that tickles! Do the ears next!', mood: 'love' },
-    { text: 'Best. Day. Ever.', mood: 'love' },
-  ],
-  recipeHighProtein: [
-    { text: 'This one keeps you full for ages. I’d still want seconds.', mood: 'happy' },
-    { text: 'A proper hearty one! Good for busy days.', mood: 'proud' },
-  ],
-  recipeLight: [
-    { text: 'Light and fresh! Leaves room for dessert. Just saying.', mood: 'happy' },
-    { text: 'Fresh and bright, like a sunny windowsill.', mood: 'love' },
-  ],
-  recipeTreat: [
-    { text: 'Ooooh, dessert! I volunteer to lick the spoon. Very important job.', mood: 'excited' },
-    { text: 'This one smells like happiness. I can smell through the screen.', mood: 'love' },
-  ],
-  recipeComfort: [
-    { text: 'A cozy one! Perfect for blanket and sock weather.', mood: 'happy' },
-    { text: 'I made this once and only spilled half. Still delicious!', mood: 'oops' },
-  ],
-  addedToList: [{ text: 'On the list! I wrote it with my paw. Very neat. Mostly.', mood: 'happy' }],
-  itemChecked: [
-    { text: 'In the basket!', mood: 'happy' },
-    { text: 'Got it! I didn’t even drop it!', mood: 'proud' },
-    { text: 'One more down. You’re quick!', mood: 'excited' },
-  ],
-  listDone: [{ text: 'Everything’s in the basket! Can we get a treat too?', mood: 'cheering' }],
-  listEmpty: [{ text: 'The list is empty, like my snack bowl. Pick a recipe and we’ll fill both.', mood: 'thinking' }],
-  favorite: [{ text: 'Saved! Good taste, by the way.', mood: 'hop' }],
-  noResults: [{ text: 'I looked everywhere. Even under the fridge! Try fewer filters?', mood: 'thinking' }],
-  cookStart: [{ text: 'Aprons on! Set out your ingredients and tap each one as you go.', mood: 'excited' }],
-  stepStir: [{ text: 'Stir, stir, stir! Round and round. I’m getting dizzy just watching.', mood: 'happy' }],
-  stepHeat: [{ text: 'Careful, it’s hot! My whiskers know. Don’t ask me how.', mood: 'worried' }],
-  stepChop: [{ text: 'Chop chop! Tuck your fingers in like little cat paws.', mood: 'proud' }],
-  stepWait: [{ text: 'Now we wait. I’ll keep an eye on it. Both eyes, even.', mood: 'watch' }],
-  stepServe: [{ text: 'Plating time! Make it pretty. I’ll handle the taste test.', mood: 'excited' }],
-  stepOther: [{ text: 'You’re doing great! On to the next one.', mood: 'happy' }],
-  timerStart: [{ text: 'Timer’s on! I’m watching it. I won’t blink. Okay, I blinked.', mood: 'watch' }],
-  timerDone: [{ text: 'Ding! The timer’s done. Go take a look, then tap Stop.', mood: 'alarm' }],
-  timerStopped: [{ text: 'Right on time! Nothing burnt, nothing dropped.', mood: 'proud' }],
-  cookDone: [{ text: 'You did it! It smells amazing. Can I have a little bite? Please?', mood: 'cheering' }],
-  planEmptyDay: [{ text: 'Nothing planned yet. Want to add a meal? I always vote dessert.', mood: 'thinking' }],
-  planDay: [{ text: 'About {calories} kcal of yummy planned today. {goalNote}', mood: 'happy' }],
-  goalHit: [{ text: 'You hit your goal today! I’m doing a little dance.', mood: 'cheering' }],
-  savedEmpty: [{ text: 'No favorites yet. Tap a heart on any recipe. It’s like a little hug for it.', mood: 'love' }],
-  recipeSaved: [{ text: 'A new recipe! I already love it. Can we make it now?', mood: 'hop' }],
-  newRecipe: [{ text: 'Ooh, your own recipe! Tell me everything.', mood: 'excited' }],
+/** A surprise line now and then, so Biscuit doesn't always say the same thing. */
+const rare: Partial<Record<Situation, Line[]>> = {
+  greetMorning: [{ text: 'I dreamt about pancakes again.', mood: 'sleepy' }],
+  greetAfternoon: [{ text: 'I counted the spoons. All here!', mood: 'proud' }],
+  greetEvening: [{ text: 'My tummy says it’s dinner time.', mood: 'happy' }],
+  itemChecked: [{ text: 'Ooh, can I carry that one?', mood: 'excited' }],
+  stepStir: [{ text: 'Stirring is my cardio.', mood: 'proud' }],
+  stepOther: [{ text: 'Look at you go, chef!', mood: 'cheering' }],
+  cookDone: [{ text: 'Chef’s kiss! Well, cat’s kiss.', mood: 'love' }],
 };
 
-/** Pick a line. `n` cycles through the options so repeated taps show new lines. */
-export function say(situation: Situation, vars: Vars = {}, n = 0): Line {
-  const options = script[situation];
+const script: Record<Situation, Line[]> = {
+  intro: [{ text: 'Hi! I’m Biscuit, your kitchen buddy.', mood: 'wave' }],
+  greetMorning: [
+    { text: 'Good morning, {name}!', mood: 'wave' },
+    { text: 'Morning, {name}! Breakfast time?', mood: 'happy' },
+  ],
+  greetAfternoon: [
+    { text: 'Hi {name}! It’s snack o’clock.', mood: 'wave' },
+    { text: 'Afternoon, {name}! I’m awake, promise.', mood: 'sleepy' },
+  ],
+  greetEvening: [
+    { text: 'Dinner time, {name}!', mood: 'wave' },
+    { text: 'Evening, {name}! What’s cooking?', mood: 'happy' },
+  ],
+  tip: [
+    { text: 'Read the recipe first.', more: 'Read the whole recipe before you start. I learned that the hard way. Twice.', mood: 'oops' },
+    { text: 'Taste as you go!', more: 'Taste as you go, and add salt a little at a time. It’s my favorite cooking rule.', mood: 'happy' },
+    { text: 'Salt your pasta water.', more: 'Salt your pasta water like the sea. But please don’t drink the sea.', mood: 'thinking' },
+    { text: 'Let meat rest.', more: 'Let meat rest a few minutes before you slice it, so it stays juicy. Like me after lunch.', mood: 'sleepy' },
+    { text: 'Set everything out first.', more: 'Put every ingredient out before you start. Fewer surprises, fewer oopsies!', mood: 'proud' },
+    { text: 'Keep your knife sharp.', more: 'A sharp knife is a safe knife. A dull one slips. Ask my whiskers.', mood: 'worried' },
+    { text: 'I knead you to know…', more: 'I knead you to know you’re doing great. Get it? Knead? Like bread?', mood: 'love' },
+  ],
+  pet: [
+    { text: 'Purrrr… I’m melting.', mood: 'love' },
+    { text: 'Hehe, that tickles!', mood: 'love' },
+    { text: 'Best. Day. Ever.', mood: 'love' },
+    { text: 'Do the ears next!', mood: 'love' },
+  ],
+  recipeHighProtein: [
+    { text: 'This one keeps you full.', mood: 'happy' },
+    { text: 'A proper hearty one!', mood: 'proud' },
+  ],
+  recipeLight: [
+    { text: 'Light and fresh!', mood: 'happy' },
+    { text: 'Leaves room for dessert.', mood: 'love' },
+  ],
+  recipeTreat: [
+    { text: 'Ooooh, dessert!', mood: 'excited' },
+    { text: 'I’ll lick the spoon.', mood: 'love' },
+  ],
+  recipeComfort: [
+    { text: 'A cozy one!', mood: 'happy' },
+    { text: 'Perfect for sock weather.', mood: 'love' },
+  ],
+  addedToList: [{ text: 'It’s on the list!', mood: 'happy' }],
+  itemChecked: [
+    { text: 'In the basket!', mood: 'happy' },
+    { text: 'Got it!', mood: 'proud' },
+    { text: 'One more down!', mood: 'excited' },
+  ],
+  listDone: [{ text: 'All done! Treat time?', mood: 'cheering' }],
+  listEmpty: [{ text: 'Pick a recipe to fill the list.', mood: 'thinking' }],
+  favorite: [{ text: 'Saved! Good taste.', mood: 'hop' }],
+  noResults: [{ text: 'I looked everywhere! Try fewer filters.', mood: 'thinking' }],
+  cookStart: [{ text: 'Aprons on! Tick off each ingredient.', mood: 'excited' }],
+  stepStir: [{ text: 'Stir, stir, stir!', mood: 'happy' }],
+  stepHeat: [{ text: 'Careful, it’s hot!', mood: 'worried' }],
+  stepChop: [{ text: 'Tuck your fingers in!', mood: 'proud' }],
+  stepWait: [{ text: 'Now we wait.', mood: 'watch' }],
+  stepServe: [{ text: 'Plating time! Make it pretty.', mood: 'excited' }],
+  stepOther: [{ text: 'You’re doing great!', mood: 'happy' }],
+  timerStart: [{ text: 'Timer’s on! I’m watching it.', mood: 'watch' }],
+  timerDone: [{ text: 'Ding! Take a look, then tap Stop.', mood: 'alarm' }],
+  timerStopped: [{ text: 'Right on time!', mood: 'proud' }],
+  cookDone: [{ text: 'You did it! It smells amazing.', mood: 'cheering' }],
+  planEmptyDay: [{ text: 'Nothing planned yet. I vote dessert.', mood: 'thinking' }],
+  planDay: [{ text: 'About {calories} kcal planned today.', mood: 'happy' }],
+  goalHit: [{ text: 'You hit your goal today!', mood: 'cheering' }],
+  savedEmpty: [{ text: 'Tap a heart to save a recipe.', mood: 'love' }],
+  recipeSaved: [{ text: 'A new recipe! I love it.', mood: 'hop' }],
+  newRecipe: [{ text: 'Your own recipe? Tell me everything!', mood: 'excited' }],
+};
+
+const fill = (text: string, vars: Vars) => text.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? '')).replace(/\s+/g, ' ').trim();
+
+/**
+ * Pick a line. `n` cycles through the options so repeated taps show new lines.
+ * Pass `surprise` (a number from 0 to 1, e.g. Math.random() made once per visit) and roughly one
+ * time in five Biscuit says one of its rarer lines instead.
+ */
+export function say(situation: Situation, vars: Vars = {}, n = 0, surprise = 1): Line {
+  const extras = rare[situation];
+  const options = extras && surprise < 0.2 ? extras : script[situation];
   const line = options[Math.abs(n) % options.length];
   const all: Vars = { name: 'friend', ...Object.fromEntries(Object.entries(vars).filter(([, v]) => v !== '' && v !== undefined)) };
-  return { mood: line.mood, text: line.text.replace(/\{(\w+)\}/g, (_, k: string) => String(all[k] ?? '')).replace(/\s+/g, ' ').trim() };
+  return { mood: line.mood, text: fill(line.text, all), more: line.more ? fill(line.more, all) : undefined };
 }
 
 export const greetingSituation = (date = new Date()): Situation => {

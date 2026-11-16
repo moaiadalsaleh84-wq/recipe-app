@@ -158,11 +158,11 @@ function narratorLine(step: Step, p: Profile): Line {
   const n = displayName(p, 'friend');
   switch (step) {
     case 'goal':
-      return p.name.trim() ? { text: `Nice to meet you, ${n}! I’m Biscuit. What are we cooking for?`, mood: 'wave' } : { text: 'Hi! I’m Biscuit. What are we cooking for?', mood: 'wave' };
+      return p.name.trim() ? { text: `Nice to meet you, ${n}!`, mood: 'wave' } : { text: 'Hi! I’m Biscuit.', mood: 'wave' };
     case 'diet':
-      return p.diets.length ? { text: 'Got it! No sneaky surprises on your plate.', mood: 'proud' } : { text: 'Tell me what you love. Or what you don’t. I love everything.', mood: 'excited' };
+      return p.diets.length ? { text: 'Got it! No sneaky surprises.', mood: 'proud' } : { text: 'Tell me what you love!', mood: 'excited' };
     case 'household':
-      return (p.household ?? 0) >= 3 ? { text: 'A full table! My favorite kind.', mood: 'cheering' } : { text: 'A table for one, or a big family feast? Both are cozy!', mood: 'happy' };
+      return (p.household ?? 0) >= 3 ? { text: 'A full table! My favorite kind.', mood: 'cheering' } : { text: 'One plate or a feast?', mood: 'happy' };
     default:
       return { text: '', mood: 'idle' };
   }

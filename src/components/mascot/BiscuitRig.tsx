@@ -319,12 +319,12 @@ export function BiscuitRig({ mood, talking, size, playKey, hold }: RigProps) {
         break;
       }
       case 'hide': {
-        // Ducks, paws over the eyes, then one paw lowers for a peek.
-        sq.set(withSequence(T(0.9, 160, out), S(0.94, soft)));
-        headY.set(S(13, snap));
-        earL.set(S(18, soft));
-        earR.set(S(18, soft));
-        armR.set(withSequence(S(s.armR), withDelay(1300, S(-120, soft))));
+        // Ducks and scrunches up, ears flat, tail tucked; then relaxes a little.
+        sq.set(withSequence(T(0.86, 160, out), S(0.93, soft)));
+        headY.set(withSequence(S(11, snap), withDelay(1300, S(6, soft))));
+        tilt.set(withSequence(T(-3, 120), T(3, 140), S(0, jiggle)));
+        earL.set(S(20, soft));
+        earR.set(S(20, soft));
         tail.set(withSequence(T(-14, 300), withRepeat(withSequence(T(-12, 600), T(-7, 600)), -1)));
         break;
       }
@@ -415,7 +415,7 @@ export function BiscuitRig({ mood, talking, size, playKey, hold }: RigProps) {
   const fill = StyleSheet.absoluteFill;
   // While talking the mouth swaps with a second shape: open mouths close a little, closed ones open.
   const talkMouth = spec.mouth === 'open' ? 'small' : 'open';
-  const lidTop = [art.pivots.eyeL[0], 61] as const;
+  const lidTop = [art.pivots.eyeL[0], 59] as const;
 
   return (
     <Animated.View ref={self} style={{ width: size, height: size }} pointerEvents="none">
@@ -428,10 +428,7 @@ export function BiscuitRig({ mood, talking, size, playKey, hold }: RigProps) {
           <Layer>{art.tail}</Layer>
         </Animated.View>
         <View style={fill}>
-          <Layer>
-            {art.body}
-            {art.scarf}
-          </Layer>
+          <Layer>{art.body}</Layer>
         </View>
 
         {/* head: ears behind, then the face, then the hat */}
@@ -480,13 +477,17 @@ export function BiscuitRig({ mood, talking, size, playKey, hold }: RigProps) {
           </Animated.View>
         </Animated.View>
 
-        {/* arms in front, so paws can reach the chin and cover the eyes */}
+        {/* arms in front of the head, so a paw can reach the chin */}
         <Animated.View style={[fill, { transformOrigin: origin(art.pivots.shoulderL) }, armLStyle]}>
           <Layer>{art.armL}</Layer>
         </Animated.View>
         <Animated.View style={[fill, { transformOrigin: origin(mirrored(art.pivots.shoulderL)) }, armRStyle]}>
           <Layer>{art.armR}</Layer>
         </Animated.View>
+        {/* the scarf sits over the shoulders, so the arms come out from under it */}
+        <View style={fill}>
+          <Layer>{art.scarf}</Layer>
+        </View>
       </Animated.View>
 
       {spec.fx.map((e) => (
@@ -552,7 +553,7 @@ function Effect({ kind, clock, k }: { kind: Fx; clock: SharedValue<number>; k: n
         <>
           {[0, 0.33, 0.66].map((ph, i) => (
             <Particle key={ph} {...p} phase={ph} from={[150, 44]} to={[178, 10]}>
-              <SvgText x={150} y={44} fontSize={15 + i * 3} fontWeight="bold" fill="#1E88E5">
+              <SvgText x={150} y={44} fontSize={15 + i * 3} fontWeight="bold" fill="#7A5C8E">
                 Z
               </SvgText>
             </Particle>
@@ -562,7 +563,7 @@ function Effect({ kind, clock, k }: { kind: Fx; clock: SharedValue<number>; k: n
     case 'sweat':
       return (
         <Particle {...p} phase={0} from={[158, 50]} to={[162, 70]}>
-          <Path d="M158 40 Q 166 51 158 55 Q 150 51 158 40 Z" fill="#58B6F5" />
+          <Path d="M158 40 Q 166 51 158 55 Q 150 51 158 40 Z" fill="#8CCBF2" />
         </Particle>
       );
     case 'dots':

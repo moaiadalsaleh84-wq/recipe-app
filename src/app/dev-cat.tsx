@@ -22,7 +22,7 @@ export default function DevCat() {
   if (view === 'grid') {
     const s = Number(size) || 112;
     return (
-      <View testID="cat" style={{ flexDirection: 'row', flexWrap: 'wrap', backgroundColor: background, padding: 8, gap: 4, width: 390 }}>
+      <View testID="cat" style={{ flexDirection: 'row', flexWrap: 'wrap', backgroundColor: background, padding: 8, gap: 4, width: s >= 200 ? 780 : 390 }}>
         {MOODS.map((m) => (
           <View key={m} style={{ alignItems: 'center', width: Math.max(s, 60) + 8 }}>
             <Mascot mood={m} size={s} petable={false} hold={live !== '1'} />

@@ -27,14 +27,19 @@ type Props = {
  */
 export function MascotSays({ line, onNext, size = 110, layout = 'row', style, hint, onPet, hideCat }: Props) {
   const t = useTheme();
+  // A line can have a longer version (a tip). It opens on tap, and belongs to that line only.
+  const [openFor, setOpenFor] = useState<string | null>(null);
+  const expanded = !!line.more && openFor === line.text;
+  const said = expanded ? line.more! : line.text;
+  const canExpand = !!line.more && !expanded;
   // Progress is stored with the text it belongs to, so a new line starts from zero without resetting state in an effect.
-  const [typed, setTyped] = useState({ text: line.text, n: 0 });
-  const shown = typed.text === line.text ? typed.n : 0;
+  const [typed, setTyped] = useState({ text: said, n: 0 });
+  const shown = typed.text === said ? typed.n : 0;
   const timer = useRef<ReturnType<typeof setInterval>>(undefined);
-  const done = shown >= line.text.length;
+  const done = shown >= said.length;
 
   useEffect(() => {
-    const text = line.text;
+    const text = said;
     timer.current = setInterval(() => {
       setTyped((prev) => {
         const n = prev.text === text ? prev.n : 0;
@@ -46,21 +51,24 @@ export function MascotSays({ line, onNext, size = 110, layout = 'row', style, hi
       });
     }, 28);
     return () => clearInterval(timer.current);
-  }, [line.text]);
+  }, [said]);
 
   const bubble = (
     <PressableScale
       onPress={() => {
         if (!done) {
-          setTyped({ text: line.text, n: line.text.length });
+          setTyped({ text: said, n: said.length });
+          haptics.select();
+        } else if (canExpand) {
+          setOpenFor(line.text);
           haptics.select();
         } else onNext?.();
       }}
       haptic={null}
       scaleTo={0.98}
-      accessibilityRole={onNext ? 'button' : 'text'}
-      accessibilityLabel={line.text}
-      accessibilityHint={onNext ? hint ?? 'Shows another line' : undefined}
+      accessibilityRole={onNext || canExpand ? 'button' : 'text'}
+      accessibilityLabel={said}
+      accessibilityHint={canExpand ? 'Shows the whole tip' : onNext ? hint ?? 'Shows another line' : undefined}
       style={[
         styles.bubble,
         layout === 'row' ? styles.bubbleRow : styles.bubbleColumn,
@@ -74,13 +82,13 @@ export function MascotSays({ line, onNext, size = 110, layout = 'row', style, hi
           { backgroundColor: t.colors.cell, borderColor: t.colors.border },
         ]}
       />}
-      <Text style={[t.type.callout, { color: t.colors.label }]} testID="cat-line">
-        {line.text.slice(0, shown)}
-        <Text style={{ color: 'transparent' }}>{line.text.slice(shown)}</Text>
+      <Text style={[t.type.callout, t.noWidows.style, { color: t.colors.label }]} {...t.noWidows.props} testID="cat-line">
+        {said.slice(0, shown)}
+        <Text style={{ color: 'transparent' }}>{said.slice(shown)}</Text>
       </Text>
-      {hint && onNext && (
-        <Animated.Text entering={FadeIn.delay(300)} style={[t.type.caption1, { color: t.colors.secondaryLabel, marginTop: 6, fontWeight: '600' }]}>
-          {hint}
+      {(canExpand || (hint && onNext)) && done && (
+        <Animated.Text entering={FadeIn.duration(200)} style={[t.type.caption1, { color: t.colors.secondaryLabel, marginTop: 4, fontWeight: '600' }]}>
+          {canExpand ? 'Tap to read the tip' : hint}
         </Animated.Text>
       )}
     </PressableScale>
@@ -96,9 +104,9 @@ export function MascotSays({ line, onNext, size = 110, layout = 'row', style, hi
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   column: { alignItems: 'center', gap: 6 },
-  bubble: { borderWidth: 2, borderRadius: 20, borderCurve: 'continuous', paddingHorizontal: 14, paddingVertical: 12, minHeight: 44 },
+  bubble: { borderWidth: 2, borderRadius: 20, borderCurve: 'continuous', paddingHorizontal: 16, paddingVertical: 12, minHeight: 48, justifyContent: 'center' },
   bubbleRow: {},
   bubbleColumn: { maxWidth: 320 },
   tailLeft: { position: 'absolute', left: -8, top: '50%', marginTop: -7, width: 14, height: 14, borderLeftWidth: 2, borderBottomWidth: 2, transform: [{ rotate: '45deg' }] },
