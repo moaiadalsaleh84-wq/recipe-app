@@ -2,8 +2,9 @@ import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
-import { CatSays } from '../../../components/cats/CatSays';
-import { greetingSituation, say } from '../../../components/cats/dialogue';
+import { MascotSays } from '../../../components/mascot/MascotSays';
+import { greetingSituation, say } from '../../../components/mascot/lines';
+import { Chunky } from '../../../components/Chunky';
 import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
 import { FeaturedCard, RecipeCard, RecipePhoto } from '../../../components/RecipeCard';
@@ -15,7 +16,7 @@ import { showPaywall, useProGate } from '../../../lib/pro';
 import { MANAGE_SUBSCRIPTIONS_URL } from '../../../lib/purchases';
 import { ScreenTitle } from '../../../navigation/screenOptions';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useBuddy, useStore } from '../../../state/store';
+import { useStore } from '../../../state/store';
 import { useTheme } from '../../../theme';
 
 const todayIndex = (new Date().getDay() + 6) % 7; // Monday = 0
@@ -25,7 +26,6 @@ const dayNumber = Math.floor((Date.now() - new Date().getTimezoneOffset() * 6000
 export default function RecipesScreen() {
   const t = useTheme();
   const toast = useToast();
-  const buddy = useBuddy();
   const { width } = useWindowDimensions();
   const { category, setCategory, tags, toggleTag, clearFilters, plan, allRecipes, getRecipe, favorites, cookbooks, profile } = useStore();
 
@@ -37,13 +37,13 @@ export default function RecipesScreen() {
   const [reminderHidden, setReminderHidden] = useState(false);
   // Keeps the paywall's promise: a reminder in the app before the trial ends.
   const showTrialReminder = !reminderHidden && trialDaysLeft !== null && trialDaysLeft >= 0 && trialDaysLeft <= 2;
-  const addButton = useMemo(
-    () => (
-      <IconButton icon="plus" accessibilityLabel="Add a recipe" iconSize={20} onPress={() => setMenuOpen(true)} />
-    ),
-    [],
+  // The screen's one main action: add a recipe (import from a link, or write your own).
+  const addButton = (
+    <Chunky onPress={() => setMenuOpen(true)} accessibilityLabel="Add a recipe" face={t.colors.tintFill} lip={t.colors.tintDeep} depth={t.depth.small} radius={t.radius.pill} faceStyle={styles.addBtn}>
+      <Icon name="plus" size={16} color={t.colors.onTint} weight="bold" />
+      <Text style={[t.type.subhead, { color: t.colors.onTint, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>Add</Text>
+    </Chunky>
   );
-
 
   const q = query.trim().toLowerCase();
   const filtered = useMemo(
@@ -63,7 +63,7 @@ export default function RecipesScreen() {
   const mains = allRecipes.filter((r) => r.category !== 'Dessert');
   const featured = tonight ?? mains[dayNumber % Math.max(1, mains.length)] ?? allRecipes[0];
   const firstName = profile.name.trim().split(/\s+/)[0] ?? '';
-  const line = tip < 0 ? say(buddy, greetingSituation(), { name: firstName }) : say(buddy, 'tip', {}, tip);
+  const line = tip < 0 ? say(greetingSituation(), { name: firstName }) : say('tip', {}, tip);
 
   const margin = t.spacing.md;
   const contentWidth = Math.min(width, 900);
@@ -106,8 +106,7 @@ export default function RecipesScreen() {
 
       {showExtras && (
         <>
-          <CatSays
-            buddy={buddy}
+          <MascotSays
             line={petLine ?? line}
             size={112}
             hint="Tap for a tip"
@@ -115,20 +114,20 @@ export default function RecipesScreen() {
               setPetLine(null);
               setTip((n) => n + 1);
             }}
-            onPet={() => setPetLine(say(buddy, 'pet', {}, tip + 1))}
+            onPet={() => setPetLine(say('pet', {}, tip + 1))}
             style={{ marginBottom: t.spacing.sm }}
           />
           <PressableScale
             onPress={() => router.push('/buddy-pick')}
-            accessibilityLabel={`Can't decide? Let ${buddy === 'tank' ? 'Tank' : 'Biscuit'} pick`}
+            accessibilityLabel="Can't decide? Let Biscuit pick"
             style={[styles.pickBtn, { backgroundColor: t.colors.cell, ...t.chunky.card }]}
           >
-            <View style={[styles.pickIcon, { backgroundColor: t.colors.tintFill }]}>
+            <View style={[styles.pickIcon, { backgroundColor: t.colors.info }]}>
               <Icon name="shuffle" size={18} color={t.colors.onTint} weight="bold" />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[t.type.headline, { color: t.colors.label }]}>Can’t decide?</Text>
-              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>Let {buddy === 'tank' ? 'Tank' : 'Biscuit'} pick something for you</Text>
+              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>Let Biscuit pick something for you</Text>
             </View>
             <Icon name="chevronRight" size={14} color={t.colors.tertiaryLabel} weight="semibold" />
           </PressableScale>
@@ -208,9 +207,9 @@ export default function RecipesScreen() {
           {filtered.length === 0 ? (
             <EmptyState
               icon="search"
-              cat={{ buddy, mood: 'think' }}
+              cat="thinking"
               title="No Recipes Found"
-              message={say(buddy, 'noResults').text}
+              message={say('noResults').text}
               action={{
                 label: 'Clear Search & Filters',
                 icon: 'close',
@@ -311,6 +310,7 @@ function CookbookTile({ id, name, recipes }: { id: string; name: string; recipes
 }
 
 const styles = StyleSheet.create({
+  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 40, paddingHorizontal: 16 },
   content: { paddingBottom: 120, width: '100%', alignSelf: 'center' },
   reminder: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingLeft: 14, paddingRight: 2, paddingVertical: 6, borderRadius: 16, borderWidth: 2, marginBottom: 14, borderCurve: 'continuous' },
   reminderBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 6 },

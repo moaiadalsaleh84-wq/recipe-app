@@ -8,6 +8,7 @@ import { ProgressWatcher } from '../components/ProgressWatcher';
 import { ToastProvider } from '../components/Toast';
 import { StoreProvider, useStore } from '../state/store';
 import { TimersProvider } from '../state/timers';
+import { LookProvider } from '../components/mascot/look';
 import { loadAppearance, useTheme } from '../theme';
 
 /** Waits for saved data to load so screens never flash default content. */
@@ -51,6 +52,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: t.colors.background }}>
       <ThemeProvider value={navTheme}>
+        <LookProvider>
         <StoreProvider>
           <ToastProvider>
             <StatusBar style={t.isDark ? 'light' : 'dark'} />
@@ -61,7 +63,6 @@ export default function RootLayout() {
               <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: t.colors.background } }}>
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="onboarding" options={{ gestureEnabled: false, animation: 'fade' }} />
-                <Stack.Screen name="buddy-picker" />
                 <Stack.Screen name="paywall" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
                 <Stack.Screen name="recipe/[id]" />
                 <Stack.Screen name="recipe/new" options={{ presentation: 'modal', contentStyle: { backgroundColor: t.colors.groupedBackground } }} />
@@ -78,6 +79,7 @@ export default function RootLayout() {
             </Hydrated>
           </ToastProvider>
         </StoreProvider>
+        </LookProvider>
       </ThemeProvider>
     </GestureHandlerRootView>
   );

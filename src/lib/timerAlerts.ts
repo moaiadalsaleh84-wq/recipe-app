@@ -10,7 +10,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform } from 'react-native';
-import type { BuddyId } from '../components/cats/types';
 import { liveActivity as palette } from '../theme';
 import type { CookTimerActivityProps } from '../widgets/CookTimerActivity';
 import { clock, type CookTimer } from './cookTimers';
@@ -153,20 +152,20 @@ export function listen(handlers: { onOpenRecipe: (recipeId: string) => void; onC
 
 /* ---------------- carrying out the plan ---------------- */
 
-export type AlertContext = { buddy: BuddyId; buddyName: string; doneLine: string };
+export type AlertContext = { buddyName: string; doneLine: string };
 
 const notifId = (timerId: string) => `${NOTIF_PREFIX}${timerId}`;
 
-/** Cat faces for the Live Activity, copied once into the folder the widget extension can read. */
-let faceCache: Partial<Record<BuddyId, CookTimerActivityProps['faces']>> = {};
-const FACE_ASSETS: Record<BuddyId, Record<'calm' | 'worried' | 'alarm', number>> = {
-  tank: { calm: require('../../assets/live-activity/tank-calm.png'), worried: require('../../assets/live-activity/tank-worried.png'), alarm: require('../../assets/live-activity/tank-alarm.png') },
-  biscuit: { calm: require('../../assets/live-activity/biscuit-calm.png'), worried: require('../../assets/live-activity/biscuit-worried.png'), alarm: require('../../assets/live-activity/biscuit-alarm.png') },
+/** Biscuit's face for the Live Activity, copied once into the folder the widget extension can read. */
+let faceCache: CookTimerActivityProps['faces'] | null = null;
+const FACE_ASSETS: Record<'calm' | 'worried' | 'alarm', number> = {
+  calm: require('../../assets/live-activity/biscuit-calm.png'),
+  worried: require('../../assets/live-activity/biscuit-worried.png'),
+  alarm: require('../../assets/live-activity/biscuit-alarm.png'),
 };
 
-async function facesFor(buddy: BuddyId): Promise<CookTimerActivityProps['faces']> {
-  const cached = faceCache[buddy];
-  if (cached) return cached;
+async function faces(): Promise<CookTimerActivityProps['faces']> {
+  if (faceCache) return faceCache;
   const empty = { calm: '', worried: '', alarm: '' };
   const w = W();
   if (!w?.mod.widgetsDirectory) return empty;
@@ -176,14 +175,15 @@ async function facesFor(buddy: BuddyId): Promise<CookTimerActivityProps['faces']
     const dir = new Directory(w.mod.widgetsDirectory);
     const out = { ...empty };
     for (const mood of ['calm', 'worried', 'alarm'] as const) {
-      const dest = new File(dir, `cook-timer-${buddy}-${mood}.png`);
+      // "v2": the redesigned Biscuit. A new name, so old copies aren't reused.
+      const dest = new File(dir, `cook-timer-biscuit-v2-${mood}.png`);
       if (!dest.exists) {
-        const asset = await Asset.fromModule(FACE_ASSETS[buddy][mood]).downloadAsync();
+        const asset = await Asset.fromModule(FACE_ASSETS[mood]).downloadAsync();
         if (asset.localUri) await new File(asset.localUri).copy(dest);
       }
       out[mood] = dest.uri;
     }
-    faceCache = { ...faceCache, [buddy]: out };
+    faceCache = out;
     return out;
   } catch {
     return empty; // the layout falls back to a timer symbol
@@ -285,7 +285,7 @@ async function run(op: AlertOp, ctx: AlertContext) {
     }
     case 'activityStart': {
       if (!w) return;
-      const props = activityProps(op.timer, ctx, await facesFor(ctx.buddy));
+      const props = activityProps(op.timer, ctx, await faces());
       const url = `pantrypop://cook/${encodeURIComponent(op.timer.recipeId)}`;
       activities.set(op.timer.id, w.factory.start(props, url, staleDateFor(op.timer)));
       await saveActivityMap();
@@ -294,7 +294,7 @@ async function run(op: AlertOp, ctx: AlertContext) {
     case 'activityUpdate': {
       const a = activities.get(op.timer.id);
       if (!a) return run({ kind: 'activityStart', timer: op.timer }, ctx);
-      await a.update(activityProps(op.timer, ctx, await facesFor(ctx.buddy)), staleDateFor(op.timer));
+      await a.update(activityProps(op.timer, ctx, await faces()), staleDateFor(op.timer));
       return;
     }
     case 'activityEnd': {

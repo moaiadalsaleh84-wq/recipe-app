@@ -14,7 +14,7 @@ const tabs: Record<string, { label: string; icon: IconName }> = {
   plan: { label: 'Plan', icon: 'calendar' },
   pantry: { label: 'Pantry', icon: 'fridge' },
   groceries: { label: 'Shop', icon: 'cart' },
-  buddy: { label: 'Buddy', icon: 'paw' },
+  progress: { label: 'Progress', icon: 'trophy' },
 };
 
 /** The app's own tab bar: big icons in a soft pill, short labels, room to breathe. */

@@ -4,9 +4,9 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeInRight, LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CatSays } from '../../components/cats/CatSays';
+import { MascotSays } from '../../components/mascot/MascotSays';
 import { ConfettiBurst } from '../../components/ConfettiBurst';
-import { say, stepSituation, type Line } from '../../components/cats/dialogue';
+import { say, stepSituation, type Line } from '../../components/mascot/lines';
 import { Icon } from '../../components/Icon';
 import { PressableScale } from '../../components/PressableScale';
 import { useToast } from '../../components/Toast';
@@ -15,7 +15,7 @@ import { haptics } from '../../lib/haptics';
 import { clock, secondsLeft, type CookTimer } from '../../lib/cookTimers';
 import { findTimers } from '../../lib/timers';
 import { convertQty, convertStepText } from '../../lib/units';
-import { formatQty, roundQty, useBuddy, useStore } from '../../state/store';
+import { formatQty, roundQty, useStore } from '../../state/store';
 import { useTimers } from '../../state/timers';
 import { useTheme } from '../../theme';
 
@@ -25,7 +25,6 @@ export default function CookMode() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const toast = useToast();
-  const buddy = useBuddy();
   const params = useLocalSearchParams<{ id: string; servings?: string }>();
   const { getRecipe, units, logCooked } = useStore();
   const recipe = getRecipe(params.id);
@@ -43,26 +42,26 @@ export default function CookMode() {
 
   // A ringing timer always gets the cat's attention.
   const line: Line = ringing.length
-    ? say(buddy, 'timerDone')
+    ? say('timerDone')
     : override
       ? override
       : page === 0
-        ? say(buddy, 'cookStart')
+        ? say('cookStart')
         : page === last
-          ? say(buddy, 'cookDone')
-          : say(buddy, stepSituation(steps[page - 1] ?? ''));
+          ? say('cookDone')
+          : say(stepSituation(steps[page - 1] ?? ''));
 
   if (!recipe) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', backgroundColor: t.colors.background }}>
-        <EmptyState icon="fork" cat={{ buddy, mood: 'worried' }} title="Recipe Not Found" message="It may have been removed." action={{ label: 'Close', onPress: () => router.back() }} />
+        <EmptyState icon="fork" cat="worried" title="Recipe Not Found" message="It may have been removed." action={{ label: 'Close', onPress: () => router.back() }} />
       </View>
     );
   }
 
   const stopAlarm = (id: string) => {
     stop(id);
-    setOverride(say(buddy, 'timerStopped'));
+    setOverride(say('timerStopped'));
     haptics.success();
   };
 
@@ -76,7 +75,7 @@ export default function CookMode() {
 
   const startTimer = (label: string, seconds: number) => {
     start({ label, total: seconds, recipeId: recipe.id, recipeTitle: recipe.title, step: page, stepText: shortStep(steps[page - 1] ?? '') });
-    setOverride(say(buddy, 'timerStart'));
+    setOverride(say('timerStart'));
     toast({ message: `Timer set for ${label}`, icon: 'timer', tone: 'info' });
   };
 
@@ -94,7 +93,7 @@ export default function CookMode() {
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.background }}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 6 }]}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 12) + 6 }]}>
         <IconButton icon="close" accessibilityLabel="Exit cook mode" onPress={close} color={t.colors.label} background={t.colors.fill} />
         <View style={{ flex: 1, alignItems: 'center' }}>
           <Text style={[t.type.headline, { color: t.colors.label }]} numberOfLines={1}>
@@ -137,11 +136,11 @@ export default function CookMode() {
         </Text>
       )}
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="never" automaticallyAdjustContentInsets={false} contentContainerStyle={styles.content}>
         <Animated.View key={page} entering={FadeInRight.duration(240)} style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
           {page === 0 && (
             <>
-              <Text style={[t.type.title2, { color: t.colors.label }]}>Gather your ingredients</Text>
+              <Text style={[t.type.title2, { color: t.colors.label }]} accessibilityRole="header">Ingredients</Text>
               <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, marginBottom: 8 }]}>
                 For {servings} {servings === 1 ? 'serving' : 'servings'}. Tap each one as you set it out.
               </Text>
@@ -202,7 +201,7 @@ export default function CookMode() {
           )}
         </Animated.View>
 
-        <CatSays buddy={buddy} line={line} size={128} style={{ marginTop: 20 }} />
+        <MascotSays line={line} size={128} style={{ marginTop: 20 }} />
       </ScrollView>
 
       {/* Celebrate the finish */}
@@ -288,8 +287,8 @@ const styles = StyleSheet.create({
   ringing: { paddingRight: 8, borderWidth: 0 },
   stopBtn: { minHeight: 44, minWidth: 84, paddingHorizontal: 18, borderRadius: 999, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
   timerBar: { flexDirection: 'row', alignItems: 'center', gap: 4, marginHorizontal: 16, marginBottom: 4, paddingLeft: 14, paddingRight: 4, borderRadius: 18, borderCurve: 'continuous', minHeight: 56 },
-  content: { padding: 16, paddingBottom: 140, width: '100%', maxWidth: 640, alignSelf: 'center' },
-  card: { borderRadius: 24, padding: 20, gap: 6, borderCurve: 'continuous' },
+  content: { padding: 16, paddingTop: 12, paddingBottom: 140, width: '100%', maxWidth: 640, alignSelf: 'center' },
+  card: { borderRadius: 24, padding: 20, paddingTop: 22, gap: 6, borderCurve: 'continuous' },
   stepText: { fontSize: 24, lineHeight: 33, fontWeight: '600', marginTop: 6 },
   timerChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
   timerChip: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 14, borderRadius: 999, borderWidth: 1.5 },

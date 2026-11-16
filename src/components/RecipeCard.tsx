@@ -4,7 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useState } from 'react';
 import type { Recipe, RecipeImage } from '../data/mock';
 import { photoUri } from '../lib/photos';
-import { useBuddy, useStore } from '../state/store';
+import { useStore } from '../state/store';
 import { useTheme } from '../theme';
 import { Icon } from './Icon';
 import { PressableScale } from './PressableScale';
@@ -57,11 +57,8 @@ export function FavoriteButton({ recipe, onPhoto }: { recipe: Recipe; onPhoto?: 
   );
 }
 
-/** Tank cares about protein; Biscuit about calories-of-joy. */
-const useMeta = () => {
-  const buddy = useBuddy();
-  return (r: Recipe) => (buddy === 'tank' ? `${r.minutes} min · ${r.nutrition.protein} g protein` : `${r.minutes} min · ${r.calories} kcal`);
-};
+/** The small print under a recipe's title. */
+const useMeta = () => (r: Recipe) => `${r.minutes} min · ${r.calories} kcal`;
 
 /** Grid card: photo with title and meta below, App Store style. */
 export function RecipeCard({ recipe, width }: { recipe: Recipe; width: number }) {

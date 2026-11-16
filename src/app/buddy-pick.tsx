@@ -3,22 +3,21 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CatSays } from '../components/cats/CatSays';
-import { buddyInfo, type Line } from '../components/cats/dialogue';
+import { MascotSays } from '../components/mascot/MascotSays';
+import type { Line } from '../components/mascot/lines';
 import { PageHeader } from '../components/PageHeader';
 import { RecipePhoto } from '../components/RecipeCard';
 import { Button } from '../components/ui';
 import { matchesFilter, type Recipe } from '../data/mock';
 import { haptics } from '../lib/haptics';
 import { isIOS } from '../navigation/screenOptions';
-import { useBuddy, useStore } from '../state/store';
+import { useStore } from '../state/store';
 import { useTheme } from '../theme';
 
-/** "Can't decide?" The buddy shuffles through recipes and lands on one. */
+/** "Can't decide?" Biscuit shuffles through recipes and lands on one. */
 export default function BuddyPick() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
-  const buddy = useBuddy();
   const { allRecipes, profile, category, tags } = useStore();
 
   // Respect the diet from onboarding and any filters that are on.
@@ -56,14 +55,12 @@ export default function BuddyPick() {
 
   const recipe: Recipe = pool[index % pool.length];
   const line: Line = rolling
-    ? { text: buddy === 'tank' ? 'Let me scout the playbook…' : 'Ooh, let me sniff around the kitchen…', mood: 'think' }
-    : buddy === 'tank'
-      ? { text: `${recipe.title}. ${recipe.nutrition.protein} g protein. That’s the call, ${profile.name.trim().split(/\s+/)[0] || 'champ'}.`, mood: 'flex' }
-      : { text: `Tonight: ${recipe.title}! I can already smell it. Mmm!`, mood: 'celebrate' };
+    ? { text: 'Ooh, let me sniff around the kitchen…', mood: 'thinking' }
+    : { text: `How about ${recipe.title}? I can already smell it. Mmm!`, mood: 'excited' };
 
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.groupedBackground }}>
-      <PageHeader title={`Let ${buddyInfo[buddy].name} pick`} mode="cancel" inSheet={isIOS} />
+      <PageHeader title="Let Biscuit pick" mode="cancel" inSheet={isIOS} />
       <View style={[styles.body, { paddingBottom: insets.bottom + 16 }]}>
         <View style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card }]} accessibilityLiveRegion="polite" accessibilityLabel={rolling ? 'Shuffling recipes' : `Picked: ${recipe.title}`}>
           <Animated.View key={`${round}-${index}-${rolling}`} entering={FadeIn.duration(rolling ? 60 : 220)} style={styles.photo}>
@@ -74,12 +71,12 @@ export default function BuddyPick() {
               {recipe.title}
             </Text>
             <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
-              {recipe.minutes} min · {buddy === 'tank' ? `${recipe.nutrition.protein} g protein` : `${recipe.calories} kcal`}
+              {recipe.minutes} min · {recipe.calories} kcal
             </Text>
           </View>
         </View>
 
-        <CatSays buddy={buddy} line={line} size={110} style={{ marginTop: 18 }} />
+        <MascotSays line={line} size={110} style={{ marginTop: 18 }} />
 
         <View style={styles.actions}>
           <Button

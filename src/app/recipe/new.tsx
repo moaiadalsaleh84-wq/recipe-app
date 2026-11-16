@@ -2,8 +2,8 @@ import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
-import { CatSays } from '../../components/cats/CatSays';
-import { say } from '../../components/cats/dialogue';
+import { MascotSays } from '../../components/mascot/MascotSays';
+import { say } from '../../components/mascot/lines';
 import { Icon } from '../../components/Icon';
 import { PageHeader } from '../../components/PageHeader';
 import { PressableScale } from '../../components/PressableScale';
@@ -14,14 +14,13 @@ import { haptics } from '../../lib/haptics';
 import { parseIngredient } from '../../lib/parseIngredient';
 import { downloadPhoto, photoUri, pickPhoto as pickLibraryPhoto } from '../../lib/photos';
 import { showPaywall, useProGate } from '../../lib/pro';
-import { useBuddy, useStore } from '../../state/store';
+import { useStore } from '../../state/store';
 import { useTheme } from '../../theme';
 
 /** Write down your own recipe, or keep one you found online with a link to the original. */
 export default function NewRecipe() {
   const t = useTheme();
   const toast = useToast();
-  const buddy = useBuddy();
   const { addRecipe, draft: storedDraft, setDraft } = useStore();
   const { canAddRecipe } = useProGate();
   const params = useLocalSearchParams<{ draft?: string; next?: string }>();
@@ -116,7 +115,7 @@ export default function NewRecipe() {
             <Text style={[t.type.subhead, { color: t.colors.label, flex: 1 }]}>{draft.notice}</Text>
           </View>
         ) : (
-          <CatSays buddy={buddy} line={say(buddy, 'newRecipe')} size={86} style={{ marginBottom: 16 }} />
+          <MascotSays line={say('newRecipe')} size={86} style={{ marginBottom: 16 }} />
         )}
 
         <PressableScale

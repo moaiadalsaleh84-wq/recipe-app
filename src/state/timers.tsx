@@ -4,7 +4,7 @@
  *
  * - The countdown on screen ticks only while the app is open (iOS pauses JavaScript otherwise).
  * - Outside the app, a scheduled notification and the Live Activity take over (timerAlerts.ts).
- * - The first timer asks, through the cat, whether it may send notifications.
+ * - The first timer asks, through Biscuit, whether it may send notifications.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, usePathname } from 'expo-router';
@@ -12,8 +12,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { AppState, Modal, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CatSays } from '../components/cats/CatSays';
-import { buddyInfo } from '../components/cats/dialogue';
+import { MASCOT_NAME } from '../components/mascot/Mascot';
+import { MascotSays } from '../components/mascot/MascotSays';
 import { Icon } from '../components/Icon';
 import { PressableScale } from '../components/PressableScale';
 import { Button } from '../components/ui';
@@ -23,7 +23,6 @@ import { haptics } from '../lib/haptics';
 import { applyAlerts, backgroundSupport, listen, notificationPermission, reconnect, requestNotificationPermission, type BackgroundSupport, type TimerControl } from '../lib/timerAlerts';
 import { planAlerts } from '../lib/timerPlan';
 import { useTheme } from '../theme';
-import { useBuddy } from './store';
 
 const STORAGE_KEY = 'pantry-pop-timers-v1';
 const ASKED_KEY = 'pantry-pop-notifications-asked';
@@ -50,7 +49,6 @@ export function useTimers() {
 }
 
 export function TimersProvider({ children }: { children: ReactNode }) {
-  const buddy = useBuddy();
   const alarm = useAlarm();
   const [timers, setTimers] = useState<engine.CookTimer[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -82,9 +80,8 @@ export function TimersProvider({ children }: { children: ReactNode }) {
     if (!loaded) return;
     const ops = planAlerts(sent.current, timers);
     sent.current = timers;
-    const info = buddyInfo[buddy];
-    applyAlerts(ops, { buddy, buddyName: info.name, doneLine: buddy === 'tank' ? 'Go check it, champ.' : 'Come take a look!' });
-  }, [timers, loaded, buddy]);
+    applyAlerts(ops, { buddyName: MASCOT_NAME, doneLine: 'Come take a look!' });
+  }, [timers, loaded]);
 
   /* ---------- the clock: only while the app is open ---------- */
   const latest = useRef(timers);
@@ -208,19 +205,15 @@ function RingingBanner({ timers, onStop }: { timers: engine.CookTimer[]; onStop:
   );
 }
 
-/** The cat explains why notifications help, before iOS asks. */
+/** Biscuit explains why notifications help, before iOS asks. */
 export function AskNotifications({ open, onAnswer }: { open: boolean; onAnswer: (allow: boolean) => void }) {
   const t = useTheme();
-  const buddy = useBuddy();
-  const line =
-    buddy === 'tank'
-      ? { text: 'Want me to call you even when your phone’s locked? Allow notifications and I’ll ring when the timer’s done. Nothing else, promise.', mood: 'think' as const }
-      : { text: 'Can I ring you when the timer’s done, even if your phone is locked? Allow notifications and I’ll only use them for timers!', mood: 'happy' as const };
+  const line = { text: 'Can I ring you when the timer’s done, even if your phone is locked? Allow notifications and I’ll only use them for timers!', mood: 'wave' as const };
   return (
     <Modal visible={open} transparent animationType="fade" onRequestClose={() => onAnswer(false)}>
       <View style={[styles.scrim, { backgroundColor: t.colors.scrim }]}>
         <View style={[styles.sheet, { backgroundColor: t.colors.background, ...t.chunky.card }]} testID="ask-notifications">
-          <CatSays buddy={buddy} line={line} size={100} layout="column" />
+          <MascotSays line={line} size={100} layout="column" />
           <Button label="Allow notifications" icon="timer" onPress={() => { haptics.select(); onAnswer(true); }} style={{ marginTop: 16 }} />
           <Button label="Not now" variant="plain" onPress={() => onAnswer(false)} accessibilityLabel="Not now, keep the timer in the app" />
           <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, textAlign: 'center' }]}>You can change this anytime in Settings → Notifications.</Text>

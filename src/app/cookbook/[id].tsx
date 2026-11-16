@@ -5,15 +5,14 @@ import { PageHeader } from '../../components/PageHeader';
 import { RecipeRow } from '../../components/RecipeCard';
 import { useToast } from '../../components/Toast';
 import { EmptyState, IconButton, Section, Separator } from '../../components/ui';
-import { say } from '../../components/cats/dialogue';
+import { say } from '../../components/mascot/lines';
 import { FAVORITES_ID, type Recipe } from '../../data/mock';
-import { useBuddy, useStore } from '../../state/store';
+import { useStore } from '../../state/store';
 import { useTheme } from '../../theme';
 
 export default function CookbookScreen() {
   const t = useTheme();
   const toast = useToast();
-  const buddy = useBuddy();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { favorites, cookbooks, getRecipe, toggleInCookbook, deleteCookbook, restoreCookbook } = useStore();
 
@@ -25,7 +24,7 @@ export default function CookbookScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: t.colors.groupedBackground }}>
         <PageHeader title="Cookbook" />
-        <EmptyState icon="book" cat={{ buddy, mood: 'worried' }} title="Cookbook Not Found" message="It may have been deleted." />
+        <EmptyState icon="book" cat="worried" title="Cookbook Not Found" message="It may have been deleted." />
       </View>
     );
   }
@@ -64,9 +63,9 @@ export default function CookbookScreen() {
         {recipes.length === 0 ? (
           <EmptyState
             icon="book"
-            cat={{ buddy, mood: isFavorites ? 'love' : 'think' }}
+            cat={isFavorites ? 'love' : 'thinking'}
             title={isFavorites ? 'No Favorites Yet' : 'This Cookbook Is Empty'}
-            message={isFavorites ? say(buddy, 'savedEmpty').text : 'Open a recipe and tap the bookmark to add it here.'}
+            message={isFavorites ? say('savedEmpty').text : 'Open a recipe and tap the bookmark to add it here.'}
             action={{ label: 'Browse Recipes', icon: 'book', onPress: () => router.dismissTo('/') }}
           />
         ) : (

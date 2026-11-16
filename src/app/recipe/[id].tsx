@@ -15,8 +15,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
-import { CatSays } from '../../components/cats/CatSays';
-import { say } from '../../components/cats/dialogue';
+import { MascotSays } from '../../components/mascot/MascotSays';
+import { say } from '../../components/mascot/lines';
 import { Icon, type IconName } from '../../components/Icon';
 import { PressableScale } from '../../components/PressableScale';
 import { RecipePhoto } from '../../components/RecipeCard';
@@ -26,7 +26,7 @@ import { recipeKind, type DietTag, type Recipe, type Units } from '../../data/mo
 import { haptics } from '../../lib/haptics';
 import { pickPhoto } from '../../lib/photos';
 import { convertQty, convertStepText } from '../../lib/units';
-import { formatQty, roundQty, useBuddy, useStore } from '../../state/store';
+import { formatQty, roundQty, useStore } from '../../state/store';
 import { useTheme } from '../../theme';
 
 export default function RecipeScreen() {
@@ -34,7 +34,6 @@ export default function RecipeScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const toast = useToast();
-  const buddy = useBuddy();
   const { id } = useLocalSearchParams<{ id: string }>();
   const {
     getRecipe, isFavorite, toggleFavorite, addIngredients, showOnlyTag, units, setUnits, notes, setNote,
@@ -89,7 +88,7 @@ export default function RecipeScreen() {
   if (!recipe) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', backgroundColor: t.colors.background }}>
-        <EmptyState icon="fork" cat={{ buddy, mood: 'worried' }} title="Recipe Not Found" message="It may have been removed." action={{ label: 'Back to Recipes', onPress: goBack }} />
+        <EmptyState icon="fork" cat="worried" title="Recipe Not Found" message="It may have been removed." action={{ label: 'Back to Recipes', onPress: goBack }} />
       </View>
     );
   }
@@ -97,7 +96,7 @@ export default function RecipeScreen() {
   const fav = isFavorite(recipe.id);
   const inCookbooks = cookbooks.filter((c) => c.recipeIds.includes(recipe.id)).length + (favorites.includes(recipe.id) ? 1 : 0);
   const scale = servings / recipe.servings;
-  const line = say(buddy, recipeKind(recipe), { protein: recipe.nutrition.protein }, lineN);
+  const line = say(recipeKind(recipe), { protein: recipe.nutrition.protein }, lineN);
 
   const onFavorite = () => {
     const now = toggleFavorite(recipe.id);
@@ -155,7 +154,7 @@ export default function RecipeScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.background }}>
-      <StatusBar style={barVisible ? 'auto' : 'light'} animated />
+      <StatusBar style={barVisible ? (t.isDark ? 'light' : 'dark') : 'light'} animated />
       <Animated.ScrollView
         onScroll={onScroll}
         scrollEventThrottle={16}
@@ -243,15 +242,15 @@ export default function RecipeScreen() {
             </View>
           )}
 
-          {/* The buddy reacts to this recipe */}
-          <CatSays buddy={buddy} line={line} size={96} onNext={() => setLineN((n) => n + 1)} hint="Tap for more" style={{ marginTop: 20 }} />
+          {/* Biscuit reacts to this recipe */}
+          <MascotSays line={line} size={96} onNext={() => setLineN((n) => n + 1)} hint="Tap for more" style={{ marginTop: 20 }} />
 
           {/* Nutrition */}
           <Text style={[t.type.title2, styles.h2, { color: t.colors.label }]} accessibilityRole="header">
             Nutrition
           </Text>
           <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: -8, marginBottom: 10 }]}>Estimated per serving, from the ingredients</Text>
-          <Nutrition recipe={recipe} proteinGoal={buddy === 'tank' && isPro ? goals.protein : undefined} />
+          <Nutrition recipe={recipe} proteinGoal={isPro ? goals.protein : undefined} />
 
           {/* Ingredients */}
           <View style={styles.sectionHeader}>
@@ -333,7 +332,8 @@ export default function RecipeScreen() {
 
       {/* Compact bar that fades in once the photo scrolls away */}
       <Animated.View pointerEvents="none" style={[styles.topBar, { height: insets.top + 56 }, barStyle]}>
-        <BlurView tint="systemChromeMaterial" intensity={90} style={StyleSheet.absoluteFill} />
+        <BlurView tint={t.isDark ? 'dark' : 'light'} intensity={40} style={StyleSheet.absoluteFill} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: t.colors.bar }]} />
         <View style={[StyleSheet.absoluteFill, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: t.colors.separator }]} />
         <Text style={[t.type.headline, styles.topTitle, { color: t.colors.label, top: insets.top + 17 }]} numberOfLines={1}>
           {recipe.title}
@@ -357,13 +357,14 @@ export default function RecipeScreen() {
 
       {/* Sticky actions */}
       <View style={[styles.bottom, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-        <BlurView tint="systemChromeMaterial" intensity={90} style={StyleSheet.absoluteFill} />
+        <BlurView tint={t.isDark ? 'dark' : 'light'} intensity={40} style={StyleSheet.absoluteFill} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: t.colors.bar }]} />
         <View style={[StyleSheet.absoluteFill, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.colors.separator }]} />
         <View style={styles.bottomRow}>
           <Button
             label={justAdded ? 'Added' : 'Add to List'}
             icon={justAdded ? 'check' : 'cartAdd'}
-            variant="success"
+            variant={justAdded ? 'success' : 'tinted'}
             onPress={onAdd}
             style={{ flex: 1 }}
             accessibilityLabel={`Add ingredients for ${servings} servings to the grocery list`}
@@ -424,7 +425,7 @@ function GlassButton({ icon, label, onPress, color }: { icon: IconName; label: s
   const t = useTheme();
   return (
     <View style={styles.glass}>
-      <BlurView tint="systemChromeMaterial" intensity={80} style={StyleSheet.absoluteFill} />
+      <BlurView tint={t.isDark ? 'dark' : 'light'} intensity={40} style={StyleSheet.absoluteFill} />
       <IconButton icon={icon} accessibilityLabel={label} onPress={onPress} color={color ?? t.colors.label} iconSize={18} />
     </View>
   );
@@ -467,7 +468,8 @@ const styles = StyleSheet.create({
   stepNum: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', marginTop: -3, borderWidth: 1.5 },
   notes: { minHeight: 96, borderRadius: 16, padding: 14, textAlignVertical: 'top', borderCurve: 'continuous', outlineStyle: 'none' } as never,
   topBar: { position: 'absolute', top: 0, left: 0, right: 0, overflow: 'hidden' },
-  topTitle: { position: 'absolute', left: 72, right: 150, textAlign: 'center' },
+  // Left-aligned between Back and the three buttons on the right; long titles end in "…".
+  topTitle: { position: 'absolute', left: 68, right: 176, textAlign: 'left' },
   controls: { position: 'absolute', left: 16, right: 16, flexDirection: 'row', justifyContent: 'space-between' },
   controlsRight: { flexDirection: 'row', gap: 8 },
   glass: { width: 44, height: 44, borderRadius: 22, overflow: 'hidden' },

@@ -1,3 +1,4 @@
+import { roundQty } from '../lib/qty';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { BuddyId } from '../components/cats/types';
@@ -147,29 +148,7 @@ type Store = Saved & {
 
 const StoreContext = createContext<Store | null>(null);
 
-export const roundQty = (n: number) => Math.round(n * 10) / 10;
-const FRACTIONS: Record<number, string> = { 0.25: '¼', 0.5: '½', 0.75: '¾' };
-const METRIC = ['g', 'ml'];
-
-/**
- * Kitchen-friendly display: grams and millilitres round to a sensible step,
- * everything else (spoons, counts, cups, oz) to the nearest quarter, shown as a fraction.
- */
-export const formatQty = (quantity: number, unit: string) => {
-  // 0 means the recipe gives no amount ("salt to taste").
-  if (!(quantity > 0)) return '';
-  let text: string;
-  if (METRIC.includes(unit)) {
-    const step = quantity >= 100 ? 5 : 1;
-    text = String(Math.max(step, Math.round(quantity / step) * step));
-  } else {
-    const quarters = Math.max(1, Math.round(quantity * 4)); // never show 0
-    const whole = Math.floor(quarters / 4);
-    const frac = FRACTIONS[(quarters % 4) / 4] ?? '';
-    text = whole ? `${whole}${frac}` : frac;
-  }
-  return unit ? `${text} ${unit}` : text;
-};
+export { formatQty, roundQty } from '../lib/qty';
 
 const uid = (prefix: string) => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
@@ -481,8 +460,6 @@ export function useStore() {
   return ctx;
 }
 
-/** The user's chosen buddy (defaults to Biscuit before onboarding finishes). */
-export const useBuddy = (): BuddyId => useStore().buddy ?? 'biscuit';
 
 /** Nutrition totals for a list of recipe ids (one serving each). */
 export function totalsFor(ids: (string | undefined)[], getRecipe: (id: string | undefined) => Recipe | undefined) {

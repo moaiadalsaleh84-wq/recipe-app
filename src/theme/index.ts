@@ -59,10 +59,10 @@ const light = {
   accent: brand.berry, // favorites (hearts)
   highlight: brand.blue,
   destructive: '#E5342B',
-  // Macro colors
-  protein: brand.tomato,
-  carbs: '#E0A100',
-  fat: brand.green,
+  // Nutrition bars: three calm browns, so they never read as "good" (green) or "bad" (red).
+  protein: '#5C4033',
+  carbs: '#A47551',
+  fat: '#D2A679',
 
   label: brand.cocoa,
   secondaryLabel: '#7A5E4D',
@@ -109,9 +109,9 @@ const dark: Palette = {
   accent: '#FF7F92',
   highlight: '#7DBEF7',
   destructive: '#FF6A5E',
-  protein: '#FF8A66',
-  carbs: '#FFC933',
-  fat: '#6FD98C',
+  protein: '#F3DEC9',
+  carbs: '#C99B77',
+  fat: '#8F6A50',
 
   label: '#FFF3E4',
   secondaryLabel: '#C9AE98',

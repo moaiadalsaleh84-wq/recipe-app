@@ -4,8 +4,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
-import { CatSays } from '../components/cats/CatSays';
-import type { Line } from '../components/cats/dialogue';
+import { MascotSays } from '../components/mascot/MascotSays';
+import type { Line } from '../components/mascot/lines';
 import { Icon } from '../components/Icon';
 import { PageHeader } from '../components/PageHeader';
 import { PressableScale } from '../components/PressableScale';
@@ -27,7 +27,7 @@ import {
 import { downloadPhoto } from '../lib/photos';
 import { showPaywall, useProGate } from '../lib/pro';
 import { isIOS } from '../navigation/screenOptions';
-import { FREE_LIMITS, useBuddy, useStore } from '../state/store';
+import { FREE_LIMITS, useStore } from '../state/store';
 import { useTheme } from '../theme';
 
 type Phase = { name: 'input' } | { name: 'loading' } | { name: 'failed'; failure: ImportFailure } | { name: 'review'; result: ImportSuccess };
@@ -36,7 +36,6 @@ type Phase = { name: 'input' } | { name: 'loading' } | { name: 'failed'; failure
 export default function ImportScreen() {
   const t = useTheme();
   const toast = useToast();
-  const buddy = useBuddy();
   const params = useLocalSearchParams<{ url?: string; from?: string }>();
   const fromOnboarding = params.from === 'onboarding';
   const { addRecipe, countImport, setDraft } = useStore();
@@ -121,12 +120,12 @@ export default function ImportScreen() {
 
   const line: Line =
     phase.name === 'loading'
-      ? { text: buddy === 'tank' ? 'Reading the playbook. Stay with me.' : 'Ooh, let me read this one…', mood: 'think' }
+      ? { text: 'Ooh, let me read this one…', mood: 'thinking' }
       : phase.name === 'failed'
-        ? { text: buddy === 'tank' ? 'That one fought back. Here’s what we can do.' : 'Oops, that one slipped out of my paws!', mood: 'worried' }
+        ? { text: 'Oops, that one slipped out of my paws!', mood: 'hide' }
         : phase.name === 'review'
-          ? { text: buddy === 'tank' ? 'Got it. Check the details, then lock it in.' : 'Got it! Have a look before we save it.', mood: 'happy' }
-          : { text: buddy === 'tank' ? 'Drop a link. I’ll pull the recipe out.' : 'Paste a link and I’ll fetch the recipe for you!', mood: 'wave' };
+          ? { text: 'Got it! Have a look before we save it.', mood: 'happy' }
+          : { text: 'Paste a link and I’ll fetch the recipe for you!', mood: 'wave' };
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: t.colors.groupedBackground }}>
@@ -147,7 +146,7 @@ export default function ImportScreen() {
         }
       />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <CatSays buddy={buddy} line={line} size={96} style={{ marginBottom: 16 }} />
+        <MascotSays line={line} size={96} style={{ marginBottom: 16 }} />
 
         {phase.name === 'input' && (
           <Animated.View entering={FadeIn.duration(200)}>

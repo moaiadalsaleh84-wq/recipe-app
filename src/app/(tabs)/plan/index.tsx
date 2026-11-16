@@ -8,10 +8,10 @@ import { RecipeRow } from '../../../components/RecipeCard';
 import { useToast } from '../../../components/Toast';
 import { IconButton, Section } from '../../../components/ui';
 import { meals, type Meal } from '../../../data/mock';
-import { CatSays } from '../../../components/cats/CatSays';
-import { say } from '../../../components/cats/dialogue';
+import { MascotSays } from '../../../components/mascot/MascotSays';
+import { say } from '../../../components/mascot/lines';
 import { ScreenTitle } from '../../../navigation/screenOptions';
-import { totalsFor, useBuddy, useStore } from '../../../state/store';
+import { totalsFor, useStore } from '../../../state/store';
 import { useTheme } from '../../../theme';
 import { weekDays } from '../../../lib/week';
 
@@ -19,7 +19,6 @@ import { weekDays } from '../../../lib/week';
 export default function PlanScreen() {
   const t = useTheme();
   const toast = useToast();
-  const buddy = useBuddy();
   const { plan, setMeal, addIngredients, getRecipe, goals, isPro } = useStore();
   const [day, setDay] = useState(weekDays.find((d) => d.isToday)?.index ?? 0);
   const dayPlan = plan[day] ?? {};
@@ -117,14 +116,13 @@ export default function PlanScreen() {
       </Text>
 
       {/* The buddy sums up the day */}
-      <CatSays
-        buddy={buddy}
+      <MascotSays
         size={96}
         style={{ marginBottom: 20 }}
         line={
           plannedToday === 0
-            ? say(buddy, 'planEmptyDay')
-            : say(buddy, 'planDay', {
+            ? say('planEmptyDay')
+            : say('planDay', {
                 calories: dayTotals.calories,
                 protein: dayTotals.protein,
                 goalNote: !isPro

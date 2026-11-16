@@ -21,7 +21,7 @@ export default function TabsLayout() {
         <Tabs.Screen name="plan" />
         <Tabs.Screen name="pantry" />
         <Tabs.Screen name="groceries" />
-        <Tabs.Screen name="buddy" />
+        <Tabs.Screen name="progress" />
       </Tabs>
       <StatusBarShade />
     </View>

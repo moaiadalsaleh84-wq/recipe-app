@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, View, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
+import { Pressable, View, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from 'react-native-reanimated';
 import { haptics, type HapticKind } from '../lib/haptics';
 import { useTheme } from '../theme';
@@ -53,14 +53,16 @@ export function Chunky({ children, face, lip, border, depth, radius, style, face
         if (haptic) haptics[haptic]();
         onPress?.(e);
       }}
-      style={[{ paddingBottom: d }, style, disabled && { opacity: 0.45 }]}
+      style={[style, disabled && { opacity: 0.45 }]}
     >
-      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { top: d, backgroundColor: lip, borderRadius: r, borderCurve: 'continuous' }]} />
+      {/* The lip: same shape as the face, shifted down by the depth. The face covers it when pressed. */}
+      <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: d, bottom: 0, backgroundColor: lip, borderRadius: r, borderCurve: 'continuous' }} />
       <Animated.View
         style={[
-          { backgroundColor: face, borderRadius: r, borderCurve: 'continuous', flexGrow: 1 },
+          { backgroundColor: face, borderRadius: r, borderCurve: 'continuous' },
           border ? { borderWidth: 2, borderColor: border } : null,
           faceStyle,
+          { marginBottom: d },
           faceMove,
         ]}
       >

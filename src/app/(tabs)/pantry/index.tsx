@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
-import { CatSays } from '../../../components/cats/CatSays';
+import { MascotSays } from '../../../components/mascot/MascotSays';
 import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
 import { RecipePhoto, openRecipe } from '../../../components/RecipeCard';
@@ -12,14 +12,13 @@ import { haptics } from '../../../lib/haptics';
 import { COMMON_ITEMS, smartSuggestions, suggestionsFor, whatCanICook, type PantryMatch } from '../../../lib/pantry';
 import { showPaywall, useProGate } from '../../../lib/pro';
 import { ScreenTitle } from '../../../navigation/screenOptions';
-import { FREE_LIMITS, useBuddy, useStore } from '../../../state/store';
+import { FREE_LIMITS, useStore } from '../../../state/store';
 import { useTheme } from '../../../theme';
 
 /** What's in your kitchen, and what you can cook with it. */
 export default function PantryScreen() {
   const t = useTheme();
   const toast = useToast();
-  const buddy = useBuddy();
   const { pantry, addPantry, removePantry, restorePantry, allRecipes, addIngredients } = useStore();
   const { isPro, canAddPantry } = useProGate();
   const [query, setQuery] = useState('');
@@ -58,10 +57,10 @@ export default function PantryScreen() {
   };
 
   const line = !pantry.length
-    ? { text: buddy === 'tank' ? 'What’s in the fridge, champ? Let’s use it before it goes off.' : 'Ooh, what’s in the cupboards? Tell me and I’ll find a recipe!', mood: 'think' as const }
+    ? { text: 'Ooh, what’s in the cupboards? Tell me and I’ll find a recipe!', mood: 'thinking' as const }
     : ready
-      ? { text: buddy === 'tank' ? `You can cook ${ready} ${ready === 1 ? 'recipe' : 'recipes'} right now. No excuses.` : `Yay! ${ready} ${ready === 1 ? 'recipe is' : 'recipes are'} ready to cook right now!`, mood: 'happy' as const }
-      : { text: buddy === 'tank' ? 'Close on a few. One quick shop and you’re cooking.' : 'So close! A couple of things and we’re cooking.', mood: 'nod' as const };
+      ? { text: `Yay! ${ready} ${ready === 1 ? 'recipe is' : 'recipes are'} ready to cook right now!`, mood: 'happy' as const }
+      : { text: 'So close! A couple of things and we’re cooking.', mood: 'happy' as const };
 
   return (
     <ScrollView
@@ -71,7 +70,7 @@ export default function PantryScreen() {
       contentContainerStyle={styles.content}
     >
       <ScreenTitle title="Pantry" />
-      <CatSays buddy={buddy} line={line} size={86} style={{ marginBottom: 14 }} />
+      <MascotSays line={line} size={86} style={{ marginBottom: 14 }} />
 
       {/* Add */}
       <View style={[styles.addRow, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
@@ -122,7 +121,7 @@ export default function PantryScreen() {
         </Text>
       </View>
       {pantry.length === 0 ? (
-        <EmptyState cat={{ buddy, mood: 'think' }} icon="cart" title="Your pantry is empty" message="Add a few things you have at home, and we’ll show what you can cook with them." />
+        <EmptyState cat="thinking" icon="cart" title="Your pantry is empty" message="Add a few things you have at home, and we’ll show what you can cook with them." />
       ) : (
         <Animated.View layout={LinearTransition.duration(200)} style={styles.chips}>
           {pantry.map((name) => (

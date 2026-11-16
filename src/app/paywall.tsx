@@ -2,7 +2,7 @@
  * Pro paywall. Persuasive, never deceptive.
  *
  * Uses: context-matched headline (why it opened), benefits ordered by the user's own goals,
- * the buddy they bonded with, a preselected yearly plan with truthful per-week anchoring and
+ * Biscuit, a preselected yearly plan with truthful per-week anchoring and
  * savings computed from real prices, a transparent trial timeline with a reminder (risk reversal),
  * only two choices (Hick's law), and a celebratory success moment (peak-end rule).
  *
@@ -15,9 +15,9 @@ import { useState } from 'react';
 import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CatBuddy } from '../components/cats/CatBuddy';
-import { CatSays } from '../components/cats/CatSays';
-import type { Line } from '../components/cats/dialogue';
+import { Mascot } from '../components/mascot/Mascot';
+import { MascotSays } from '../components/mascot/MascotSays';
+import type { Line } from '../components/mascot/lines';
 import { Icon, type IconName } from '../components/Icon';
 import { PressableScale } from '../components/PressableScale';
 import { useToast } from '../components/Toast';
@@ -38,7 +38,7 @@ import {
   yearlySavingsPct,
   type PlanId,
 } from '../lib/purchases';
-import { FREE_LIMITS, useBuddy, useStore } from '../state/store';
+import { FREE_LIMITS, useStore } from '../state/store';
 import { useTheme } from '../theme';
 
 type Source = PaywallSource;
@@ -47,7 +47,6 @@ export default function Paywall() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const toast = useToast();
-  const buddy = useBuddy();
   const { source = 'settings' } = useLocalSearchParams<{ source?: Source }>();
   const { profile, pro, setPro } = useStore();
 
@@ -66,7 +65,7 @@ export default function Paywall() {
   const trial = selected.trialDays;
 
   const copy = headline(source, goalPhrase(profile), profile.name.trim().split(/\s+/)[0] ?? '');
-  const line = buddyLine(buddy, source, profile.name.trim().split(/\s+/)[0] ?? '');
+  const line = mascotLine(source);
   const benefits = benefitsFor(profile);
 
   const buy = async () => {
@@ -118,7 +117,7 @@ export default function Paywall() {
       </View>
 
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 210 }]}>
-        <CatSays buddy={buddy} line={line} size={104} />
+        <MascotSays line={line} size={104} />
 
         <Animated.Text entering={FadeInDown.duration(320)} style={[t.type.largeTitle, { color: t.colors.label, marginTop: 14 }]} accessibilityRole="header">
           {copy.title}
@@ -218,21 +217,15 @@ function headline(source: Source, goal: string, name: string): { title: string; 
     case 'cookbooks':
       return { title: 'Organize without limits', subtitle: `The free version holds ${FREE_LIMITS.cookbooks} cookbooks. Pro lets you make as many as you need.` };
     case 'goals':
-      return { title: 'Hit your goals with Tank', subtitle: 'Set daily protein and calorie targets and see your progress from every meal you cook.' };
+      return { title: 'Set goals you can see', subtitle: 'Set daily protein and calorie targets and see your progress from every meal you cook.' };
     default:
       return { title: 'Cook with everything unlocked', subtitle: 'Unlimited imports, pantry and cookbooks, plus nutrition goals.' };
   }
 }
 
-function buddyLine(buddy: string, source: Source, name: string): Line {
-  const n = name || (buddy === 'tank' ? 'champ' : 'friend');
-  if (buddy === 'tank') {
-    if (source === 'goals') return { text: `Goals you can see are goals you hit. Let’s track them, ${n}.`, mood: 'flex' };
-    if (source === 'imports') return { text: `Good taste, ${n}. That’s three already. Pro keeps the playbook growing.`, mood: 'proud' };
-    return { text: `You did the warm-up, ${n}. Pro is the full workout. No pressure.`, mood: 'proud' };
-  }
+function mascotLine(source: Source): Line {
   if (source === 'recipes' || source === 'imports') return { text: 'Our recipe box is full! I tried to squeeze one more in. It didn’t fit.', mood: 'oops' };
-  if (source === 'pantry') return { text: 'The pantry shelf is full! I’m guarding the snacks, just in case.', mood: 'eat' };
+  if (source === 'pantry') return { text: 'The pantry shelf is full! I’m guarding the snacks, just in case.', mood: 'watch' };
   return { text: 'Pro is like the big kitchen! All the recipes, all the cookbooks, all the fun.', mood: 'happy' };
 }
 
@@ -288,13 +281,12 @@ function TimelineRow({ icon, title, detail, first, last }: { icon: IconName; tit
 /** Peak-end: the purchase ends on a happy, celebrated moment. */
 function Welcome({ onDone, trialEndsAt }: { onDone: () => void; trialEndsAt: string | null }) {
   const t = useTheme();
-  const buddy = useBuddy();
   const insets = useSafeAreaInsets();
   const ends = trialEndsAt ? new Date(trialEndsAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) : null;
   return (
     <View style={[styles.welcome, { backgroundColor: t.colors.background, paddingTop: insets.top + 40, paddingBottom: Math.max(insets.bottom, 16) }]}>
       <View style={{ alignItems: 'center', flex: 1, justifyContent: 'center' }}>
-        <CatBuddy buddy={buddy} mood="celebrate" size={220} petable={false} />
+        <Mascot mood="cheering" size={220} petable={false} />
         <Text style={[t.type.largeTitle, { color: t.colors.label, textAlign: 'center', marginTop: 12 }]} accessibilityRole="header">
           Welcome to Pro!
         </Text>

@@ -1,9 +1,8 @@
 /**
- * The short onboarding (name, goal, diet, household, buddy) and what's built from the answers.
- * Every answer is used: the cats use your name, the goal picks your buddy and orders the
+ * The short onboarding (name, goal, diet, household) and what's built from the answers.
+ * Every answer is used: Biscuit uses your name, the goal orders the
  * paywall's benefits, the diet filters suggestions, and recipes open sized for your household.
  */
-import type { BuddyId } from '../components/cats/types';
 import type { IconName } from '../components/Icon';
 import type { DietTag } from './mock';
 
@@ -40,10 +39,6 @@ export const householdOptions: { size: number; label: string }[] = [
 /** Name for the cats to use, or a friendly fallback. */
 export const displayName = (p: Profile, fallback: string) => (p.name.trim() ? p.name.trim().split(/\s+/)[0] : fallback);
 
-/** Tank for fitness and nutrition goals, Biscuit for everything cozy. */
-export function recommendBuddy(p: Profile): BuddyId {
-  return p.goals.includes('muscle') || p.goals.includes('healthier') ? 'tank' : 'biscuit';
-}
 
 export type Benefit = { icon: IconName; title: string; detail: string; for: Goal[] };
 
@@ -51,7 +46,7 @@ export type Benefit = { icon: IconName; title: string; detail: string; for: Goal
 export const proBenefits: Benefit[] = [
   { icon: 'link', title: 'Unlimited imports', detail: 'Save recipes from TikTok, YouTube, Instagram and any website (free: 3)', for: ['home', 'learn', 'save'] },
   { icon: 'cart', title: 'Unlimited pantry + smart suggestions', detail: 'See the one item that unlocks the most recipes (free: 10 items)', for: ['waste', 'save'] },
-  { icon: 'chart', title: 'Nutrition goals with Tank', detail: 'Daily protein and calorie targets, tracked from the meals you cook', for: ['muscle', 'healthier'] },
+  { icon: 'chart', title: 'Nutrition goals', detail: 'Daily protein and calorie targets, tracked from the meals you cook', for: ['muscle', 'healthier'] },
   { icon: 'bookmark', title: 'Unlimited cookbooks and recipes', detail: 'Organize everything you love (free: 3 cookbooks, 5 handwritten recipes)', for: ['learn', 'home'] },
 ];
 

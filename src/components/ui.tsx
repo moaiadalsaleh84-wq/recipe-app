@@ -15,8 +15,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import type { HapticKind } from '../lib/haptics';
 import { useTheme } from '../theme';
-import { CatBuddy } from './cats/CatBuddy';
-import type { BuddyId, Mood } from './cats/types';
+import { Mascot } from './mascot/Mascot';
+import type { Mood } from './mascot/moods';
 import { Icon, type IconName } from './Icon';
 import { Chunky } from './Chunky';
 import { PressableScale } from './PressableScale';
@@ -221,6 +221,33 @@ export function CheckCircle({ checked, color }: { checked: boolean; color: strin
   );
 }
 
+/* ---------- Progress bar: fills with a small bounce ---------- */
+
+export function ProgressBar({ value, color, track, height = 14, label }: { /** 0 to 1 */ value: number; color?: string; track?: string; height?: number; label?: string }) {
+  const t = useTheme();
+  const reduceMotion = useReducedMotion();
+  const pct = Math.max(0, Math.min(1, value));
+  const shown = useSharedValue(0);
+  useEffect(() => {
+    shown.set(reduceMotion ? withTiming(pct, { duration: 200 }) : withSpring(pct, { damping: 14, stiffness: 120, mass: 0.9 }));
+  }, [pct, reduceMotion, shown]);
+  // Never an empty-looking bar: a small nub shows where it starts.
+  const fill = useAnimatedStyle(() => ({ width: `${Math.max(6, Math.min(100, shown.get() * 100))}%` }));
+  return (
+    <View
+      style={{ height, borderRadius: height / 2, backgroundColor: track ?? t.colors.fillStrong, overflow: 'hidden' }}
+      accessibilityRole="progressbar"
+      accessibilityLabel={label}
+      accessibilityValue={{ min: 0, max: 100, now: Math.round(pct * 100) }}
+    >
+      <Animated.View style={[{ height, borderRadius: height / 2, backgroundColor: color ?? t.colors.success }, fill]}>
+        {/* a soft highlight along the top, like the buttons' shine */}
+        <View style={{ position: 'absolute', left: height / 2, right: height / 2, top: height * 0.22, height: height * 0.22, borderRadius: height, backgroundColor: 'rgba(255,255,255,0.35)' }} />
+      </Animated.View>
+    </View>
+  );
+}
+
 /* ---------- Skeleton ---------- */
 
 export function Skeleton({ style }: { style?: StyleProp<ViewStyle> }) {
@@ -247,14 +274,14 @@ export function EmptyState({
   title: string;
   message: string;
   action?: { label: string; onPress: () => void; icon?: IconName };
-  /** Show the user's cat acting out the empty state instead of an icon. */
-  cat?: { buddy: BuddyId; mood: Mood };
+  /** Show Biscuit acting out the empty state instead of an icon: pass the mood. */
+  cat?: Mood;
 }) {
   const t = useTheme();
   return (
     <View style={styles.empty} accessibilityRole="summary">
       {cat ? (
-        <CatBuddy buddy={cat.buddy} mood={cat.mood} size={140} />
+        <Mascot mood={cat} size={140} />
       ) : (
         <View style={[styles.emptyIcon, { backgroundColor: t.colors.tintSoft }]}>
           <Icon name={icon} size={30} color={t.colors.tint} weight="semibold" />
@@ -262,7 +289,12 @@ export function EmptyState({
       )}
       <Text style={[t.type.title3, { color: t.colors.label, textAlign: 'center' }]}>{title}</Text>
       <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, textAlign: 'center', maxWidth: 280 }]}>{message}</Text>
-      {action && <Button label={action.label} icon={action.icon} onPress={action.onPress} variant="filled" size="medium" style={{ marginTop: 8 }} />}
+      {action && (
+        // Its own row, so the button's size never depends on the text above it.
+        <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 8 }}>
+          <Button label={action.label} icon={action.icon} onPress={action.onPress} variant="filled" size="medium" style={{ alignSelf: 'auto' }} />
+        </View>
+      )}
     </View>
   );
 }

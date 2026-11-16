@@ -26,19 +26,54 @@ export type ProgressInput = {
   streak: number;
 };
 
-export type Badge = { id: string; title: string; hint: string; icon: IconName; earned: (p: ProgressInput) => boolean };
+export type Badge = {
+  id: string;
+  title: string;
+  hint: string;
+  icon: IconName;
+  /** How far along: [done so far, needed]. Earned when done reaches needed. */
+  count: (p: ProgressInput) => readonly [number, number];
+  earned: (p: ProgressInput) => boolean;
+};
+
+const badge = (id: string, title: string, hint: string, icon: IconName, count: Badge['count']): Badge => ({
+  id,
+  title,
+  hint,
+  icon,
+  count,
+  earned: (p) => {
+    const [done, needed] = count(p);
+    return done >= needed;
+  },
+});
 
 export const BADGES: Badge[] = [
-  { id: 'first-dish', title: 'First Dish', hint: 'Cook your first meal in Cook Mode', icon: 'pot', earned: (p) => p.cooked.length >= 1 },
-  { id: 'on-a-roll', title: 'On a Roll', hint: 'Cook 3 days in a row', icon: 'flame', earned: (p) => p.streak >= 3 },
-  { id: 'ten-club', title: 'Ten Meal Club', hint: 'Cook 10 meals', icon: 'crown', earned: (p) => p.cooked.length >= 10 },
-  { id: 'explorer', title: 'Explorer', hint: 'Cook 5 different recipes', icon: 'shuffle', earned: (p) => new Set(p.cooked.map((c) => c.recipeId)).size >= 5 },
-  { id: 'writer', title: 'Recipe Writer', hint: 'Add a recipe of your own', icon: 'edit', earned: (p) => p.customRecipes.length >= 1 },
-  { id: 'planner', title: 'Week Planner', hint: 'Plan 7 meals in one week', icon: 'calendar', earned: (p) => Object.values(p.plan).reduce((n, d) => n + Object.keys(d).length, 0) >= 7 },
-  { id: 'shopper', title: 'Shopping Champ', hint: 'Tick off a whole grocery list', icon: 'cart', earned: (p) => p.fun.listsDone >= 1 },
-  { id: 'collector', title: 'Collector', hint: 'Save 5 favorite recipes', icon: 'heartFill', earned: (p) => p.favorites.length >= 5 },
-  { id: 'best-friends', title: 'Best Friends', hint: 'Pet your buddy 10 times', icon: 'paw', earned: (p) => p.fun.pets >= 10 },
+  badge('first-dish', 'First Dish', 'Cook your first meal in Cook Mode', 'pot', (p) => [p.cooked.length, 1]),
+  badge('on-a-roll', 'On a Roll', 'Cook 3 days in a row', 'flame', (p) => [p.streak, 3]),
+  badge('ten-club', 'Ten Meal Club', 'Cook 10 meals', 'crown', (p) => [p.cooked.length, 10]),
+  badge('explorer', 'Explorer', 'Cook 5 different recipes', 'shuffle', (p) => [new Set(p.cooked.map((c) => c.recipeId)).size, 5]),
+  badge('writer', 'Recipe Writer', 'Add a recipe of your own', 'edit', (p) => [p.customRecipes.length, 1]),
+  badge('planner', 'Week Planner', 'Plan 7 meals in one week', 'calendar', (p) => [Object.values(p.plan).reduce((n, d) => n + Object.keys(d).length, 0), 7]),
+  badge('shopper', 'Shopping Champ', 'Tick off a whole grocery list', 'cart', (p) => [p.fun.listsDone, 1]),
+  badge('collector', 'Collector', 'Save 5 favorite recipes', 'heartFill', (p) => [p.favorites.length, 5]),
+  badge('best-friends', 'Best Friends', 'Pet Biscuit 10 times', 'paw', (p) => [p.fun.pets, 10]),
 ];
+
+/**
+ * The badge to aim for next: the unearned one you're closest to. Ties go to the earlier badge,
+ * so a brand-new cook is pointed at "First Dish".
+ */
+export function nextBadge(p: ProgressInput, earnedIds: string[]) {
+  let best: { badge: Badge; done: number; needed: number } | null = null;
+  for (const b of BADGES) {
+    if (earnedIds.includes(b.id)) continue;
+    const [done, needed] = b.count(p);
+    if (done >= needed) continue;
+    if (!best || done / needed > best.done / best.needed) best = { badge: b, done, needed };
+  }
+  return best;
+}
 
 export function xpFor(p: ProgressInput) {
   return (

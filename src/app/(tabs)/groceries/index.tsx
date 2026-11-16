@@ -8,17 +8,16 @@ import { PressableScale } from '../../../components/PressableScale';
 import { useToast } from '../../../components/Toast';
 import { CheckCircle, EmptyState, IconButton, Section, Separator } from '../../../components/ui';
 import { aisleOrder, type GroceryItem } from '../../../data/mock';
-import { CatSays } from '../../../components/cats/CatSays';
-import { say, type Line } from '../../../components/cats/dialogue';
+import { MascotSays } from '../../../components/mascot/MascotSays';
+import { say, type Line } from '../../../components/mascot/lines';
 import { haptics } from '../../../lib/haptics';
 import { ScreenTitle } from '../../../navigation/screenOptions';
-import { formatQty, useBuddy, useStore } from '../../../state/store';
+import { formatQty, useStore } from '../../../state/store';
 import { useTheme } from '../../../theme';
 
 export default function GroceriesScreen() {
   const t = useTheme();
   const toast = useToast();
-  const buddy = useBuddy();
   const { groceries, toggleGrocery, removeGrocery, clearCompleted, addCustomItem, undoGroceries } = useStore();
   const [reaction, setReaction] = useState<{ line: Line; n: number } | null>(null);
   const [draft, setDraft] = useState('');
@@ -76,7 +75,7 @@ export default function GroceriesScreen() {
     if (item.checked) return;
     const next = (reaction?.n ?? 0) + 1;
     const willBeDone = done + 1 === total;
-    setReaction({ line: say(buddy, willBeDone ? 'listDone' : 'itemChecked', {}, next), n: next });
+    setReaction({ line: say(willBeDone ? 'listDone' : 'itemChecked', {}, next), n: next });
   };
 
   const add = () => {
@@ -132,9 +131,9 @@ export default function GroceriesScreen() {
       {total === 0 ? (
         <EmptyState
           icon="cart"
-          cat={{ buddy, mood: 'worried' }}
+          cat="thinking"
           title="Your List Is Empty"
-          message={say(buddy, 'listEmpty').text}
+          message={say('listEmpty').text}
           action={{ label: 'Browse Recipes', icon: 'book', onPress: () => router.navigate('/') }}
         />
       ) : (
@@ -148,11 +147,10 @@ export default function GroceriesScreen() {
             </View>
           </View>
 
-          <CatSays
-            buddy={buddy}
+          <MascotSays
             size={90}
             style={{ marginBottom: 20 }}
-            line={done === total ? say(buddy, 'listDone') : reaction?.line ?? say(buddy, 'addedToList')}
+            line={done === total ? say('listDone') : reaction?.line ?? say('addedToList')}
           />
 
           {groups.map((g) => (
