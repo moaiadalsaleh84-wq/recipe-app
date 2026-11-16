@@ -148,7 +148,7 @@ type Store = Saved & {
 
 const StoreContext = createContext<Store | null>(null);
 
-export { formatQty, roundQty } from '../lib/qty';
+export { formatQty, nameFor, roundQty } from '../lib/qty';
 
 const uid = (prefix: string) => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 

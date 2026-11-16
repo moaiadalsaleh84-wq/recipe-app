@@ -21,18 +21,31 @@ import { Icon, type IconName } from './Icon';
 import { Chunky } from './Chunky';
 import { PressableScale } from './PressableScale';
 
-/* ---------- Chip: a toggleable filter with a clear selected state ---------- */
+/* ---------- Chip: the one pill used everywhere (filters, tags, quick-add, removable items) ---------- */
 
 export function Chip({
   label,
-  selected,
+  selected = false,
   onPress,
   icon,
+  leading,
+  trailing,
+  accessibilityLabel,
+  toggle = true,
 }: {
   label: string;
-  selected: boolean;
+  /** Selected chips turn green with a check. */
+  selected?: boolean;
   onPress: () => void;
+  /** A small icon before the label. */
   icon?: IconName;
+  /** A small picture before the label instead of an icon (e.g. a <FoodIcon bare>). */
+  leading?: ReactNode;
+  /** A small icon after the label: "close" for removable items, "chevronRight" for links, "plus" to add. */
+  trailing?: IconName;
+  accessibilityLabel?: string;
+  /** False for chips that do something instead of switching on and off. */
+  toggle?: boolean;
 }) {
   const t = useTheme();
   // Selected chips are green ("this is on"), so tomato stays reserved for the screen's main action.
@@ -41,19 +54,30 @@ export function Chip({
     <Chunky
       onPress={onPress}
       haptic="select"
-      accessibilityRole="togglebutton"
-      aria-selected={selected}
-      accessibilityLabel={`${label} filter`}
+      accessibilityRole={toggle ? 'togglebutton' : 'button'}
+      aria-selected={toggle ? selected : undefined}
+      accessibilityLabel={accessibilityLabel ?? (toggle ? `${label} filter` : label)}
       hitSlop={{ top: 2, bottom: 2 }}
       depth={t.depth.small}
       radius={t.radius.pill}
       face={selected ? t.colors.success : t.colors.cell}
       lip={selected ? t.colors.successDeep : t.colors.lip}
       border={selected ? undefined : t.colors.border}
-      faceStyle={styles.chip}
+      faceStyle={[styles.chip, !selected && styles.chipBordered]}
     >
-      {(selected || icon) && <Icon name={selected ? 'check' : icon!} size={14} color={fg} weight="bold" />}
+      {selected ? <Icon name="check" size={15} color={fg} weight="bold" /> : leading ? leading : icon ? <Icon name={icon} size={15} color={t.colors.tint} weight="bold" /> : null}
       <Text style={[t.type.subhead, { color: fg, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>{label}</Text>
+      {trailing && <Icon name={trailing} size={12} color={selected ? fg : t.colors.secondaryLabel} weight="bold" />}
+    </Chunky>
+  );
+}
+
+/** A round white button for the top right of a screen (share, settings…). */
+export function HeaderButton({ icon, onPress, accessibilityLabel, disabled }: { icon: IconName; onPress: () => void; accessibilityLabel: string; disabled?: boolean }) {
+  const t = useTheme();
+  return (
+    <Chunky onPress={onPress} disabled={disabled} accessibilityLabel={accessibilityLabel} depth={t.depth.small} radius={22} face={t.colors.cell} lip={t.colors.lip} border={t.colors.border} faceStyle={styles.headerButton}>
+      <Icon name={icon} size={19} color={t.colors.tint} weight="bold" />
     </Chunky>
   );
 }
@@ -281,14 +305,16 @@ export function EmptyState({
   return (
     <View style={styles.empty} accessibilityRole="summary">
       {cat ? (
-        <Mascot mood={cat} size={140} />
+        <Mascot mood={cat} size={132} />
       ) : (
         <View style={[styles.emptyIcon, { backgroundColor: t.colors.tintSoft }]}>
           <Icon name={icon} size={30} color={t.colors.tint} weight="semibold" />
         </View>
       )}
       <Text style={[t.type.title3, { color: t.colors.label, textAlign: 'center' }]}>{title}</Text>
-      <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, textAlign: 'center', maxWidth: 280 }]}>{message}</Text>
+      <Text style={[t.type.subhead, t.noWidows.style, { color: t.colors.secondaryLabel, textAlign: 'center', maxWidth: 280 }]} {...t.noWidows.props}>
+        {message}
+      </Text>
       {action && (
         // Its own row, so the button's size never depends on the text above it.
         <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 8 }}>
@@ -304,7 +330,7 @@ export function EmptyState({
 export function Section({ title, footer, children, right }: { title?: string; footer?: string; children: ReactNode; right?: ReactNode }) {
   const t = useTheme();
   return (
-    <View style={{ marginBottom: t.spacing.xl }}>
+    <View style={{ marginBottom: t.layout.section }}>
       {(title || right) && (
         <View style={styles.sectionHeader}>
           {title && <Text style={[t.type.title3, { color: t.colors.label, flex: 1 }]}>{title}</Text>}
@@ -312,8 +338,8 @@ export function Section({ title, footer, children, right }: { title?: string; fo
         </View>
       )}
       {/* Outer view draws the outline + lip; inner view clips rows to the rounded corners. */}
-      <View style={[styles.sectionBody, { backgroundColor: t.colors.cell, borderRadius: t.radius.lg, ...t.chunky.card }]}>
-        <View style={{ borderRadius: t.radius.lg - 2, overflow: 'hidden', borderCurve: 'continuous' }}>{children}</View>
+      <View style={[styles.sectionBody, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]}>
+        <View style={{ borderRadius: t.layout.cardRadius - 2, overflow: 'hidden', borderCurve: 'continuous' }}>{children}</View>
       </View>
       {footer && <Text style={[t.type.footnote, styles.sectionFooter, { color: t.colors.secondaryLabel }]}>{footer}</Text>}
     </View>
@@ -356,10 +382,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    minHeight: 38,
+    minHeight: 40,
     paddingHorizontal: 16,
-    // With the lip the chip is 42 tall; hitSlop extends the touch area past 44.
+    // With the lip the chip is 44 tall.
   },
+  // The 2pt border is part of the height, so bordered and filled chips match.
+  chipBordered: { minHeight: 40 },
+  headerButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   button: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -375,7 +404,7 @@ const styles = StyleSheet.create({
   checkFill: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   empty: { alignItems: 'center', gap: 10, paddingVertical: 48, paddingHorizontal: 32 },
   emptyIcon: { width: 72, height: 72, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4, marginBottom: 8, minHeight: 28 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, minHeight: 28 },
   sectionBody: { borderCurve: 'continuous' },
   sectionFooter: { paddingHorizontal: 16, marginTop: 8 },
   search: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 16, borderCurve: 'continuous', paddingLeft: 14, minHeight: 50 },

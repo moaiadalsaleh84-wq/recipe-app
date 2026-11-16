@@ -17,11 +17,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 import { MascotSays } from '../../components/mascot/MascotSays';
 import { say } from '../../components/mascot/lines';
+import { FoodIcon } from '../../components/FoodIcon';
 import { Icon, type IconName } from '../../components/Icon';
 import { PressableScale } from '../../components/PressableScale';
 import { RecipePhoto } from '../../components/RecipeCard';
 import { useToast } from '../../components/Toast';
-import { Button, EmptyState, IconButton, Segmented, Separator, Stepper } from '../../components/ui';
+import { Button, Chip, EmptyState, IconButton, Segmented, Separator, Stepper } from '../../components/ui';
 import { recipeKind, type DietTag, type Recipe, type Units } from '../../data/mock';
 import { haptics } from '../../lib/haptics';
 import { pickPhoto } from '../../lib/photos';
@@ -88,7 +89,7 @@ export default function RecipeScreen() {
   if (!recipe) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', backgroundColor: t.colors.background }}>
-        <EmptyState icon="fork" cat="worried" title="Recipe Not Found" message="It may have been removed." action={{ label: 'Back to Recipes', onPress: goBack }} />
+        <EmptyState icon="fork" cat="worried" title="Recipe not found" message="It may have been removed." action={{ label: 'Back to recipes', onPress: goBack }} />
       </View>
     );
   }
@@ -191,14 +192,18 @@ export default function RecipeScreen() {
         </Animated.View>
 
         <View style={[styles.body, { backgroundColor: t.colors.background, borderRadius: t.radius.xl, marginTop: -t.radius.xl }]}>
-          <Text style={[t.type.footnote, { color: t.colors.tint, fontWeight: 'normal', letterSpacing: 0.6, fontFamily: t.fonts.rounded }]}>
-            {recipe.category.toUpperCase()}
-            {recipe.custom ? (recipe.origin === 'import' ? ' · IMPORTED' : ' · MY RECIPE') : ''}
+          <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>
+            {recipe.category}
+            {recipe.custom ? (recipe.origin === 'import' ? ', imported' : ', my recipe') : ''}
           </Text>
-          <Text style={[t.type.largeTitle, { color: t.colors.label, marginTop: 4 }]} accessibilityRole="header">
+          <Text style={[t.type.largeTitle, t.noWidows.style, { color: t.colors.label, marginTop: 4 }]} {...t.noWidows.props} accessibilityRole="header">
             {recipe.title}
           </Text>
-          {!!recipe.description && <Text style={[t.type.body, { color: t.colors.secondaryLabel, marginTop: 8 }]}>{recipe.description}</Text>}
+          {!!recipe.description && (
+            <Text style={[t.type.body, t.noWidows.style, { color: t.colors.secondaryLabel, marginTop: 8 }]} {...t.noWidows.props}>
+              {recipe.description}
+            </Text>
+          )}
           {!!recipe.sourceUrl && (
             <PressableScale
               onPress={() => Linking.openURL(recipe.sourceUrl!).catch(() => toast({ message: 'Couldn’t open that link', tone: 'warning' }))}
@@ -213,9 +218,9 @@ export default function RecipeScreen() {
             </PressableScale>
           )}
 
-          <View style={[styles.stats, { backgroundColor: t.colors.cell, borderRadius: t.radius.lg, ...t.chunky.card }]}>
+          <View style={[styles.stats, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]}>
             {stats.map((s, i) => (
-              <View key={s.label} style={[styles.stat, i > 0 && { borderLeftWidth: 1.5, borderLeftColor: t.colors.separator }]} accessible accessibilityLabel={`${s.label}: ${s.value}`}>
+              <View key={s.label} style={[styles.stat, i > 0 && { borderLeftWidth: 2, borderLeftColor: t.colors.separator }]} accessible accessibilityLabel={`${s.label}: ${s.value}`}>
                 <Icon name={s.icon} size={18} color={t.colors.tint} />
                 <Text style={[t.type.headline, { color: t.colors.label }]}>{s.value}</Text>
                 <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]}>{s.label}</Text>
@@ -226,54 +231,40 @@ export default function RecipeScreen() {
           {recipe.tags.length > 0 && (
             <View style={styles.tags}>
               {recipe.tags.map((tag) => (
-                <PressableScale
-                  key={tag}
-                  haptic="select"
-                  onPress={() => onTag(tag)}
-                  accessibilityRole="link"
-                  hitSlop={{ top: 4, bottom: 4 }}
-                  accessibilityLabel={`${tag}. Show all ${tag.toLowerCase()} recipes`}
-                  style={[styles.tag, { backgroundColor: t.colors.tintSoft, borderColor: t.colors.border }]}
-                >
-                  <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: 'normal', fontFamily: t.fonts.rounded }]}>{tag}</Text>
-                  <Icon name="chevronRight" size={11} color={t.colors.tint} weight="bold" />
-                </PressableScale>
+                <Chip key={tag} label={tag} trailing="chevronRight" toggle={false} accessibilityLabel={`${tag}. Show all ${tag.toLowerCase()} recipes`} onPress={() => onTag(tag)} />
               ))}
             </View>
           )}
 
           {/* Biscuit reacts to this recipe */}
-          <MascotSays line={line} size={96} onNext={() => setLineN((n) => n + 1)} hint="Tap for more" style={{ marginTop: 20 }} />
+          <MascotSays line={line} size={80} onNext={() => setLineN((n) => n + 1)} style={{ marginTop: 24 }} />
 
           {/* Nutrition */}
           <Text style={[t.type.title2, styles.h2, { color: t.colors.label }]} accessibilityRole="header">
             Nutrition
           </Text>
-          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: -8, marginBottom: 10 }]}>Estimated per serving, from the ingredients</Text>
           <Nutrition recipe={recipe} proteinGoal={isPro ? goals.protein : undefined} />
 
           {/* Ingredients */}
-          <View style={styles.sectionHeader}>
-            <View style={{ flex: 1 }}>
-              <Text style={[t.type.title2, { color: t.colors.label }]} accessibilityRole="header">
-                Ingredients
-              </Text>
-              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 2 }]}>
-                {servings} {servings === 1 ? 'serving' : 'servings'}
-              </Text>
+          <Text style={[t.type.title2, styles.h2, { color: t.colors.label }]} accessibilityRole="header">
+            Ingredients
+          </Text>
+          {/* Servings and units side by side */}
+          <View style={styles.controlsRow}>
+            <View style={styles.servings}>
+              <Stepper value={servings} onChange={setServings} label="servings" />
+              <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]}>{servings === 1 ? 'serving' : 'servings'}</Text>
             </View>
-            <Stepper value={servings} onChange={setServings} label="servings" />
-          </View>
-          <View style={{ alignItems: 'flex-start', marginBottom: 12 }}>
             <Segmented label="Units" value={units} onChange={(u: Units) => setUnits(u)} options={[{ label: 'Metric', value: 'metric' }, { label: 'US', value: 'us' }]} />
           </View>
-          <View style={[styles.card, { backgroundColor: t.colors.cell, borderRadius: t.radius.lg, ...t.chunky.card }]}>
+          <View style={[styles.card, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]}>
             {recipe.ingredients.map((ing, i) => {
               const c = convertQty(roundQty(ing.quantity * scale), ing.unit, units);
               return (
                 <View key={`${ing.id}-${i}`}>
-                  {i > 0 && <Separator inset={16} />}
+                  {i > 0 && <Separator inset={60} />}
                   <View style={styles.ingredient}>
+                    <FoodIcon name={ing.name} aisle={ing.aisle} />
                     <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>{ing.name}</Text>
                     <Text style={[t.type.body, { color: t.colors.secondaryLabel, fontVariant: ['tabular-nums'] }]} testID={`qty-${ing.id}`}>
                       {formatQty(c.quantity, c.unit)}
@@ -290,7 +281,7 @@ export default function RecipeScreen() {
           </Text>
           {recipe.steps.map((step, i) => (
             <View key={i} style={styles.step} accessible accessibilityLabel={`Step ${i + 1}. ${convertStepText(step, units)}`}>
-              <View style={[styles.stepNum, { backgroundColor: t.colors.tintSoft, borderColor: t.colors.border }]}>
+              <View style={[styles.stepNum, { backgroundColor: t.colors.tintSoft }]}>
                 <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: 'normal', fontFamily: t.fonts.rounded }]}>{i + 1}</Text>
               </View>
               <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>{convertStepText(step, units)}</Text>
@@ -299,7 +290,7 @@ export default function RecipeScreen() {
 
           {/* Notes */}
           <Text style={[t.type.title2, styles.h2, { color: t.colors.label }]} accessibilityRole="header">
-            My Notes
+            My notes
           </Text>
           <TextInput
             value={noteDraft}
@@ -319,7 +310,7 @@ export default function RecipeScreen() {
 
           {recipe.custom && (
             <Button
-              label={confirmDelete ? 'Tap again to delete' : 'Delete Recipe'}
+              label={confirmDelete ? 'Tap again to delete' : 'Delete recipe'}
               icon="trash"
               variant="plain"
               onPress={onDelete}
@@ -362,7 +353,7 @@ export default function RecipeScreen() {
         <View style={[StyleSheet.absoluteFill, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.colors.separator }]} />
         <View style={styles.bottomRow}>
           <Button
-            label={justAdded ? 'Added' : 'Add to List'}
+            label={justAdded ? 'Added' : 'Groceries'}
             icon={justAdded ? 'check' : 'cartAdd'}
             variant={justAdded ? 'success' : 'tinted'}
             onPress={onAdd}
@@ -370,7 +361,7 @@ export default function RecipeScreen() {
             accessibilityLabel={`Add ingredients for ${servings} servings to the grocery list`}
           />
           <Button
-            label="Cook Now"
+            label="Cook now"
             icon="pot"
             onPress={() => router.push({ pathname: '/cook/[id]', params: { id: recipe.id, servings: String(servings) } })}
             style={{ flex: 1 }}
@@ -381,51 +372,61 @@ export default function RecipeScreen() {
   );
 }
 
-/** Per-serving nutrition with macro bars. With a protein goal, shows its share. */
+/**
+ * Per-serving nutrition: the calories, then one bar split by where those calories come from,
+ * then each macro with its grams and share. With a protein goal, shows its share too.
+ */
 function Nutrition({ recipe, proteinGoal }: { recipe: Recipe; proteinGoal?: number }) {
   const t = useTheme();
   const { protein, carbs, fat } = recipe.nutrition;
   const kcalFrom = { protein: protein * 4, carbs: carbs * 4, fat: fat * 9 };
-  const total = kcalFrom.protein + kcalFrom.carbs + kcalFrom.fat || 1;
+  const total = kcalFrom.protein + kcalFrom.carbs + kcalFrom.fat;
   const rows = [
     { key: 'protein', label: 'Protein', grams: protein, color: t.colors.protein },
     { key: 'carbs', label: 'Carbs', grams: carbs, color: t.colors.carbs },
     { key: 'fat', label: 'Fat', grams: fat, color: t.colors.fat },
   ] as const;
   return (
-    <View style={[styles.card, styles.nutrition, { backgroundColor: t.colors.cell, borderRadius: t.radius.lg, ...t.chunky.card }]} accessible accessibilityLabel={`${recipe.calories} calories, ${protein} grams protein, ${carbs} grams carbs, ${fat} grams fat per serving`}>
+    <View style={[styles.card, styles.nutrition, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]} accessible accessibilityLabel={`${recipe.calories} calories, ${protein} grams protein, ${carbs} grams carbs, ${fat} grams fat per serving`}>
       <View style={styles.kcal}>
         <Text style={[t.type.title1, { color: t.colors.label }]}>{recipe.calories}</Text>
-        <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]}>kcal</Text>
+        <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]}>kcal per serving, estimated</Text>
       </View>
-      <View style={{ flex: 1, gap: 8 }}>
-        {rows.map((r) => (
-          <View key={r.key}>
-            <View style={styles.macroLabel}>
-              <Text style={[t.type.footnote, { color: t.colors.label, fontWeight: '600' }]}>{r.label}</Text>
-              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, fontVariant: ['tabular-nums'] }]}>{r.grams} g</Text>
-            </View>
-            <View style={[styles.track, { backgroundColor: t.colors.fill }]}>
-              <Animated.View entering={FadeIn.duration(400)} style={[styles.bar, { backgroundColor: r.color, width: `${Math.max(4, (kcalFrom[r.key] / total) * 100)}%` }]} />
-            </View>
+      {total > 0 && (
+        <>
+          <View style={styles.split}>
+            {rows.map((r) => (
+              <Animated.View key={r.key} entering={FadeIn.duration(400)} style={{ flex: Math.max(kcalFrom[r.key], total * 0.03), backgroundColor: r.color, borderRadius: 6 }} />
+            ))}
           </View>
-        ))}
-        {proteinGoal ? (
-          <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]}>
-            {Math.round((protein / proteinGoal) * 100)}% of your {proteinGoal} g daily protein goal
-          </Text>
-        ) : null}
-      </View>
+          <View style={styles.macros}>
+            {rows.map((r) => (
+              <View key={r.key} style={styles.macro}>
+                <View style={styles.macroLabel}>
+                  <View style={[styles.dot, { backgroundColor: r.color }]} />
+                  <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{r.label}</Text>
+                </View>
+                <Text style={[t.type.headline, { color: t.colors.label }]}>{r.grams} g</Text>
+                <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]}>{Math.round((kcalFrom[r.key] / total) * 100)}% of kcal</Text>
+              </View>
+            ))}
+          </View>
+        </>
+      )}
+      {proteinGoal ? (
+        <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
+          {Math.round((protein / proteinGoal) * 100)}% of your {proteinGoal} g daily protein goal
+        </Text>
+      ) : null}
     </View>
   );
 }
 
-/** Circular blurred button that reads well over photos and the blurred bar. */
+/** A round white button that reads clearly over any photo. */
 function GlassButton({ icon, label, onPress, color }: { icon: IconName; label: string; onPress: () => void; color?: string }) {
   const t = useTheme();
   return (
-    <View style={styles.glass}>
-      <BlurView tint={t.isDark ? 'dark' : 'light'} intensity={40} style={StyleSheet.absoluteFill} />
+    <View style={[styles.glass, { backgroundColor: t.colors.cell }]}>
       <IconButton icon={icon} accessibilityLabel={label} onPress={onPress} color={color ?? t.colors.label} iconSize={18} />
     </View>
   );
@@ -449,31 +450,33 @@ function shareText(r: Recipe, servings: number, units: Units) {
 const styles = StyleSheet.create({
   heroShade: { position: 'absolute', top: 0, left: 0, right: 0 },
   photoBtn: { position: 'absolute', right: 16, flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 14, borderRadius: 22 },
-  body: { paddingHorizontal: 20, paddingTop: 24, borderBottomLeftRadius: 0, borderBottomRightRadius: 0, borderCurve: 'continuous' },
+  body: { paddingHorizontal: 16, paddingTop: 24, borderBottomLeftRadius: 0, borderBottomRightRadius: 0, borderCurve: 'continuous' },
   source: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, alignSelf: 'flex-start' },
   stats: { flexDirection: 'row', marginTop: 16, paddingVertical: 14, borderCurve: 'continuous' },
   stat: { flex: 1, alignItems: 'center', gap: 3 },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },
-  tag: { flexDirection: 'row', alignItems: 'center', gap: 5, minHeight: 36, paddingHorizontal: 14, borderRadius: 999, borderWidth: 1.5 },
   h2: { marginTop: 32, marginBottom: 12 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginTop: 32, marginBottom: 12 },
+  controlsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 12 },
+  servings: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 },
   card: { overflow: 'hidden', borderCurve: 'continuous' },
-  nutrition: { flexDirection: 'row', alignItems: 'center', gap: 16, padding: 16, overflow: 'visible' },
-  kcal: { alignItems: 'center', minWidth: 72 },
-  macroLabel: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  track: { height: 8, borderRadius: 4, overflow: 'hidden' },
-  bar: { height: 8, borderRadius: 4 },
-  ingredient: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, minHeight: 48, gap: 12 },
-  step: { flexDirection: 'row', gap: 14, marginBottom: 18 },
-  stepNum: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', marginTop: -3, borderWidth: 1.5 },
-  notes: { minHeight: 96, borderRadius: 16, padding: 14, textAlignVertical: 'top', borderCurve: 'continuous', outlineStyle: 'none' } as never,
+  nutrition: { gap: 16, padding: 16, overflow: 'visible' },
+  kcal: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
+  split: { flexDirection: 'row', gap: 3, height: 16 },
+  macros: { flexDirection: 'row' },
+  macro: { flex: 1, gap: 2 },
+  macroLabel: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  dot: { width: 10, height: 10, borderRadius: 5 },
+  ingredient: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, minHeight: 56, gap: 12 },
+  step: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+  stepNum: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginTop: -4 },
+  notes: { minHeight: 96, borderRadius: 20, padding: 16, textAlignVertical: 'top', borderCurve: 'continuous', outlineStyle: 'none' } as never,
   topBar: { position: 'absolute', top: 0, left: 0, right: 0, overflow: 'hidden' },
   // Left-aligned between Back and the three buttons on the right; long titles end in "…".
   topTitle: { position: 'absolute', left: 68, right: 176, textAlign: 'left' },
   controls: { position: 'absolute', left: 16, right: 16, flexDirection: 'row', justifyContent: 'space-between' },
   controlsRight: { flexDirection: 'row', gap: 8 },
-  glass: { width: 44, height: 44, borderRadius: 22, overflow: 'hidden' },
+  glass: { width: 44, height: 44, borderRadius: 22, shadowColor: '#3D2314', shadowOpacity: 0.16, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
   bottom: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingTop: 12, paddingHorizontal: 16, overflow: 'hidden' },
-  bottomRow: { flexDirection: 'row', gap: 10 },
+  bottomRow: { flexDirection: 'row', gap: 12 },
 });
 

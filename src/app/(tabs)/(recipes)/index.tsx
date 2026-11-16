@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
+import { Mascot } from '../../../components/mascot/Mascot';
 import { MascotSays } from '../../../components/mascot/MascotSays';
 import { greetingSituation, say } from '../../../components/mascot/lines';
 import { Chunky } from '../../../components/Chunky';
@@ -14,7 +15,7 @@ import { FAVORITES_ID, categories, filterTags, matchesFilter, type Recipe } from
 import { haptics } from '../../../lib/haptics';
 import { showPaywall, useProGate } from '../../../lib/pro';
 import { MANAGE_SUBSCRIPTIONS_URL } from '../../../lib/purchases';
-import { ScreenTitle } from '../../../navigation/screenOptions';
+import { ScreenTitle, useTabContent } from '../../../navigation/screenOptions';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from '../../../state/store';
 import { useTheme } from '../../../theme';
@@ -63,9 +64,12 @@ export default function RecipesScreen() {
   const mains = allRecipes.filter((r) => r.category !== 'Dessert');
   const featured = tonight ?? mains[dayNumber % Math.max(1, mains.length)] ?? allRecipes[0];
   const firstName = profile.name.trim().split(/\s+/)[0] ?? '';
-  const line = tip < 0 ? say(greetingSituation(), { name: firstName }) : say('tip', {}, tip);
+  // Decided once per visit: now and then Biscuit greets you with something new.
+  const [surprise] = useState(() => Math.random());
+  const line = tip < 0 ? say(greetingSituation(), { name: firstName }, dayNumber, surprise) : say('tip', {}, tip);
 
-  const margin = t.spacing.md;
+  const margin = t.layout.screen;
+  const content = useTabContent();
   const contentWidth = Math.min(width, 900);
   const columns = contentWidth >= 700 ? 3 : 2;
   const gap = t.spacing.md;
@@ -83,13 +87,13 @@ export default function RecipesScreen() {
       keyboardDismissMode="on-drag"
       keyboardShouldPersistTaps="handled"
       style={{ backgroundColor: t.colors.background }}
-      contentContainerStyle={[styles.content, { paddingHorizontal: margin, maxWidth: 900 }]}
+      contentContainerStyle={[content, { maxWidth: 900 }]}
     >
       <ScreenTitle title="Recipes" right={addButton} />
 
       {showTrialReminder && (
-        <View style={[styles.reminder, { backgroundColor: t.colors.cell, borderColor: t.colors.warning }]} accessibilityRole="alert">
-          <Icon name="crown" size={18} color={t.colors.warning} />
+        <View style={[styles.reminder, { backgroundColor: t.colors.rewardSoft, borderColor: t.colors.reward }]} accessibilityRole="alert">
+          <Icon name="crown" size={18} color={t.colors.rewardText} />
           <Text style={[t.type.subhead, { color: t.colors.label, flex: 1 }]} testID="trial-reminder">
             Your free trial ends {trialDaysLeft === 0 ? 'today' : `in ${trialDaysLeft} ${trialDaysLeft === 1 ? 'day' : 'days'}`}. Keep Pro, or cancel anytime before then.
           </Text>
@@ -104,67 +108,29 @@ export default function RecipesScreen() {
         </View>
       )}
 
+      {/* 1. A short hello */}
       {showExtras && (
-        <>
-          <MascotSays
-            line={petLine ?? line}
-            size={112}
-            hint="Tap for a tip"
-            onNext={() => {
-              setPetLine(null);
-              setTip((n) => n + 1);
-            }}
-            onPet={() => setPetLine(say('pet', {}, tip + 1))}
-            style={{ marginBottom: t.spacing.sm }}
-          />
-          <PressableScale
-            onPress={() => router.push('/buddy-pick')}
-            accessibilityLabel="Can't decide? Let Biscuit pick"
-            style={[styles.pickBtn, { backgroundColor: t.colors.cell, ...t.chunky.card }]}
-          >
-            <View style={[styles.pickIcon, { backgroundColor: t.colors.info }]}>
-              <Icon name="shuffle" size={18} color={t.colors.onTint} weight="bold" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[t.type.headline, { color: t.colors.label }]}>Can’t decide?</Text>
-              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>Let Biscuit pick something for you</Text>
-            </View>
-            <Icon name="chevronRight" size={14} color={t.colors.tertiaryLabel} weight="semibold" />
-          </PressableScale>
-        </>
+        <MascotSays
+          line={petLine ?? line}
+          size={88}
+          hint="Tap for a tip"
+          onNext={() => {
+            setPetLine(null);
+            setTip((n) => n + 1);
+          }}
+          onPet={() => setPetLine(say('pet', {}, tip + 1))}
+          style={{ marginBottom: t.layout.gap }}
+        />
       )}
 
-      <SearchField value={query} onChangeText={setQuery} placeholder="Search recipes or ingredients" style={{ marginBottom: t.spacing.sm }} />
+      {/* 2. Search */}
+      <SearchField value={query} onChangeText={setQuery} placeholder="Search recipes or ingredients" />
 
-      {/* Cookbooks */}
-      {showExtras && (
-        <>
-          <View style={styles.rowHeader}>
-            <Text style={[t.type.title3, { color: t.colors.label, flex: 1 }]} accessibilityRole="header">
-              Cookbooks
-            </Text>
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -margin }} contentContainerStyle={[styles.books, { paddingHorizontal: margin }]}>
-            {books.map((b) => (
-              <CookbookTile key={b.id} id={b.id} name={b.name} recipes={b.recipeIds.map((id) => getRecipe(id)).filter((r): r is Recipe => !!r)} />
-            ))}
-            <PressableScale
-              onPress={() => (canAddCookbook ? router.push('/cookbook-edit') : showPaywall('cookbooks'))}
-              accessibilityLabel="New cookbook"
-              style={[styles.book, styles.newBook, { borderColor: t.colors.border }]}
-            >
-              <Icon name="plus" size={22} color={t.colors.tint} weight="bold" />
-              <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: 'normal', fontFamily: t.fonts.rounded }]}>New cookbook</Text>
-            </PressableScale>
-          </ScrollView>
-        </>
-      )}
-
-      {/* Filters: one category at a time, any number of tags */}
+      {/* 3. Filters: one category at a time, any number of tags */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={{ marginHorizontal: -margin, marginTop: showExtras ? t.spacing.lg : 0 }}
+        style={{ marginHorizontal: -margin, marginTop: t.spacing.sm }}
         contentContainerStyle={[styles.chips, { paddingHorizontal: margin }]}
         accessibilityLabel="Filters"
       >
@@ -172,7 +138,8 @@ export default function RecipesScreen() {
           <Chip
             label="Clear"
             icon="close"
-            selected={false}
+            toggle={false}
+            accessibilityLabel="Clear filter"
             onPress={() => {
               clearFilters();
               toast({ message: 'Filters cleared', tone: 'info' });
@@ -182,53 +149,87 @@ export default function RecipesScreen() {
         {categories.map((c) => (
           <Chip key={c} label={c} selected={category === c} onPress={() => setCategory(category === c ? null : c)} />
         ))}
-        <View style={[styles.chipDivider, { backgroundColor: t.colors.separator }]} />
+        <View style={[styles.chipDivider, { backgroundColor: t.colors.fillStrong }]} />
         {filterTags.map((tag) => (
           <Chip key={tag} label={tag} selected={tags.includes(tag)} onPress={() => toggleTag(tag)} />
         ))}
       </ScrollView>
 
       <Animated.View entering={FadeIn.duration(250)}>
-          {showExtras && featured && (
-            <View style={{ marginTop: t.spacing.md }}>
-              <FeaturedCard recipe={featured} eyebrow={tonight ? 'On the menu tonight' : 'Recipe of the day'} />
+        {/* 4. Recipe of the day */}
+        {showExtras && featured && (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text style={[t.type.title2, { color: t.colors.label, flex: 1 }]} accessibilityRole="header">
+                {tonight ? 'On the menu tonight' : 'Recipe of the day'}
+              </Text>
+              <Chip label="Surprise me" icon="shuffle" toggle={false} accessibilityLabel="Can't decide? Let Biscuit pick" onPress={() => router.push('/buddy-pick')} />
             </View>
-          )}
+            <FeaturedCard recipe={featured} label={tonight ? 'On the menu tonight' : 'Recipe of the day'} />
+          </>
+        )}
 
-          <View style={styles.listHeader}>
-            <Text style={[t.type.title2, { color: t.colors.label, flex: 1 }]} accessibilityRole="header">
-              {q ? 'Results' : hasFilters ? 'Filtered' : 'All Recipes'}
-            </Text>
-            <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]} testID="result-count">
-              {countLabel}
-            </Text>
-          </View>
-
-          {filtered.length === 0 ? (
-            <EmptyState
-              icon="search"
-              cat="thinking"
-              title="No Recipes Found"
-              message={say('noResults').text}
-              action={{
-                label: 'Clear Search & Filters',
-                icon: 'close',
-                onPress: () => {
-                  haptics.tap();
-                  clearFilters();
-                  setQuery('');
-                },
-              }}
-            />
-          ) : (
-            <View style={[styles.grid, { gap, rowGap: t.spacing.xl }]}>
-              {filtered.map((r) => (
-                <Animated.View key={r.id} layout={LinearTransition.duration(220)} entering={FadeIn.duration(200)}>
-                  <RecipeCard recipe={r} width={cardWidth} />
-                </Animated.View>
+        {/* 5. Cookbooks: a grid, so no card is ever cut off */}
+        {showExtras && (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text style={[t.type.title2, { color: t.colors.label, flex: 1 }]} accessibilityRole="header">
+                Cookbooks
+              </Text>
+            </View>
+            <View style={[styles.grid, { gap }]}>
+              {books.map((b) => (
+                <CookbookTile key={b.id} id={b.id} name={b.name} width={cardWidth} recipes={b.recipeIds.map((id) => getRecipe(id)).filter((r): r is Recipe => !!r)} />
               ))}
+              <PressableScale
+                onPress={() => (canAddCookbook ? router.push('/cookbook-edit') : showPaywall('cookbooks'))}
+                accessibilityLabel="New cookbook"
+                style={[styles.book, styles.newBook, { width: cardWidth, borderColor: t.colors.lip, borderRadius: t.layout.cardRadius }]}
+              >
+                <View style={[styles.newIcon, { backgroundColor: t.colors.tintSoft }]}>
+                  <Icon name="plus" size={20} color={t.colors.tint} weight="bold" />
+                </View>
+                <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: 'normal', fontFamily: t.fonts.rounded }]}>New cookbook</Text>
+              </PressableScale>
             </View>
-          )}
+          </>
+        )}
+
+        {/* 6. All recipes */}
+        <View style={styles.sectionHeader}>
+          <Text style={[t.type.title2, { color: t.colors.label, flex: 1 }]} accessibilityRole="header">
+            {q ? 'Results' : hasFilters ? 'Filtered' : 'All recipes'}
+          </Text>
+          <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]} testID="result-count">
+            {countLabel}
+          </Text>
+        </View>
+
+        {filtered.length === 0 ? (
+          <EmptyState
+            icon="search"
+            cat="thinking"
+            title="No recipes found"
+            message={say('noResults').text}
+            action={{
+              label: 'Clear search and filters',
+              icon: 'close',
+              onPress: () => {
+                haptics.tap();
+                clearFilters();
+                setQuery('');
+              },
+            }}
+          />
+        ) : (
+          <View style={[styles.grid, { gap, rowGap: t.spacing.xl }]}>
+            {filtered.map((r) => (
+              <Animated.View key={r.id} layout={LinearTransition.duration(220)} entering={FadeIn.duration(200)}>
+                <RecipeCard recipe={r} width={cardWidth} />
+              </Animated.View>
+            ))}
+          </View>
+        )}
       </Animated.View>
       <AddMenu
         visible={menuOpen}
@@ -276,18 +277,22 @@ function AddMenu({ visible, onClose, onImport, onWrite }: { visible: boolean; on
   );
 }
 
-function CookbookTile({ id, name, recipes }: { id: string; name: string; recipes: Recipe[] }) {
+function CookbookTile({ id, name, recipes, width }: { id: string; name: string; recipes: Recipe[]; width: number }) {
   const t = useTheme();
-  const covers = recipes.slice(0, 3);
+  const covers = recipes.slice(0, 2);
+  const empty = covers.length === 0;
   return (
     <PressableScale
       onPress={() => router.push({ pathname: '/cookbook/[id]', params: { id } })}
       accessibilityLabel={`${name} cookbook, ${recipes.length} recipes`}
-      style={[styles.book, { backgroundColor: t.colors.cell, ...t.chunky.card }]}
+      style={[styles.book, { width, backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]}
     >
-      <View style={[styles.covers, { backgroundColor: t.colors.imagePlaceholder }]}>
-        {covers.length === 0 ? (
-          <Icon name={id === FAVORITES_ID ? 'heart' : 'book'} size={26} color={t.colors.tertiaryLabel} />
+      <View style={[styles.covers, { backgroundColor: empty ? t.colors.tintSoft : t.colors.imagePlaceholder }]}>
+        {empty ? (
+          // A friendly little picture instead of a grey box.
+          <View style={styles.emptyCover}>
+            <Mascot mood={id === FAVORITES_ID ? 'love' : 'idle'} size={64} petable={false} hold />
+          </View>
         ) : (
           covers.map((r) => (
             <View key={r.id} style={styles.cover}>
@@ -297,13 +302,13 @@ function CookbookTile({ id, name, recipes }: { id: string; name: string; recipes
         )}
       </View>
       <View style={styles.bookText}>
-        {id === FAVORITES_ID && <Icon name="heartFill" size={13} color={t.colors.accent} />}
-        <Text style={[t.type.subhead, { color: t.colors.label, fontWeight: 'normal', fontFamily: t.fonts.rounded, flexShrink: 1 }]} numberOfLines={1}>
+        {id === FAVORITES_ID && <Icon name="heartFill" size={14} color={t.colors.accent} />}
+        <Text style={[t.type.headline, { color: t.colors.label, fontSize: 16, flexShrink: 1 }]} numberOfLines={1}>
           {name}
         </Text>
       </View>
-      <Text style={[t.type.caption1, { color: t.colors.secondaryLabel, paddingHorizontal: 10 }]}>
-        {recipes.length} {recipes.length === 1 ? 'recipe' : 'recipes'}
+      <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, paddingHorizontal: 12 }]} numberOfLines={1}>
+        {empty ? (id === FAVORITES_ID ? 'Tap ♥ on a recipe' : 'Nothing saved yet') : `${recipes.length} ${recipes.length === 1 ? 'recipe' : 'recipes'}`}
       </Text>
     </PressableScale>
   );
@@ -311,22 +316,20 @@ function CookbookTile({ id, name, recipes }: { id: string; name: string; recipes
 
 const styles = StyleSheet.create({
   addBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 40, paddingHorizontal: 16 },
-  content: { paddingBottom: 120, width: '100%', alignSelf: 'center' },
-  reminder: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingLeft: 14, paddingRight: 2, paddingVertical: 6, borderRadius: 16, borderWidth: 2, marginBottom: 14, borderCurve: 'continuous' },
-  reminderBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 6 },
-  pickBtn: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 18, marginBottom: 16, borderCurve: 'continuous' },
-  pickIcon: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
-  rowHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
-  books: { gap: 12, paddingBottom: 6 },
-  book: { width: 148, borderRadius: 18, borderCurve: 'continuous', paddingBottom: 10 },
-  newBook: { borderWidth: 2, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 140 },
-  covers: { height: 84, margin: 6, borderRadius: 12, overflow: 'hidden', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
+  reminder: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 16, paddingRight: 4, paddingVertical: 8, borderRadius: 20, borderWidth: 2, marginBottom: 16, borderCurve: 'continuous' },
+  reminderBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
+  pickIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 24, marginBottom: 12, minHeight: 44 },
+  book: { borderCurve: 'continuous', paddingBottom: 12 },
+  newBook: { borderWidth: 2, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 152 },
+  newIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  covers: { height: 88, margin: 8, borderRadius: 12, overflow: 'hidden', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
   cover: { flex: 1, height: '100%' },
-  bookText: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, marginTop: 2 },
-  chips: { gap: 8, paddingVertical: 6, alignItems: 'center', minHeight: 48 },
-  chipDivider: { width: 2, height: 22, marginHorizontal: 4, borderRadius: 1 },
-  menu: { position: 'absolute', right: 16, width: 300, maxWidth: '92%', borderRadius: 18, overflow: 'hidden', borderCurve: 'continuous' },
-  menuRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12, minHeight: 60 },
-  listHeader: { flexDirection: 'row', alignItems: 'baseline', marginTop: 28, marginBottom: 12 },
+  emptyCover: { marginTop: 14 },
+  bookText: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, marginTop: 2 },
+  chips: { gap: 8, paddingVertical: 4, alignItems: 'center', minHeight: 52 },
+  chipDivider: { width: 2, height: 24, marginHorizontal: 4, borderRadius: 1 },
+  menu: { position: 'absolute', right: 16, width: 300, maxWidth: '92%', borderRadius: 20, overflow: 'hidden', borderCurve: 'continuous' },
+  menuRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12, minHeight: 64 },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
 });

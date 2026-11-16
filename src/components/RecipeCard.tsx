@@ -1,11 +1,14 @@
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import { useState } from 'react';
 import type { Recipe, RecipeImage } from '../data/mock';
 import { photoUri } from '../lib/photos';
 import { useStore } from '../state/store';
-import { useTheme } from '../theme';
+import { haptics } from '../lib/haptics';
+import { brand, useTheme } from '../theme';
 import { Icon } from './Icon';
 import { PressableScale } from './PressableScale';
 import { useToast } from './Toast';
@@ -30,30 +33,41 @@ export function RecipePhoto({ recipe, iconSize = 36 }: { recipe: Recipe; iconSiz
   );
 }
 
-/** Heart button used on cards and rows. Shows a toast with Undo. */
+/** Heart button used on cards and rows. Pops when you save, and shows a toast with Undo. */
 export function FavoriteButton({ recipe, onPhoto }: { recipe: Recipe; onPhoto?: boolean }) {
   const t = useTheme();
   const { isFavorite, toggleFavorite } = useStore();
   const toast = useToast();
+  const reduceMotion = useReducedMotion();
   const fav = isFavorite(recipe.id);
+  const pop = useSharedValue(1);
+  const popStyle = useAnimatedStyle(() => ({ transform: [{ scale: pop.get() }] }));
   return (
-    <IconButton
-      icon={fav ? 'heartFill' : 'heart'}
-      accessibilityLabel={fav ? `Remove ${recipe.title} from Favorites` : `Add ${recipe.title} to Favorites`}
-      color={fav ? t.colors.accent : onPhoto ? '#FFFFFF' : t.colors.secondaryLabel}
-      background={onPhoto ? t.colors.scrim : undefined}
-      size={onPhoto ? 34 : 44}
-      iconSize={onPhoto ? 16 : 20}
-      onPress={() => {
-        const now = toggleFavorite(recipe.id);
-        toast({
-          message: now ? 'Added to Favorites' : 'Removed from Favorites',
-          icon: now ? 'heartFill' : 'heart',
-          tone: now ? 'success' : 'info',
-          action: { label: 'Undo', onPress: () => toggleFavorite(recipe.id) },
-        });
-      }}
-    />
+    <Animated.View style={popStyle}>
+      <IconButton
+        icon={fav ? 'heartFill' : 'heart'}
+        accessibilityLabel={fav ? `Remove ${recipe.title} from Favorites` : `Add ${recipe.title} to Favorites`}
+        color={fav ? t.colors.accent : onPhoto ? brand.cocoa : t.colors.secondaryLabel}
+        // On photos: a solid white circle, so the heart is clear on any picture.
+        background={onPhoto ? '#FFFFFF' : undefined}
+        size={onPhoto ? 36 : 44}
+        iconSize={onPhoto ? 18 : 20}
+        haptic={null}
+        style={onPhoto ? styles.favShadow : undefined}
+        onPress={() => {
+          const now = toggleFavorite(recipe.id);
+          if (now) haptics.success();
+          else haptics.select();
+          if (now && !reduceMotion) pop.set(withSequence(withTiming(0.7, { duration: 80 }), withSpring(1, t.motion.pop)));
+          toast({
+            message: now ? 'Added to Favorites' : 'Removed from Favorites',
+            icon: now ? 'heartFill' : 'heart',
+            tone: now ? 'success' : 'info',
+            action: { label: 'Undo', onPress: () => toggleFavorite(recipe.id) },
+          });
+        }}
+      />
+    </Animated.View>
   );
 }
 
@@ -71,16 +85,19 @@ export function RecipeCard({ recipe, width }: { recipe: Recipe; width: number })
       accessibilityHint="Opens the recipe"
       style={{ width }}
     >
-      <View style={[styles.imageWrap, { borderRadius: t.radius.lg, backgroundColor: t.colors.imagePlaceholder, borderColor: t.colors.border }]}>
+      <View style={[styles.imageWrap, { borderRadius: t.layout.cardRadius, backgroundColor: t.colors.imagePlaceholder }]}>
         <RecipePhoto recipe={recipe} />
         <View style={styles.favOnPhoto}>
           <FavoriteButton recipe={recipe} onPhoto />
         </View>
       </View>
-      <Text style={[t.type.headline, { color: t.colors.label, marginTop: 8 }]} numberOfLines={2}>
-        {recipe.title}
-      </Text>
-      <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 2 }]}>{meta(recipe)}</Text>
+      {/* Room for two lines of title on every card, so a row of cards always lines up. */}
+      <View style={styles.cardTitle}>
+        <Text style={[t.type.headline, { color: t.colors.label, fontSize: 17, lineHeight: 22 }]} numberOfLines={2}>
+          {recipe.title}
+        </Text>
+      </View>
+      <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{meta(recipe)}</Text>
     </PressableScale>
   );
 }
@@ -97,28 +114,27 @@ export function RecipeCardSkeleton({ width }: { width: number }) {
 }
 
 /** Large featured card with the title over the photo. */
-export function FeaturedCard({ recipe, eyebrow }: { recipe: Recipe; eyebrow: string }) {
+export function FeaturedCard({ recipe, label }: { recipe: Recipe; /** For screen readers: why it's featured. */ label: string }) {
   const t = useTheme();
   const meta = useMeta();
   return (
     <PressableScale
       onPress={() => openRecipe(recipe.id)}
       scaleTo={0.98}
-      accessibilityLabel={`${eyebrow}: ${recipe.title}`}
+      accessibilityLabel={`${label}: ${recipe.title}`}
       accessibilityHint="Opens the recipe"
-      style={[styles.featured, { borderRadius: t.radius.xl, backgroundColor: t.colors.imagePlaceholder, ...t.shadow.card }]}
+      style={[styles.featured, { borderRadius: t.layout.cardRadius, backgroundColor: t.colors.imagePlaceholder }]}
     >
       <RecipePhoto recipe={recipe} iconSize={56} />
-      <View style={[StyleSheet.absoluteFill, styles.featuredShade]} />
+      <LinearGradient colors={['rgba(30,14,6,0)', 'rgba(30,14,6,0.78)']} style={styles.featuredShade} pointerEvents="none" />
       <View style={styles.featuredFav}>
         <FavoriteButton recipe={recipe} onPhoto />
       </View>
       <View style={styles.featuredText}>
-        <Text style={[t.type.footnote, styles.eyebrow]}>{eyebrow.toUpperCase()}</Text>
-        <Text style={[t.type.title1, { color: '#FFFFFF' }]} numberOfLines={2}>
+        <Text style={[t.type.title2, { color: '#FFFFFF' }]} numberOfLines={2}>
           {recipe.title}
         </Text>
-        <Text style={[t.type.subhead, { color: 'rgba(255,255,255,0.88)', marginTop: 2 }]}>{meta(recipe)}</Text>
+        <Text style={[t.type.subhead, { color: 'rgba(255,255,255,0.92)', marginTop: 2 }]}>{meta(recipe)}</Text>
       </View>
     </PressableScale>
   );
@@ -168,15 +184,16 @@ export function RecipeRow({
 }
 
 const styles = StyleSheet.create({
-  imageWrap: { width: '100%', aspectRatio: 1, overflow: 'hidden', borderCurve: 'continuous', borderWidth: 2 },
+  imageWrap: { width: '100%', aspectRatio: 1, overflow: 'hidden', borderCurve: 'continuous' },
+  cardTitle: { minHeight: 44, marginTop: 8, marginBottom: 2 },
+  favShadow: { shadowColor: '#3D2314', shadowOpacity: 0.18, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
   noPhoto: { alignItems: 'center', justifyContent: 'center' },
-  favOnPhoto: { position: 'absolute', top: 6, right: 6 },
-  featured: { height: 300, overflow: 'hidden', borderCurve: 'continuous', justifyContent: 'flex-end' },
-  featuredShade: { backgroundColor: 'rgba(0,0,0,0.28)' },
-  featuredFav: { position: 'absolute', top: 12, right: 12 },
-  featuredText: { padding: 20 },
-  eyebrow: { color: 'rgba(255,255,255,0.9)', fontWeight: '600', letterSpacing: 0.4, marginBottom: 2 },
+  favOnPhoto: { position: 'absolute', top: 8, right: 8 },
+  featured: { height: 216, overflow: 'hidden', borderCurve: 'continuous', justifyContent: 'flex-end' },
+  featuredShade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 136 },
+  featuredFav: { position: 'absolute', top: 8, right: 8 },
+  featuredText: { padding: 16 },
   row: { flexDirection: 'row', alignItems: 'center', paddingRight: 8 },
   rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingLeft: 16, paddingRight: 8, minHeight: 72 },
-  thumb: { width: 56, height: 56, borderRadius: 10, overflow: 'hidden', borderCurve: 'continuous' },
+  thumb: { width: 56, height: 56, borderRadius: 12, overflow: 'hidden', borderCurve: 'continuous' },
 });

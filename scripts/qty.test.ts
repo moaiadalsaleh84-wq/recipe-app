@@ -7,7 +7,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { formatQty, roundQty } from '../src/lib/qty.ts';
+import { formatQty, nameFor, roundQty } from '../src/lib/qty.ts';
 import { convertQty } from '../src/lib/units.ts';
 
 // The recipe file loads photos, which plain Node can't do, so read the amounts from its text.
@@ -57,4 +57,14 @@ test('the reported bug: 1 of 9 servings of a sponge cake is not a quarter', () =
   assert.equal(formatQty(1.5, 'cups'), '1½ cups');
   assert.equal(formatQty(2.95, 'tbsp'), '3 tbsp');
   assert.equal(formatQty(0, 'tsp'), '');
+});
+
+test('one of something is singular', () => {
+  assert.equal(nameFor(1, '', 'Eggs'), 'Egg');
+  assert.equal(nameFor(1, '', 'Tomatoes'), 'Tomato');
+  assert.equal(nameFor(1, '', 'Raspberries'), 'Raspberry');
+  assert.equal(nameFor(1, '', 'Brioche buns'), 'Brioche bun');
+  assert.equal(nameFor(2, '', 'Eggs'), 'Eggs');
+  assert.equal(nameFor(1, 'tsp', 'Cumin seeds'), 'Cumin seeds');
+  assert.equal(nameFor(1, '', 'Swiss'), 'Swiss');
 });

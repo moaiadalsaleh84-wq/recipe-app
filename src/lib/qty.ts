@@ -36,3 +36,15 @@ export const formatQty = (quantity: number, unit: string) => {
   }
   return unit ? `${text} ${unit}` : text;
 };
+
+/**
+ * "1 Eggs" reads wrong: for a single countable thing, drop the plural ("1 Egg", "1 Tomato").
+ * Only used when there is no unit, so "1 tbsp Capers" stays as it is.
+ */
+export function nameFor(quantity: number, unit: string, name: string) {
+  if (unit || formatQty(quantity, unit) !== '1') return name;
+  if (/oes$/i.test(name)) return name.slice(0, -2);
+  if (/ies$/i.test(name)) return `${name.slice(0, -3)}y`;
+  if (/[^s]s$/i.test(name)) return name.slice(0, -1);
+  return name;
+}

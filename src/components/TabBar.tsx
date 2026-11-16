@@ -13,7 +13,7 @@ const tabs: Record<string, { label: string; icon: IconName }> = {
   '(recipes)': { label: 'Recipes', icon: 'book' },
   plan: { label: 'Plan', icon: 'calendar' },
   pantry: { label: 'Pantry', icon: 'fridge' },
-  groceries: { label: 'Shop', icon: 'cart' },
+  groceries: { label: 'Groceries', icon: 'cart' },
   progress: { label: 'Progress', icon: 'trophy' },
 };
 
