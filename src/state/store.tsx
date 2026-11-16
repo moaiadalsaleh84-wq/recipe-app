@@ -1,5 +1,6 @@
 import { roundQty } from '../lib/qty';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AppState, Platform } from 'react-native';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { BuddyId } from '../components/cats/types';
 import { emptyProfile, type Profile } from '../data/onboarding';
@@ -175,13 +176,31 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       .finally(() => setHydrated(true));
   }, []);
 
+  // Saves a moment after each change (so a burst of taps is one write), and right away when the
+  // app goes to the background or the page closes, so the last change is never lost.
+  const pending = useRef<string | null>(null);
+  const flush = useCallback(() => {
+    if (pending.current === null) return;
+    AsyncStorage.setItem(STORAGE_KEY, pending.current).catch(() => {});
+    pending.current = null;
+  }, []);
   useEffect(() => {
     if (!hydrated) return;
-    const id = setTimeout(() => {
-      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(saved)).catch(() => {});
-    }, 300);
+    pending.current = JSON.stringify(saved);
+    const id = setTimeout(flush, 300);
     return () => clearTimeout(id);
-  }, [saved, hydrated]);
+  }, [saved, hydrated, flush]);
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') flush();
+    });
+    const web = Platform.OS === 'web' && typeof window !== 'undefined';
+    if (web) window.addEventListener('pagehide', flush);
+    return () => {
+      sub.remove();
+      if (web) window.removeEventListener('pagehide', flush);
+    };
+  }, [flush]);
 
   const update = useCallback((fn: (s: Saved) => Partial<Saved>) => setSaved((s) => ({ ...s, ...fn(s) })), []);
 

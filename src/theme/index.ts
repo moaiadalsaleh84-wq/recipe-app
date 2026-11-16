@@ -33,7 +33,7 @@ export const brand = {
 
 const light = {
   /* Primary (tomato): the one main action */
-  tint: '#C9330F', // tomato as text and icons (5:1 on cream)
+  tint: '#B82D0C', // tomato as text and icons (5.8:1 on cream, 4.9:1 on the soft tomato)
   tintFill: brand.tomato, // the primary button's face, behind white text
   tintDeep: '#B92C0E', // the lip under the primary button
   tintSoft: '#FFE6DC', // quiet tomato background: secondary buttons, selected tab
@@ -42,7 +42,7 @@ const light = {
   success: brand.green,
   successDeep: '#14702F',
   successSoft: '#DDF4E3',
-  successText: '#1B7F3A',
+  successText: '#15703A',
   /* Rewards (yellow) */
   reward: brand.yellow,
   rewardDeep: '#E0A100',
@@ -66,7 +66,7 @@ const light = {
 
   label: brand.cocoa,
   secondaryLabel: '#7A5E4D',
-  tertiaryLabel: '#8D7462', // placeholders and quiet icons (4.5:1 on white)
+  tertiaryLabel: '#7F6655', // placeholders and quiet icons (5:1 on white and cream)
 
   background: brand.cream,
   groupedBackground: brand.cream,
@@ -115,7 +115,7 @@ const dark: Palette = {
 
   label: '#FFF3E4',
   secondaryLabel: '#C9AE98',
-  tertiaryLabel: '#A68C7C',
+  tertiaryLabel: '#B09887',
 
   // Warm darks. Cards are clearly lighter than the page.
   background: '#211713',
