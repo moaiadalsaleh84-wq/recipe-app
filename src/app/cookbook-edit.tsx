@@ -42,9 +42,9 @@ export default function CookbookEdit() {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.groupedBackground }}>
-      <PageHeader title={existing ? 'Rename Cookbook' : 'New Cookbook'} mode="cancel" inSheet />
+      <PageHeader title={existing ? 'Rename cookbook' : 'New cookbook'} mode="cancel" inSheet />
       <View style={styles.body}>
-        <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginBottom: 6, marginLeft: 4 }]}>NAME</Text>
+        <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginBottom: 8, fontFamily: t.fonts.display, fontWeight: 'normal', fontSize: 15 }]}>Name</Text>
         <TextInput
           value={name}
           onChangeText={setName}
@@ -57,7 +57,7 @@ export default function CookbookEdit() {
           accessibilityLabel="Cookbook name"
           style={[t.type.body, styles.input, { color: t.colors.label, backgroundColor: t.colors.cell, ...t.chunky.card }]}
         />
-        <Button label={existing ? 'Save' : 'Create Cookbook'} icon={existing ? 'check' : 'plus'} onPress={save} disabled={!valid} style={{ marginTop: 20 }} />
+        <Button label={existing ? 'Save' : 'Create cookbook'} icon={existing ? 'check' : 'plus'} onPress={save} disabled={!valid} style={{ marginTop: 20 }} />
       </View>
     </View>
   );

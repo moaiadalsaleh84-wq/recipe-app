@@ -17,6 +17,7 @@ export function PageHeader({
   mode = 'back',
   onBack,
   inSheet,
+  cancelLabel = 'Cancel',
 }: {
   title: string;
   subtitle?: string;
@@ -26,18 +27,20 @@ export function PageHeader({
   onBack?: () => void;
   /** Sheets on iOS already sit below the status bar. */
   inSheet?: boolean;
+  /** The word on the left button in 'cancel' mode ("Done" for screens with nothing to discard). */
+  cancelLabel?: string;
 }) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const back = onBack ?? (() => (router.canGoBack() ? router.back() : router.replace('/')));
   return (
-    <View style={[styles.header, { paddingTop: inSheet ? 14 : insets.top + 6, borderBottomColor: t.colors.separator }]}>
+    <View style={[styles.header, { paddingTop: inSheet ? 16 : insets.top + 8 }]}>
       <View style={styles.side}>
         {mode === 'none' ? null : mode === 'back' ? (
           <IconButton icon="back" accessibilityLabel="Back" onPress={back} color={t.colors.tint} iconSize={19} />
         ) : (
-          <PressableScale onPress={back} style={styles.textButton} accessibilityLabel="Cancel">
-            <Text style={[t.type.body, { color: t.colors.tint }]}>Cancel</Text>
+          <PressableScale onPress={back} style={styles.textButton} accessibilityLabel={cancelLabel}>
+            <Text style={[t.type.body, { color: t.colors.tint }]}>{cancelLabel}</Text>
           </PressableScale>
         )}
       </View>
@@ -55,7 +58,7 @@ export function PageHeader({
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingBottom: 8, borderBottomWidth: StyleSheet.hairlineWidth },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingBottom: 8 },
   side: { width: 96 },
   right: { flexDirection: 'row', alignItems: 'center' },
   titleWrap: { flex: 1, alignItems: 'center' },

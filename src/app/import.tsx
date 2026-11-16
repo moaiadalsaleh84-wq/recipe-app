@@ -43,6 +43,7 @@ export default function ImportScreen() {
   const [input, setInput] = useState(typeof params.url === 'string' ? params.url : '');
   const [phase, setPhase] = useState<Phase>({ name: 'input' });
   const [elapsed, setElapsed] = useState(0);
+  const [helpOpen, setHelpOpen] = useState(false);
   const abort = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -181,14 +182,25 @@ export default function ImportScreen() {
                 ) : null}
                 <PressableScale onPress={paste} accessibilityLabel="Paste from clipboard" style={[styles.smallBtn, { backgroundColor: t.colors.tintSoft }]}>
                   <Icon name="notes" size={15} color={t.colors.tint} />
-                  <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: '700' }]}>Paste</Text>
+                  <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>Paste</Text>
                 </PressableScale>
               </View>
             </View>
-            <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 10, lineHeight: 19 }]}>
-              Works with recipe websites, and with TikTok, YouTube and Instagram when the recipe is written in the caption or description. We can’t watch videos, so a video without the recipe in its text can’t be imported.
-            </Text>
-            <Button label="Import recipe" icon="arrowRight" onPress={run} disabled={!input.trim()} style={{ marginTop: 18 }} />
+            {/* One line of help; the details open on tap. */}
+            <View style={styles.helpRow}>
+              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, flex: 1 }]}>Websites, TikTok, YouTube and Instagram.</Text>
+              <PressableScale onPress={() => setHelpOpen((v) => !v)} accessibilityLabel="What works?" aria-expanded={helpOpen} style={styles.helpLink}>
+                <Text style={[t.type.footnote, { color: t.colors.tint, fontWeight: '700' }]}>What works?</Text>
+              </PressableScale>
+            </View>
+            {helpOpen && (
+              <Animated.View entering={FadeIn.duration(180)} style={[styles.help, { backgroundColor: t.colors.fill }]} testID="import-help">
+                <Text style={[t.type.footnote, { color: t.colors.label, lineHeight: 19 }]}>
+                  Recipe websites work best. TikTok, YouTube and Instagram work when the recipe is written in the caption or description. We can’t watch videos, so a video without the recipe in its text can’t be imported.
+                </Text>
+              </Animated.View>
+            )}
+            <Button label="Import recipe" icon="arrowRight" onPress={run} disabled={!input.trim()} style={{ marginTop: 16 }} />
             {importsLeft !== null && (
               <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, textAlign: 'center', marginTop: 10 }]} testID="imports-left">
                 {importsLeft > 0 ? `${importsLeft} of ${FREE_LIMITS.imports} free imports left` : `You’ve used your ${FREE_LIMITS.imports} free imports. Pro imports without limits.`}
@@ -334,6 +346,9 @@ function Review({ result, onSave, onEdit, onDiscard }: { result: ImportSuccess; 
 }
 
 const styles = StyleSheet.create({
+  helpRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
+  helpLink: { minHeight: 44, justifyContent: 'center', paddingLeft: 12 },
+  help: { borderRadius: 16, padding: 12, borderCurve: 'continuous' },
   content: { padding: 16, paddingBottom: 60, width: '100%', maxWidth: 640, alignSelf: 'center' },
   headerBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
   inputWrap: { borderRadius: 18, padding: 12, borderCurve: 'continuous' },

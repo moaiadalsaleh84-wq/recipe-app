@@ -16,7 +16,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 import { MascotSays } from '../../components/mascot/MascotSays';
-import { say } from '../../components/mascot/lines';
+import { say, type Line } from '../../components/mascot/lines';
 import { FoodIcon } from '../../components/FoodIcon';
 import { Icon, type IconName } from '../../components/Icon';
 import { PressableScale } from '../../components/PressableScale';
@@ -47,6 +47,7 @@ export default function RecipeScreen() {
   const [justAdded, setJustAdded] = useState(false);
   const [barVisible, setBarVisible] = useState(false);
   const [lineN, setLineN] = useState(0);
+  const [reaction, setReaction] = useState<Line | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [noteDraft, setNoteDraft] = useState(recipe ? notes[recipe.id] ?? '' : '');
   const addedTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -97,10 +98,12 @@ export default function RecipeScreen() {
   const fav = isFavorite(recipe.id);
   const inCookbooks = cookbooks.filter((c) => c.recipeIds.includes(recipe.id)).length + (favorites.includes(recipe.id) ? 1 : 0);
   const scale = servings / recipe.servings;
-  const line = say(recipeKind(recipe), { protein: recipe.nutrition.protein }, lineN);
+  // Biscuit reacts to what you just did here (saved it, added it to the list), or to the recipe.
+  const line = reaction ?? say(recipeKind(recipe), { protein: recipe.nutrition.protein }, lineN);
 
   const onFavorite = () => {
     const now = toggleFavorite(recipe.id);
+    setReaction(now ? say('favorite') : null);
     toast({
       message: now ? 'Added to Favorites' : 'Removed from Favorites',
       icon: now ? 'heartFill' : 'heart',
@@ -111,6 +114,7 @@ export default function RecipeScreen() {
 
   const onAdd = () => {
     const n = addIngredients(recipe.id, recipe.ingredients, scale);
+    setReaction(say('addedToList'));
     setJustAdded(true);
     clearTimeout(addedTimer.current);
     addedTimer.current = setTimeout(() => setJustAdded(false), 1800);
@@ -237,7 +241,10 @@ export default function RecipeScreen() {
           )}
 
           {/* Biscuit reacts to this recipe */}
-          <MascotSays line={line} size={80} onNext={() => setLineN((n) => n + 1)} style={{ marginTop: 24 }} />
+          <MascotSays line={line} size={80} onNext={() => {
+              setReaction(null);
+              setLineN((n) => n + 1);
+            }} style={{ marginTop: 24 }} />
 
           {/* Nutrition */}
           <Text style={[t.type.title2, styles.h2, { color: t.colors.label }]} accessibilityRole="header">

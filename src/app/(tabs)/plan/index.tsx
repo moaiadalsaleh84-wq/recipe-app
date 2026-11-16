@@ -6,12 +6,13 @@ import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
 import { RecipeRow } from '../../../components/RecipeCard';
 import { useToast } from '../../../components/Toast';
-import { Chip, HeaderButton, IconButton, Section, Separator } from '../../../components/ui';
+import { Button, HeaderButton, IconButton, Section, Separator } from '../../../components/ui';
 import { meals, type Meal } from '../../../data/mock';
 import { Mascot } from '../../../components/mascot/Mascot';
 import { MascotSays } from '../../../components/mascot/MascotSays';
 import { say } from '../../../components/mascot/lines';
 import { haptics } from '../../../lib/haptics';
+import { noWidow } from '../../../lib/text';
 import { ScreenTitle, useTabContent } from '../../../navigation/screenOptions';
 import { totalsFor, useStore } from '../../../state/store';
 import { useTheme } from '../../../theme';
@@ -117,13 +118,14 @@ export default function PlanScreen() {
             <View style={{ flex: 1 }}>
               <Text style={[t.type.title3, { color: t.colors.label }]}>{weekDays[day].isToday ? 'Plan today' : `Plan ${weekDays[day].long}`}</Text>
               <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]} testID="cat-line">
-                {say('planEmptyDay').text}
+                {noWidow(say('planEmptyDay').text)}
               </Text>
             </View>
           </View>
+          {/* One row, three equal buttons. */}
           <View style={styles.emptyChips}>
             {meals.map((meal) => (
-              <Chip key={meal} label={meal} icon="plus" toggle={false} accessibilityLabel={`Add ${meal.toLowerCase()} for ${weekDays[day].long}`} onPress={() => addMeal(meal)} />
+              <Button key={meal} label={meal} variant="tinted" size="medium" onPress={() => addMeal(meal)} accessibilityLabel={`Add ${meal.toLowerCase()} for ${weekDays[day].long}`} style={styles.mealButton} />
             ))}
           </View>
         </View>
@@ -175,7 +177,8 @@ const styles = StyleSheet.create({
   dayHeader: { flexDirection: 'row', alignItems: 'baseline', marginTop: 24, marginBottom: 12 },
   emptyCard: { padding: 16, gap: 16, borderCurve: 'continuous' },
   emptyTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  emptyChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  emptyChips: { flexDirection: 'row', gap: 8 },
+  mealButton: { flex: 1, alignSelf: 'auto' },
   addSlot: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, minHeight: 72 },
   addIcon: { width: 56, height: 56, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
 });

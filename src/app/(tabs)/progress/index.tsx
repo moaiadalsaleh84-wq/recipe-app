@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { Icon } from '../../../components/Icon';
 import { say, type Line } from '../../../components/mascot/lines';
@@ -8,14 +8,12 @@ import { MascotSays } from '../../../components/mascot/MascotSays';
 import { PressableScale } from '../../../components/PressableScale';
 import { RecipeRow } from '../../../components/RecipeCard';
 import { useToast } from '../../../components/Toast';
-import { Button, ProgressBar, Section, Segmented, Separator, Stepper } from '../../../components/ui';
-import type { Units } from '../../../data/mock';
+import { Button, HeaderButton, ProgressBar, Section, Separator, Stepper } from '../../../components/ui';
 import { showPaywall, useProGate } from '../../../lib/pro';
 import { BADGES, levelFor, nextBadge, streakOf, xpFor } from '../../../lib/progress';
-import { MANAGE_SUBSCRIPTIONS_URL } from '../../../lib/purchases';
-import { ScreenTitle } from '../../../navigation/screenOptions';
+import { ScreenTitle, useTabContent } from '../../../navigation/screenOptions';
 import { totalsFor, useStore } from '../../../state/store';
-import { setAppearance, useAppearance, useTheme } from '../../../theme';
+import { useTheme } from '../../../theme';
 
 const dayKey = (d: Date) => d.toDateString();
 const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -23,13 +21,13 @@ const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 /** Your cooking progress: the streak, the next badge to aim for, your chef level, and settings. */
 export default function ProgressScreen() {
   const t = useTheme();
-  const appearance = useAppearance();
   const toast = useToast();
-  const { cooked, getRecipe, goals, setGoals, units, setUnits, pro, customRecipes, plan, favorites, fun } = useStore();
-  const { isPro, trialDaysLeft } = useProGate();
+  const { cooked, getRecipe, goals, setGoals, customRecipes, plan, favorites, fun } = useStore();
+  const { isPro } = useProGate();
   const [showAll, setShowAll] = useState(false);
   const [petLine, setPetLine] = useState<Line | null>(null);
   const [pets, setPets] = useState(0);
+  const content = useTabContent();
 
   const now = new Date();
   const streak = streakOf(cooked.map((c) => c.date));
@@ -63,12 +61,12 @@ export default function ProgressScreen() {
           : { text: 'Cook one meal to start a streak!', mood: 'wave' });
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" style={{ backgroundColor: t.colors.background }} contentContainerStyle={[styles.content, { paddingHorizontal: t.spacing.lg }]}>
-      <ScreenTitle title="Progress" />
+    <ScrollView contentInsetAdjustmentBehavior="automatic" style={{ backgroundColor: t.colors.background }} contentContainerStyle={content}>
+      <ScreenTitle title="Progress" right={<HeaderButton icon="gear" accessibilityLabel="Settings" onPress={() => router.push('/settings')} />} />
 
       <MascotSays
         line={line}
-        size={104}
+        size={88}
         onPet={() => {
           setPetLine(say('pet', {}, pets));
           setPets((n) => n + 1);
@@ -104,6 +102,17 @@ export default function ProgressScreen() {
             )}
           </View>
         </View>
+        {streak === 0 && (
+          // You're not starting from nothing: setting up was step one.
+          <View style={styles.barRow} accessible accessibilityLabel="1 of 3 steps to your first streak: set up done, then cook today and cook tomorrow">
+            <View style={{ flex: 1 }}>
+              <ProgressBar value={cookedToday ? 2 / 3 : 1 / 3} color={t.colors.reward} track={t.colors.cell} label="Steps to your first streak" />
+            </View>
+            <Text style={[t.type.footnote, { color: t.colors.rewardText }]} testID="streak-steps">
+              {cookedToday ? 2 : 1} of 3 steps
+            </Text>
+          </View>
+        )}
         <View style={styles.week}>
           {week.map((d, i) => (
             <View key={i} style={styles.day}>
@@ -243,7 +252,7 @@ export default function ProgressScreen() {
               </Text>
             </View>
           </View>
-          <Button label="Unlock Goals with Pro" icon="crown" variant="tinted" size="medium" onPress={() => showPaywall('goals')} style={{ alignSelf: 'stretch' }} />
+          <Button label="Unlock goals with Pro" icon="crown" variant="tinted" size="medium" onPress={() => showPaywall('goals')} style={{ alignSelf: 'stretch' }} />
         </View>
       ) : (
         <Section footer="Meals you log at the end of Cook Mode count toward today, one serving each. Recipe nutrition is estimated.">
@@ -278,50 +287,6 @@ export default function ProgressScreen() {
         </>
       )}
 
-      {/* Settings */}
-      <Text style={[t.type.title3, styles.h, { color: t.colors.label }]} accessibilityRole="header">
-        Settings
-      </Text>
-      <Section>
-        {isPro ? (
-          <PressableScale
-            onPress={() => Linking.openURL(MANAGE_SUBSCRIPTIONS_URL).catch(() => toast({ message: 'Couldn’t open the link', tone: 'warning' }))}
-            style={styles.settingRow}
-            accessibilityLabel="Manage your Pro subscription"
-            scaleTo={0.99}
-          >
-            <Icon name="crown" size={18} color={t.colors.warning} />
-            <View style={{ flex: 1 }}>
-              <Text style={[t.type.body, { color: t.colors.label }]}>Pro</Text>
-              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]} testID="pro-status">
-                {trialDaysLeft !== null && trialDaysLeft >= 0 ? `Free trial, ${trialDaysLeft} ${trialDaysLeft === 1 ? 'day' : 'days'} left` : `${pro?.plan === 'yearly' ? 'Yearly' : 'Monthly'} plan`}
-              </Text>
-            </View>
-            <Text style={[t.type.subhead, { color: t.colors.tint }]}>Manage</Text>
-          </PressableScale>
-        ) : (
-          <PressableScale onPress={() => showPaywall('settings')} style={styles.settingRow} accessibilityLabel="Upgrade to Pro" scaleTo={0.99}>
-            <Icon name="crown" size={18} color={t.colors.warning} />
-            <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>Upgrade to Pro</Text>
-            <Icon name="chevronRight" size={14} color={t.colors.tertiaryLabel} weight="semibold" />
-          </PressableScale>
-        )}
-        <Separator />
-        <View style={styles.settingRow}>
-          <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>Units</Text>
-          <Segmented label="Units" value={units} onChange={(u: Units) => setUnits(u)} options={[{ label: 'Metric', value: 'metric' }, { label: 'US', value: 'us' }]} />
-        </View>
-        <Separator />
-        <View style={[styles.settingRow, styles.settingStack]}>
-          <Text style={[t.type.body, { color: t.colors.label }]}>Look</Text>
-          <Segmented label="Look" value={appearance} onChange={setAppearance} options={[{ label: 'Light', value: 'light' }, { label: 'Dark', value: 'dark' }, { label: 'Auto', value: 'system' }]} />
-        </View>
-        <Separator />
-        <PressableScale onPress={() => router.push('/privacy')} style={styles.settingRow} accessibilityLabel="Privacy" scaleTo={0.99}>
-          <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>Privacy</Text>
-          <Icon name="chevronRight" size={14} color={t.colors.tertiaryLabel} weight="semibold" />
-        </PressableScale>
-      </Section>
     </ScrollView>
   );
 }
@@ -345,8 +310,7 @@ function GoalRow({ label, unit, eaten, goal, color, children }: { label: string;
 }
 
 const styles = StyleSheet.create({
-  content: { paddingTop: 8, paddingBottom: 48, width: '100%', maxWidth: 700, alignSelf: 'center' },
-  card: { borderRadius: 24, borderWidth: 2, padding: 18, gap: 14, borderCurve: 'continuous', marginBottom: 16 },
+  card: { borderRadius: 20, borderWidth: 2, padding: 16, gap: 16, borderCurve: 'continuous', marginBottom: 16 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   barRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   streakTop: { flexDirection: 'row', alignItems: 'center', gap: 14 },
@@ -362,7 +326,4 @@ const styles = StyleSheet.create({
   badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12, minHeight: 60 },
   badgeRowIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   goal: { padding: 16, gap: 10 },
-  settingRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, minHeight: 56, gap: 10 },
-  // The three-way switch gets its own line, so it never squeezes its label.
-  settingStack: { flexDirection: 'column', alignItems: 'stretch', paddingVertical: 12, gap: 8 },
 });

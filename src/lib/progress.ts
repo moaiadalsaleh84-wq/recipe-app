@@ -61,10 +61,16 @@ export const BADGES: Badge[] = [
 ];
 
 /**
- * The badge to aim for next: the unearned one you're closest to. Ties go to the earlier badge,
- * so a brand-new cook is pointed at "First Dish".
+* The badge to aim for next: "First Dish" until you've cooked, then the unearned one you're
+ * closest to.
  */
 export function nextBadge(p: ProgressInput, earnedIds: string[]) {
+  // The first badge is always about cooking: nothing else comes before "First Dish".
+  const first = BADGES[0];
+  if (!earnedIds.includes(first.id) && !first.earned(p)) {
+    const [done, needed] = first.count(p);
+    return { badge: first, done, needed };
+  }
   let best: { badge: Badge; done: number; needed: number } | null = null;
   for (const b of BADGES) {
     if (earnedIds.includes(b.id)) continue;

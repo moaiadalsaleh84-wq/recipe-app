@@ -24,7 +24,7 @@ export default function CookbookScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: t.colors.groupedBackground }}>
         <PageHeader title="Cookbook" />
-        <EmptyState icon="book" cat="worried" title="Cookbook Not Found" message="It may have been deleted." />
+        <EmptyState icon="book" cat="worried" title="Cookbook not found" message="It may have been deleted." />
       </View>
     );
   }
@@ -64,9 +64,9 @@ export default function CookbookScreen() {
           <EmptyState
             icon="book"
             cat={isFavorites ? 'love' : 'thinking'}
-            title={isFavorites ? 'No Favorites Yet' : 'This Cookbook Is Empty'}
+            title={isFavorites ? 'No favorites yet' : 'This cookbook is empty'}
             message={isFavorites ? say('savedEmpty').text : 'Open a recipe and tap the bookmark to add it here.'}
-            action={{ label: 'Browse Recipes', icon: 'book', onPress: () => router.dismissTo('/') }}
+            action={{ label: 'Browse recipes', icon: 'book', onPress: () => router.dismissTo('/') }}
           />
         ) : (
           <Section>

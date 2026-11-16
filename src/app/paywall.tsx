@@ -24,6 +24,7 @@ import { useToast } from '../components/Toast';
 import { Button, IconButton } from '../components/ui';
 import { benefitsFor, goalPhrase } from '../data/onboarding';
 import { haptics } from '../lib/haptics';
+import { noWidow } from '../lib/text';
 import type { PaywallSource } from '../lib/pro';
 import {
   MANAGE_SUBSCRIPTIONS_URL,
@@ -184,14 +185,16 @@ export default function Paywall() {
       {/* Sticky purchase area: price and renewal terms are always visible next to the button */}
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: t.colors.background, borderTopColor: t.colors.separator }]}>
         <Button
-          label={busy === 'buy' ? 'One moment…' : trial ? `Start My ${trial}-Day Free Trial` : `Subscribe for ${money(selected.price)}/${selected.period}`}
+          label={busy === 'buy' ? 'One moment…' : trial ? `Start my ${trial}-day free trial` : `Subscribe for ${money(selected.price)}/${selected.period}`}
           onPress={buy}
           disabled={!!busy}
         />
         <Text style={[t.type.caption1, { color: t.colors.secondaryLabel, textAlign: 'center', marginTop: 8 }]} testID="price-terms">
-          {trial
-            ? `${trial} days free, then ${money(selected.price)} per ${selected.period}. Renews automatically. Cancel anytime in Settings at least 24 hours before the trial ends.`
-            : `${money(selected.price)} per ${selected.period}. Renews automatically. Cancel anytime in Settings at least 24 hours before renewal.`}
+          {noWidow(
+            trial
+              ? `${trial} days free, then ${money(selected.price)} per ${selected.period}. Renews automatically. Cancel anytime in Settings at least 24 hours before the trial ends.`
+              : `${money(selected.price)} per ${selected.period}. Renews automatically. Cancel anytime in Settings at least 24 hours before renewal.`,
+          )}
         </Text>
         <PressableScale onPress={close} style={styles.free} accessibilityLabel={source === 'onboarding' ? 'Continue with the free version' : 'Not now'}>
           <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: '600' }]}>{source === 'onboarding' ? 'Continue with the free version' : 'Not now'}</Text>
@@ -294,7 +297,7 @@ function Welcome({ onDone, trialEndsAt }: { onDone: () => void; trialEndsAt: str
           {ends ? `Everything is unlocked. Your free trial runs until ${ends}, and we’ll remind you before it ends.` : 'Everything is unlocked. Happy cooking!'}
         </Text>
       </View>
-      <Button label="Start Cooking" icon="pot" onPress={onDone} />
+      <Button label="Start cooking" icon="pot" onPress={onDone} />
     </View>
   );
 }

@@ -53,6 +53,7 @@ const icons = {
   crown: { ios: 'crown.fill', md: 'workspace_premium' },
   trophy: { ios: 'trophy.fill', md: 'emoji_events' },
   flameFill: { ios: 'flame.fill', md: 'local_fire_department' },
+  gear: { ios: 'gearshape.fill', md: 'settings' },
   fridge: { ios: 'refrigerator', md: 'kitchen' },
   sun: { ios: 'sun.max.fill', md: 'light_mode' },
   moon: { ios: 'moon.fill', md: 'dark_mode' },

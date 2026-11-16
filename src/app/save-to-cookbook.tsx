@@ -22,7 +22,7 @@ export default function SaveToCookbook() {
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.groupedBackground }}>
       <PageHeader
-        title="Save to Cookbook"
+        title="Save to cookbook"
         subtitle={recipe?.title}
         mode="cancel"
         inSheet

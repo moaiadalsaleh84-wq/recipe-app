@@ -14,6 +14,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import type { HapticKind } from '../lib/haptics';
+import { noWidow } from '../lib/text';
 import { useTheme } from '../theme';
 import { Mascot } from './mascot/Mascot';
 import type { Mood } from './mascot/moods';
@@ -313,7 +314,7 @@ export function EmptyState({
       )}
       <Text style={[t.type.title3, { color: t.colors.label, textAlign: 'center' }]}>{title}</Text>
       <Text style={[t.type.subhead, t.noWidows.style, { color: t.colors.secondaryLabel, textAlign: 'center', maxWidth: 280 }]} {...t.noWidows.props}>
-        {message}
+        {noWidow(message)}
       </Text>
       {action && (
         // Its own row, so the button's size never depends on the text above it.
@@ -451,5 +452,5 @@ export function Segmented<T extends string>({
 
 const segStyles = StyleSheet.create({
   wrap: { flexDirection: 'row', borderRadius: 16, padding: 4, paddingBottom: 6, borderCurve: 'continuous' },
-  item: { minHeight: 38, minWidth: 64, paddingHorizontal: 14, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
+  item: { minHeight: 38, minWidth: 56, paddingHorizontal: 12, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
 });

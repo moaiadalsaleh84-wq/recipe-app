@@ -16,6 +16,7 @@ import { useToast } from '../../components/Toast';
 import { Button, CheckCircle, Chip, EmptyState, IconButton, ProgressBar } from '../../components/ui';
 import { haptics } from '../../lib/haptics';
 import { playSuccess } from '../../lib/sounds';
+import { noWidow } from '../../lib/text';
 import { clock, secondsLeft, type CookTimer } from '../../lib/cookTimers';
 import { findTimers } from '../../lib/timers';
 import { convertQty, convertStepText } from '../../lib/units';
@@ -160,7 +161,7 @@ export default function CookMode() {
               Ingredients
             </Text>
             <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]}>
-              For {servings} {servings === 1 ? 'serving' : 'servings'}. Tap each one as you set it out.
+              {noWidow(`For ${servings} ${servings === 1 ? 'serving' : 'servings'}. Tap each one as you set it out.`)}
             </Text>
             <View style={styles.gatherBar}>
               <View style={{ flex: 1 }}>
@@ -218,7 +219,7 @@ export default function CookMode() {
               You made it!
             </Text>
             <Text style={[t.type.body, t.noWidows.style, { color: t.colors.secondaryLabel, textAlign: 'center', maxWidth: 300 }]} {...t.noWidows.props}>
-              {recipe.title} is ready. Log it to keep your streak going.
+              {noWidow(`${recipe.title} is ready. Log it to keep your streak going.`)}
             </Text>
           </Animated.View>
         ) : (

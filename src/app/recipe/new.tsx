@@ -98,7 +98,7 @@ export default function NewRecipe() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: t.colors.groupedBackground }}>
       <PageHeader
-        title={fromImport ? 'Check Recipe' : 'New Recipe'}
+        title={fromImport ? 'Check recipe' : 'New recipe'}
         mode="cancel"
         inSheet={Platform.OS === 'ios'}
         onBack={params.next === 'onboarding' ? () => router.replace({ pathname: '/paywall', params: { source: 'onboarding' } }) : undefined}
@@ -203,7 +203,7 @@ export default function NewRecipe() {
 
 function Label({ text }: { text: string }) {
   const t = useTheme();
-  return <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, fontWeight: '700', marginTop: 18, marginBottom: 6, marginLeft: 4 }]}>{text.toUpperCase()}</Text>;
+  return <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, fontFamily: t.fonts.display, fontWeight: 'normal', fontSize: 15, marginTop: 16, marginBottom: 8 }]}>{text}</Text>;
 }
 
 function Field({ label, hint, multiline, ...props }: TextInputProps & { label: string; hint?: string }) {

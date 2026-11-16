@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { haptics } from '../../lib/haptics';
+import { noWidow } from '../../lib/text';
 import { useTheme } from '../../theme';
 import { PressableScale } from '../PressableScale';
 import { Mascot } from './Mascot';
@@ -30,7 +31,7 @@ export function MascotSays({ line, onNext, size = 110, layout = 'row', style, hi
   // A line can have a longer version (a tip). It opens on tap, and belongs to that line only.
   const [openFor, setOpenFor] = useState<string | null>(null);
   const expanded = !!line.more && openFor === line.text;
-  const said = expanded ? line.more! : line.text;
+  const said = noWidow(expanded ? line.more! : line.text);
   const canExpand = !!line.more && !expanded;
   // Progress is stored with the text it belongs to, so a new line starts from zero without resetting state in an effect.
   const [typed, setTyped] = useState({ text: said, n: 0 });
