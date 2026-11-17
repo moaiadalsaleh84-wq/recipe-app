@@ -14,7 +14,7 @@ import { useTheme } from '../theme';
  */
 export default function DevCat() {
   const t = useTheme();
-  const { mood = 'happy', view, live, size, bg } = useLocalSearchParams<{ mood?: Mood; view?: string; live?: string; size?: string; bg?: string }>();
+  const { mood = 'happy', view, live, size, bg, sil } = useLocalSearchParams<{ mood?: Mood; view?: string; live?: string; size?: string; bg?: string; sil?: string }>();
   if (process.env.EXPO_PUBLIC_DEV_ROUTES !== '1') return null;
   // The notification permission prompt, to check its design (it can't open on the web).
   if (view === 'ask') return <AskNotifications open onAnswer={() => {}} />;
@@ -26,7 +26,7 @@ export default function DevCat() {
       <View testID="cat" style={{ flexDirection: 'row', flexWrap: 'wrap', backgroundColor: background, padding: 8, rowGap: 28, columnGap: 4, width: s >= 200 ? 780 : s >= 112 ? 600 : 390 }}>
         {list.map((m) => (
           <View key={m} style={{ alignItems: 'center', width: Math.max(s, 60) + 8 }}>
-            <Mascot mood={m} size={s} petable={false} hold={live !== '1'} />
+            <Mascot mood={m} size={s} petable={false} hold={live !== '1'} silhouette={sil === '1'} />
             <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]}>{m}</Text>
           </View>
         ))}
@@ -36,7 +36,7 @@ export default function DevCat() {
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-start', backgroundColor: background, paddingTop: 20 }}>
       <View testID="cat" style={{ width: 360, height: 360, alignItems: 'center', justifyContent: 'center', backgroundColor: background }}>
-        <Mascot mood={mood} size={340} petable={false} hold={live !== '1'} />
+        <Mascot mood={mood} size={340} petable={false} hold={live !== '1'} silhouette={sil === '1'} />
       </View>
     </View>
   );

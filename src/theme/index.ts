@@ -321,6 +321,50 @@ export const liveActivity = {
 
 export type LiveActivityPalette = typeof liveActivity;
 
+/**
+ * Biscuit, the mascot. Flat colors, one shade tone and one highlight; nothing else.
+ * The same palette is used in light and dark mode so Biscuit always looks like Biscuit.
+ */
+export const biscuit = {
+  /** The one outline color: the outer silhouette (3% of height) and the thinner inner lines (60% of that). */
+  outline: '#4A2B1D',
+  fur: '#F5A253',
+  /** The one shade tone: under the head, the far side of the body and tail. */
+  furShade: '#E68D42',
+  /** Tabby stripes on the forehead and tail. */
+  stripe: '#D06F2C',
+  /** Muzzle, belly, tail tip. */
+  cream: '#FFF1DE',
+  /** The one highlight, top left of the head. */
+  highlight: '#FFD9A8',
+  earPink: '#F6ADA4',
+  blush: '#F59089',
+  nose: '#E7716C',
+  eye: '#33201A',
+  eyeShine: '#FFFFFF',
+  mouth: '#8E3A2E',
+  tongue: '#F27F7A',
+  /** Toe beans, shown only when a paw is raised. */
+  beans: '#F59D94',
+  hat: '#FFFFFF',
+  hatShade: '#F0E6DA',
+  /** Deeper than the app's buttons, so the two reds don't clash. */
+  scarf: '#B5302A',
+  heart: '#F05D6C',
+  sweat: '#6DB6EA',
+  flour: '#FFFFFF',
+  sparkle: '#FFC233',
+  steam: '#D9CFC4',
+  pot: '#7F8C99',
+  potShade: '#66727E',
+  wood: '#C98A52',
+  woodShade: '#A96F3E',
+  steel: '#CBD4DC',
+  carrot: '#F28A2E',
+  confetti: ['#F05D6C', '#FFC233', '#6DB6EA', '#7CC68D', '#B48AD9'],
+} as const;
+export type BiscuitPalette = typeof biscuit;
+
 export const lightTheme = makeTheme(light, false);
 export const darkTheme = makeTheme(dark, true);
 export type Theme = typeof lightTheme;
