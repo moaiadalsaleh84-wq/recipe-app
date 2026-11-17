@@ -1,5 +1,4 @@
 import type { BottomTabBarProps } from 'expo-router/tabs';
-import { BlurView } from 'expo-blur';
 import { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
@@ -44,7 +43,7 @@ export function TabBar({ state, emitter, navigateToTab, badges = {} }: BottomTab
             style={styles.item}
           >
             <TabIcon icon={tab.icon} selected={selected} badge={badge} />
-            <Text numberOfLines={1} style={[t.type.caption1, { fontFamily: selected ? t.fonts.display : t.fonts.displayMedium, fontWeight: 'normal', color: selected ? t.colors.tint : t.colors.secondaryLabel }]}>
+            <Text numberOfLines={1} style={[styles.label, { fontFamily: selected ? t.fonts.display : t.fonts.displayMedium, color: selected ? t.colors.tint : t.colors.secondaryLabel }]}>
               {tab.label}
             </Text>
           </PressableScale>
@@ -75,26 +74,11 @@ function TabIcon({ icon, selected, badge }: { icon: IconName; selected: boolean;
   );
 }
 
-/**
- * A soft bar behind the clock and battery, so scrolling content never runs into them.
- * Blurred where the platform supports it, with the page color on top.
- */
-export function StatusBarShade() {
-  const t = useTheme();
-  const insets = useSafeAreaInsets();
-  if (insets.top === 0) return null;
-  return (
-    <View pointerEvents="none" style={[styles.shade, { height: insets.top }]}>
-      <BlurView intensity={30} tint={t.isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: t.colors.bar }]} />
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  bar: { flexDirection: 'row', borderTopWidth: 2, paddingTop: 8, paddingHorizontal: 6 },
+  bar: { flexDirection: 'row', borderTopWidth: 2, paddingTop: 8, paddingHorizontal: 4 },
   item: { flex: 1, alignItems: 'center', gap: 3, minHeight: 54, justifyContent: 'center' },
-  pill: { width: 58, height: 34, borderRadius: 14, borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center' },
+  // Small enough that the longest label (Groceries) keeps clear space on each side, even on an SE.
+  label: { fontSize: 11, lineHeight: 14, fontWeight: 'normal', letterSpacing: 0.1 },
+  pill: { width: 54, height: 32, borderRadius: 14, borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center' },
   badge: { position: 'absolute', top: -5, right: 2, minWidth: 20, height: 20, borderRadius: 10, borderWidth: 2, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center' },
-  shade: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 },
 });

@@ -11,7 +11,7 @@ import { aisleOrder, type GroceryItem } from '../../../data/mock';
 import { MascotSays } from '../../../components/mascot/MascotSays';
 import { say, type Line } from '../../../components/mascot/lines';
 import { haptics } from '../../../lib/haptics';
-import { ScreenTitle, useTabContent } from '../../../navigation/screenOptions';
+import { TabScreen } from '../../../components/TabScreen';
 import { formatQty, useStore } from '../../../state/store';
 import { useTheme } from '../../../theme';
 
@@ -22,7 +22,6 @@ export default function GroceriesScreen() {
   const [reaction, setReaction] = useState<{ line: Line; n: number } | null>(null);
   const [draft, setDraft] = useState('');
   const [surprise] = useState(() => Math.random());
-  const content = useTabContent();
 
   const done = groceries.filter((g) => g.checked).length;
   const total = groceries.length;
@@ -79,14 +78,7 @@ export default function GroceriesScreen() {
 
 
   return (
-    <ScrollView
-      contentInsetAdjustmentBehavior="automatic"
-      keyboardShouldPersistTaps="handled"
-      keyboardDismissMode="on-drag"
-      style={{ backgroundColor: t.colors.background }}
-      contentContainerStyle={content}
-    >
-      <ScreenTitle title="Groceries" right={headerRight} />
+    <TabScreen title="Groceries" right={headerRight} keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled">
 
       {/* Quick add */}
       <View style={[styles.addRow, { backgroundColor: t.colors.cell, borderRadius: 16, ...t.chunky.card }]}>
@@ -156,7 +148,7 @@ export default function GroceriesScreen() {
           <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, textAlign: 'center' }]}>Swipe left on an item to delete it.</Text>
         </>
       )}
-    </ScrollView>
+    </TabScreen>
   );
 }
 

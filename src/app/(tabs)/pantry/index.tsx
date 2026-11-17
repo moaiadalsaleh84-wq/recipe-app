@@ -12,7 +12,7 @@ import { Button, Chip, EmptyState } from '../../../components/ui';
 import { haptics } from '../../../lib/haptics';
 import { COMMON_ITEMS, smartSuggestions, suggestionsFor, whatCanICook, type PantryMatch } from '../../../lib/pantry';
 import { showPaywall, useProGate } from '../../../lib/pro';
-import { ScreenTitle, useTabContent } from '../../../navigation/screenOptions';
+import { TabScreen } from '../../../components/TabScreen';
 import { FREE_LIMITS, useStore } from '../../../state/store';
 import { useTheme } from '../../../theme';
 
@@ -23,7 +23,6 @@ export default function PantryScreen() {
   const { pantry, addPantry, removePantry, restorePantry, allRecipes, addIngredients } = useStore();
   const { isPro, canAddPantry } = useProGate();
   const [query, setQuery] = useState('');
-  const content = useTabContent();
 
   const matches = useMemo(() => whatCanICook(allRecipes, pantry), [allRecipes, pantry]);
   const suggestions = useMemo(() => smartSuggestions(matches), [matches]);
@@ -65,13 +64,7 @@ export default function PantryScreen() {
       : { text: 'So close! Just a few things missing.', mood: 'hungry' as const };
 
   return (
-    <ScrollView
-      contentInsetAdjustmentBehavior="automatic"
-      keyboardShouldPersistTaps="handled"
-      style={{ backgroundColor: t.colors.background }}
-      contentContainerStyle={content}
-    >
-      <ScreenTitle title="Pantry" />
+    <TabScreen title="Pantry" keyboardShouldPersistTaps="handled">
       <MascotSays line={line} size={88} style={{ marginBottom: t.layout.gap }} />
 
       {/* Add */}
@@ -178,7 +171,7 @@ export default function PantryScreen() {
           )}
         </>
       )}
-    </ScrollView>
+    </TabScreen>
   );
 }
 

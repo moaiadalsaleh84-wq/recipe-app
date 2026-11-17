@@ -48,3 +48,34 @@ export function nameFor(quantity: number, unit: string, name: string) {
   if (/[^s]s$/i.test(name)) return name.slice(0, -1);
   return name;
 }
+
+/** "1¾" → "1 3/4": fractions as plain digits, so they have the same size and baseline as the rest. */
+export const plainFractions = (s: string) =>
+  s.replace(/(\d)?([⅛¼⅓½⅔¾])/g, (_, whole: string | undefined, f: string) => {
+    const map: Record<string, string> = { '⅛': '1/8', '¼': '1/4', '⅓': '1/3', '½': '1/2', '⅔': '2/3', '¾': '3/4' };
+    return whole ? `${whole} ${map[f]}` : map[f];
+  });
+
+/** Things nobody uses half of: round to whole ones ("1 small clove", never "½ garlic clove"). */
+const WHOLE_ONLY = /\b(eggs?|cloves?|buns?|slices?|sheets?|balls?|tortillas?|wraps?)\b/i;
+/** Names that keep their capital after an amount. */
+const PROPER = /^(Greek|Parmesan|Cheddar|Dijon|Worcestershire)\b/;
+
+/**
+ * An ingredient as a cook would say it: a practical amount, a unit or a word, and the name.
+ *   (0.75, '', 'Red peppers')   → { amount: '3/4', text: 'red pepper' }
+ *   (0.5, '', 'Garlic cloves')  → { amount: '1', text: 'small garlic clove' }
+ *   (350, 'g', 'Chicken thighs') → { amount: '350 g', text: 'chicken thighs' }
+ */
+export function ingredientText(quantity: number, unit: string, name: string): { amount: string; text: string } {
+  const lower = (n: string) => (PROPER.test(n) ? n : n.charAt(0).toLowerCase() + n.slice(1));
+  if (!(quantity > 0)) return { amount: '', text: name };
+  if (WHOLE_ONLY.test(`${unit} ${name}`) && !['g', 'ml'].includes(unit)) {
+    const n = Math.max(1, Math.round(quantity));
+    const small = quantity < n * 0.75;
+    const base = lower(nameFor(n, unit, name));
+    return { amount: unit ? `${n} ${unit}` : String(n), text: small ? `small ${base}` : base };
+  }
+  const amount = plainFractions(formatQty(quantity, unit));
+  return { amount, text: lower(unit ? name : nameFor(quantity <= 1 ? 1 : quantity, unit, name)) };
+}

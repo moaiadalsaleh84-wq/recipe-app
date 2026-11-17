@@ -13,7 +13,7 @@ import { MascotSays } from '../../../components/mascot/MascotSays';
 import { say } from '../../../components/mascot/lines';
 import { haptics } from '../../../lib/haptics';
 import { noWidow } from '../../../lib/text';
-import { ScreenTitle, useTabContent } from '../../../navigation/screenOptions';
+import { TabScreen } from '../../../components/TabScreen';
 import { totalsFor, useStore } from '../../../state/store';
 import { useTheme } from '../../../theme';
 import { weekDays } from '../../../lib/week';
@@ -26,7 +26,6 @@ export default function PlanScreen() {
   const [day, setDay] = useState(weekDays.find((d) => d.isToday)?.index ?? 0);
   const dayPlan = plan[day] ?? {};
   const plannedToday = meals.filter((m) => dayPlan[m]).length;
-  const content = useTabContent();
   const dayTotals = totalsFor(meals.map((m) => dayPlan[m]), getRecipe);
 
   const weekRecipes = useMemo(
@@ -71,8 +70,7 @@ export default function PlanScreen() {
   const addMeal = (meal: Meal) => router.push({ pathname: '/plan-picker', params: { day: String(day), meal } });
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" style={{ backgroundColor: t.colors.background }} contentContainerStyle={content}>
-      <ScreenTitle title="Plan" right={addWeek} />
+    <TabScreen title="Plan" right={addWeek}>
 
       {/* The week, kept compact */}
       <View style={[styles.week, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]} accessibilityRole="tablist">
@@ -165,7 +163,7 @@ export default function PlanScreen() {
           )}
         </>
       )}
-    </ScrollView>
+    </TabScreen>
   );
 }
 

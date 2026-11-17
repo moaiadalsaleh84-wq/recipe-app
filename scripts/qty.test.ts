@@ -7,7 +7,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { formatQty, nameFor, roundQty } from '../src/lib/qty.ts';
+import { formatQty, ingredientText, nameFor, plainFractions, roundQty } from '../src/lib/qty.ts';
 import { convertQty } from '../src/lib/units.ts';
 
 // The recipe file loads photos, which plain Node can't do, so read the amounts from its text.
@@ -67,4 +67,16 @@ test('one of something is singular', () => {
   assert.equal(nameFor(2, '', 'Eggs'), 'Eggs');
   assert.equal(nameFor(1, 'tsp', 'Cumin seeds'), 'Cumin seeds');
   assert.equal(nameFor(1, '', 'Swiss'), 'Swiss');
+});
+
+test('ingredients read the way a cook says them', () => {
+  assert.deepEqual(ingredientText(0.75, '', 'Red peppers'), { amount: '3/4', text: 'red pepper' });
+  assert.deepEqual(ingredientText(0.5, '', 'Garlic cloves'), { amount: '1', text: 'small garlic clove' });
+  assert.deepEqual(ingredientText(4, '', 'Garlic cloves'), { amount: '4', text: 'garlic cloves' });
+  assert.deepEqual(ingredientText(1.4, '', 'Eggs'), { amount: '1', text: 'egg' });
+  assert.deepEqual(ingredientText(350, 'g', 'Chicken thighs'), { amount: '350 g', text: 'chicken thighs' });
+  assert.deepEqual(ingredientText(75, 'g', 'Greek yogurt'), { amount: '75 g', text: 'Greek yogurt' });
+  assert.deepEqual(ingredientText(1.5, 'tbsp', 'Olive oil'), { amount: '1 1/2 tbsp', text: 'olive oil' });
+  assert.deepEqual(ingredientText(0, '', 'Salt'), { amount: '', text: 'Salt' });
+  assert.equal(plainFractions('1¾ cups'), '1 3/4 cups');
 });

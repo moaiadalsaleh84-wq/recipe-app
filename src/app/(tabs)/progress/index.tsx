@@ -11,7 +11,7 @@ import { useToast } from '../../../components/Toast';
 import { Button, HeaderButton, ProgressBar, Section, Separator, Stepper } from '../../../components/ui';
 import { showPaywall, useProGate } from '../../../lib/pro';
 import { BADGES, levelFor, nextBadge, streakOf, xpFor } from '../../../lib/progress';
-import { ScreenTitle, useTabContent } from '../../../navigation/screenOptions';
+import { TabScreen } from '../../../components/TabScreen';
 import { totalsFor, useStore } from '../../../state/store';
 import { useTheme } from '../../../theme';
 
@@ -27,7 +27,6 @@ export default function ProgressScreen() {
   const [showAll, setShowAll] = useState(false);
   const [petLine, setPetLine] = useState<Line | null>(null);
   const [pets, setPets] = useState(0);
-  const content = useTabContent();
 
   const now = new Date();
   const streak = streakOf(cooked.map((c) => c.date));
@@ -61,8 +60,7 @@ export default function ProgressScreen() {
           : { text: 'Cook one meal to start a streak!', mood: 'proud' });
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" style={{ backgroundColor: t.colors.background }} contentContainerStyle={content}>
-      <ScreenTitle title="Progress" right={<HeaderButton icon="gear" accessibilityLabel="Settings" onPress={() => router.push('/settings')} />} />
+    <TabScreen title="Progress" right={<HeaderButton icon="gear" accessibilityLabel="Settings" onPress={() => router.push('/settings')} />}>
 
       <MascotSays
         line={line}
@@ -287,7 +285,7 @@ export default function ProgressScreen() {
         </>
       )}
 
-    </ScrollView>
+    </TabScreen>
   );
 }
 

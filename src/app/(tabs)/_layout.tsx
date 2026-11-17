@@ -1,7 +1,7 @@
 import { Redirect } from 'expo-router';
 import { Tabs } from 'expo-router/tabs';
 import { View } from 'react-native';
-import { StatusBarShade, TabBar } from '../../components/TabBar';
+import { TabBar } from '../../components/TabBar';
 import { useStore } from '../../state/store';
 import { useTheme } from '../../theme';
 
@@ -23,7 +23,6 @@ export default function TabsLayout() {
         <Tabs.Screen name="groceries" />
         <Tabs.Screen name="progress" />
       </Tabs>
-      <StatusBarShade />
     </View>
   );
 }

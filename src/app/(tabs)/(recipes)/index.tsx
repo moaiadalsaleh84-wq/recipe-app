@@ -15,7 +15,7 @@ import { FAVORITES_ID, categories, filterTags, matchesFilter, type Recipe } from
 import { haptics } from '../../../lib/haptics';
 import { showPaywall, useProGate } from '../../../lib/pro';
 import { MANAGE_SUBSCRIPTIONS_URL } from '../../../lib/purchases';
-import { ScreenTitle, useTabContent } from '../../../navigation/screenOptions';
+import { TabScreen } from '../../../components/TabScreen';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from '../../../state/store';
 import { useTheme } from '../../../theme';
@@ -69,7 +69,6 @@ export default function RecipesScreen() {
   const line = tip < 0 ? say(greetingSituation(), { name: firstName }, dayNumber, surprise) : say('tip', {}, tip);
 
   const margin = t.layout.screen;
-  const content = useTabContent();
   const contentWidth = Math.min(width, 900);
   const columns = contentWidth >= 700 ? 3 : 2;
   const gap = t.spacing.md;
@@ -82,14 +81,7 @@ export default function RecipesScreen() {
   ];
 
   return (
-    <ScrollView
-      contentInsetAdjustmentBehavior="automatic"
-      keyboardDismissMode="on-drag"
-      keyboardShouldPersistTaps="handled"
-      style={{ backgroundColor: t.colors.background }}
-      contentContainerStyle={[content, { maxWidth: 900 }]}
-    >
-      <ScreenTitle title="Recipes" right={addButton} />
+    <TabScreen maxWidth={900} title="Recipes" right={addButton} keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled">
 
       {showTrialReminder && (
         <View style={[styles.reminder, { backgroundColor: t.colors.rewardSoft, borderColor: t.colors.reward }]} accessibilityRole="alert">
@@ -184,7 +176,7 @@ export default function RecipesScreen() {
               <PressableScale
                 onPress={() => (canAddCookbook ? router.push('/cookbook-edit') : showPaywall('cookbooks'))}
                 accessibilityLabel="New cookbook"
-                style={[styles.book, styles.newBook, { width: cardWidth, borderColor: t.colors.lip, borderRadius: t.layout.cardRadius }]}
+                style={[styles.book, styles.newBook, { width: cardWidth, backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]}
               >
                 <View style={[styles.newIcon, { backgroundColor: t.colors.tintSoft }]}>
                   <Icon name="plus" size={20} color={t.colors.tint} weight="bold" />
@@ -245,7 +237,7 @@ export default function RecipesScreen() {
           else showPaywall('recipes');
         }}
       />
-    </ScrollView>
+    </TabScreen>
   );
 }
 
@@ -308,7 +300,7 @@ function CookbookTile({ id, name, recipes, width }: { id: string; name: string; 
         </Text>
       </View>
       <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, paddingHorizontal: 12 }]} numberOfLines={1}>
-        {empty ? (id === FAVORITES_ID ? 'Tap ♥ on a recipe' : 'Nothing saved yet') : `${recipes.length} ${recipes.length === 1 ? 'recipe' : 'recipes'}`}
+        {empty ? (id === FAVORITES_ID ? 'Tap ♥ to save' : 'Nothing yet') : `${recipes.length} ${recipes.length === 1 ? 'recipe' : 'recipes'}`}
       </Text>
     </PressableScale>
   );
@@ -320,8 +312,9 @@ const styles = StyleSheet.create({
   reminderBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
   pickIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 24, marginBottom: 12, minHeight: 44 },
-  book: { borderCurve: 'continuous', paddingBottom: 12 },
-  newBook: { borderWidth: 2, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 152 },
+  book: { borderCurve: 'continuous', paddingBottom: 12, minHeight: 164 },
+  // Same size and weight as a cookbook card; only the inside differs.
+  newBook: { alignItems: 'center', justifyContent: 'center', gap: 8, paddingTop: 12 },
   newIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   covers: { height: 88, margin: 8, borderRadius: 12, overflow: 'hidden', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
   cover: { flex: 1, height: '100%' },

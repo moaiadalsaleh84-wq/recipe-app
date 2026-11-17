@@ -42,31 +42,32 @@ export function FavoriteButton({ recipe, onPhoto }: { recipe: Recipe; onPhoto?: 
   const fav = isFavorite(recipe.id);
   const pop = useSharedValue(1);
   const popStyle = useAnimatedStyle(() => ({ transform: [{ scale: pop.get() }] }));
+  const onPress = () => {
+    const now = toggleFavorite(recipe.id);
+    if (now) haptics.success();
+    else haptics.select();
+    if (now && !reduceMotion) pop.set(withSequence(withTiming(0.7, { duration: 80 }), withSpring(1, t.motion.pop)));
+    toast({
+      message: now ? 'Added to Favorites' : 'Removed from Favorites',
+      icon: now ? 'heartFill' : 'heart',
+      tone: now ? 'success' : 'info',
+      action: { label: 'Undo', onPress: () => toggleFavorite(recipe.id) },
+    });
+  };
+  const label = fav ? `Remove ${recipe.title} from Favorites` : `Add ${recipe.title} to Favorites`;
+  if (onPhoto) {
+    // On photos: a small solid white circle (32pt) inside a full 44pt tap area.
+    return (
+      <PressableScale onPress={onPress} haptic={null} scaleTo={0.9} accessibilityLabel={label} style={styles.favTap}>
+        <Animated.View style={[styles.favDot, popStyle]}>
+          <Icon name={fav ? 'heartFill' : 'heart'} size={16} color={fav ? t.colors.accent : brand.cocoa} weight="bold" />
+        </Animated.View>
+      </PressableScale>
+    );
+  }
   return (
     <Animated.View style={popStyle}>
-      <IconButton
-        icon={fav ? 'heartFill' : 'heart'}
-        accessibilityLabel={fav ? `Remove ${recipe.title} from Favorites` : `Add ${recipe.title} to Favorites`}
-        color={fav ? t.colors.accent : onPhoto ? brand.cocoa : t.colors.secondaryLabel}
-        // On photos: a solid white circle, so the heart is clear on any picture.
-        background={onPhoto ? '#FFFFFF' : undefined}
-        size={onPhoto ? 36 : 44}
-        iconSize={onPhoto ? 18 : 20}
-        haptic={null}
-        style={onPhoto ? styles.favShadow : undefined}
-        onPress={() => {
-          const now = toggleFavorite(recipe.id);
-          if (now) haptics.success();
-          else haptics.select();
-          if (now && !reduceMotion) pop.set(withSequence(withTiming(0.7, { duration: 80 }), withSpring(1, t.motion.pop)));
-          toast({
-            message: now ? 'Added to Favorites' : 'Removed from Favorites',
-            icon: now ? 'heartFill' : 'heart',
-            tone: now ? 'success' : 'info',
-            action: { label: 'Undo', onPress: () => toggleFavorite(recipe.id) },
-          });
-        }}
-      />
+      <IconButton icon={fav ? 'heartFill' : 'heart'} accessibilityLabel={label} color={fav ? t.colors.accent : t.colors.secondaryLabel} iconSize={20} haptic={null} onPress={onPress} />
     </Animated.View>
   );
 }
@@ -186,12 +187,13 @@ export function RecipeRow({
 const styles = StyleSheet.create({
   imageWrap: { width: '100%', aspectRatio: 1, overflow: 'hidden', borderCurve: 'continuous' },
   cardTitle: { minHeight: 44, marginTop: 8, marginBottom: 2 },
-  favShadow: { shadowColor: '#3D2314', shadowOpacity: 0.18, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
   noPhoto: { alignItems: 'center', justifyContent: 'center' },
-  favOnPhoto: { position: 'absolute', top: 8, right: 8 },
+  favOnPhoto: { position: 'absolute', top: 2, right: 2 },
+  favTap: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  favDot: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', shadowColor: '#3D2314', shadowOpacity: 0.18, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
   featured: { height: 216, overflow: 'hidden', borderCurve: 'continuous', justifyContent: 'flex-end' },
   featuredShade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 136 },
-  featuredFav: { position: 'absolute', top: 8, right: 8 },
+  featuredFav: { position: 'absolute', top: 2, right: 2 },
   featuredText: { padding: 16 },
   row: { flexDirection: 'row', alignItems: 'center', paddingRight: 8 },
   rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingLeft: 16, paddingRight: 8, minHeight: 72 },
