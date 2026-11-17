@@ -40,10 +40,12 @@ const art: Record<FoodKind, ReactNode> = {
     </>
   ),
   pepper: (
+    // A tall, blocky bell pepper with three lobes and a big green cap: unlike the round tomato.
     <>
-      <Path d="M7 9 C 4 11 5 19 9 20 C 10.5 20.5 11.5 19.5 12 19 C 12.5 19.5 13.5 20.5 15 20 C 19 19 20 11 17 9 C 15 8 13 9 12 9.5 C 11 9 9 8 7 9 Z" fill={red} {...ol} />
-      <Path d="M12 9.5 C 12 7 13 5 15 4" stroke={darkGreen} strokeWidth={2.2} fill="none" strokeLinecap="round" />
-      <Path d="M12 11 L 12 18" stroke="#C43420" strokeWidth={1} strokeLinecap="round" />
+      <Path d="M6.5 8.5 C 5 10 5 15 5.8 18.5 C 6.3 20.6 8.3 21 9.4 19.8 C 10.4 21 13.6 21 14.6 19.8 C 15.7 21 17.7 20.6 18.2 18.5 C 19 15 19 10 17.5 8.5 C 16 7.2 8 7.2 6.5 8.5 Z" fill={red} {...ol} />
+      <Path d="M9.4 11 L 9.4 19.5 M14.6 11 L 14.6 19.5" stroke="#C43420" strokeWidth={1} strokeLinecap="round" />
+      <Path d="M8 8.6 C 9.5 6.6 14.5 6.6 16 8.6 C 14 9.6 10 9.6 8 8.6 Z" fill={green} {...ol} strokeWidth={1} />
+      <Path d="M12 7.4 C 12 5.5 12.8 4 14.6 3.2" stroke={darkGreen} strokeWidth={2} fill="none" strokeLinecap="round" />
     </>
   ),
   carrot: (
@@ -61,10 +63,11 @@ const art: Record<FoodKind, ReactNode> = {
     </>
   ),
   garlic: (
+    // A pointed bulb with clear clove lines and roots: unlike the round onion or the egg.
     <>
-      <Path d="M12 6 C 18 8 19.5 13 18 16.5 C 16.5 20 7.5 20 6 16.5 C 4.5 13 6 8 12 6 Z" fill={white} {...ol} />
-      <Path d="M12 8 C 10 11 10 15 11 19 M12 8 C 14 11 14 15 13 19 M9 10 C 7.5 13 8 16 8.5 18.5 M15 10 C 16.5 13 16 16 15.5 18.5" stroke="#D9CFC3" strokeWidth={0.9} fill="none" />
-      <Path d="M12 6 L 12 3.5" stroke={O} strokeWidth={1.4} strokeLinecap="round" />
+      <Path d="M12 3 C 12.5 5 14 6.5 16.5 8.5 C 19.5 11 19.5 16 16.5 18 C 14 19.6 10 19.6 7.5 18 C 4.5 16 4.5 11 7.5 8.5 C 10 6.5 11.5 5 12 3 Z" fill={white} {...ol} />
+      <Path d="M12 7.5 C 10.3 11 10.3 15 11.2 18.8 M12 7.5 C 13.7 11 13.7 15 12.8 18.8 M8.8 10.5 C 7.6 13 7.9 16 8.8 18 M15.2 10.5 C 16.4 13 16.1 16 15.2 18" stroke="#A8998A" strokeWidth={1.1} fill="none" />
+      <Path d="M10 19.6 L 9.2 21.2 M12 19.8 L 12 21.5 M14 19.6 L 14.8 21.2" stroke={O} strokeWidth={1.1} strokeLinecap="round" />
     </>
   ),
   potato: (
@@ -137,9 +140,11 @@ const art: Record<FoodKind, ReactNode> = {
     </>
   ),
   egg: (
+    // A fried egg: the yellow yolk keeps it apart from garlic and onions.
     <>
-      <Path d="M12 3.5 C 16 3.5 19 10 19 14.5 C 19 18.5 16 21 12 21 C 8 21 5 18.5 5 14.5 C 5 10 8 3.5 12 3.5 Z" fill={cream} {...ol} />
-      <Ellipse cx={9.5} cy={10} rx={1.3} ry={2.2} fill={white} />
+      <Path d="M7 5.5 C 10 3 15 4 17.5 6.5 C 20.5 9 21 13.5 19 16.5 C 17 19.5 12.5 21 9 19.5 C 5 18 3 14 3.8 10.5 C 4.3 8.3 5.3 6.8 7 5.5 Z" fill={white} {...ol} />
+      <Circle cx={11.5} cy={12} r={3.6} fill="#F6B73C" stroke={O} strokeWidth={1.2} />
+      <Circle cx={10.4} cy={10.9} r={1} fill="#FFE29A" />
     </>
   ),
   milk: (

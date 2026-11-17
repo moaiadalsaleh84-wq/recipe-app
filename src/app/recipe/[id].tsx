@@ -279,7 +279,7 @@ export default function RecipeScreen() {
             <PressableScale onPress={() => setServings(recipe.servings)} style={styles.resetServings} accessibilityLabel={`Use the recipe's ${recipe.servings} servings`} testID="servings-reset">
               <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]}>
                 {servings === profile.household ? 'Sized for your household. ' : ''}The recipe makes {recipe.servings}.{' '}
-                <Text style={{ color: t.colors.tint, fontFamily: t.fonts.display }}>Use {recipe.servings}</Text>
+                <Text style={{ color: t.colors.tint, fontFamily: t.fonts.display }}>{`Use\u00A0${recipe.servings}`}</Text>
               </Text>
             </PressableScale>
           )}
