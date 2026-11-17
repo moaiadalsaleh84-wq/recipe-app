@@ -8,6 +8,7 @@ import { ProgressWatcher } from '../components/ProgressWatcher';
 import { ToastProvider } from '../components/Toast';
 import { StoreProvider, useStore } from '../state/store';
 import { TimersProvider } from '../state/timers';
+import { DevDevice } from '../components/DevDevice';
 import { LookProvider } from '../components/mascot/look';
 import { loadAppearance, useTheme } from '../theme';
 
@@ -52,6 +53,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: t.colors.background }}>
       <ThemeProvider value={navTheme}>
+        <DevDevice>
         <LookProvider>
         <StoreProvider>
           <ToastProvider>
@@ -81,6 +83,7 @@ export default function RootLayout() {
           </ToastProvider>
         </StoreProvider>
         </LookProvider>
+        </DevDevice>
       </ThemeProvider>
     </GestureHandlerRootView>
   );

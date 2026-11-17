@@ -56,7 +56,7 @@ export default function BuddyPick() {
   const recipe: Recipe = pool[index % pool.length];
   const line: Line = rolling
     ? { text: 'Let me sniff around…', mood: 'thinking' }
-    : { text: 'How about this one? Mmm!', mood: 'excited' };
+    : { text: 'How about this one? Mmm!', mood: 'hungry' };
 
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.groupedBackground }}>

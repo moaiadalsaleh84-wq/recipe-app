@@ -208,7 +208,7 @@ export default function RecipesScreen() {
         {filtered.length === 0 ? (
           <EmptyState
             icon="search"
-            cat="thinking"
+            cat="oops"
             title="No recipes found"
             message={say('noResults').text}
             action={{

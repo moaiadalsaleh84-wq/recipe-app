@@ -1,16 +1,18 @@
 /**
- * Biscuit as a layered puppet. Each part (tail, body, arms, head, ears, eyes, pupils, eyelids,
- * mouth, hat) is its own layer and moves around a real joint, driven by Reanimated springs.
+ * Biscuit as a layered puppet. Each part (tail, body, scarf, head, ears, eyes, pupils, eyelids,
+ * brows, mouth, cheeks, hat, each arm, paws, props) is its own layer and moves around a real joint,
+ * driven by Reanimated springs.
  *
  * - Always: breathing, blinking at random, tail sway.
- * - A mood plays once as a short act (anticipation, squash and stretch, overshoot, settle),
- *   then Biscuit relaxes: glances around, twitches an ear, flicks its tail.
- * - The pupils follow your finger for a moment after each touch (see look.tsx).
- * - With Reduce Motion on, poses change with a simple fade-like ease and nothing bounces.
+ * - A mood plays as a short act (anticipation, squash and stretch, overshoot, settle), then Biscuit
+ *   relaxes: glances around, twitches an ear, flicks its tail. Busy moods (cooking, chopping,
+ *   eating, hungry, sleepy, alarm) keep going.
+ * - The eyes follow your finger for a moment after each touch (see look.tsx).
+ * - With Reduce Motion on, poses change with a short ease and nothing bounces.
  *
  * This file is one "renderer" for the mascot. The app only uses <Mascot> (Mascot.tsx).
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, {
   Easing,
@@ -27,7 +29,7 @@ import Animated, {
   withTiming,
   type SharedValue,
 } from 'react-native-reanimated';
-import Svg, { Circle, Path, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, Path, Rect, Text as SvgText } from 'react-native-svg';
 import * as art from './art';
 import { FOLLOW_MS, useLook } from './look';
 import { actMs, moodSpecs, restSpec, sustained, type Fx, type Mood } from './moods';
@@ -84,6 +86,8 @@ function Layer({ children }: { children: React.ReactNode }) {
 
 export function BiscuitRig({ mood, talking, size, playKey, hold }: RigProps) {
   const reduceMotion = useReducedMotion();
+  // Clip-path ids must be unique on the page when several Biscuits are showing.
+  const uid = `b${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
 
   // Act, then rest: once the line is done (and its act has played), relax.
   const playId = `${mood}|${playKey}`;
@@ -102,7 +106,7 @@ export function BiscuitRig({ mood, talking, size, playKey, hold }: RigProps) {
   }, [playId, talking, keeps, mood]);
 
   const spec = resting ? restSpec : moodSpecs[mood];
-  const lineEyes = spec.eyes === 'smile' || spec.eyes === 'squeeze';
+  const canGlance = art.glances(spec.eyes);
 
   // Whole body (turns at the feet)
   const jump = useSharedValue(0);
@@ -117,8 +121,7 @@ export function BiscuitRig({ mood, talking, size, playKey, hold }: RigProps) {
   const tail = useSharedValue(0);
   const earL = useSharedValue(0);
   const earR = useSharedValue(0);
-  const lid = useSharedValue(spec.lid ?? 0); // mood eyelids, 0 open to 1 closed
-  const blink = useSharedValue(0); // blinks, added on top
+  const blink = useSharedValue(0);
   const lookX = useSharedValue(spec.look?.[0] ?? 0);
   const lookY = useSharedValue(spec.look?.[1] ?? 0);
   const mouthOpen = useSharedValue(0);
@@ -148,18 +151,19 @@ export function BiscuitRig({ mood, talking, size, playKey, hold }: RigProps) {
   useEffect(() => {
     const s = resting ? restSpec : moodSpecs[mood];
     const look = s.look ?? [0, 0];
+    const aL = s.akimbo ? 0 : s.armL;
+    const aR = s.akimbo ? 0 : s.armR;
     if (reduceMotion) {
-      armL.set(T(s.armL, 220));
-      armR.set(T(s.armR, 220));
-      lid.set(T(s.lid ?? 0, 220));
+      armL.set(T(aL, 220));
+      armR.set(T(aR, 220));
       lookX.set(T(look[0], 220));
       lookY.set(T(look[1], 220));
       return;
     }
     // Defaults: into the pose, body back to neutral. Each act below overrides what it moves.
     const cfg = resting ? soft : snap;
-    armL.set(S(s.armL, cfg));
-    armR.set(S(s.armR, cfg));
+    armL.set(S(aL, cfg));
+    armR.set(S(aR, cfg));
     jump.set(S(0, cfg));
     tilt.set(S(0, cfg));
     sq.set(S(1, cfg));
@@ -169,7 +173,6 @@ export function BiscuitRig({ mood, talking, size, playKey, hold }: RigProps) {
     hat.set(S(0, cfg));
     earL.set(S(0, cfg));
     earR.set(S(0, cfg));
-    lid.set(S(s.lid ?? 0, soft));
     lookX.set(S(look[0], glance));
     lookY.set(S(look[1], glance));
     const lazyTail = withRepeat(withSequence(T(-8, 1300), T(10, 1300)), -1);
@@ -184,19 +187,15 @@ export function BiscuitRig({ mood, talking, size, playKey, hold }: RigProps) {
           const pick = Math.floor(Math.random() * 5);
           const side = Math.random() < 0.5 ? -1 : 1;
           if (pick === 0) {
-            // Ear twitch
             (side < 0 ? earL : earR).set(withSequence(T(-14, 70, out), S(0, jiggle), T(-9, 70, out), S(0, jiggle)));
           } else if (pick === 1) {
-            // Glance to one side, then back
             lookX.set(withSequence(S(0.9 * side, glance), withDelay(900, S(0, glance))));
             headRot.set(withSequence(T(3 * side, 500), withDelay(700, T(0, 600))));
           } else if (pick === 2) {
             tail.set(withSequence(T(24, 220, out), T(-8, 650), lazyTail));
           } else if (pick === 3) {
-            // Look around: one way, then the other
             lookX.set(withSequence(S(-0.9, glance), withDelay(700, S(0.9, glance)), withDelay(700, S(0, glance))));
           } else {
-            // A small stretch
             sq.set(withSequence(T(1.04, 700), T(1, 900)));
             headY.set(withSequence(T(-2, 700), T(0, 900)));
           }
@@ -217,73 +216,13 @@ export function BiscuitRig({ mood, talking, size, playKey, hold }: RigProps) {
         break;
       }
       case 'excited': {
-        // Wind up, then quick little bounces with shaking paws.
         sq.set(withSequence(T(0.86, 150, out), S(1.06, jiggle), withRepeat(withSequence(T(0.95, 110), T(1.05, 110)), 5), S(1, jiggle)));
         jump.set(withDelay(150, withSequence(withRepeat(withSequence(T(-8, 110, out), T(0, 110, fall)), 5), S(0))));
-        armL.set(withDelay(150, withSequence(back(140, 112, 110, 5), S(s.armL))));
-        armR.set(withDelay(150, withSequence(back(112, 140, 110, 5), S(s.armR))));
+        armL.set(withDelay(150, withSequence(back(aL + 12, aL - 14, 110, 5), S(aL))));
+        armR.set(withDelay(150, withSequence(back(aR - 14, aR + 12, 110, 5), S(aR))));
         earL.set(withSequence(T(-10, 120), S(0, jiggle)));
         earR.set(withSequence(T(-10, 120), S(0, jiggle)));
         tail.set(wag(8));
-        break;
-      }
-      case 'cheering': {
-        const h = hops(22, 3);
-        jump.set(h.jump);
-        sq.set(h.sq);
-        armL.set(withDelay(120, withSequence(back(172, 140, 170, 6), S(s.armL))));
-        armR.set(withDelay(120, withSequence(back(140, 172, 170, 6), S(s.armR))));
-        headRot.set(withSequence(back(-4, 4, 300, 3), S(0)));
-        tail.set(wag(10));
-        break;
-      }
-      case 'thinking': {
-        headRot.set(S(8));
-        headY.set(S(-1));
-        // The paw taps the chin.
-        armR.set(withDelay(380, withSequence(back(s.armR + 9, s.armR - 3, 180, 6), S(s.armR))));
-        earR.set(withDelay(900, withSequence(T(-12, 70, out), S(0, jiggle))));
-        tail.set(withRepeat(withSequence(T(-4, 1500), T(7, 1500)), -1));
-        break;
-      }
-      case 'worried': {
-        // Shrink back, tuck the tail, ears down.
-        tilt.set(S(4, soft));
-        sq.set(withSequence(T(0.93, 160, out), S(0.97, soft)));
-        headRot.set(withSequence(S(-6), withDelay(700, T(-3, 600))));
-        earL.set(S(16, soft));
-        earR.set(S(16, soft));
-        tail.set(withSequence(T(-14, 400), withRepeat(withSequence(T(-12, 700), T(-6, 700)), -1)));
-        break;
-      }
-      case 'sleepy': {
-        headRot.set(S(10, soft));
-        // Nods off, catches itself.
-        headY.set(withSequence(S(4, soft), withRepeat(withSequence(T(7, 1900), T(3, 1900)), -1)));
-        lid.set(withSequence(S(0.72, soft), withRepeat(withSequence(T(1, 1900), T(0.7, 1900)), -1)));
-        earL.set(S(10, soft));
-        earR.set(S(10, soft));
-        tail.set(withRepeat(withSequence(T(-3, 2300), T(3, 2300)), -1));
-        break;
-      }
-      case 'proud': {
-        sq.set(withSequence(T(0.94, 150, out), S(1, jiggle)));
-        puff.set(withDelay(150, S(1.06, snap)));
-        headY.set(withDelay(150, S(-3)));
-        // Chin up, then one slow nod.
-        headRot.set(withSequence(withDelay(150, S(-7)), withDelay(450, T(-1, 220)), T(-7, 300)));
-        tail.set(withRepeat(withSequence(T(-6, 900), T(12, 900)), -1));
-        break;
-      }
-      case 'oops': {
-        const h = hops(7, 1);
-        jump.set(h.jump);
-        tilt.set(withSequence(T(-12, 150), T(9, 190), T(-5, 180), S(0, jiggle)));
-        hat.set(withSequence(T(-24, 170), S(-10, jiggle)));
-        armL.set(withSequence(T(150, 140, out), T(80, 180), S(s.armL)));
-        armR.set(withSequence(T(30, 140, out), T(95, 180), S(s.armR)));
-        earL.set(withSequence(T(14, 150), S(6, soft)));
-        earR.set(withSequence(T(14, 150), S(6, soft)));
         break;
       }
       case 'love': {
@@ -293,24 +232,106 @@ export function BiscuitRig({ mood, talking, size, playKey, hold }: RigProps) {
         tail.set(withSequence(back(-14, 20, 400, 3), lazyTail));
         break;
       }
+      case 'thinking': {
+        headRot.set(S(8));
+        headY.set(S(-1));
+        armR.set(withDelay(380, withSequence(back(aR + 8, aR - 3, 180, 6), S(aR))));
+        earR.set(withDelay(900, withSequence(T(-12, 70, out), S(0, jiggle))));
+        tail.set(withRepeat(withSequence(T(-4, 1500), T(7, 1500)), -1));
+        break;
+      }
+      case 'hungry': {
+        // Leans in toward the bowl, little bobs, tail going.
+        headY.set(S(3));
+        headRot.set(withRepeat(withSequence(T(-3, 700), T(3, 700)), -1));
+        sq.set(withSequence(T(0.94, 160, out), S(1, jiggle)));
+        tail.set(withRepeat(withSequence(T(-16, 260), T(18, 260)), -1));
+        break;
+      }
+      case 'eating': {
+        // Chewing: the head bobs, the paws nibble.
+        headY.set(withRepeat(withSequence(T(2.4, 150), T(-1, 150)), -1));
+        armL.set(withRepeat(withSequence(T(aL - 6, 300), T(aL + 3, 300)), -1));
+        armR.set(withRepeat(withSequence(T(aR + 3, 300), T(aR - 6, 300)), -1));
+        tail.set(withRepeat(withSequence(T(-10, 600), T(14, 600)), -1));
+        break;
+      }
+      case 'cooking': {
+        // Stirring the pot round and round.
+        armR.set(withRepeat(withSequence(T(aR + 18, 420), T(aR - 8, 420)), -1));
+        tilt.set(withRepeat(withSequence(T(-2, 840), T(2, 840)), -1));
+        headRot.set(withRepeat(withSequence(T(2, 840), T(-2, 840)), -1));
+        break;
+      }
+      case 'chopping': {
+        // Careful chops: up, down onto the board, a beat.
+        armR.set(withRepeat(withSequence(T(aR + 16, 180, out), T(aR - 2, 120, fall), T(aR - 2, 260)), -1));
+        headY.set(S(2));
+        sq.set(withRepeat(withSequence(T(1, 300), T(0.985, 120), T(1, 140)), -1));
+        break;
+      }
+      case 'worried': {
+        tilt.set(S(4, soft));
+        sq.set(withSequence(T(0.93, 160, out), S(0.97, soft)));
+        headRot.set(withSequence(S(-6), withDelay(700, T(-3, 600))));
+        earL.set(S(18, soft));
+        earR.set(S(18, soft));
+        tail.set(withSequence(T(-14, 400), withRepeat(withSequence(T(-12, 700), T(-6, 700)), -1)));
+        break;
+      }
+      case 'shocked': {
+        // Anticipation, then a jolt up with everything stretched.
+        sq.set(withSequence(T(0.85, 90, out), T(1.12, 120, out), S(1, jiggle)));
+        jump.set(withSequence(T(0, 90), T(-10, 120, out), S(0, jiggle)));
+        earL.set(withSequence(T(-16, 100), S(-6, jiggle)));
+        earR.set(withSequence(T(-16, 100), S(-6, jiggle)));
+        tail.set(withSequence(T(30, 120, out), S(16, jiggle)));
+        break;
+      }
+      case 'sleepy': {
+        headRot.set(S(9, soft));
+        headY.set(withSequence(S(4, soft), withRepeat(withSequence(T(7, 1900), T(3, 1900)), -1)));
+        earL.set(S(10, soft));
+        earR.set(S(10, soft));
+        tail.set(withRepeat(withSequence(T(-3, 2300), T(3, 2300)), -1));
+        break;
+      }
+      case 'proud': {
+        sq.set(withSequence(T(0.94, 150, out), S(1, jiggle)));
+        puff.set(withDelay(150, S(1.06, snap)));
+        headY.set(withDelay(150, S(-3)));
+        headRot.set(withSequence(withDelay(150, S(-7)), withDelay(450, T(-1, 220)), T(-7, 300)));
+        tail.set(withRepeat(withSequence(T(-6, 900), T(12, 900)), -1));
+        break;
+      }
+      case 'celebrating': {
+        const h = hops(22, 3);
+        jump.set(h.jump);
+        sq.set(h.sq);
+        armL.set(withDelay(120, withSequence(back(aL + 8, aL - 22, 170, 6), S(aL))));
+        armR.set(withDelay(120, withSequence(back(aR - 22, aR + 8, 170, 6), S(aR))));
+        headRot.set(withSequence(back(-4, 4, 300, 3), S(0)));
+        tail.set(wag(10));
+        break;
+      }
+      case 'oops': {
+        const h = hops(7, 1);
+        jump.set(h.jump);
+        tilt.set(withSequence(T(-10, 150), T(8, 190), T(-4, 180), S(0, jiggle)));
+        hat.set(withSequence(T(-20, 170), S(-9, jiggle)));
+        armR.set(withSequence(S(aR), back(aR + 8, aR - 6, 150, 4), S(aR)));
+        earL.set(withSequence(T(14, 150), S(6, soft)));
+        earR.set(withSequence(T(14, 150), S(6, soft)));
+        break;
+      }
       case 'wave': {
         sq.set(withSequence(T(0.94, 120, out), S(1, jiggle)));
         headRot.set(S(-6));
-        armR.set(withSequence(S(s.armR), back(s.armR + 22, s.armR - 16, 180, 5), S(s.armR)));
+        armR.set(withSequence(S(aR), back(aR + 22, aR - 16, 180, 5), S(aR)));
         tail.set(wag(4));
         break;
       }
-      case 'hop': {
-        const h = hops(24, 1);
-        jump.set(h.jump);
-        sq.set(h.sq);
-        armL.set(withSequence(T(20, 110), S(150, snap), withDelay(380, S(s.armL))));
-        armR.set(withSequence(T(20, 110), S(150, snap), withDelay(380, S(s.armR))));
-        tail.set(wag(6));
-        break;
-      }
       case 'watch': {
-        // Looks up at the timer, leans in, tail tapping.
         headRot.set(S(-4));
         headY.set(S(-3));
         sq.set(withSequence(T(1.04, 300, out), S(1.02, soft)));
@@ -318,27 +339,16 @@ export function BiscuitRig({ mood, talking, size, playKey, hold }: RigProps) {
         tail.set(withSequence(back(-6, 12, 240, 6), lazyTail));
         break;
       }
-      case 'hide': {
-        // Ducks and scrunches up, ears flat, tail tucked; then relaxes a little.
-        sq.set(withSequence(T(0.86, 160, out), S(0.93, soft)));
-        headY.set(withSequence(S(11, snap), withDelay(1300, S(6, soft))));
-        tilt.set(withSequence(T(-3, 120), T(3, 140), S(0, jiggle)));
-        earL.set(S(20, soft));
-        earR.set(S(20, soft));
-        tail.set(withSequence(T(-14, 300), withRepeat(withSequence(T(-12, 600), T(-7, 600)), -1)));
-        break;
-      }
       case 'alarm': {
-        // Time's up: a cheerful wave and a little bounce, without the panic.
         jump.set(withRepeat(withSequence(T(-6, 260, out), T(0, 300, fall)), -1));
         sq.set(withRepeat(withSequence(T(1.04, 260), T(0.96, 300)), -1));
-        armR.set(withDelay(150, back(165, 132, 380, -1)));
+        armR.set(withDelay(150, back(aR + 15, aR - 18, 380, -1)));
         headRot.set(back(-4, 4, 560, -1));
         tail.set(back(-12, 16, 380, -1));
         break;
       }
     }
-  }, [mood, playId, resting, reduceMotion, jump, tilt, sq, puff, headRot, headY, hat, tail, earL, earR, lid, lookX, lookY, armL, armR]);
+  }, [mood, playId, resting, reduceMotion, jump, tilt, sq, puff, headRot, headY, hat, tail, earL, earR, lookX, lookY, armL, armR]);
 
   /* ---------- talking mouth ---------- */
   useEffect(() => {
@@ -360,9 +370,8 @@ export function BiscuitRig({ mood, talking, size, playKey, hold }: RigProps) {
   const touchAt = look?.at ?? fallback;
   const follow = useDerivedValue(() => {
     clock.get(); // re-check every frame, so following ends on time
-    const following = !lineEyes && touchAt.get() > 0 && Date.now() - touchAt.get() < FOLLOW_MS;
-    if (!following) return withSpring(0, glance);
-    return withSpring(1, glance);
+    const following = canGlance && touchAt.get() > 0 && Date.now() - touchAt.get() < FOLLOW_MS;
+    return withSpring(following ? 1 : 0, glance);
   });
   const pupilStyle = useAnimatedStyle(() => {
     let x = lookX.get();
@@ -379,7 +388,7 @@ export function BiscuitRig({ mood, talking, size, playKey, hold }: RigProps) {
       }
     }
     const k = size / 200;
-    return { transform: [{ translateX: x * 4.2 * k }, { translateY: y * 4.5 * k }] };
+    return { transform: [{ translateX: x * 3 * k }, { translateY: y * 3.2 * k }] };
   });
 
   /* ---------- animated styles ---------- */
@@ -401,11 +410,11 @@ export function BiscuitRig({ mood, talking, size, playKey, hold }: RigProps) {
   const earLStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${-earL.get()}deg` }] }));
   const earRStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${earR.get()}deg` }] }));
   const lidStyle = useAnimatedStyle(() => {
-    const v = Math.min(1, lid.get() + blink.get());
+    const v = blink.get();
     // Fully open lids are hidden outright: a layer scaled to zero can still leave a sliver.
     return { opacity: v > 0.02 ? 1 : 0, transform: [{ scaleY: Math.max(0.02, v) }] };
   });
-  const closedStyle = useAnimatedStyle(() => ({ opacity: Math.min(1, Math.max(0, (lid.get() + blink.get() - 0.8) * 5)) }));
+  const closedStyle = useAnimatedStyle(() => ({ opacity: Math.min(1, Math.max(0, (blink.get() - 0.8) * 5)) }));
   const mouthClosed = useAnimatedStyle(() => ({ opacity: 1 - mouthOpen.get() }));
   const mouthTalk = useAnimatedStyle(() => ({ opacity: mouthOpen.get() }));
   const hatStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${hat.get()}deg` }] }));
@@ -414,8 +423,8 @@ export function BiscuitRig({ mood, talking, size, playKey, hold }: RigProps) {
 
   const fill = StyleSheet.absoluteFill;
   // While talking the mouth swaps with a second shape: open mouths close a little, closed ones open.
-  const talkMouth = spec.mouth === 'open' ? 'small' : 'open';
-  const lidTop = [art.pivots.eyeL[0], 59] as const;
+  const talkMouth = spec.mouth === 'open' || spec.mouth === 'o' ? 'small' : 'open';
+  const lidTop = [100, art.pivots.eyeTop] as const;
 
   return (
     <Animated.View ref={self} style={{ width: size, height: size }} pointerEvents="none">
@@ -428,7 +437,10 @@ export function BiscuitRig({ mood, talking, size, playKey, hold }: RigProps) {
           <Layer>{art.tail}</Layer>
         </Animated.View>
         <View style={fill}>
-          <Layer>{art.body}</Layer>
+          <Layer>
+            {art.body(uid)}
+            {art.front(spec.prop)}
+          </Layer>
         </View>
 
         {/* head: ears behind, then the face, then the hat */}
@@ -441,30 +453,37 @@ export function BiscuitRig({ mood, talking, size, playKey, hold }: RigProps) {
           </Animated.View>
           <View style={fill}>
             <Layer>
-              {art.head}
-              {art.cheeks}
-              {spec.brows && art.brows}
-              {lineEyes ? art.lineEyes(spec.eyes) : art.eyeWhites}
+              {art.head(uid, spec.puff)}
+              {art.cheeks(spec.eyes === 'heart' || spec.puff)}
+              {art.eyeFrame(spec.eyes)}
             </Layer>
           </View>
-          {!lineEyes && (
+          {canGlance && (
             <>
               <Animated.View style={[fill, pupilStyle]}>
-                <Layer>{art.pupils(spec.eyes === 'wide')}</Layer>
+                <Layer>{art.pupils(spec.eyes)}</Layer>
               </Animated.View>
-              <Animated.View style={[fill, { transformOrigin: origin(lidTop) }, lidStyle]}>
-                <Layer>{art.lidL}</Layer>
-              </Animated.View>
-              <Animated.View style={[fill, { transformOrigin: origin(mirrored(lidTop)) }, lidStyle]}>
-                <Layer>{art.lidR}</Layer>
-              </Animated.View>
-              <Animated.View style={[fill, closedStyle]}>
-                <Layer>{art.closedEyes}</Layer>
-              </Animated.View>
+              {spec.eyes !== 'ring' && (
+                <>
+                  <Animated.View style={[fill, { transformOrigin: origin(lidTop) }, lidStyle]}>
+                    <Layer>
+                      {art.lidL}
+                      {art.lidR}
+                    </Layer>
+                  </Animated.View>
+                  <Animated.View style={[fill, closedStyle]}>
+                    <Layer>{art.blinkLine}</Layer>
+                  </Animated.View>
+                </>
+              )}
             </>
           )}
           <View style={fill}>
-            <Layer>{art.nose}</Layer>
+            <Layer>
+              {art.brows(spec.brows)}
+              {art.nose}
+              {spec.fx.includes('flour') && art.flour}
+            </Layer>
           </View>
           <Animated.View style={[fill, mouthClosed]}>
             <Layer>{art.mouth(spec.mouth)}</Layer>
@@ -477,31 +496,40 @@ export function BiscuitRig({ mood, talking, size, playKey, hold }: RigProps) {
           </Animated.View>
         </Animated.View>
 
-        {/* arms in front of the head, so a paw can reach the chin */}
+        {/* arms in front of the head, so a paw can reach the chin and the cheeks */}
         <Animated.View style={[fill, { transformOrigin: origin(art.pivots.shoulderL) }, armLStyle]}>
-          <Layer>{art.armL}</Layer>
+          <Layer>{spec.akimbo ? art.akimbo : art.arm(!!spec.palms)}</Layer>
         </Animated.View>
         <Animated.View style={[fill, { transformOrigin: origin(mirrored(art.pivots.shoulderL)) }, armRStyle]}>
-          <Layer>{art.armR}</Layer>
+          <Layer>
+            {spec.akimbo ? art.akimboR : art.armR(!!spec.palms)}
+            {art.heldR(spec.prop)}
+          </Layer>
         </Animated.View>
         {/* the scarf sits over the shoulders, so the arms come out from under it */}
         <View style={fill}>
-          <Layer>{art.scarf}</Layer>
+          <Layer>
+            {art.scarf}
+            {spec.prop === 'pot' && art.potFront}
+            {spec.prop === 'cookie' && art.cookie}
+          </Layer>
         </View>
       </Animated.View>
 
-      {spec.fx.map((e) => (
-        <Effect key={e} kind={e} clock={clock} k={size / 200} />
-      ))}
+      {spec.fx
+        .filter((e) => e !== 'flour')
+        .map((e) => (
+          <Effect key={e} kind={e} clock={clock} k={size / 200} />
+        ))}
     </Animated.View>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/* Little effects around the head, all driven by one looping clock     */
+/* Little effects around Biscuit, all driven by one looping clock      */
 /* ------------------------------------------------------------------ */
 
-function Particle({ clock, phase, from, to, children, pop = false, k }: {
+function Particle({ clock, phase, from, to, children, pop = false, spin = 0, k }: {
   k: number; // pixels per grid unit
   clock: SharedValue<number>;
   phase: number;
@@ -510,12 +538,13 @@ function Particle({ clock, phase, from, to, children, pop = false, k }: {
   children: React.ReactNode;
   /** Grow and shrink in place instead of drifting and fading. */
   pop?: boolean;
+  spin?: number;
 }) {
   const style = useAnimatedStyle(() => {
     const p = (clock.get() + phase) % 1;
     return {
       opacity: pop ? 1 : Math.min(1, (1 - p) * 2.2) * Math.min(1, p * 6),
-      transform: [{ translateX: (to[0] - from[0]) * p * k }, { translateY: (to[1] - from[1]) * p * k }, { scale: pop ? Math.sin(p * Math.PI) : 0.7 + p * 0.5 }],
+      transform: [{ translateX: (to[0] - from[0]) * p * k }, { translateY: (to[1] - from[1]) * p * k }, { rotate: `${spin * p}deg` }, { scale: pop ? Math.sin(p * Math.PI) : 0.7 + p * 0.5 }],
     };
   });
   return (
@@ -525,15 +554,16 @@ function Particle({ clock, phase, from, to, children, pop = false, k }: {
   );
 }
 
+const L = art.C.line;
 function Effect({ kind, clock, k }: { kind: Fx; clock: SharedValue<number>; k: number }) {
   const p = { clock, k };
   switch (kind) {
     case 'hearts':
       return (
         <>
-          {([[52, 34, 0, -12], [150, 28, 0.5, 12], [100, 12, 0.25, 0]] as const).map(([x, y, ph, dx]) => (
-            <Particle key={ph} {...p} phase={ph} from={[x, y]} to={[x + dx, y - 26]}>
-              <Path d={`M${x} ${y + 8} C ${x - 12} ${y - 1}, ${x - 7} ${y - 12}, ${x} ${y - 4} C ${x + 7} ${y - 12}, ${x + 12} ${y - 1}, ${x} ${y + 8} Z`} fill="#FF5C7A" />
+          {([[44, 40, 0, -12], [158, 34, 0.5, 12], [100, 10, 0.25, 0]] as const).map(([x, y, ph, dx]) => (
+            <Particle key={ph} {...p} phase={ph} from={[x, y]} to={[x + dx, y - 24]}>
+              <Path d={`M${x} ${y + 8} C ${x - 12} ${y - 1}, ${x - 7} ${y - 12}, ${x} ${y - 4} C ${x + 7} ${y - 12}, ${x + 12} ${y - 1}, ${x} ${y + 8} Z`} fill="#F0546B" stroke={L} strokeWidth={3} strokeLinejoin="round" />
             </Particle>
           ))}
         </>
@@ -541,9 +571,9 @@ function Effect({ kind, clock, k }: { kind: Fx; clock: SharedValue<number>; k: n
     case 'sparkle':
       return (
         <>
-          {([[30, 54, 0, 9], [172, 70, 0.33, 8], [160, 22, 0.66, 10]] as const).map(([x, y, ph, r]) => (
+          {([[26, 60, 0, 9], [176, 74, 0.33, 8], [166, 22, 0.66, 10]] as const).map(([x, y, ph, r]) => (
             <Particle key={ph} {...p} phase={ph} from={[x, y]} to={[x, y]} pop>
-              <Path d={`M${x} ${y - r} Q ${x} ${y} ${x + r} ${y} Q ${x} ${y} ${x} ${y + r} Q ${x} ${y} ${x - r} ${y} Q ${x} ${y} ${x} ${y - r} Z`} fill="#FFC933" />
+              <Path d={`M${x} ${y - r} Q ${x} ${y} ${x + r} ${y} Q ${x} ${y} ${x} ${y + r} Q ${x} ${y} ${x - r} ${y} Q ${x} ${y} ${x} ${y - r} Z`} fill="#FFC933" stroke={L} strokeWidth={2.5} strokeLinejoin="round" />
             </Particle>
           ))}
         </>
@@ -552,9 +582,9 @@ function Effect({ kind, clock, k }: { kind: Fx; clock: SharedValue<number>; k: n
       return (
         <>
           {[0, 0.33, 0.66].map((ph, i) => (
-            <Particle key={ph} {...p} phase={ph} from={[150, 44]} to={[178, 10]}>
-              <SvgText x={150} y={44} fontSize={15 + i * 3} fontWeight="bold" fill="#7A5C8E">
-                Z
+            <Particle key={ph} {...p} phase={ph} from={[150, 40]} to={[178, 8]}>
+              <SvgText x={150} y={40} fontSize={15 + i * 3} fontWeight="bold" fill="#7A5C8E" stroke={L} strokeWidth={1}>
+                z
               </SvgText>
             </Particle>
           ))}
@@ -562,8 +592,8 @@ function Effect({ kind, clock, k }: { kind: Fx; clock: SharedValue<number>; k: n
       );
     case 'sweat':
       return (
-        <Particle {...p} phase={0} from={[158, 50]} to={[162, 70]}>
-          <Path d="M158 40 Q 166 51 158 55 Q 150 51 158 40 Z" fill="#8CCBF2" />
+        <Particle {...p} phase={0} from={[162, 58]} to={[166, 78]}>
+          <Path d="M162 46 Q 171 58 162 63 Q 153 58 162 46 Z" fill={art.C.drool} stroke={L} strokeWidth={3} strokeLinejoin="round" />
         </Particle>
       );
     case 'dots':
@@ -571,7 +601,7 @@ function Effect({ kind, clock, k }: { kind: Fx; clock: SharedValue<number>; k: n
         <>
           {[0, 1, 2].map((i) => (
             <Particle key={i} {...p} phase={i * 0.2} from={[150 + i * 13, 26]} to={[150 + i * 13, 26]} pop>
-              <Circle cx={150 + i * 13} cy={26} r={5} fill="#A08A7B" />
+              <Circle cx={150 + i * 13} cy={26} r={5} fill={art.C.cream} stroke={L} strokeWidth={2.5} />
             </Particle>
           ))}
         </>
@@ -581,7 +611,45 @@ function Effect({ kind, clock, k }: { kind: Fx; clock: SharedValue<number>; k: n
         <>
           {[0, 0.5].map((ph) => (
             <Particle key={ph} {...p} phase={ph} from={[100, 80]} to={[100, 80]} pop>
-              <Path d="M30 62 Q 20 80 30 98 M170 62 Q 180 80 170 98" stroke="#FFC933" strokeWidth={5} fill="none" strokeLinecap="round" />
+              <Path d="M24 62 Q 14 80 24 98 M176 62 Q 186 80 176 98" stroke="#FFC933" strokeWidth={6} fill="none" strokeLinecap="round" />
+            </Particle>
+          ))}
+        </>
+      );
+    case 'steam':
+      return (
+        <>
+          {[-14, 0, 14].map((dx, i) => (
+            <Particle key={dx} {...p} phase={i * 0.33} from={[100 + dx * 2.4, 160]} to={[100 + dx * 2.8, 140]}>
+              <Path d={`M${100 + dx * 2.4} 166 q -4 -5 0 -10 q 4 -5 0 -10`} stroke="#D9C7B0" strokeWidth={4} fill="none" strokeLinecap="round" />
+            </Particle>
+          ))}
+        </>
+      );
+    case 'crumbs':
+      return (
+        <>
+          {[[-8, 0], [6, 0.35], [-2, 0.7]].map(([dx, ph]) => (
+            <Particle key={ph} {...p} phase={ph} from={[100 + dx, 158]} to={[100 + dx * 2.2, 190]} spin={180}>
+              <Rect x={98 + dx} y={156} width={5} height={4.5} rx={1} fill={art.C.cookie} stroke={L} strokeWidth={1.5} />
+            </Particle>
+          ))}
+        </>
+      );
+    case 'confetti':
+      return (
+        <>
+          {([
+            [20, 0, '#F2431F'],
+            [56, 0.2, '#FFC933'],
+            [144, 0.4, '#1F9A45'],
+            [180, 0.6, '#7A5C8E'],
+            [100, 0.8, '#F0546B'],
+            [36, 0.5, '#FF9838'],
+            [164, 0.1, '#FFC933'],
+          ] as const).map(([x, ph, c]) => (
+            <Particle key={`${x}-${ph}`} {...p} phase={ph} from={[x, 0]} to={[x + 10, 110]} spin={360}>
+              <Rect x={x - 3} y={0} width={6} height={9} rx={1.5} fill={c} />
             </Particle>
           ))}
         </>

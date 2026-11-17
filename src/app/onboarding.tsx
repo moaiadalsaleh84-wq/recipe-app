@@ -162,7 +162,7 @@ function narratorLine(step: Step, p: Profile): Line {
     case 'diet':
       return p.diets.length ? { text: 'Got it! No sneaky surprises.', mood: 'proud' } : { text: 'Tell me what you love!', mood: 'excited' };
     case 'household':
-      return (p.household ?? 0) >= 3 ? { text: 'A full table! My favorite kind.', mood: 'cheering' } : { text: 'One plate or a feast?', mood: 'happy' };
+      return (p.household ?? 0) >= 3 ? { text: 'A full table! My favorite kind.', mood: 'celebrating' } : { text: 'One plate or a feast?', mood: 'happy' };
     default:
       return { text: '', mood: 'idle' };
   }

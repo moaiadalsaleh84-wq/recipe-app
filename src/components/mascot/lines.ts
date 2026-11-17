@@ -19,6 +19,7 @@ export type Situation =
   | 'greetMorning'
   | 'greetAfternoon'
   | 'greetEvening'
+  | 'greetLate'
   | 'tip'
   | 'pet'
   | 'recipeHighProtein'
@@ -55,9 +56,9 @@ const rare: Partial<Record<Situation, Line[]>> = {
   greetAfternoon: [{ text: 'I counted the spoons. All here!', mood: 'proud' }],
   greetEvening: [{ text: 'My tummy says it’s dinner time.', mood: 'happy' }],
   itemChecked: [{ text: 'Ooh, can I carry that one?', mood: 'excited' }],
-  stepStir: [{ text: 'Stirring is my cardio.', mood: 'proud' }],
-  stepOther: [{ text: 'Look at you go, chef!', mood: 'cheering' }],
-  cookDone: [{ text: 'Chef’s kiss! Well, cat’s kiss.', mood: 'love' }],
+  stepStir: [{ text: 'Stirring is my cardio.', mood: 'cooking' }],
+  stepOther: [{ text: 'Look at you go, chef!', mood: 'cooking' }],
+  cookDone: [{ text: 'Chef’s kiss! Well, cat’s kiss.', mood: 'celebrating' }],
 };
 
 const script: Record<Situation, Line[]> = {
@@ -69,6 +70,10 @@ const script: Record<Situation, Line[]> = {
   greetAfternoon: [
     { text: 'Hi {name}! It’s snack o’clock.', mood: 'wave' },
     { text: 'Afternoon, {name}! I’m awake, promise.', mood: 'sleepy' },
+  ],
+  greetLate: [
+    { text: 'Still up, {name}? Midnight snack?', mood: 'sleepy' },
+    { text: 'Yawn… a late one, {name}!', mood: 'sleepy' },
   ],
   greetEvening: [
     { text: 'Dinner time, {name}!', mood: 'wave' },
@@ -90,20 +95,20 @@ const script: Record<Situation, Line[]> = {
     { text: 'Do the ears next!', mood: 'love' },
   ],
   recipeHighProtein: [
-    { text: 'This one keeps you full.', mood: 'happy' },
-    { text: 'A proper hearty one!', mood: 'proud' },
+    { text: 'This one keeps you full.', mood: 'hungry' },
+    { text: 'A proper hearty one!', mood: 'hungry' },
   ],
   recipeLight: [
-    { text: 'Light and fresh!', mood: 'happy' },
-    { text: 'Leaves room for dessert.', mood: 'love' },
+    { text: 'Light and fresh!', mood: 'hungry' },
+    { text: 'Leaves room for dessert.', mood: 'hungry' },
   ],
   recipeTreat: [
-    { text: 'Ooooh, dessert!', mood: 'excited' },
-    { text: 'I’ll lick the spoon.', mood: 'love' },
+    { text: 'Ooooh, dessert!', mood: 'hungry' },
+    { text: 'I’ll lick the spoon.', mood: 'hungry' },
   ],
   recipeComfort: [
-    { text: 'A cozy one!', mood: 'happy' },
-    { text: 'Perfect for sock weather.', mood: 'love' },
+    { text: 'A cozy one!', mood: 'hungry' },
+    { text: 'Perfect for sock weather.', mood: 'hungry' },
   ],
   addedToList: [{ text: 'It’s on the list!', mood: 'happy' }],
   itemChecked: [
@@ -111,26 +116,26 @@ const script: Record<Situation, Line[]> = {
     { text: 'Got it!', mood: 'proud' },
     { text: 'One more down!', mood: 'excited' },
   ],
-  listDone: [{ text: 'All done! Treat time?', mood: 'cheering' }],
+  listDone: [{ text: 'All done! Treat time?', mood: 'celebrating' }],
   listEmpty: [{ text: 'Pick a recipe to fill the list.', mood: 'thinking' }],
-  favorite: [{ text: 'Saved! Good taste.', mood: 'hop' }],
-  noResults: [{ text: 'I looked everywhere! Try fewer filters.', mood: 'thinking' }],
+  favorite: [{ text: 'Saved! Good taste.', mood: 'happy' }],
+  noResults: [{ text: 'I looked everywhere! Try fewer filters.', mood: 'oops' }],
   cookStart: [{ text: 'Aprons on! Tick off each ingredient.', mood: 'excited' }],
-  stepStir: [{ text: 'Stir, stir, stir!', mood: 'happy' }],
+  stepStir: [{ text: 'Stir, stir, stir!', mood: 'cooking' }],
   stepHeat: [{ text: 'Careful, it’s hot!', mood: 'worried' }],
-  stepChop: [{ text: 'Tuck your fingers in!', mood: 'proud' }],
-  stepWait: [{ text: 'Now we wait.', mood: 'watch' }],
-  stepServe: [{ text: 'Plating time! Make it pretty.', mood: 'excited' }],
-  stepOther: [{ text: 'You’re doing great!', mood: 'happy' }],
+  stepChop: [{ text: 'Tuck your fingers in!', mood: 'chopping' }],
+  stepWait: [{ text: 'Now we wait.', mood: 'cooking' }],
+  stepServe: [{ text: 'Plating time! Make it pretty.', mood: 'hungry' }],
+  stepOther: [{ text: 'You’re doing great!', mood: 'cooking' }],
   timerStart: [{ text: 'Timer’s on! I’m watching it.', mood: 'watch' }],
   timerDone: [{ text: 'Ding! Take a look, then tap Stop.', mood: 'alarm' }],
   timerStopped: [{ text: 'Right on time!', mood: 'proud' }],
-  cookDone: [{ text: 'You did it! It smells amazing.', mood: 'cheering' }],
+  cookDone: [{ text: 'You did it! It smells amazing.', mood: 'celebrating' }],
   planEmptyDay: [{ text: 'Nothing planned yet. I vote dessert.', mood: 'thinking' }],
   planDay: [{ text: 'About {calories} kcal planned today.', mood: 'happy' }],
-  goalHit: [{ text: 'You hit your goal today!', mood: 'cheering' }],
+  goalHit: [{ text: 'You hit your goal today!', mood: 'celebrating' }],
   savedEmpty: [{ text: 'Tap a heart to save a recipe.', mood: 'love' }],
-  recipeSaved: [{ text: 'A new recipe! I love it.', mood: 'hop' }],
+  recipeSaved: [{ text: 'A new recipe! I love it.', mood: 'happy' }],
   newRecipe: [{ text: 'Your own recipe? Tell me everything!', mood: 'excited' }],
 };
 
@@ -151,7 +156,7 @@ export function say(situation: Situation, vars: Vars = {}, n = 0, surprise = 1):
 
 export const greetingSituation = (date = new Date()): Situation => {
   const h = date.getHours();
-  return h < 11 ? 'greetMorning' : h < 17 ? 'greetAfternoon' : 'greetEvening';
+  return h < 5 ? 'greetLate' : h < 11 ? 'greetMorning' : h < 17 ? 'greetAfternoon' : h < 21 ? 'greetEvening' : 'greetLate';
 };
 
 /** Figure out what a cooking step is about, so Biscuit can react to it. */

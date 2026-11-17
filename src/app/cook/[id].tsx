@@ -61,7 +61,7 @@ export default function CookMode() {
   if (!recipe) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', backgroundColor: t.colors.background }}>
-        <EmptyState icon="fork" cat="worried" title="Recipe not found" message="It may have been removed." action={{ label: 'Close', onPress: () => router.back() }} />
+        <EmptyState icon="fork" cat="oops" title="Recipe not found" message="It may have been removed." action={{ label: 'Close', onPress: () => router.back() }} />
       </View>
     );
   }
@@ -214,7 +214,7 @@ export default function CookMode() {
         {/* The best moment in the app: Biscuit cheers, confetti falls, a chime plays. */}
         {done ? (
           <Animated.View key="done" entering={ZoomIn.springify().damping(12)} style={styles.done}>
-            <Mascot mood="cheering" size={200} playKey="done" />
+            <Mascot mood="celebrating" size={200} playKey="done" />
             <Text style={[t.type.largeTitle, { color: t.colors.label, textAlign: 'center' }]} accessibilityRole="header">
               You made it!
             </Text>

@@ -53,12 +53,12 @@ export default function ProgressScreen() {
   const line: Line =
     petLine ??
     (streak >= 3
-      ? { text: `${streak} days in a row! You’re on fire.`, mood: 'cheering' }
+      ? { text: `${streak} days in a row! You’re on fire.`, mood: 'proud' }
       : cookedToday
         ? { text: 'You cooked today! I’m so proud.', mood: 'proud' }
         : streak > 0
-          ? { text: 'Cook today to keep your streak!', mood: 'excited' }
-          : { text: 'Cook one meal to start a streak!', mood: 'wave' });
+          ? { text: 'Cook today to keep your streak!', mood: 'proud' }
+          : { text: 'Cook one meal to start a streak!', mood: 'proud' });
 
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" style={{ backgroundColor: t.colors.background }} contentContainerStyle={content}>

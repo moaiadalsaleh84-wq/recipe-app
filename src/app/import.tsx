@@ -123,10 +123,10 @@ export default function ImportScreen() {
     phase.name === 'loading'
       ? { text: 'Ooh, let me read this one…', mood: 'thinking' }
       : phase.name === 'failed'
-        ? { text: 'Oops, that one slipped away!', mood: 'hide' }
+        ? { text: 'Oops, that one slipped away!', mood: 'oops' }
         : phase.name === 'review'
           ? { text: 'Got it! Have a look.', mood: 'happy' }
-          : { text: 'Paste a link. I’ll fetch the recipe!', mood: 'wave' };
+          : { text: 'Paste a link. I’ll fetch the recipe!', mood: 'excited' };
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: t.colors.groupedBackground }}>

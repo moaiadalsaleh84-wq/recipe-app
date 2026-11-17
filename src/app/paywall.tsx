@@ -289,7 +289,7 @@ function Welcome({ onDone, trialEndsAt }: { onDone: () => void; trialEndsAt: str
   return (
     <View style={[styles.welcome, { backgroundColor: t.colors.background, paddingTop: insets.top + 40, paddingBottom: Math.max(insets.bottom, 16) }]}>
       <View style={{ alignItems: 'center', flex: 1, justifyContent: 'center' }}>
-        <Mascot mood="cheering" size={220} petable={false} />
+        <Mascot mood="celebrating" size={220} petable={false} />
         <Text style={[t.type.largeTitle, { color: t.colors.label, textAlign: 'center', marginTop: 12 }]} accessibilityRole="header">
           Welcome to Pro!
         </Text>

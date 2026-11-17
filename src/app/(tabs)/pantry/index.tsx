@@ -61,8 +61,8 @@ export default function PantryScreen() {
   const line = !pantry.length
     ? { text: 'What’s in your cupboards?', mood: 'thinking' as const }
     : ready
-      ? { text: `Yay! You can cook ${ready} ${ready === 1 ? 'recipe' : 'recipes'} now!`, mood: 'happy' as const }
-      : { text: 'So close! Just a few things missing.', mood: 'happy' as const };
+      ? { text: `Yay! You can cook ${ready} ${ready === 1 ? 'recipe' : 'recipes'} now!`, mood: 'hungry' as const }
+      : { text: 'So close! Just a few things missing.', mood: 'hungry' as const };
 
   return (
     <ScrollView

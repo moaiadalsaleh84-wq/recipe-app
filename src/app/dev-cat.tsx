@@ -1,7 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import { Text, View } from 'react-native';
 import { Mascot } from '../components/mascot/Mascot';
-import { MOODS, type Mood } from '../components/mascot/moods';
+import { EXPRESSIONS, MOODS, type Mood } from '../components/mascot/moods';
 import { AskNotifications } from '../state/timers';
 import { useTheme } from '../theme';
 
@@ -19,11 +19,12 @@ export default function DevCat() {
   // The notification permission prompt, to check its design (it can't open on the web).
   if (view === 'ask') return <AskNotifications open onAnswer={() => {}} />;
   const background = bg === 'white' ? '#FFFFFF' : t.colors.background;
-  if (view === 'grid') {
+  if (view === 'grid' || view === 'sheet') {
     const s = Number(size) || 112;
+    const list = view === 'sheet' ? EXPRESSIONS : MOODS;
     return (
-      <View testID="cat" style={{ flexDirection: 'row', flexWrap: 'wrap', backgroundColor: background, padding: 8, gap: 4, width: s >= 200 ? 780 : 390 }}>
-        {MOODS.map((m) => (
+      <View testID="cat" style={{ flexDirection: 'row', flexWrap: 'wrap', backgroundColor: background, padding: 8, gap: 4, width: s >= 200 ? 780 : s >= 112 ? 600 : 390 }}>
+        {list.map((m) => (
           <View key={m} style={{ alignItems: 'center', width: Math.max(s, 60) + 8 }}>
             <Mascot mood={m} size={s} petable={false} hold={live !== '1'} />
             <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]}>{m}</Text>

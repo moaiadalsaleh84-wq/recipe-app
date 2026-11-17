@@ -90,7 +90,7 @@ export default function RecipeScreen() {
   if (!recipe) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', backgroundColor: t.colors.background }}>
-        <EmptyState icon="fork" cat="worried" title="Recipe not found" message="It may have been removed." action={{ label: 'Back to recipes', onPress: goBack }} />
+        <EmptyState icon="fork" cat="oops" title="Recipe not found" message="It may have been removed." action={{ label: 'Back to recipes', onPress: goBack }} />
       </View>
     );
   }
@@ -169,7 +169,7 @@ export default function RecipeScreen() {
         contentContainerStyle={{ paddingBottom: insets.bottom + 110 }}
       >
         {/* Hero */}
-        <Animated.View style={[{ height: heroHeight, backgroundColor: t.colors.imagePlaceholder }, heroStyle]}>
+        <Animated.View testID="hero" style={[{ height: heroHeight, backgroundColor: t.colors.imagePlaceholder }, heroStyle]}>
           <RecipePhoto recipe={recipe} iconSize={72} />
           <LinearGradient colors={['rgba(0,0,0,0.35)', 'rgba(0,0,0,0)']} style={[styles.heroShade, { height: insets.top + 90 }]} pointerEvents="none" />
           {recipe.custom && (

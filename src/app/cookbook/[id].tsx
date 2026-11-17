@@ -24,7 +24,7 @@ export default function CookbookScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: t.colors.groupedBackground }}>
         <PageHeader title="Cookbook" />
-        <EmptyState icon="book" cat="worried" title="Cookbook not found" message="It may have been deleted." />
+        <EmptyState icon="book" cat="oops" title="Cookbook not found" message="It may have been deleted." />
       </View>
     );
   }
