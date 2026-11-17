@@ -1,14 +1,10 @@
 /**
- * Biscuit: a little cat who is also a fresh bread bun. That mix is what makes Biscuit its own
- * character (the way Duo is an owl, but unmistakably Duo):
- *   - a golden, toasted crown with three baked-loaf score marks instead of plain tabby stripes
- *   - a curl of dough on top as its signature tuft
- *   - a croissant tail
- * Drawn in a soft emote style: a thick reddish-brown outline around every shape, flat peach fur
- * with one soft shade tone, a white muzzle, big dark eyes and fluffy jagged cheeks.
+ * Biscuit, drawn in a sticker / emote style: every shape has the same thick warm-brown outline,
+ * flat colors with one soft shade tone, small highlights, and fluffy jagged fur on the cheeks and
+ * the forehead. Chibi proportions: the head is about 58% of the height.
  *
  * Every part is its own piece so the rig (BiscuitRig.tsx) can move it by itself. Coordinates are
- * on a 200 × 200 grid; the ear tips are near y = 6 and the feet near y = 196.
+ * on a 200 × 200 grid; the hat top is near y = 8 and the feet near y = 194.
  * Parts that need a clip take a `uid` so several Biscuits can be on screen at once.
  */
 import type { ReactNode } from 'react';
@@ -16,27 +12,28 @@ import { Circle, ClipPath, Defs, Ellipse, G, Path, Rect } from 'react-native-svg
 import type { Brows, Eyes, Mouth, Prop } from './moods';
 
 export const C = {
-  line: '#6E2C20', // the outline, everywhere: a warm reddish brown
-  fur: '#F8C891',
-  furShade: '#ECAA6E',
-  crust: '#E59A55', // the toasted crown, ear tips and croissant tail
-  crustDark: '#C9763A',
-  score: '#BF6F45', // the score marks on the crown
-  cream: '#FFF8EE',
-  creamShade: '#F1E1CB',
-  pink: '#F6A7AE',
-  nose: '#E9798C',
-  eye: '#2B1914',
+  line: '#4A2A1A', // the outline, everywhere
+  fur: '#F7A24E',
+  furShade: '#E5832F',
+  furLight: '#FFC889',
+  stripe: '#CF6A22',
+  cream: '#FFF5E6',
+  creamShade: '#F2DFC6',
+  pink: '#F8A5AE',
+  nose: '#EC6F86',
+  eye: '#2E1A12',
   white: '#FFFFFF',
-  blush: '#FF9C94',
-  mouth: '#8A2F27',
-  tongue: '#F27C8A',
+  blush: '#FF8F8F',
+  mouth: '#7A2B22',
+  tongue: '#F27A8A',
+  hat: '#FFFFFF',
+  hatShade: '#ECE3D7',
   scarf: '#E8402B',
   scarfShade: '#B9301E',
   drool: '#A9DDF7',
   wood: '#C88A52',
   woodShade: '#A96D3A',
-  steel: '#DCE3E8',
+  steel: '#D9E1E7',
   steelShade: '#AEB9C2',
   pot: '#E8402B',
   carrot: '#FF8A2A',
@@ -45,25 +42,24 @@ export const C = {
   chip: '#6B3A1F',
 } as const;
 
-/** Outline width: about 3.5% of Biscuit's height. */
+/** Outline width: about 3.6% of Biscuit's height. */
 export const W = 6.5;
 const outline = { stroke: C.line, strokeWidth: W, strokeLinejoin: 'round', strokeLinecap: 'round' } as const;
-const thin = { stroke: C.line, strokeWidth: 4.5, strokeLinejoin: 'round', strokeLinecap: 'round', fill: 'none' } as const;
-
-export const EYE_L = [71, 100] as const;
-export const EYE_R = [129, 100] as const;
-const ER = { rx: 12.5, ry: 14.5 };
+const thin = { stroke: C.line, strokeWidth: 4, strokeLinejoin: 'round', strokeLinecap: 'round', fill: 'none' } as const;
 
 /** Where parts turn: [x, y] on the 200 grid. */
 export const pivots = {
-  feet: [100, 196],
-  neck: [100, 148],
-  tail: [132, 178],
-  shoulderL: [76, 158],
-  earL: [62, 46],
-  hat: [100, 40],
-  eyeTop: EYE_L[1] - ER.ry - 1,
+  feet: [100, 194],
+  neck: [100, 126],
+  tail: [124, 172],
+  shoulderL: [74, 140],
+  earL: [62, 50],
+  hat: [100, 46],
+  eyeTop: 72,
 } as const;
+
+export const EYE_L = [77, 86] as const;
+export const EYE_R = [123, 86] as const;
 
 const mirror = (node: ReactNode) => <G transform="translate(200,0) scale(-1,1)">{node}</G>;
 
@@ -71,29 +67,25 @@ const mirror = (node: ReactNode) => <G transform="translate(200,0) scale(-1,1)">
 /* Tail, body, scarf                                                   */
 /* ------------------------------------------------------------------ */
 
-/** A croissant tail: rounded lobes that get smaller toward the curled tip. */
+const TAIL = 'M118 178 C 150 186 174 166 166 134';
+/** A thick curl with a cream tip and two stripes. Drawn behind the body, so it grows out of it. */
 export const tail = (
   <G>
-    {(
-      [
-        [167, 140, 5.5],
-        [166, 151, 7.5],
-        [160, 164, 9.5],
-        [148, 175, 11],
-        [134, 181, 11],
-      ] as const
-    ).map(([x, y, r], i) => (
-      <Circle key={i} cx={x} cy={y} r={r} fill={i % 2 ? C.crust : C.fur} {...outline} strokeWidth={5} />
-    ))}
-    <Path d="M144 171 Q 149 175 150 181 M157 160 Q 162 164 162 169" stroke={C.crustDark} strokeWidth={2.5} fill="none" strokeLinecap="round" />
+    <Path d={TAIL} stroke={C.line} strokeWidth={17 + W * 2} fill="none" strokeLinecap="round" />
+    <Path d={TAIL} stroke={C.fur} strokeWidth={17} fill="none" strokeLinecap="round" />
+    <Path d="M152.8 162.4 L 163.8 175.6" stroke={C.stripe} strokeWidth={5} strokeLinecap="round" />
+    <Path d="M159 150.4 L 173.6 153.2" stroke={C.stripe} strokeWidth={5} strokeLinecap="round" />
+    <Path d="M166.9 138.5 L 166 134" stroke={C.cream} strokeWidth={17} fill="none" strokeLinecap="round" />
   </G>
 );
 
-const BODY = 'M100 136 C 126 136 139 152 139 168 C 139 186 124 194 100 194 C 76 194 61 186 61 168 C 61 152 74 136 100 136 Z';
+const BODY = 'M100 116 C 129 116 141 140 140 160 C 139 181 124 190 100 190 C 76 190 61 181 60 160 C 59 140 71 116 100 116 Z';
 export const body = (uid: string) => (
   <G>
-    <Ellipse cx={81} cy={191} rx={14} ry={7.5} fill={C.fur} {...outline} />
-    <Ellipse cx={119} cy={191} rx={14} ry={7.5} fill={C.fur} {...outline} />
+    {/* feet, behind the belly */}
+    <Ellipse cx={81} cy={187} rx={15} ry={8.5} fill={C.fur} {...outline} />
+    <Ellipse cx={119} cy={187} rx={15} ry={8.5} fill={C.fur} {...outline} />
+    <Path d="M76 186 l 0 5 M83 186 l 0 5 M117 186 l 0 5 M124 186 l 0 5" stroke={C.line} strokeWidth={3} strokeLinecap="round" />
     <Defs>
       <ClipPath id={`${uid}-body`}>
         <Path d={BODY} />
@@ -101,20 +93,23 @@ export const body = (uid: string) => (
     </Defs>
     <Path d={BODY} fill={C.fur} />
     <G clipPath={`url(#${uid}-body)`}>
-      <Ellipse cx={146} cy={170} rx={20} ry={40} fill={C.furShade} />
-      <Ellipse cx={100} cy={176} rx={23} ry={18} fill={C.cream} />
+      <Ellipse cx={148} cy={160} rx={22} ry={46} fill={C.furShade} />
+      <Ellipse cx={100} cy={164} rx={24} ry={24} fill={C.cream} />
+      <Ellipse cx={112} cy={170} rx={12} ry={18} fill={C.creamShade} />
     </G>
     <Path d={BODY} fill="none" {...outline} />
   </G>
 );
 
-/** A small red scarf knotted at the front. */
+/** A red scarf knotted at the front; the knot's tails hang in front of the chest. */
 export const scarf = (
   <G>
-    <Path d="M66 141 C 82 153 118 153 134 141 L 136 151 C 118 164 82 164 64 151 Z" fill={C.scarf} {...outline} />
-    <Path d="M98 160 L 89 177 L 100 175 Z" fill={C.scarf} {...outline} strokeWidth={5} />
-    <Path d="M102 160 L 112 176 L 101 175 Z" fill={C.scarf} {...outline} strokeWidth={5} />
-    <Path d="M92 153 Q 100 148 108 153 Q 110 160 100 164 Q 90 160 92 153 Z" fill={C.scarf} {...outline} strokeWidth={5} />
+    <Path d="M64 125 C 80 138 120 138 136 125 L 139 137 C 121 151 79 151 61 137 Z" fill={C.scarf} {...outline} />
+    <Path d="M68 136 C 84 145 116 145 132 136" stroke={C.scarfShade} strokeWidth={3.5} fill="none" strokeLinecap="round" />
+    <Path d="M97 146 L 86 168 L 99 165 Z" fill={C.scarf} {...outline} />
+    <Path d="M103 146 L 116 167 L 104 165 Z" fill={C.scarf} {...outline} />
+    <Path d="M105 152 L 111 162" stroke={C.scarfShade} strokeWidth={3} strokeLinecap="round" />
+    <Path d="M91 138 Q 100 132 109 138 Q 111 147 100 151 Q 89 147 91 138 Z" fill={C.scarf} {...outline} />
   </G>
 );
 
@@ -122,19 +117,17 @@ export const scarf = (
 /* Head                                                                */
 /* ------------------------------------------------------------------ */
 
-/** A big round head with fluffy, jagged fur on both cheeks. */
+/** One round head with fluffy, jagged fur on both cheeks. */
 const HEAD =
-  'M100 38 C 139 38 165 56 169 86 C 171 98 169 108 165 116 L 175 121 L 165 127 L 172 134 L 159 136 ' +
-  'C 147 147 127 151 100 151 C 73 151 53 147 41 136 L 28 134 L 35 127 L 25 121 L 35 116 ' +
-  'C 31 108 29 98 31 86 C 35 56 61 38 100 38 Z';
+  'M100 40 C 128 40 150 48 157 62 C 163 74 164 88 162 97 L 171 101 L 162 107 L 169 113 L 158 117 ' +
+  'C 150 129 128 134 100 134 C 72 134 50 129 42 117 L 31 113 L 38 107 L 29 101 L 38 97 ' +
+  'C 36 88 37 74 43 62 C 50 48 72 40 100 40 Z';
 
 export const earL = (
   <G>
-    <Path d="M40 82 L 33 14 C 32 6 39 4 45 8 L 94 44 Z" fill={C.fur} />
-    <Path d="M45 68 L 40 24 L 80 47 Z" fill={C.pink} />
-    {/* a toasted tip, like the crust of a bun */}
-    <Path d="M35 34 L 33 14 C 32 6 39 4 45 8 L 58 17 Z" fill={C.crust} />
-    <Path d="M40 82 L 33 14 C 32 6 39 4 45 8 L 94 44" fill="none" {...outline} />
+    <Path d="M48 72 L 39 25 C 38 18 44 16 48 19 L 86 48 Z" fill={C.fur} {...outline} />
+    <Path d="M52 62 L 46 32 L 74 50 Z" fill={C.pink} />
+    <Path d="M50 46 l 6 -3 M51 54 l 6 -2" stroke={C.cream} strokeWidth={2.5} strokeLinecap="round" />
   </G>
 );
 export const earR = mirror(earL);
@@ -148,24 +141,23 @@ export const head = (uid: string, puff = false) => (
     </Defs>
     <Path d={HEAD} fill={C.fur} />
     <G clipPath={`url(#${uid}-head)`}>
-      {/* golden toasted crown, and a soft shade under the jaw */}
-      <Ellipse cx={100} cy={30} rx={78} ry={36} fill={C.crust} />
-      <Ellipse cx={100} cy={166} rx={80} ry={28} fill={C.furShade} />
-      {/* baked score marks */}
-      <Path d="M84 46 Q 87 55 88 66" stroke={C.score} strokeWidth={6.5} strokeLinecap="round" fill="none" />
-      <Path d="M100 42 L 100 64" stroke={C.score} strokeWidth={6.5} strokeLinecap="round" />
-      <Path d="M116 46 Q 113 55 112 66" stroke={C.score} strokeWidth={6.5} strokeLinecap="round" fill="none" />
-      {/* a shine on the crust */}
-      <Ellipse cx={66} cy={54} rx={10} ry={4.5} fill={C.cream} opacity={0.55} transform="rotate(-28 66 54)" />
+      {/* one soft shade under the jaw and a highlight on the crown */}
+      <Ellipse cx={100} cy={146} rx={74} ry={26} fill={C.furShade} />
+      <Ellipse cx={70} cy={54} rx={12} ry={5.5} fill={C.furLight} transform="rotate(-22 70 54)" />
+      {/* forehead stripes */}
+      <Path d="M100 52 L 100 64" stroke={C.stripe} strokeWidth={5.5} strokeLinecap="round" />
+      <Path d="M89 54 Q 91 59 92 64" stroke={C.stripe} strokeWidth={5} strokeLinecap="round" fill="none" />
+      <Path d="M111 54 Q 109 59 108 64" stroke={C.stripe} strokeWidth={5} strokeLinecap="round" fill="none" />
       {/* cheek stripes */}
-      <Path d="M36 104 L 48 106 M38 112 L 49 112" stroke={C.score} strokeWidth={4} strokeLinecap="round" />
-      <Path d="M164 104 L 152 106 M162 112 L 151 112" stroke={C.score} strokeWidth={4} strokeLinecap="round" />
-      {/* the white muzzle, soft like the inside of a bun */}
-      <Path d="M100 115 C 117 113 129 120 128 130 C 127 141 114 145 100 143 C 86 145 73 141 72 130 C 71 120 83 113 100 115 Z" fill={C.cream} />
+      <Path d="M44 92 L 54 94 M46 100 L 55 100" stroke={C.stripe} strokeWidth={3.5} strokeLinecap="round" />
+      <Path d="M156 92 L 146 94 M154 100 L 145 100" stroke={C.stripe} strokeWidth={3.5} strokeLinecap="round" />
+      {/* white muzzle */}
+      <Path d="M100 97 C 117 95 129 103 128 113 C 127 124 114 129 100 127 C 86 129 73 124 72 113 C 71 103 83 95 100 97 Z" fill={C.cream} />
       {puff && (
+        // cheeks full of food
         <G>
-          <Ellipse cx={68} cy={130} rx={15} ry={11} fill={C.cream} />
-          <Ellipse cx={132} cy={130} rx={15} ry={11} fill={C.cream} />
+          <Ellipse cx={70} cy={112} rx={14} ry={11} fill={C.cream} />
+          <Ellipse cx={130} cy={112} rx={14} ry={11} fill={C.cream} />
         </G>
       )}
     </G>
@@ -174,13 +166,13 @@ export const head = (uid: string, puff = false) => (
 );
 
 export const cheeks = (strong = false) => (
-  <G opacity={strong ? 0.85 : 0.55}>
-    <Ellipse cx={55} cy={123} rx={10} ry={6} fill={C.blush} />
-    <Ellipse cx={145} cy={123} rx={10} ry={6} fill={C.blush} />
+  <G opacity={strong ? 0.85 : 0.6}>
+    <Ellipse cx={61} cy={106} rx={9} ry={5.5} fill={C.blush} />
+    <Ellipse cx={139} cy={106} rx={9} ry={5.5} fill={C.blush} />
   </G>
 );
 
-export const nose = <Path d="M95.5 118 Q 100 115.5 104.5 118 Q 103.5 122.5 100 123.5 Q 96.5 122.5 95.5 118 Z" fill={C.nose} stroke={C.line} strokeWidth={2.5} strokeLinejoin="round" />;
+export const nose = <Path d="M95 100 Q 100 97 105 100 Q 104 105 100 106 Q 96 105 95 100 Z" fill={C.nose} stroke={C.line} strokeWidth={2.5} strokeLinejoin="round" />;
 
 /* ------------------------------------------------------------------ */
 /* Eyes, lids, brows                                                   */
@@ -189,66 +181,92 @@ export const nose = <Path d="M95.5 118 Q 100 115.5 104.5 118 Q 103.5 122.5 100 1
 const heart = (x: number, y: number, s: number) =>
   `M${x} ${y + 9 * s} C ${x - 13 * s} ${y + 1 * s}, ${x - 9 * s} ${y - 11 * s}, ${x} ${y - 4 * s} C ${x + 9 * s} ${y - 11 * s}, ${x + 13 * s} ${y + 1 * s}, ${x} ${y + 9 * s} Z`;
 const star = (x: number, y: number, r: number) => `M${x} ${y - r} Q ${x} ${y} ${x + r} ${y} Q ${x} ${y} ${x} ${y + r} Q ${x} ${y} ${x - r} ${y} Q ${x} ${y} ${x} ${y - r} Z`;
-const both = (f: (x: number, y: number, right: boolean) => ReactNode) => (
-  <G>
-    <G>{f(EYE_L[0], EYE_L[1], false)}</G>
-    <G>{f(EYE_R[0], EYE_R[1], true)}</G>
-  </G>
-);
 
 /** The part of the eyes that can glance around (dark ovals, sparkles, the pupil in a ring). */
-export const pupils = (e: Eyes) =>
-  both((x, y) => {
-    if (e === 'ring') {
+export const pupils = (e: Eyes) => (
+  <G>
+    {[EYE_L, EYE_R].map(([x, y]) => {
+      if (e === 'ring') {
+        return (
+          <G key={x}>
+            <Circle cx={x} cy={y} r={4.8} fill={C.eye} />
+            <Circle cx={x - 1.4} cy={y - 1.6} r={1.5} fill={C.white} />
+          </G>
+        );
+      }
+      const big = e === 'sparkle';
       return (
-        <G>
-          <Circle cx={x} cy={y} r={5.5} fill={C.eye} />
-          <Circle cx={x - 1.6} cy={y - 1.8} r={1.7} fill={C.white} />
+        <G key={x}>
+          <Ellipse cx={x} cy={y} rx={big ? 11 : 9.5} ry={big ? 13.5 : 12.5} fill={C.eye} />
+          {big ? <Path d={star(x - 3.5, y - 4.5, 5)} fill={C.white} /> : <Circle cx={x - 3.5} cy={y - 5} r={3.8} fill={C.white} />}
+          <Circle cx={x + 3.8} cy={y + 5.5} r={big ? 2.2 : 1.8} fill={C.white} />
         </G>
       );
-    }
-    const big = e === 'sparkle';
-    return (
-      <G>
-        <Ellipse cx={x} cy={y} rx={big ? ER.rx + 1.5 : ER.rx} ry={big ? ER.ry + 1.5 : ER.ry} fill={C.eye} />
-        {big ? <Path d={star(x - 4, y - 5, 5.5)} fill={C.white} /> : <Circle cx={x - 4} cy={y - 5.5} r={4.2} fill={C.white} />}
-        <Circle cx={x + 4.5} cy={y + 6} r={big ? 2.4 : 2} fill={C.white} />
-      </G>
-    );
-  });
+    })}
+  </G>
+);
 
 /** The part of the eyes that stays put. */
 export const eyeFrame = (e: Eyes) => {
   switch (e) {
     case 'ring':
-      return both((x, y) => <Circle cx={x} cy={y} r={14.5} fill={C.white} stroke={C.line} strokeWidth={5} />);
+      return (
+        <G>
+          <Circle cx={EYE_L[0]} cy={EYE_L[1]} r={12.5} fill={C.white} stroke={C.line} strokeWidth={4} />
+          <Circle cx={EYE_R[0]} cy={EYE_R[1]} r={12.5} fill={C.white} stroke={C.line} strokeWidth={4} />
+        </G>
+      );
     case 'heart':
-      return both((x, y) => (
+      return (
         <G>
-          <Path d={heart(x, y, 1.3)} fill="#F0546B" stroke={C.line} strokeWidth={4.5} strokeLinejoin="round" />
-          <Circle cx={x - 4.5} cy={y - 3.5} r={2.2} fill={C.white} />
+          {[EYE_L, EYE_R].map(([x, y]) => (
+            <G key={x}>
+              <Path d={heart(x, y, 1.15)} fill="#F0546B" stroke={C.line} strokeWidth={4} strokeLinejoin="round" />
+              <Circle cx={x - 4} cy={y - 3} r={2} fill={C.white} />
+            </G>
+          ))}
         </G>
-      ));
+      );
     case 'arc':
-      return both((x, y) => <Path d={`M${x - 12} ${y + 4} Q ${x} ${y - 11} ${x + 12} ${y + 4}`} {...thin} strokeWidth={6} />);
+      return (
+        <G {...thin} strokeWidth={5.5}>
+          <Path d="M67 90 Q 77 77 87 90" />
+          <Path d="M113 90 Q 123 77 133 90" />
+        </G>
+      );
     case 'closed':
-      return both((x, y) => <Path d={`M${x - 12} ${y - 1} Q ${x} ${y + 9} ${x + 12} ${y - 1}`} {...thin} strokeWidth={6} />);
+      return (
+        <G {...thin} strokeWidth={5.5}>
+          <Path d="M67 85 Q 77 94 87 85" />
+          <Path d="M113 85 Q 123 94 133 85" />
+        </G>
+      );
     case 'half':
-      return both((x, y) => (
+      // Sleepy: the top half is covered by a heavy lid.
+      return (
         <G>
-          <Path d={`M${x - 12.5} ${y + 1} Q ${x} ${y + 17} ${x + 12.5} ${y + 1} Z`} fill={C.eye} />
-          <Circle cx={x - 3} cy={y + 6} r={2} fill={C.white} />
-          <Path d={`M${x - 14} ${y + 1} L ${x + 14} ${y + 1}`} {...thin} strokeWidth={5} />
+          {[EYE_L, EYE_R].map(([x, y]) => (
+            <G key={x}>
+              <Path d={`M${x - 9.5} ${y + 1} Q ${x} ${y + 15} ${x + 9.5} ${y + 1} Z`} fill={C.eye} />
+              <Circle cx={x - 2} cy={y + 5} r={1.8} fill={C.white} />
+              <Path d={`M${x - 11} ${y + 1} L ${x + 11} ${y + 1}`} {...thin} strokeWidth={4.5} />
+            </G>
+          ))}
         </G>
-      ));
+      );
     case 'focus':
-      return both((x, y) => (
+      // Concentrating: a flat upper lid over the dark oval.
+      return (
         <G>
-          <Path d={`M${x - 12.5} ${y - 5} L ${x + 12.5} ${y - 5} Q ${x + 12.5} ${y + 14.5} ${x} ${y + 14.5} Q ${x - 12.5} ${y + 14.5} ${x - 12.5} ${y - 5} Z`} fill={C.eye} />
-          <Circle cx={x - 4} cy={y + 1} r={3} fill={C.white} />
-          <Path d={`M${x - 14} ${y - 5} L ${x + 14} ${y - 5}`} {...thin} strokeWidth={5} />
+          {[EYE_L, EYE_R].map(([x, y]) => (
+            <G key={x}>
+              <Path d={`M${x - 9.5} ${y - 4} L ${x + 9.5} ${y - 4} Q ${x + 9.5} ${y + 12.5} ${x} ${y + 12.5} Q ${x - 9.5} ${y + 12.5} ${x - 9.5} ${y - 4} Z`} fill={C.eye} />
+              <Circle cx={x - 3} cy={y + 1} r={2.6} fill={C.white} />
+              <Path d={`M${x - 11} ${y - 4} L ${x + 11} ${y - 4}`} {...thin} strokeWidth={4.5} />
+            </G>
+          ))}
         </G>
-      ));
+      );
     default:
       return null;
   }
@@ -258,29 +276,36 @@ export const eyeFrame = (e: Eyes) => {
 export const glances = (e: Eyes) => e === 'oval' || e === 'sparkle' || e === 'ring';
 
 /** Lids for blinking: fur-colored covers that grow down from the top of each eye. */
-export const lidL = <Rect x={EYE_L[0] - 15} y={pivots.eyeTop} width={30} height={34} rx={12} fill={C.fur} />;
-export const lidR = <Rect x={EYE_R[0] - 15} y={pivots.eyeTop} width={30} height={34} rx={12} fill={C.fur} />;
-export const blinkLine = both((x, y) => <Path d={`M${x - 12} ${y} Q ${x} ${y + 9} ${x + 12} ${y}`} {...thin} strokeWidth={5.5} />);
+export const lidL = <Rect x={65} y={72} width={24} height={29} rx={10} fill={C.fur} />;
+export const lidR = <Rect x={111} y={72} width={24} height={29} rx={10} fill={C.fur} />;
+export const blinkLine = (
+  <G {...thin} strokeWidth={5}>
+    <Path d="M67 86 Q 77 93 87 86" />
+    <Path d="M113 86 Q 123 93 133 86" />
+  </G>
+);
 
-export const brows = (b: Brows) =>
-  both((x, y, right) => {
-    const s = right ? -1 : 1; // inner end is toward the nose
-    const o = y - 22;
-    const d: Record<Brows, string> = {
-      calm: `M${x - 10 * s} ${o + 1} Q ${x} ${o - 3} ${x + 10 * s} ${o}`,
-      high: `M${x - 10 * s} ${o - 2} Q ${x} ${o - 7} ${x + 10 * s} ${o - 4}`,
-      up: `M${x - 10 * s} ${o + 1} L ${x + 10 * s} ${o - 6}`,
-      down: `M${x - 10 * s} ${o - 5} L ${x + 10 * s} ${o + 2}`,
-      raised: right ? `M${x - 10 * s} ${o - 6} Q ${x} ${o - 12} ${x + 10 * s} ${o - 7}` : `M${x - 10 * s} ${o + 1} Q ${x} ${o - 2} ${x + 10 * s} ${o}`,
-    };
-    return <Path d={d[b]} {...thin} strokeWidth={5} />;
-  });
+export const brows = (b: Brows) => {
+  const d: Record<Brows, [string, string]> = {
+    calm: ['M69 69 Q 77 65 85 68', 'M115 68 Q 123 65 131 69'],
+    high: ['M69 66 Q 77 61 85 64', 'M115 64 Q 123 61 131 66'],
+    up: ['M69 70 L 85 63', 'M115 63 L 131 70'],
+    down: ['M69 64 L 85 70', 'M115 70 L 131 64'],
+    raised: ['M69 69 Q 77 66 85 68', 'M115 64 Q 123 58 131 62'],
+  };
+  return (
+    <G {...thin} strokeWidth={4.5}>
+      <Path d={d[b][0]} />
+      <Path d={d[b][1]} />
+    </G>
+  );
+};
 
 /* ------------------------------------------------------------------ */
-/* Mouths (drawn around y = 128, under the nose)                       */
+/* Mouths                                                              */
 /* ------------------------------------------------------------------ */
 
-const mouthShape = (m: Mouth): ReactNode => {
+export const mouth = (m: Mouth): ReactNode => {
   switch (m) {
     case 'open':
       return (
@@ -294,16 +319,16 @@ const mouthShape = (m: Mouth): ReactNode => {
     case 'big':
       return <Ellipse cx={100} cy={117} rx={9} ry={10} fill={C.mouth} stroke={C.line} strokeWidth={3.5} />;
     case 'small':
-      return <Path d="M95 111 Q 100 115 105 111" {...thin} strokeWidth={4} />;
+      return <Path d="M95 111 Q 100 115 105 111" {...thin} />;
     case 'wavy':
-      return <Path d="M88 114 Q 92 109 96 114 Q 100 119 104 114 Q 108 109 112 114" {...thin} strokeWidth={4} />;
+      return <Path d="M88 114 Q 92 109 96 114 Q 100 119 104 114 Q 108 109 112 114" {...thin} />;
     case 'chew':
-      return <Path d="M93 113 Q 97 109 100 113 Q 103 109 107 113" {...thin} strokeWidth={4} />;
+      return <Path d="M93 113 Q 97 109 100 113 Q 103 109 107 113" {...thin} />;
     case 'drool':
       return (
         <G>
           <Path d="M92 109 Q 100 108 108 109 Q 107 119 100 119 Q 93 119 92 109 Z" fill={C.mouth} stroke={C.line} strokeWidth={3.5} strokeLinejoin="round" />
-          <Path d="M106 115 Q 110 124 108 130 Q 103 131 103 125 Q 103 120 106 115 Z" fill={C.drool} stroke={C.line} strokeWidth={2.5} strokeLinejoin="round" />
+          <Path d="M108 113 Q 112 121 110 125 Q 106 126 106 121 Q 106 117 108 113 Z" fill={C.drool} stroke={C.line} strokeWidth={2.5} strokeLinejoin="round" />
         </G>
       );
     case 'grin':
@@ -314,25 +339,27 @@ const mouthShape = (m: Mouth): ReactNode => {
         </G>
       );
     case 'smile':
-      return <Path d="M88 109 Q 100 121 112 109" {...thin} />;
+      return <Path d="M88 109 Q 100 121 112 109" {...thin} strokeWidth={4.5} />;
     case 'w':
     default:
-      return <Path d="M90 109 Q 95 116 100 109 Q 105 116 110 109" {...thin} strokeWidth={4} />;
+      return <Path d="M90 109 Q 95 116 100 109 Q 105 116 110 109" {...thin} />;
   }
 };
-/** The mouth, placed in the middle of the muzzle. */
-export const mouth = (m: Mouth): ReactNode => <G transform="translate(0 17)">{mouthShape(m)}</G>;
 
 /* ------------------------------------------------------------------ */
-/* The signature: a curl of dough on top                                */
+/* Hat                                                                 */
 /* ------------------------------------------------------------------ */
 
-/** Biscuit's tuft: a little curl of dough on top of the head, outlined like everything else. */
+/** A small chef hat with an outline, sitting snugly between the ears, and the fur fringe under it. */
 export const hat = (
   <G>
-    <Path d="M92 44 C 86 30 96 20 107 23 C 117 26 116 39 107 39 C 101 39 100 32 105 31" stroke={C.line} strokeWidth={13} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-    <Path d="M92 44 C 86 30 96 20 107 23 C 117 26 116 39 107 39 C 101 39 100 32 105 31" stroke={C.crust} strokeWidth={6.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-    <Path d="M94 34 C 95 28 100 25 105 26" stroke={C.cream} strokeWidth={2} fill="none" strokeLinecap="round" opacity={0.8} />
+    <Path d="M76 46 C 63 44 62 26 75 24 C 77 12 92 7 100 15 C 108 7 123 12 125 24 C 138 26 137 44 124 46 Z" fill={C.hat} {...outline} />
+    <Path d="M106 44 C 118 44 127 40 129 31 C 131 38 128 44 121 46 Z" fill={C.hatShade} />
+    <Path d="M89 27 Q 91 35 89 42 M111 27 Q 109 35 111 42" {...thin} strokeWidth={3} />
+    <Rect x={75} y={40} width={50} height={13} rx={5} fill={C.hat} {...outline} />
+    <Rect x={108} y={43.5} width={13} height={6} rx={2} fill={C.hatShade} />
+    {/* fluffy fringe peeking out under the band */}
+    <Path d="M90 52 L 94 57 L 97 53 L 100 58.5 L 103 53 L 106 57 L 110 52 Z" fill={C.fur} stroke={C.line} strokeWidth={3} strokeLinejoin="round" />
   </G>
 );
 
@@ -340,30 +367,30 @@ export const hat = (
 /* Arms and paws                                                       */
 /* ------------------------------------------------------------------ */
 
-/** Left arm: a short soft paw from under the scarf, so there is no seam at the shoulder. */
-const ARM = 'M67 158 C 67 150 85 150 85 158 L 84 172 C 83 183 68 183 68 172 Z';
+/** Left arm, hanging from the shoulder. The scarf covers the joint, so there is no seam. */
+const ARM = 'M64 140 C 64 131 84 131 84 140 L 82 158 C 81 170 63 170 62 158 Z';
 export const arm = (palms: boolean) => (
   <G>
     <Path d={ARM} fill={C.fur} {...outline} />
     {palms ? (
+      // The paw turned toward you: a cream pad and pink toe beans.
       <G>
-        <Ellipse cx={76} cy={174} rx={7.5} ry={6.5} fill={C.cream} />
-        <Ellipse cx={76} cy={176} rx={3.8} ry={2.8} fill={C.pink} />
-        <Circle cx={71.5} cy={171} r={1.8} fill={C.pink} />
-        <Circle cx={76} cy={169.5} r={1.8} fill={C.pink} />
-        <Circle cx={80.5} cy={171} r={1.8} fill={C.pink} />
+        <Ellipse cx={72} cy={159} rx={8} ry={7} fill={C.cream} />
+        <Ellipse cx={72} cy={161} rx={4} ry={3} fill={C.pink} />
+        <Circle cx={67} cy={155.5} r={1.9} fill={C.pink} />
+        <Circle cx={72} cy={154} r={1.9} fill={C.pink} />
+        <Circle cx={77} cy={155.5} r={1.9} fill={C.pink} />
       </G>
     ) : (
-      <G>
-        <Ellipse cx={76} cy={175} rx={7.5} ry={5} fill={C.cream} />
-        <Path d="M73 176 l 0 3 M79 176 l 0 3" stroke={C.line} strokeWidth={2.2} strokeLinecap="round" />
-      </G>
+      <Path d="M68 163 l 0 4 M75 163 l 0 4" stroke={C.line} strokeWidth={2.5} strokeLinecap="round" />
     )}
   </G>
 );
 /** Paws on hips: a bent arm, elbow out. */
 export const akimbo = (
-  <Path d="M72 150 C 63 155 55 160 53 166 C 51 172 58 178 66 182 C 72 185 79 180 75 174 C 71 171 65 168 65 166 C 69 162 76 159 82 157 Z" fill={C.fur} {...outline} />
+  <G>
+    <Path d="M70 134 C 60 140 52 146 49 152 C 46 158 54 165 62 170 C 69 174 76 168 72 162 C 67 158 62 155 62 153 C 66 149 74 145 80 142 Z" fill={C.fur} {...outline} />
+  </G>
 );
 export const armR = (palms: boolean) => mirror(arm(palms));
 export const akimboR = mirror(akimbo);
@@ -371,49 +398,57 @@ export const akimboR = mirror(akimbo);
 /** What the right paw holds, drawn in the left arm's frame and mirrored with it. */
 export const held = (p: Prop | undefined): ReactNode => {
   if (p === 'pot')
+    // A wooden spoon, dipping down into the pot (the pot's front is drawn over its tip).
     return (
       <G>
-        <Path d="M76 170 L 80 198" stroke={C.line} strokeWidth={6 + W} strokeLinecap="round" />
-        <Path d="M76 170 L 80 198" stroke={C.wood} strokeWidth={6} strokeLinecap="round" />
+        <Path d="M72 156 L 76 188" stroke={C.line} strokeWidth={7 + W} strokeLinecap="round" />
+        <Path d="M72 156 L 76 188" stroke={C.wood} strokeWidth={7} strokeLinecap="round" />
+        <Ellipse cx={76.5} cy={190} rx={6} ry={8} fill={C.wood} stroke={C.line} strokeWidth={4} />
       </G>
     );
   if (p === 'board')
+    // A chef's knife held safely by the handle, the blade pointing down at the board.
     return (
       <G>
-        <Path d="M70 178 L 83 178 L 81 199 C 74 199 68 194 68 186 Z" fill={C.steel} stroke={C.line} strokeWidth={4.5} strokeLinejoin="round" />
-        <Path d="M78 182 L 77 195" stroke={C.steelShade} strokeWidth={2.5} strokeLinecap="round" />
-        <Rect x={70} y={163} width={12} height={16} rx={4} fill={C.chip} stroke={C.line} strokeWidth={4.5} />
+        <Path d="M66 166 L 79 166 L 77 190 C 70 190 64 184 64 176 Z" fill={C.steel} stroke={C.line} strokeWidth={4.5} strokeLinejoin="round" />
+        <Path d="M74 170 L 73 185" stroke={C.steelShade} strokeWidth={2.5} strokeLinecap="round" />
+        <Rect x={66} y={150} width={12} height={17} rx={4} fill={C.chip} stroke={C.line} strokeWidth={4.5} />
       </G>
     );
   return null;
 };
+
+/** The held tool in the right paw (the right arm is the left one mirrored). */
 export const heldR = (p: Prop | undefined) => {
   const node = held(p);
   return node ? mirror(node) : null;
 };
 
-/** Things Biscuit stands behind: a pot (its inside), a cutting board, a bowl. */
+/** Things Biscuit stands behind: a pot, a cutting board, a bowl, a cookie in both paws. */
 export const front = (p: Prop | undefined): ReactNode => {
   switch (p) {
     case 'pot':
-      return <Ellipse cx={100} cy={176} rx={36} ry={7} fill={C.mouth} {...outline} />;
+      // The inside of the pot; its front wall is `potFront`, drawn over the spoon.
+      return <Ellipse cx={100} cy={164} rx={36} ry={8} fill={C.mouth} {...outline} />;
     case 'board':
       return (
         <G>
-          <Rect x={52} y={182} width={96} height={14} rx={6} fill={C.wood} {...outline} />
-          <Path d="M108 182 C 118 174 138 174 142 182 Z" fill={C.carrot} {...outline} strokeWidth={4} />
-          <Path d="M141 177 l 6 -5 M142 180 l 7 -1" stroke={C.leaf} strokeWidth={3.5} strokeLinecap="round" />
-          <Ellipse cx={95} cy={182} rx={5} ry={3} fill={C.carrot} stroke={C.line} strokeWidth={3} />
-          <Ellipse cx={84} cy={183} rx={5} ry={3} fill={C.carrot} stroke={C.line} strokeWidth={3} />
+          <Rect x={54} y={176} width={92} height={16} rx={6} fill={C.wood} {...outline} />
+          <Path d="M60 186 L 140 186" stroke={C.woodShade} strokeWidth={3} strokeLinecap="round" />
+          <Path d="M106 176 C 116 168 136 168 140 176 Z" fill={C.carrot} {...outline} strokeWidth={4} />
+          <Path d="M139 171 l 6 -5 M140 174 l 7 -1" stroke={C.leaf} strokeWidth={3.5} strokeLinecap="round" />
+          <Ellipse cx={95} cy={176} rx={5} ry={3} fill={C.carrot} stroke={C.line} strokeWidth={3} />
+          <Ellipse cx={84} cy={177} rx={5} ry={3} fill={C.carrot} stroke={C.line} strokeWidth={3} />
         </G>
       );
     case 'bowl':
       return (
         <G>
-          <Path d="M64 178 C 66 198 134 198 136 178 Z" fill={C.white} {...outline} />
-          <Path d="M70 178 C 76 166 92 168 100 172 C 108 166 126 166 130 178 Z" fill={C.cookie} {...outline} strokeWidth={4.5} />
-          <Circle cx={86} cy={174} r={3} fill={C.leaf} />
-          <Circle cx={112} cy={173} r={3} fill={C.carrot} />
+          <Path d="M64 172 C 66 194 134 194 136 172 Z" fill={C.white} {...outline} />
+          <Path d="M70 172 C 76 160 92 162 100 166 C 108 160 126 160 130 172 Z" fill={C.cookie} {...outline} strokeWidth={4.5} />
+          <Circle cx={86} cy={168} r={3} fill={C.leaf} />
+          <Circle cx={112} cy={167} r={3} fill={C.carrot} />
+          <Path d="M72 182 C 90 186 110 186 128 182" stroke={C.hatShade} strokeWidth={4} fill="none" strokeLinecap="round" />
         </G>
       );
     default:
@@ -424,29 +459,32 @@ export const front = (p: Prop | undefined): ReactNode => {
 /** The pot's front wall, drawn in front of the paw and the spoon. */
 export const potFront = (
   <G>
-    <Path d="M64 176 L 68 194 C 69 199 131 199 132 194 L 136 176 C 130 184 70 184 64 176 Z" fill={C.pot} {...outline} />
-    <Path d="M78 186 C 88 189 112 189 122 186" stroke={C.white} strokeWidth={3} opacity={0.5} fill="none" strokeLinecap="round" />
+    <Path d="M64 164 L 68 188 C 69 194 131 194 132 188 L 136 164 C 130 172 70 172 64 164 Z" fill={C.pot} {...outline} />
+    <Path d="M76 176 C 86 180 114 180 124 176" stroke={C.white} strokeWidth={3} opacity={0.5} fill="none" strokeLinecap="round" />
+    <Path d="M60 168 Q 52 168 54 176" fill="none" stroke={C.line} strokeWidth={W} strokeLinecap="round" />
+    <Path d="M140 168 Q 148 168 146 176" fill="none" stroke={C.line} strokeWidth={W} strokeLinecap="round" />
   </G>
 );
 
-/** A cookie held up in both paws. */
+/** A cookie held up in both paws, drawn in front of them. */
 export const cookie = (
   <G>
-    <Circle cx={100} cy={166} r={12} fill={C.cookie} {...outline} strokeWidth={5} />
-    <Circle cx={95} cy={162} r={2.2} fill={C.chip} />
-    <Circle cx={104} cy={169} r={2.2} fill={C.chip} />
-    <Circle cx={95} cy={170} r={1.9} fill={C.chip} />
+    <Circle cx={100} cy={146} r={13} fill={C.cookie} {...outline} strokeWidth={5} />
+    <Path d="M108 136 Q 104 140 110 144 Q 114 140 113 137 Z" fill={C.cream} />
+    <Circle cx={95} cy={142} r={2.3} fill={C.chip} />
+    <Circle cx={103} cy={150} r={2.3} fill={C.chip} />
+    <Circle cx={94} cy={151} r={2} fill={C.chip} />
   </G>
 );
 
-/** Flour on the face (oops). */
+/** Flour on the face and hat (oops). */
 export const flour = (
   <G fill={C.white} opacity={0.95}>
-    <Ellipse cx={52} cy={112} rx={8} ry={5} />
-    <Circle cx={61} cy={119} r={2.6} />
-    <Circle cx={142} cy={88} r={2.6} />
-    <Ellipse cx={86} cy={76} rx={5} ry={3} />
+    <Ellipse cx={62} cy={98} rx={7} ry={4.5} />
+    <Circle cx={70} cy={104} r={2.5} />
+    <Circle cx={132} cy={78} r={2.4} />
+    <Ellipse cx={86} cy={58} rx={5} ry={3} />
   </G>
 );
 
-export const groundShadow = <Ellipse cx={100} cy={196} rx={46} ry={4.5} fill="rgba(110,44,32,0.16)" />;
+export const groundShadow = <Ellipse cx={100} cy={194} rx={46} ry={5} fill="rgba(74,42,26,0.16)" />;
