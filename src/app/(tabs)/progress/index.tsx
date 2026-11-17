@@ -13,10 +13,18 @@ import { showPaywall, useProGate } from '../../../lib/pro';
 import { BADGES, levelFor, nextBadge, streakOf, xpFor } from '../../../lib/progress';
 import { TabScreen } from '../../../components/TabScreen';
 import { totalsFor, useStore } from '../../../state/store';
+import { noWidow } from '../../../lib/text';
 import { useTheme } from '../../../theme';
 
 const dayKey = (d: Date) => d.toDateString();
 const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+/** The way to earn a one-time badge, shown instead of a progress bar. */
+const BADGE_ACTION: Record<string, { label: string; href: '/' | '/recipe/new' | '/groceries' } | undefined> = {
+  'first-dish': { label: 'Cook any recipe in Cook Mode', href: '/' },
+  writer: { label: 'Write a recipe', href: '/recipe/new' },
+  shopper: { label: 'Open your grocery list', href: '/groceries' },
+};
 
 /** Your cooking progress: the streak, the next badge to aim for, your chef level, and settings. */
 export default function ProgressScreen() {
@@ -35,6 +43,7 @@ export default function ProgressScreen() {
   const lvl = levelFor(xp);
   const next = nextBadge(input, fun.badges);
   const earned = BADGES.filter((b) => fun.badges.includes(b.id));
+  const upcoming = BADGES.filter((b) => !fun.badges.includes(b.id)).slice(0, 2);
   const today = cooked.filter((c) => dayKey(new Date(c.date)) === dayKey(now));
   const eaten = totalsFor(today.map((c) => c.recipeId), getRecipe);
   const recent = useMemo(() => cooked.slice(0, 5), [cooked]);
@@ -51,13 +60,14 @@ export default function ProgressScreen() {
 
   const line: Line =
     petLine ??
+    // Biscuit cheers you on; the cards below hold the numbers, so the words never repeat them.
     (streak >= 3
-      ? { text: `${streak} days in a row! You’re on fire.`, mood: 'proud' }
+      ? { text: 'Look at you go, chef!', mood: 'proud' }
       : cookedToday
-        ? { text: 'You cooked today! I’m so proud.', mood: 'proud' }
+        ? { text: 'I’m so proud of you!', mood: 'proud' }
         : streak > 0
-          ? { text: 'Cook today to keep your streak!', mood: 'proud' }
-          : { text: 'Cook one meal to start a streak!', mood: 'proud' });
+          ? { text: 'Ready for today’s dish?', mood: 'proud' }
+          : { text: 'Every chef starts somewhere!', mood: 'proud' });
 
   return (
     <TabScreen title="Progress" right={<HeaderButton icon="gear" accessibilityLabel="Settings" onPress={() => router.push('/settings')} />}>
@@ -100,17 +110,6 @@ export default function ProgressScreen() {
             )}
           </View>
         </View>
-        {streak === 0 && (
-          // You're not starting from nothing: setting up was step one.
-          <View style={styles.barRow} accessible accessibilityLabel="1 of 3 steps to your first streak: set up done, then cook today and cook tomorrow">
-            <View style={{ flex: 1 }}>
-              <ProgressBar value={cookedToday ? 2 / 3 : 1 / 3} color={t.colors.reward} track={t.colors.cell} label="Steps to your first streak" />
-            </View>
-            <Text style={[t.type.footnote, { color: t.colors.rewardText }]} testID="streak-steps">
-              {cookedToday ? 2 : 1} of 3 steps
-            </Text>
-          </View>
-        )}
         <View style={styles.week}>
           {week.map((d, i) => (
             <View key={i} style={styles.day}>
@@ -144,16 +143,21 @@ export default function ProgressScreen() {
               <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]}>{next.badge.hint}</Text>
             </View>
           </View>
-          <View style={styles.barRow}>
-            <View style={{ flex: 1 }}>
-              <ProgressBar value={next.done / next.needed} label={`${next.badge.title} progress`} />
-            </View>
-            {next.done > 0 && (
+          {next.needed > 1 ? (
+            <View style={styles.barRow}>
+              <View style={{ flex: 1 }}>
+                <ProgressBar value={next.done / next.needed} label={`${next.badge.title} progress`} />
+              </View>
               <Text style={[t.type.subhead, { color: t.colors.label, fontFamily: t.fonts.display, fontWeight: 'normal', fontVariant: ['tabular-nums'] }]}>
                 {next.done} of {next.needed}
               </Text>
-            )}
-          </View>
+            </View>
+          ) : (
+            // A one-time badge: no bar, just the way to get it.
+            BADGE_ACTION[next.badge.id] && (
+              <Button label={BADGE_ACTION[next.badge.id]!.label} variant="tinted" onPress={() => router.navigate(BADGE_ACTION[next.badge.id]!.href)} />
+            )
+          )}
         </View>
       )}
 
@@ -177,26 +181,28 @@ export default function ProgressScreen() {
         </Text>
       </View>
 
-      {/* Badges: the ones you have. The rest stay out of the way until you ask. */}
-      {earned.length > 0 && (
-        <>
-          <Text style={[t.type.title3, styles.h, { color: t.colors.label }]} accessibilityRole="header">
-            Your badges
-          </Text>
-          <View style={styles.badges}>
-            {earned.map((b) => (
-              <PressableScale key={b.id} onPress={() => toast({ message: `${b.title}: ${b.hint}. Done!`, icon: b.icon, tone: 'info' })} accessibilityLabel={`${b.title}, earned`} style={styles.badge}>
-                <View style={[styles.badgeCoin, { backgroundColor: t.colors.reward, ...t.chunky.button(t.colors.rewardDeep) }]}>
-                  <Icon name={b.icon} size={26} color={t.colors.onReward} weight="bold" />
-                </View>
-                <Text style={[t.type.caption1, { color: t.colors.label, textAlign: 'center', fontFamily: t.fonts.display, fontWeight: 'normal' }]} numberOfLines={2}>
-                  {b.title}
-                </Text>
-              </PressableScale>
-            ))}
-          </View>
-        </>
-      )}
+      {/* Badges: the ones you have, then the next two still to earn, softly faded. */}
+      <Text style={[t.type.title3, styles.h, { color: t.colors.label }]} accessibilityRole="header">
+        Your badges
+      </Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={styles.badges}>
+        {earned.map((b) => (
+          <PressableScale key={b.id} onPress={() => toast({ message: `${b.title}: ${b.hint}. Done!`, icon: b.icon, tone: 'info' })} accessibilityLabel={`${b.title}, earned`} style={styles.badge}>
+            <View style={[styles.badgeCoin, { backgroundColor: t.colors.reward, ...t.chunky.button(t.colors.rewardDeep) }]}>
+              <Icon name={b.icon} size={26} color={t.colors.onReward} weight="bold" />
+            </View>
+            <Text style={[t.type.caption1, { color: t.colors.label, textAlign: 'center', fontFamily: t.fonts.display, fontWeight: 'normal' }]}>{b.title}</Text>
+          </PressableScale>
+        ))}
+        {upcoming.map((b) => (
+          <PressableScale key={b.id} onPress={() => toast({ message: `${b.title}: ${b.hint} to earn it.`, icon: 'lock', tone: 'info' })} accessibilityLabel={`${b.title}, not earned yet. ${b.hint}.`} style={styles.badge}>
+            <View style={[styles.badgeCoin, { backgroundColor: t.colors.fill, borderWidth: 2, borderColor: t.colors.border, borderStyle: 'dashed' }]}>
+              <Icon name={b.icon} size={24} color={t.colors.tertiaryLabel} weight="bold" />
+            </View>
+            <Text style={[t.type.caption1, { color: t.colors.secondaryLabel, textAlign: 'center', fontFamily: t.fonts.display, fontWeight: 'normal' }]}>{b.title}</Text>
+          </PressableScale>
+        ))}
+      </ScrollView>
       <Button
         label={showAll ? 'Hide the other badges' : earned.length ? `See what else you can earn` : 'See all badges'}
         variant="plain"
@@ -243,10 +249,10 @@ export default function ProgressScreen() {
             <View style={[styles.badgeRowIcon, { backgroundColor: t.colors.rewardSoft }]}>
               <Icon name="crown" size={18} color={t.colors.rewardText} />
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[t.type.headline, { color: t.colors.label }]}>Set goals, see your progress</Text>
-              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 1 }]}>
-                {today.length > 0 ? `Today so far (estimated): ${eaten.protein} g protein, ${eaten.calories} kcal. ` : ''}With Pro, you track protein and calories against daily targets.
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={[t.type.headline, { color: t.colors.label }]}>Daily protein and calories</Text>
+              <Text style={[t.type.subhead, t.noWidows.style, { color: t.colors.secondaryLabel }]} {...t.noWidows.props}>
+                {noWidow(today.length > 0 ? `Today so far: about ${eaten.protein} g protein and ${eaten.calories} kcal.` : 'Set a target and see each meal you cook count toward it.')}
               </Text>
             </View>
           </View>
@@ -318,8 +324,8 @@ const styles = StyleSheet.create({
   dayDot: { width: 34, height: 34, borderRadius: 17, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
   medal: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
   h: { marginTop: 16, marginBottom: 12 },
-  badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 14 },
-  badge: { width: 92, alignItems: 'center', gap: 8, minHeight: 44 },
+  badges: { flexDirection: 'row', gap: 12, paddingHorizontal: 16, paddingBottom: 6 },
+  badge: { width: 88, alignItems: 'center', gap: 8, minHeight: 44 },
   badgeCoin: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center' },
   badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12, minHeight: 60 },
   badgeRowIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },

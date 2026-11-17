@@ -1,8 +1,10 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
+import { Mascot } from '../../../components/mascot/Mascot';
 import { MascotSays } from '../../../components/mascot/MascotSays';
+import { noWidow } from '../../../lib/text';
 import { FoodIcon } from '../../../components/FoodIcon';
 import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
@@ -23,11 +25,14 @@ export default function PantryScreen() {
   const { pantry, addPantry, removePantry, restorePantry, allRecipes, addIngredients } = useStore();
   const { isPro, canAddPantry } = useProGate();
   const [query, setQuery] = useState('');
+  // Two equal columns of chips, so the rows line up neatly.
+  const { width } = useWindowDimensions();
+  const cell = Math.floor((Math.min(width, 700) - 32 - 8) / 2);
 
   const matches = useMemo(() => whatCanICook(allRecipes, pantry), [allRecipes, pantry]);
   const suggestions = useMemo(() => smartSuggestions(matches), [matches]);
   const typed = useMemo(() => suggestionsFor(query, allRecipes, pantry), [query, allRecipes, pantry]);
-  const common = COMMON_ITEMS.filter((c) => !pantry.some((p) => p.toLowerCase() === c.toLowerCase())).slice(0, 12);
+  const common = COMMON_ITEMS.filter((c) => !pantry.some((p) => p.toLowerCase() === c.toLowerCase())).slice(0, 8);
   const ready = matches.filter((m) => m.missing.length === 0).length;
 
   const add = (name: string) => {
@@ -65,7 +70,7 @@ export default function PantryScreen() {
 
   return (
     <TabScreen title="Pantry" keyboardShouldPersistTaps="handled">
-      <MascotSays line={line} size={88} style={{ marginBottom: t.layout.gap }} />
+      {pantry.length > 0 && <MascotSays line={line} size={88} style={{ marginBottom: t.layout.gap }} />}
 
       {/* Add */}
       <View style={[styles.addRow, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
@@ -98,9 +103,9 @@ export default function PantryScreen() {
       {!query && common.length > 0 && (
         <>
           <Text style={[t.type.subhead, styles.label, { color: t.colors.secondaryLabel, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>Tap to add</Text>
-          <View style={styles.chips}>
+          <View style={styles.grid}>
             {common.map((name) => (
-              <Chip key={name} label={name} leading={<FoodIcon name={name} size={18} bare />} toggle={false} accessibilityLabel={`Add ${name}`} onPress={() => add(name)} />
+              <Chip key={name} label={name} style={{ width: cell }} leading={<FoodIcon name={name} size={18} bare />} toggle={false} accessibilityLabel={`Add ${name}`} onPress={() => add(name)} />
             ))}
           </View>
         </>
@@ -111,17 +116,25 @@ export default function PantryScreen() {
         <Text style={[t.type.title2, { color: t.colors.label, flex: 1 }]} accessibilityRole="header">
           In your pantry
         </Text>
-        <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]} testID="pantry-count">
-          {isPro ? `${pantry.length} items` : `${pantry.length} of ${FREE_LIMITS.pantry}`}
-        </Text>
+        {/* The count only matters near the free limit. */}
+        {!isPro && pantry.length >= FREE_LIMITS.pantry - 3 && (
+          <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]} testID="pantry-count">
+            {pantry.length} of {FREE_LIMITS.pantry}
+          </Text>
+        )}
       </View>
       {pantry.length === 0 ? (
-        <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, marginTop: 8 }]}>Nothing yet. Add a few things you have at home to see what you can cook.</Text>
+        <View style={[styles.empty, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
+          <Mascot mood="thinking" size={72} />
+          <Text style={[t.type.callout, { color: t.colors.label, flex: 1 }]} testID="pantry-empty">
+            {noWidow('Add what you have and I’ll find recipes.')}
+          </Text>
+        </View>
       ) : (
-        <Animated.View layout={LinearTransition.duration(200)} style={styles.chips}>
+        <Animated.View layout={LinearTransition.duration(200)} style={styles.grid}>
           {pantry.map((name) => (
-            <Animated.View key={name} entering={FadeIn.duration(180)}>
-              <Chip label={name} leading={<FoodIcon name={name} size={18} bare />} trailing="close" toggle={false} accessibilityLabel={`Remove ${name}`} onPress={() => remove(name)} />
+            <Animated.View key={name} entering={FadeIn.duration(180)} style={{ width: cell }}>
+              <Chip label={name} style={{ width: cell }} leading={<FoodIcon name={name} size={18} bare />} trailing="close" toggle={false} accessibilityLabel={`Remove ${name}`} onPress={() => remove(name)} />
             </Animated.View>
           ))}
         </Animated.View>
@@ -187,14 +200,14 @@ function MatchCard({ match, onAddMissing }: { match: PantryMatch; onAddMissing: 
           <RecipePhoto recipe={recipe} iconSize={22} />
         </View>
         <View style={{ flex: 1, gap: 2 }}>
-          <Text style={[t.type.headline, { color: t.colors.label }]} numberOfLines={1}>
+          <Text style={[t.type.headline, { color: t.colors.label }]}>
             {recipe.title}
           </Text>
           <Text style={[t.type.footnote, { color: missing.length ? t.colors.secondaryLabel : t.colors.success, fontWeight: '600' }]}>
             {missing.length ? `You have ${have.length} of ${needed}` : 'You have everything'}
           </Text>
           {missing.length > 0 && (
-            <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]} numberOfLines={2} testID="missing">
+            <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]} testID="missing">
               Missing: {shown.join(', ')}
               {more > 0 ? ` +${more} more` : ''}
             </Text>
@@ -214,6 +227,8 @@ const styles = StyleSheet.create({
   addBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   label: { marginTop: 16 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  empty: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, paddingRight: 16, borderRadius: 20, marginTop: 8, borderCurve: 'continuous' },
   headerRow: { flexDirection: 'row', alignItems: 'baseline', marginTop: 32, marginBottom: 4 },
   limit: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderRadius: 16, marginTop: 12 },
   card: { borderRadius: 20, padding: 16, borderCurve: 'continuous' },

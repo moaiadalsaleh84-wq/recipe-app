@@ -33,7 +33,10 @@ export function Chip({
   trailing,
   accessibilityLabel,
   toggle = true,
+  style,
 }: {
+  /** Layout of the whole chip (e.g. a fixed width in a grid). */
+  style?: StyleProp<ViewStyle>;
   label: string;
   /** Selected chips turn green with a check. */
   selected?: boolean;
@@ -64,7 +67,8 @@ export function Chip({
       face={selected ? t.colors.success : t.colors.cell}
       lip={selected ? t.colors.successDeep : t.colors.lip}
       border={selected ? undefined : t.colors.border}
-      faceStyle={[styles.chip, !selected && styles.chipBordered]}
+      style={style}
+      faceStyle={[styles.chip, !selected && styles.chipBordered, style ? styles.chipFill : null]}
     >
       {selected ? <Icon name="check" size={15} color={fg} weight="bold" /> : leading ? leading : icon ? <Icon name={icon} size={15} color={t.colors.tint} weight="bold" /> : null}
       <Text style={[t.type.subhead, { color: fg, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>{label}</Text>
@@ -372,7 +376,7 @@ export function SearchField({ value, onChangeText, placeholder, style, ...rest }
         {...rest}
       />
       {value.length > 0 && (
-        <IconButton icon="closeCircle" accessibilityLabel="Clear search" onPress={() => onChangeText('')} color={t.colors.tertiaryLabel} size={32} iconSize={17} />
+        <IconButton icon="closeCircle" accessibilityLabel="Clear search" onPress={() => onChangeText('')} color={t.colors.tertiaryLabel} size={44} iconSize={17} />
       )}
     </View>
   );
@@ -389,6 +393,8 @@ const styles = StyleSheet.create({
   },
   // The 2pt border is part of the height, so bordered and filled chips match.
   chipBordered: { minHeight: 40 },
+  // In a grid: content starts on the left and the label can take the rest of the width.
+  chipFill: { justifyContent: 'flex-start', paddingHorizontal: 12 },
   headerButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   button: {
     flexDirection: 'row',
@@ -452,5 +458,5 @@ export function Segmented<T extends string>({
 
 const segStyles = StyleSheet.create({
   wrap: { flexDirection: 'row', borderRadius: 16, padding: 4, paddingBottom: 6, borderCurve: 'continuous' },
-  item: { minHeight: 38, minWidth: 56, paddingHorizontal: 12, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
+  item: { minHeight: 44, minWidth: 56, paddingHorizontal: 12, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
 });

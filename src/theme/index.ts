@@ -34,13 +34,13 @@ export const brand = {
 const light = {
   /* Primary (tomato): the one main action */
   tint: '#B82D0C', // tomato as text and icons (5.8:1 on cream, 4.9:1 on the soft tomato)
-  tintFill: brand.tomato, // the primary button's face, behind white text
-  tintDeep: '#B92C0E', // the lip under the primary button
+  tintFill: '#D9381A', // the primary button's face: a deeper tomato so white text passes AA (4.6:1)
+  tintDeep: '#A5280C', // the lip under the primary button
   tintSoft: '#FFE6DC', // quiet tomato background: secondary buttons, selected tab
   onTint: '#FFFFFF',
   /* Success and progress (green) */
-  success: brand.green,
-  successDeep: '#14702F',
+  success: '#178039', // deep enough for white text on it (5:1)
+  successDeep: '#0F5E28',
   successSoft: '#DDF4E3',
   successText: '#15703A',
   /* Rewards (yellow) */
@@ -59,10 +59,10 @@ const light = {
   accent: brand.berry, // favorites (hearts)
   highlight: brand.plum,
   destructive: '#E5342B',
-  // Nutrition bars: three calm browns, so they never read as "good" (green) or "bad" (red).
-  protein: '#5C4033',
-  carbs: '#A47551',
-  fat: '#D2A679',
+  // Nutrition: three calm colors that are easy to tell apart.
+  protein: '#D46A57',
+  carbs: '#E2A93B',
+  fat: '#6E9E86',
 
   label: brand.cocoa,
   secondaryLabel: '#7A5E4D',
@@ -88,12 +88,12 @@ type Palette = Record<keyof typeof light, string>;
 
 const dark: Palette = {
   tint: '#FF8A66',
-  tintFill: '#E8451F',
+  tintFill: '#D9381A', // white text on it passes AA
   tintDeep: '#9E2A0C',
   tintSoft: '#4A261B',
   onTint: '#FFFFFF',
-  success: '#2DB257',
-  successDeep: '#17722F',
+  success: '#178039', // white text on it passes AA (5:1)
+  successDeep: '#13602C',
   successSoft: '#22402B',
   successText: '#6FD98C',
   reward: '#FFC933',
@@ -109,9 +109,9 @@ const dark: Palette = {
   accent: '#FF7F92',
   highlight: '#CDB4DC',
   destructive: '#FF6A5E',
-  protein: '#F3DEC9',
-  carbs: '#C99B77',
-  fat: '#8F6A50',
+  protein: '#E88A78',
+  carbs: '#EDBE5E',
+  fat: '#86B79E',
 
   label: '#FFF3E4',
   secondaryLabel: '#C9AE98',
@@ -173,7 +173,7 @@ export const type = {
   title3: display(20, 25),
   headline: display(18, 23),
   /** Button labels. */
-  button: display(18, 22),
+  button: display(19, 24), // 19px bold counts as large text, so white on tomato passes AA
   body: { fontSize: 17, lineHeight: 24, fontWeight: '400' },
   callout: { fontSize: 16, lineHeight: 22, fontWeight: '400' },
   subhead: { fontSize: 15, lineHeight: 20, fontWeight: '400' },

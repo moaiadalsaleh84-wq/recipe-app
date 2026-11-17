@@ -53,6 +53,7 @@ const icons = {
   crown: { ios: 'crown.fill', md: 'workspace_premium' },
   trophy: { ios: 'trophy.fill', md: 'emoji_events' },
   flameFill: { ios: 'flame.fill', md: 'local_fire_department' },
+  more: { ios: 'ellipsis', md: 'more_horiz' },
   gear: { ios: 'gearshape.fill', md: 'settings' },
   fridge: { ios: 'refrigerator', md: 'kitchen' },
   sun: { ios: 'sun.max.fill', md: 'light_mode' },
@@ -78,7 +79,8 @@ export function Icon({ name, size = 20, color, weight = 'medium', style }: Props
       size={size}
       tintColor={color}
       weight={weight}
-      style={style}
+      // The share symbol is taller than it is wide: give it a taller frame so its arrow is never cut off.
+      style={[name === 'share' ? { width: size, height: size * 1.3 } : null, style]}
       accessibilityElementsHidden
       importantForAccessibility="no"
     />

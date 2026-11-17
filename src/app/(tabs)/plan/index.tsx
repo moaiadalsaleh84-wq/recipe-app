@@ -1,12 +1,12 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
 import { RecipeRow } from '../../../components/RecipeCard';
 import { useToast } from '../../../components/Toast';
-import { Button, HeaderButton, IconButton, Section, Separator } from '../../../components/ui';
+import { HeaderButton, IconButton, Section, Separator } from '../../../components/ui';
 import { meals, type Meal } from '../../../data/mock';
 import { Mascot } from '../../../components/mascot/Mascot';
 import { MascotSays } from '../../../components/mascot/MascotSays';
@@ -22,9 +22,9 @@ import { weekDays } from '../../../lib/week';
 export default function PlanScreen() {
   const t = useTheme();
   const toast = useToast();
-  const { plan, setMeal, addIngredients, getRecipe, goals, isPro } = useStore();
+  const { plan, setMeal, addIngredients, getRecipe, goals, isPro, allRecipes } = useStore();
   const [day, setDay] = useState(weekDays.find((d) => d.isToday)?.index ?? 0);
-  const dayPlan = plan[day] ?? {};
+  const dayPlan = useMemo(() => plan[day] ?? {}, [plan, day]);
   const plannedToday = meals.filter((m) => dayPlan[m]).length;
   const dayTotals = totalsFor(meals.map((m) => dayPlan[m]), getRecipe);
 
@@ -66,6 +66,23 @@ export default function PlanScreen() {
       action: { label: 'Undo', onPress: () => setMeal(day, meal, recipeId) },
     });
   };
+
+  // Up to three ideas, one for each empty meal, matching the meal when a recipe is made for it.
+  const ideas = useMemo(() => {
+    const used = new Set(meals.map((m) => dayPlan[m]).filter(Boolean));
+    const out: { recipe: (typeof allRecipes)[number]; meal: Meal }[] = [];
+    for (const meal of meals.filter((m) => !dayPlan[m])) {
+      const pool = allRecipes.filter((r) => !used.has(r.id) && r.category !== 'Dessert');
+      const fits = pool.filter((r) => r.category === meal);
+      const list = fits.length ? fits : pool;
+      const pick = list[(day * 3 + out.length) % Math.max(1, list.length)];
+      if (pick) {
+        used.add(pick.id);
+        out.push({ recipe: pick, meal });
+      }
+    }
+    return out;
+  }, [allRecipes, dayPlan, day]);
 
   const addMeal = (meal: Meal) => router.push({ pathname: '/plan-picker', params: { day: String(day), meal } });
 
@@ -120,10 +137,21 @@ export default function PlanScreen() {
               </Text>
             </View>
           </View>
-          {/* One row, three equal buttons. */}
-          <View style={styles.emptyChips}>
-            {meals.map((meal) => (
-              <Button key={meal} label={meal} variant="tinted" size="medium" onPress={() => addMeal(meal)} accessibilityLabel={`Add ${meal.toLowerCase()} for ${weekDays[day].long}`} style={styles.mealButton} />
+          {/* Three slots, one per meal: the words always fit. */}
+          <View style={[styles.slots, { borderColor: t.colors.separator }]}>
+            {meals.map((meal, i) => (
+              <PressableScale
+                key={meal}
+                onPress={() => addMeal(meal)}
+                accessibilityLabel={`Add ${meal.toLowerCase()} for ${weekDays[day].long}`}
+                scaleTo={0.98}
+                style={[styles.slot, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth * 2, borderTopColor: t.colors.separator }]}
+              >
+                <View style={[styles.slotIcon, { backgroundColor: t.colors.tintSoft }]}>
+                  <Icon name="plus" size={16} color={t.colors.tint} weight="bold" />
+                </View>
+                <Text style={[t.type.headline, { color: t.colors.tint }]}>Add {meal.toLowerCase()}</Text>
+              </PressableScale>
             ))}
           </View>
         </View>
@@ -163,20 +191,56 @@ export default function PlanScreen() {
           )}
         </>
       )}
+
+      {/* Ideas to fill the day: one tap plans them. */}
+      {ideas.length > 0 && (
+        <>
+          <Text style={[t.type.title3, styles.ideasTitle, { color: t.colors.label }]} accessibilityRole="header">
+            Ideas for {weekDays[day].isToday ? 'today' : weekDays[day].long}
+          </Text>
+          <Section>
+            {ideas.map(({ recipe, meal }, i) => (
+              <View key={recipe.id}>
+                {i > 0 && <Separator inset={84} />}
+                <RecipeRow
+                  recipe={recipe}
+                  subtitle={`${meal} · ${recipe.minutes} min · ${recipe.calories} kcal`}
+                  trailing={
+                    <IconButton
+                      icon="plus"
+                      accessibilityLabel={`Plan ${recipe.title} for ${meal.toLowerCase()} on ${weekDays[day].long}`}
+                      color={t.colors.tint}
+                      background={t.colors.tintSoft}
+                      iconSize={16}
+                      onPress={() => {
+                        setMeal(day, meal, recipe.id);
+                        haptics.success();
+                        toast({ message: `${recipe.title} planned for ${meal.toLowerCase()}`, icon: 'calendar', action: { label: 'Undo', onPress: () => setMeal(day, meal, null) } });
+                      }}
+                    />
+                  }
+                />
+              </View>
+            ))}
+          </Section>
+        </>
+      )}
     </TabScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  week: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 4, paddingVertical: 8, borderCurve: 'continuous' },
+  week: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 4, paddingTop: 8, paddingBottom: 6, borderCurve: 'continuous' },
   day: { flex: 1, alignItems: 'center', gap: 2, minHeight: 44 },
+  slots: { borderTopWidth: StyleSheet.hairlineWidth * 2, marginHorizontal: -16, marginBottom: -16 },
+  slot: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, minHeight: 56 },
+  slotIcon: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  ideasTitle: { marginTop: 24, marginBottom: 12 },
   dateCircle: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   dot: { width: 6, height: 6, borderRadius: 3 },
   dayHeader: { flexDirection: 'row', alignItems: 'baseline', marginTop: 24, marginBottom: 12 },
   emptyCard: { padding: 16, gap: 16, borderCurve: 'continuous' },
   emptyTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  emptyChips: { flexDirection: 'row', gap: 8 },
-  mealButton: { flex: 1, alignSelf: 'auto' },
   addSlot: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, minHeight: 72 },
   addIcon: { width: 56, height: 56, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
 });

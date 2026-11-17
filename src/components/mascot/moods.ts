@@ -61,7 +61,7 @@ export const moodSpecs: Record<Mood, MoodSpec> = {
   happy: { eyes: 'arc', mouth: 'open', brows: 'high', armL: 48, armR: 48, fx: [] },
   excited: { eyes: 'sparkle', mouth: 'open', brows: 'high', armL: 132, armR: 132, palms: true, fx: ['sparkle'] },
   love: { eyes: 'heart', mouth: 'w', brows: 'high', armL: 150, armR: 150, palms: true, fx: ['hearts'] },
-  thinking: { eyes: 'oval', mouth: 'small', brows: 'raised', armL: 12, armR: -122, look: [-0.6, -1], fx: ['dots'] },
+  thinking: { eyes: 'oval', mouth: 'small', brows: 'raised', armL: 12, armR: -131, look: [-0.6, -1], fx: ['dots'] },
   hungry: { eyes: 'sparkle', mouth: 'drool', brows: 'high', armL: -32, armR: -32, prop: 'bowl', look: [0, 1], fx: ['steam'] },
   eating: { eyes: 'arc', mouth: 'chew', brows: 'calm', armL: -42, armR: -42, prop: 'cookie', puff: true, fx: ['crumbs'] },
   cooking: { eyes: 'oval', mouth: 'w', brows: 'calm', armL: -20, armR: -22, prop: 'pot', look: [0.2, 0.9], fx: ['steam'] },

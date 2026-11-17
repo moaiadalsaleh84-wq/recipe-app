@@ -1,16 +1,17 @@
 import { router } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Share, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Share, StyleSheet, Text, TextInput, View } from 'react-native';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Animated, { FadeIn, FadeOut, LinearTransition, useAnimatedStyle, type SharedValue } from 'react-native-reanimated';
 import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
 import { useToast } from '../../../components/Toast';
-import { CheckCircle, EmptyState, HeaderButton, IconButton, ProgressBar, Section, Separator } from '../../../components/ui';
+import { Button, CheckCircle, EmptyState, HeaderButton, IconButton, ProgressBar, Section, Separator } from '../../../components/ui';
 import { aisleOrder, type GroceryItem } from '../../../data/mock';
 import { MascotSays } from '../../../components/mascot/MascotSays';
 import { say, type Line } from '../../../components/mascot/lines';
 import { haptics } from '../../../lib/haptics';
+import { plainFractions } from '../../../lib/qty';
 import { TabScreen } from '../../../components/TabScreen';
 import { formatQty, useStore } from '../../../state/store';
 import { useTheme } from '../../../theme';
@@ -113,38 +114,49 @@ export default function GroceriesScreen() {
         />
       ) : (
         <>
-          <View style={styles.progressWrap}>
-            <View style={styles.progressTop}>
-              <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, flex: 1 }]} testID="grocery-progress">
-                {done === total ? 'All done. Nice work!' : `${done} of ${total} items in your basket`}
-              </Text>
-              {done > 0 && (
-                <PressableScale onPress={clearDone} accessibilityLabel={`Clear ${done} completed items`} style={styles.clear}>
-                  <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>Clear done</Text>
-                </PressableScale>
-              )}
+          {done === total ? (
+            // Everything is in the basket: one celebration, then the clear next step.
+            <View style={[styles.done, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
+              <MascotSays size={88} line={say('listDone')} />
+              <Button label="Clear done" icon="check" variant="success" onPress={clearDone} accessibilityLabel={`Clear ${done} completed items`} />
             </View>
-            <ProgressBar value={total ? done / total : 0} height={12} label="Shopping progress" />
-          </View>
+          ) : (
+            <>
+              <View style={styles.progressWrap}>
+                <View style={styles.progressTop}>
+                  <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, flex: 1 }]} testID="grocery-progress">
+                    {done} of {total} in your basket
+                  </Text>
+                  {done > 0 && (
+                    <PressableScale onPress={clearDone} accessibilityLabel={`Clear ${done} completed items`} style={styles.clear}>
+                      <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>Clear done</Text>
+                    </PressableScale>
+                  )}
+                </View>
+                <ProgressBar value={done / total} height={12} label="Shopping progress" />
+              </View>
+              {reaction && <MascotSays size={80} style={{ marginBottom: t.layout.gap }} line={reaction.line} />}
+            </>
+          )}
 
-          <MascotSays
-            size={80}
-            style={{ marginBottom: t.layout.section }}
-            line={done === total ? say('listDone') : reaction?.line ?? say('addedToList')}
-          />
-
-          {groups.map((g) => (
-            <Animated.View key={g.aisle} layout={LinearTransition.duration(220)}>
-              <Section title={g.aisle}>
+          {/* One continuous list, with a small header for each aisle */}
+          <Section>
+            {groups.map((g, gi) => (
+              <Animated.View key={g.aisle} layout={LinearTransition.duration(220)}>
+                <View style={[styles.aisle, gi > 0 && { borderTopWidth: StyleSheet.hairlineWidth * 2, borderTopColor: t.colors.separator }, { backgroundColor: t.colors.fill }]}>
+                  <Text style={[t.type.subhead, { color: t.colors.label, fontFamily: t.fonts.display, fontWeight: 'normal' }]} accessibilityRole="header">
+                    {g.aisle}
+                  </Text>
+                </View>
                 {g.items.map((item, i) => (
                   <Animated.View key={item.key} layout={LinearTransition.duration(220)} entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)}>
                     {i > 0 && <Separator inset={60} />}
                     <GroceryRow item={item} onToggle={() => toggle(item)} onDelete={() => remove(item)} />
                   </Animated.View>
                 ))}
-              </Section>
-            </Animated.View>
-          ))}
+              </Animated.View>
+            ))}
+          </Section>
           <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, textAlign: 'center' }]}>Swipe left on an item to delete it.</Text>
         </>
       )}
@@ -205,12 +217,15 @@ function GroceryRow({ item, onToggle, onDelete }: { item: GroceryItem; onToggle:
             {item.name}
           </Text>
           {!!sources && (
-            <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 1 }]} numberOfLines={1}>
+            <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 1 }]}>
               {sources}
             </Text>
           )}
         </View>
-        <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, fontVariant: ['tabular-nums'] }]}>{formatQty(item.quantity, item.unit)}</Text>
+        {/* the amount fades and is crossed out together with the name */}
+        <Text style={[t.type.subhead, { color: item.checked ? t.colors.secondaryLabel : t.colors.label, fontVariant: ['tabular-nums'] }, item.checked && styles.struck]}>
+          {plainFractions(formatQty(item.quantity, item.unit))}
+        </Text>
       </PressableScale>
     </ReanimatedSwipeable>
   );
@@ -232,6 +247,8 @@ const styles = StyleSheet.create({
   addInput: { flex: 1, paddingVertical: 12, outlineStyle: 'none' } as never,
   addButton: { minHeight: 40, paddingHorizontal: 16, borderRadius: 12, justifyContent: 'center', borderCurve: 'continuous' },
   progressWrap: { gap: 4, marginTop: 16, marginBottom: 16 },
+  done: { marginTop: 16, marginBottom: 24, padding: 16, gap: 16, borderRadius: 20, borderCurve: 'continuous' },
+  aisle: { paddingHorizontal: 16, paddingVertical: 8, minHeight: 36, justifyContent: 'center' },
   progressTop: { flexDirection: 'row', alignItems: 'center', minHeight: 44 },
   clear: { minHeight: 44, justifyContent: 'center', paddingLeft: 12 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12, minHeight: 60 },

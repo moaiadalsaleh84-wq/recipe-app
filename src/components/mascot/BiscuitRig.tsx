@@ -592,8 +592,8 @@ function Effect({ kind, clock, k }: { kind: Fx; clock: SharedValue<number>; k: n
       );
     case 'sweat':
       return (
-        <Particle {...p} phase={0} from={[168, 66]} to={[172, 86]}>
-          <Path d="M168 54 Q 177 66 168 71 Q 159 66 168 54 Z" fill={art.C.drool} stroke={L} strokeWidth={3} strokeLinejoin="round" />
+        <Particle {...p} phase={0} from={[162, 58]} to={[166, 78]}>
+          <Path d="M162 46 Q 171 58 162 63 Q 153 58 162 46 Z" fill={art.C.drool} stroke={L} strokeWidth={3} strokeLinejoin="round" />
         </Particle>
       );
     case 'dots':
@@ -611,7 +611,7 @@ function Effect({ kind, clock, k }: { kind: Fx; clock: SharedValue<number>; k: n
         <>
           {[0, 0.5].map((ph) => (
             <Particle key={ph} {...p} phase={ph} from={[100, 80]} to={[100, 80]} pop>
-              <Path d="M14 80 Q 4 98 14 116 M186 80 Q 196 98 186 116" stroke="#FFC933" strokeWidth={6} fill="none" strokeLinecap="round" />
+              <Path d="M24 62 Q 14 80 24 98 M176 62 Q 186 80 176 98" stroke="#FFC933" strokeWidth={6} fill="none" strokeLinecap="round" />
             </Particle>
           ))}
         </>
@@ -620,8 +620,8 @@ function Effect({ kind, clock, k }: { kind: Fx; clock: SharedValue<number>; k: n
       return (
         <>
           {[-14, 0, 14].map((dx, i) => (
-            <Particle key={dx} {...p} phase={i * 0.33} from={[100 + dx * 2.4, 172]} to={[100 + dx * 2.8, 156]}>
-              <Path d={`M${100 + dx * 2.4} 178 q -4 -5 0 -10 q 4 -5 0 -10`} stroke="#D9C7B0" strokeWidth={4} fill="none" strokeLinecap="round" />
+            <Particle key={dx} {...p} phase={i * 0.33} from={[100 + dx * 2.4, 160]} to={[100 + dx * 2.8, 140]}>
+              <Path d={`M${100 + dx * 2.4} 166 q -4 -5 0 -10 q 4 -5 0 -10`} stroke="#D9C7B0" strokeWidth={4} fill="none" strokeLinecap="round" />
             </Particle>
           ))}
         </>
@@ -630,8 +630,8 @@ function Effect({ kind, clock, k }: { kind: Fx; clock: SharedValue<number>; k: n
       return (
         <>
           {[[-8, 0], [6, 0.35], [-2, 0.7]].map(([dx, ph]) => (
-            <Particle key={ph} {...p} phase={ph} from={[100 + dx, 176]} to={[100 + dx * 2.2, 196]} spin={180}>
-              <Rect x={98 + dx} y={174} width={5} height={4.5} rx={1} fill={art.C.cookie} stroke={L} strokeWidth={1.5} />
+            <Particle key={ph} {...p} phase={ph} from={[100 + dx, 158]} to={[100 + dx * 2.2, 190]} spin={180}>
+              <Rect x={98 + dx} y={156} width={5} height={4.5} rx={1} fill={art.C.cookie} stroke={L} strokeWidth={1.5} />
             </Particle>
           ))}
         </>

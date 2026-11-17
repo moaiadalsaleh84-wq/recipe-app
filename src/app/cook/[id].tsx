@@ -117,7 +117,7 @@ export default function CookMode() {
       <View style={[styles.header, { paddingTop: Math.max(insets.top, 12) + 4 }]}>
         <IconButton icon="close" accessibilityLabel="Exit cook mode" onPress={close} color={t.colors.label} background={t.colors.fill} />
         <View style={{ flex: 1, alignItems: 'center' }}>
-          <Text style={[t.type.headline, { color: t.colors.label }]} numberOfLines={1}>
+          <Text style={[t.type.headline, { color: t.colors.label }]}>
             {recipe.title}
           </Text>
           <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]} testID="cook-progress">
@@ -269,7 +269,7 @@ function TimerPill({ timer: tm, now, first, page, recipeId, onStop, onPause, onR
           <Text style={[t.type.headline, { color: '#FFFFFF' }]} testID={first ? 'timer-done' : undefined}>
             Time’s up!
           </Text>
-          <Text style={[t.type.caption1, { color: 'rgba(255,255,255,0.92)' }]} numberOfLines={1}>
+          <Text style={[t.type.caption1, { color: 'rgba(255,255,255,0.92)' }]}>
             {tm.label}, {tm.recipeId !== recipeId ? tm.recipeTitle : `step ${tm.step}`}
           </Text>
         </View>
@@ -284,7 +284,7 @@ function TimerPill({ timer: tm, now, first, page, recipeId, onStop, onPause, onR
     return (
       <Animated.View entering={FadeIn} layout={LinearTransition} style={[styles.pill, { backgroundColor: t.colors.successSoft }]} testID="timer-finished-away">
         <Icon name="checkCircle" size={20} color={t.colors.successText} weight="bold" />
-        <Text style={[t.type.subhead, { color: t.colors.label, flex: 1 }]} numberOfLines={1}>
+        <Text style={[t.type.subhead, { color: t.colors.label, flex: 1 }]}>
           {tm.label} timer finished while you were away
         </Text>
         <IconButton icon="close" accessibilityLabel="Dismiss finished timer" color={t.colors.secondaryLabel} iconSize={14} onPress={onStop} />
@@ -298,7 +298,7 @@ function TimerPill({ timer: tm, now, first, page, recipeId, onStop, onPause, onR
       <Text style={[t.type.title3, { color: t.colors.label, fontVariant: ['tabular-nums'], minWidth: 56 }]} testID={first ? 'timer-display' : undefined}>
         {clock(secondsLeft(tm, now))}
       </Text>
-      <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, flex: 1 }]} numberOfLines={1}>
+      <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, flex: 1 }]}>
         {running ? where : 'Paused'}
       </Text>
       <IconButton icon={running ? 'pause' : 'play'} accessibilityLabel={running ? 'Pause timer' : 'Resume timer'} iconSize={16} onPress={running ? onPause : onResume} />

@@ -92,9 +92,9 @@ export function RecipeCard({ recipe, width }: { recipe: Recipe; width: number })
           <FavoriteButton recipe={recipe} onPhoto />
         </View>
       </View>
-      {/* Room for two lines of title on every card, so a row of cards always lines up. */}
+      {/* Room for two lines of title on every card, so a row of cards lines up; longer titles wrap instead of being cut. */}
       <View style={styles.cardTitle}>
-        <Text style={[t.type.headline, { color: t.colors.label, fontSize: 17, lineHeight: 22 }]} numberOfLines={2}>
+        <Text style={[t.type.headline, { color: t.colors.label, fontSize: 17, lineHeight: 22 }]}>
           {recipe.title}
         </Text>
       </View>
@@ -170,10 +170,10 @@ export function RecipeRow({
           <RecipePhoto recipe={recipe} iconSize={24} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={[t.type.headline, { color: t.colors.label }]} numberOfLines={1}>
+          <Text style={[t.type.headline, { color: t.colors.label }]}>
             {recipe.title}
           </Text>
-          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 2 }]} numberOfLines={1}>
+          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 2 }]}>
             {subtitle ?? meta(recipe)}
           </Text>
         </View>
