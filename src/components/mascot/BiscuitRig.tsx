@@ -82,6 +82,21 @@ export function BiscuitRig({ mood, talking, size, playKey, hold, reduceMotion: f
   const vb = small ? { x: 20, y: -6, w: 160, h: 160 } : { x: -6, y: -10, w: 212, h: 212 };
   const k = size / vb.w; // art units → points
   const org = (p: readonly [number, number]) => `${((p[0] - vb.x) / vb.w) * 100}% ${((p[1] - vb.y) / vb.h) * 100}%`;
+  // Pivot points as plain strings, worked out here on the JS side. Animation code runs on the UI
+  // thread on a phone and must not call ordinary functions, so it only reads these.
+  const O = {
+    earL: org(art.PIVOT.earL),
+    earR: org(art.PIVOT.earR),
+    eyes: org(art.PIVOT.eyes),
+    feet: org(art.PIVOT.feet),
+    hat: org(art.PIVOT.hat),
+    mouth: org(art.PIVOT.mouth),
+    neck: org(art.PIVOT.neck),
+    shoulderL: org(art.PIVOT.shoulderL),
+    shoulderR: org(art.PIVOT.shoulderR),
+    tailBase: org(art.PIVOT.tailBase),
+    tailJoint: org(art.PIVOT.tailJoint),
+  };
   const look: art.Look = { out: small ? art.OUT_SMALL : art.OUT, color: silhouette ? '#000000' : biscuit.outline };
 
   /* ---------------- emotion and reaction layers ---------------- */
@@ -340,29 +355,24 @@ export function BiscuitRig({ mood, talking, size, playKey, hold, reduceMotion: f
     const s = sq.get();
     const b = breath.get();
     return {
-      transformOrigin: org(art.PIVOT.feet),
       transform: [{ translateY: jump.get() * k }, { rotate: `${lean.get()}deg` }, { scaleX: (1 / Math.sqrt(s)) * (1 + (b - 1) * 0.5) }, { scaleY: s * b }],
     };
   });
   const headStyle = useAnimatedStyle(() => ({
-    transformOrigin: org(art.PIVOT.neck),
     transform: [{ translateY: (headY.get() - headBreath.get() * 1.2 + chew.get() * 0.8) * k }, { rotate: `${headTilt.get() + nod.get()}deg` }],
   }));
   // The hat lags behind the head's turns and the body's jumps, then settles.
   const hatStyle = useAnimatedStyle(() => ({
-    transformOrigin: org(art.PIVOT.hat),
     transform: [{ translateY: (lagJump.get() - jump.get()) * 0.3 * k }, { rotate: `${-5 + (lagTilt.get() - headTilt.get() - nod.get()) * 1.2}deg` }],
   }));
-  const earLStyle = useAnimatedStyle(() => ({ transformOrigin: org(art.PIVOT.earL), transform: [{ rotate: `${-earL.get()}deg` }] }));
-  const earRStyle = useAnimatedStyle(() => ({ transformOrigin: org(art.PIVOT.earR), transform: [{ rotate: `${earR.get()}deg` }] }));
-  const armLStyle = useAnimatedStyle(() => ({ transformOrigin: org(art.PIVOT.shoulderL), transform: [{ rotate: `${armL.get()}deg` }] }));
-  const armRStyle = useAnimatedStyle(() => ({ transformOrigin: org(art.PIVOT.shoulderR), transform: [{ rotate: `${-(armR.get() + armBusy.get())}deg` }] }));
+  const earLStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${-earL.get()}deg` }] }));
+  const earRStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${earR.get()}deg` }] }));
+  const armLStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${armL.get()}deg` }] }));
+  const armRStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${-(armR.get() + armBusy.get())}deg` }] }));
   const tailBaseStyle = useAnimatedStyle(() => ({
-    transformOrigin: org(art.PIVOT.tailBase),
     transform: [{ rotate: `${tailA.get() + (lagJump.get() - jump.get()) * 0.9}deg` }],
   }));
   const tailTipStyle = useAnimatedStyle(() => ({
-    transformOrigin: org(art.PIVOT.tailJoint),
     transform: [{ rotate: `${tailB.get() * 1.4 + (lagJump.get() - jump.get()) * 1.4}deg` }],
   }));
   const eyesStyle = useAnimatedStyle(() => {
@@ -384,7 +394,6 @@ export function BiscuitRig({ mood, talking, size, playKey, hold, reduceMotion: f
       }
     }
     return {
-      transformOrigin: org(art.PIVOT.eyes),
       transform: [{ translateX: x * 3.6 * k }, { translateY: y * 3 * k }, { scaleY: 1 - blink.get() * 0.92 }],
     };
   });
@@ -392,12 +401,10 @@ export function BiscuitRig({ mood, talking, size, playKey, hold, reduceMotion: f
   const slotB = useAnimatedStyle(() => ({ opacity: faceMix.get() }));
   const mouthStyle = useAnimatedStyle(() => ({
     opacity: 1 - talkOn.get(),
-    transformOrigin: org(art.PIVOT.mouth),
     transform: [{ scaleX: 1 + chew.get() * 0.12 }, { scaleY: 1 - chew.get() * 0.25 }],
   }));
   const talkStyle = useAnimatedStyle(() => ({
     opacity: talkOn.get(),
-    transformOrigin: org(art.PIVOT.mouth),
     transform: [{ scaleY: 0.2 + talk.get() * 0.8 }],
   }));
 
@@ -411,7 +418,7 @@ export function BiscuitRig({ mood, talking, size, playKey, hold, reduceMotion: f
   const held = art.heldBy(spec.props);
 
   const arm = (side: 'L' | 'R', pass: art.Pass) => (
-    <A key={`${side}${pass}`} style={[StyleSheet.absoluteFill, side === 'L' ? armLStyle : armRStyle]}>
+    <A key={`${side}${pass}`} style={[StyleSheet.absoluteFill, { transformOrigin: side === 'L' ? O.shoulderL : O.shoulderR }, side === 'L' ? armLStyle : armRStyle]}>
       <Layer box={box}>
         <art.Arm side={side} pass={pass} look={look} layer={side === 'L' ? spec.layerL : spec.layerR} palm={side === 'L' ? spec.palmL : spec.palmR} prop={held[side]} />
       </Layer>
@@ -432,12 +439,12 @@ export function BiscuitRig({ mood, talking, size, playKey, hold, reduceMotion: f
         <art.BrowsArt kind={fc.brows} />
         <art.Nose />
       </Layer>
-      <A style={[StyleSheet.absoluteFill, eyesStyle]}>
+      <A style={[StyleSheet.absoluteFill, { transformOrigin: O.eyes }, eyesStyle]}>
         <Layer box={box}>
           <art.EyesArt kind={fc.eyes} />
         </Layer>
       </A>
-      <A style={[StyleSheet.absoluteFill, mouthStyle]}>
+      <A style={[StyleSheet.absoluteFill, { transformOrigin: O.mouth }, mouthStyle]}>
         <Layer box={box}>
           <art.MouthArt kind={fc.mouth} />
         </Layer>
@@ -449,11 +456,11 @@ export function BiscuitRig({ mood, talking, size, playKey, hold, reduceMotion: f
     <>
       {/* tail, behind everything; the tip is its own piece so it can follow through */}
       {!small && (
-        <A style={[StyleSheet.absoluteFill, tailBaseStyle]}>
+        <A style={[StyleSheet.absoluteFill, { transformOrigin: O.tailBase }, tailBaseStyle]}>
           <Layer box={box}>
             <art.Tail piece="base" pass={p} look={look} uid={uid} />
           </Layer>
-          <A style={[StyleSheet.absoluteFill, tailTipStyle]}>
+          <A style={[StyleSheet.absoluteFill, { transformOrigin: O.tailJoint }, tailTipStyle]}>
             <Layer box={box}>
               <art.Tail piece="tip" pass={p} look={look} uid={uid} />
             </Layer>
@@ -474,13 +481,13 @@ export function BiscuitRig({ mood, talking, size, playKey, hold, reduceMotion: f
           <art.Scarf />
         </Layer>
       )}
-      <A style={[StyleSheet.absoluteFill, headStyle]}>
-        <A style={[StyleSheet.absoluteFill, earLStyle]}>
+      <A style={[StyleSheet.absoluteFill, { transformOrigin: O.neck }, headStyle]}>
+        <A style={[StyleSheet.absoluteFill, { transformOrigin: O.earL }, earLStyle]}>
           <Layer box={box}>
             <art.Ear side="L" pass={p} look={look} />
           </Layer>
         </A>
-        <A style={[StyleSheet.absoluteFill, earRStyle]}>
+        <A style={[StyleSheet.absoluteFill, { transformOrigin: O.earR }, earRStyle]}>
           <Layer box={box}>
             <art.Ear side="R" pass={p} look={look} />
           </Layer>
@@ -492,14 +499,14 @@ export function BiscuitRig({ mood, talking, size, playKey, hold, reduceMotion: f
           <>
             {faceSlot(slots.a, slotA, 'a')}
             {faceSlot(slots.b, slotB, 'b')}
-            <A style={[StyleSheet.absoluteFill, talkStyle]} pointerEvents="none">
+            <A style={[StyleSheet.absoluteFill, { transformOrigin: O.mouth }, talkStyle]} pointerEvents="none">
               <Layer box={box}>
                 <art.TalkMouth />
               </Layer>
             </A>
           </>
         )}
-        <A style={[StyleSheet.absoluteFill, hatStyle]}>
+        <A style={[StyleSheet.absoluteFill, { transformOrigin: O.hat }, hatStyle]}>
           <Layer box={box}>
             <art.Hat pass={p} look={look} uid={uid} />
           </Layer>
@@ -511,7 +518,7 @@ export function BiscuitRig({ mood, talking, size, playKey, hold, reduceMotion: f
 
   return (
     <Animated.View ref={self} style={{ width: size, height: size }} pointerEvents="box-none">
-      <A style={[StyleSheet.absoluteFill, rootStyle]} pointerEvents="none">
+      <A style={[StyleSheet.absoluteFill, { transformOrigin: O.feet }, rootStyle]} pointerEvents="none">
         {pass('line')}
         {!silhouette && pass('fill')}
         {!silhouette && fx.length > 0 && (
