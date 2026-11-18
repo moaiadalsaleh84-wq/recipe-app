@@ -1,17 +1,18 @@
 /**
  * The single source of design tokens for the app.
  *
- * Look: a bright, playful kitchen. Warm cream page, white cards, dark brown text, and four
- * colors that each have one job:
- *   tomato  = the main action on a screen (only ONE filled tomato button per screen)
- *   green   = success and progress
- *   yellow  = rewards (streaks, badges, levels)
- *   blue    = information
- * Buttons are thick and rounded and sit on a darker "lip" that presses down when tapped.
+ * Look: "Aubergine & Saffron". A calm, cookbook-like iPhone app where the food photos lead.
+ *   paper      a cool, light page (never cream), with plain white cards on it
+ *   aubergine  the one main action on a screen, and links
+ *   saffron    rewards (streaks, badges, levels), used sparingly
+ *   herb green done and success
+ *   berry      favorites
+ * Surfaces are flat: no 3D edges, no outlines on cards, shadows only on things that float.
+ * Corners get rounder as things get bigger: photos 24, cards 20, buttons 14, chips are pills.
  *
- * - Colors: every token has a light and a dark value. Light is the default; dark is a choice
- *   (see `setAppearance`).
- * - Type: Fredoka (round, chunky) for titles and buttons, the system font for reading text.
+ * - Colors: every token has a light and a dark value (see `setAppearance`).
+ * - Type: Bricolage Grotesque (an expressive grotesque, like a food magazine) for titles and
+ *   numbers; the system font (SF Pro on iPhone) for everything you read and every button.
  * - Spacing, radius, tap targets and motion live here too.
  *
  * Read tokens in components with `const t = useTheme()`.
@@ -22,138 +23,147 @@ import { Appearance, Platform, useColorScheme, type TextStyle, type ViewStyle } 
 
 // Brand palette
 export const brand = {
-  cream: '#FFF8EE',
-  cocoa: '#3D2314',
-  tomato: '#F2431F',
-  green: '#1F9A45',
-  yellow: '#FFC933',
-  plum: '#7A5C8E', // the one calm accent, for information
-  berry: '#F0546B',
+  paper: '#F3F2F5',
+  ink: '#1F1724',
+  aubergine: '#5A2D61',
+  saffron: '#EDB031',
+  herb: '#2E7A4C',
+  berry: '#D23F5B',
+  slate: '#3F6280',
+  /** Older names, kept so screens keep working. */
+  cream: '#F3F2F5',
+  cocoa: '#1F1724',
+  tomato: '#5A2D61',
+  green: '#2E7A4C',
+  yellow: '#EDB031',
+  plum: '#3F6280',
 } as const;
 
 const light = {
-  /* Primary (tomato): the one main action */
-  tint: '#B82D0C', // tomato as text and icons (5.8:1 on cream, 4.9:1 on the soft tomato)
-  tintFill: '#D9381A', // the primary button's face: a deeper tomato so white text passes AA (4.6:1)
-  tintDeep: '#A5280C', // the lip under the primary button
-  tintSoft: '#FFE6DC', // quiet tomato background: secondary buttons, selected tab
+  /* Primary (aubergine): the one main action */
+  tint: brand.aubergine, // text and icons (9.5:1 on paper)
+  tintFill: brand.aubergine, // the primary button (white text 10.6:1)
+  tintDeep: '#3F1F44',
+  tintSoft: '#EEE6F0', // quiet aubergine: secondary buttons, selected tab
   onTint: '#FFFFFF',
-  /* Success and progress (green) */
-  success: '#178039', // deep enough for white text on it (5:1)
-  successDeep: '#0F5E28',
-  successSoft: '#DDF4E3',
-  successText: '#15703A',
-  /* Rewards (yellow) */
-  reward: brand.yellow,
-  rewardDeep: '#E0A100',
-  rewardSoft: '#FFF2C7',
-  rewardText: '#8A5A00',
-  onReward: brand.cocoa,
-  /* Information: one calm accent (a soft plum). Used sparingly. */
-  info: brand.plum,
-  infoDeep: '#5C4370',
-  infoSoft: '#F1E8F4',
-  infoText: '#6A4E7D',
+  /* Success and progress (herb green) */
+  success: brand.herb, // white text on it 5.2:1
+  successDeep: '#205836',
+  successSoft: '#E1F0E6',
+  successText: '#256B40',
+  /* Rewards (saffron) */
+  reward: brand.saffron,
+  rewardDeep: '#C98E14',
+  rewardSoft: '#FBF0D4',
+  rewardText: '#7A5200',
+  onReward: brand.ink,
+  /* Information (slate). Used sparingly. */
+  info: brand.slate,
+  infoDeep: '#2E4A62',
+  infoSoft: '#E4ECF3',
+  infoText: '#35587A',
   /* Older names, kept so screens keep working */
-  warning: '#E0A100',
+  warning: '#C98E14',
   accent: brand.berry, // favorites (hearts)
-  highlight: brand.plum,
-  destructive: '#E5342B',
+  highlight: brand.slate,
+  destructive: '#C2352B',
   // Nutrition: three calm colors that are easy to tell apart.
-  protein: '#D46A57',
-  carbs: '#E2A93B',
-  fat: '#6E9E86',
+  protein: '#C8604E',
+  carbs: '#D9A23A',
+  fat: '#5F947A',
 
-  label: brand.cocoa,
-  secondaryLabel: '#7A5E4D',
-  tertiaryLabel: '#7F6655', // placeholders and quiet icons (5:1 on white and cream)
+  label: brand.ink,
+  secondaryLabel: '#5E5566',
+  tertiaryLabel: '#6C6373', // placeholders and quiet icons (5:1 on paper)
 
-  background: brand.cream,
-  groupedBackground: brand.cream,
+  background: brand.paper,
+  groupedBackground: brand.paper,
   cell: '#FFFFFF',
   elevated: '#FFFFFF',
-  fill: '#F8ECDB', // quiet filled areas: inputs, tracks, neutral buttons
-  fillStrong: '#F1E2CC',
-  separator: '#F4E7D5',
-  border: '#F1E2CC', // the soft edge of cards
-  lip: '#EAD7BC', // the bottom edge under cards and neutral buttons
-  imagePlaceholder: '#F8ECDB',
-  scrim: 'rgba(61,35,20,0.38)',
-  shadow: '#6B3A1F',
+  fill: '#ECEAEF', // quiet filled areas: inputs, tracks, neutral buttons
+  fillStrong: '#E2DFE6',
+  separator: '#E6E3EA',
+  border: '#E6E3EA',
+  lip: '#E6E3EA',
+  imagePlaceholder: '#ECEAEF',
+  scrim: 'rgba(31,23,36,0.4)',
+  shadow: '#1F1724',
   /** Bar behind the clock and battery, and the tab bar. */
-  bar: 'rgba(255,248,238,0.92)',
+  bar: 'rgba(243,242,245,0.88)',
 };
 
 type Palette = Record<keyof typeof light, string>;
 
 const dark: Palette = {
-  tint: '#FF8A66',
-  tintFill: '#D9381A', // white text on it passes AA
-  tintDeep: '#9E2A0C',
-  tintSoft: '#4A261B',
+  tint: '#D7AEDC',
+  tintFill: '#7B4583', // white text 7:1
+  tintDeep: '#5A2D61',
+  tintSoft: '#3A2640',
   onTint: '#FFFFFF',
-  success: '#178039', // white text on it passes AA (5:1)
-  successDeep: '#13602C',
-  successSoft: '#22402B',
-  successText: '#6FD98C',
-  reward: '#FFC933',
-  rewardDeep: '#B98400',
-  rewardSoft: '#4A3A12',
-  rewardText: '#FFD666',
-  onReward: brand.cocoa,
-  info: '#A98BBD',
-  infoDeep: '#6E5482',
-  infoSoft: '#3A2D40',
-  infoText: '#CDB4DC',
-  warning: '#FFC933',
-  accent: '#FF7F92',
-  highlight: '#CDB4DC',
-  destructive: '#FF6A5E',
-  protein: '#E88A78',
-  carbs: '#EDBE5E',
-  fat: '#86B79E',
+  success: brand.herb,
+  successDeep: '#205836',
+  successSoft: '#1E3527',
+  successText: '#7CCF9A',
+  reward: brand.saffron,
+  rewardDeep: '#B07C10',
+  rewardSoft: '#3D3016',
+  rewardText: '#F2C766',
+  onReward: brand.ink,
+  info: '#8FB0CC',
+  infoDeep: brand.slate,
+  infoSoft: '#22303C',
+  infoText: '#A9C4DA',
+  warning: brand.saffron,
+  accent: '#F07A90',
+  highlight: '#A9C4DA',
+  destructive: '#FF6B5E',
+  protein: '#E08A78',
+  carbs: '#E8BE62',
+  fat: '#82B89D',
 
-  label: '#FFF3E4',
-  secondaryLabel: '#C9AE98',
-  tertiaryLabel: '#B09887',
+  label: '#F3EFF5',
+  secondaryLabel: '#B3AABA',
+  tertiaryLabel: '#A097A8',
 
-  // Warm darks. Cards are clearly lighter than the page.
-  background: '#211713',
-  groupedBackground: '#211713',
-  cell: '#38281F',
-  elevated: '#423026',
-  fill: '#2E2019',
-  fillStrong: '#4A372B',
-  separator: '#4A372B',
-  border: '#4A372B',
-  lip: '#140D0A',
-  imagePlaceholder: '#38281F',
+  // Cards are clearly lighter than the page.
+  background: '#141117',
+  groupedBackground: '#141117',
+  cell: '#1F1B23',
+  elevated: '#29242E',
+  fill: '#25202A',
+  fillStrong: '#332D39',
+  separator: '#332D39',
+  border: '#332D39',
+  lip: '#0B090D',
+  imagePlaceholder: '#25202A',
   scrim: 'rgba(0,0,0,0.55)',
   shadow: '#000000',
-  bar: 'rgba(33,23,19,0.92)',
+  bar: 'rgba(20,17,23,0.88)',
 };
 
 /**
- * Font families. Fredoka is loaded in the root layout (see `fontAssets`); until it loads, and for
- * reading text, the system font is used.
+ * Font families. Bricolage Grotesque is loaded in the root layout; until it loads the system font
+ * is used. Reading text and buttons use the system font (SF Pro on iPhone).
  */
 export const fonts = {
-  display: 'Fredoka_600SemiBold',
-  displayBold: 'Fredoka_700Bold',
-  displayMedium: 'Fredoka_500Medium',
+  display: 'BricolageGrotesque_600SemiBold',
+  displayBold: 'BricolageGrotesque_700Bold',
+  displayHeavy: 'BricolageGrotesque_800ExtraBold',
+  displayMedium: 'BricolageGrotesque_500Medium',
   /** Old name: the display face. */
-  rounded: 'Fredoka_600SemiBold',
+  rounded: 'BricolageGrotesque_600SemiBold',
 };
 
 /**
- * Type scale. Titles and buttons are Fredoka (its weights are separate font files, so
- * `fontWeight` stays 'normal' to stop the system from faking a bolder one).
+ * Type scale. Titles use Bricolage (its weights are separate font files, so `fontWeight` stays
+ * 'normal' to stop the system from faking a bolder one). Tight tracking on big sizes.
  */
-const display = (fontSize: number, lineHeight: number, family: string = fonts.display): TextStyle => ({
+const display = (fontSize: number, lineHeight: number, family: string = fonts.display, letterSpacing = 0): TextStyle => ({
   fontSize,
   lineHeight,
   fontFamily: family,
   fontWeight: 'normal',
+  letterSpacing,
   // On the web, titles wrap into lines of similar length, so no word is left alone.
   ...(Platform.OS === 'web' ? ({ textWrap: 'balance' } as object) : null),
 });
@@ -167,16 +177,16 @@ export const noWidows = {
   props: { lineBreakStrategyIOS: 'push-out', textBreakStrategy: 'balanced' } as const,
 };
 export const type = {
-  largeTitle: display(34, 40, fonts.displayBold),
-  title1: display(28, 34, fonts.displayBold),
-  title2: display(23, 28),
-  title3: display(20, 25),
-  headline: display(18, 23),
-  /** Button labels. */
-  button: display(19, 24), // 19px bold counts as large text, so white on tomato passes AA
-  body: { fontSize: 17, lineHeight: 24, fontWeight: '400' },
-  callout: { fontSize: 16, lineHeight: 22, fontWeight: '400' },
-  subhead: { fontSize: 15, lineHeight: 20, fontWeight: '400' },
+  largeTitle: display(34, 40, fonts.displayHeavy, -0.8),
+  title1: display(28, 33, fonts.displayBold, -0.5),
+  title2: display(22, 27, fonts.displayBold, -0.3),
+  title3: display(19, 24, fonts.display, -0.2),
+  headline: display(17, 22, fonts.display, -0.1),
+  /** Button labels: the system font, semibold, like native iPhone buttons. */
+  button: { fontSize: 17, lineHeight: 22, fontWeight: '600', letterSpacing: -0.2 },
+  body: { fontSize: 17, lineHeight: 24, fontWeight: '400', letterSpacing: -0.2 },
+  callout: { fontSize: 16, lineHeight: 22, fontWeight: '400', letterSpacing: -0.15 },
+  subhead: { fontSize: 15, lineHeight: 20, fontWeight: '400', letterSpacing: -0.1 },
   footnote: { fontSize: 13, lineHeight: 18, fontWeight: '400' },
   caption1: { fontSize: 12, lineHeight: 16, fontWeight: '500' },
   caption2: { fontSize: 11, lineHeight: 13, fontWeight: '500' },
@@ -204,6 +214,7 @@ export const layout = {
   /** Inside every card. */
   cardPadding: 16,
   cardRadius: 20,
+  photoRadius: 24,
   /** Bottom padding of scrolling screens. */
   bottom: 32,
 } as const;
@@ -212,9 +223,9 @@ export const layout = {
 export const radius = {
   xs: 8,
   sm: 12,
-  md: 16, // buttons, inputs, rows
-  lg: 20, // cards and photos
-  xl: 24, // sheets and big cards
+  md: 14, // buttons and inputs
+  lg: 20, // cards
+  xl: 24, // photos and sheets
   pill: 999,
 } as const;
 
@@ -234,26 +245,18 @@ export const motion = {
   toastDuration: 2600,
 } as const;
 
-/** How thick the lip under a pressable is. */
-export const depth = { button: 5, small: 4, card: 4 } as const;
+/** The old 3D edge under buttons and cards. The design is flat now: no edge. */
+export const depth = { button: 0, small: 0, card: 0 } as const;
 
 function makeTheme(c: Palette, isDark: boolean) {
-  /** A solid bottom edge drawn as a hard shadow, for things that don't press down. */
-  const lip = (color: string = c.lip, height: number = depth.card): ViewStyle => ({
-    shadowColor: color,
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    shadowOffset: { width: 0, height },
-    elevation: 0,
-  });
-  /** Face and lip colors for each kind of button (see <Button>). */
+  /** Face and label colors for each kind of button (see <Button>). Flat: no edges. */
   const buttons = {
-    primary: { face: c.tintFill, lip: c.tintDeep, label: c.onTint, border: undefined },
-    success: { face: c.success, lip: c.successDeep, label: '#FFFFFF', border: undefined },
-    reward: { face: c.reward, lip: c.rewardDeep, label: c.onReward, border: undefined },
-    info: { face: c.info, lip: c.infoDeep, label: '#FFFFFF', border: undefined },
-    /** The quiet button: white with a soft edge. Use for every action that isn't the main one. */
-    secondary: { face: c.cell, lip: c.lip, label: c.tint, border: c.border },
+    primary: { face: c.tintFill, lip: c.tintFill, label: c.onTint, border: undefined },
+    success: { face: c.success, lip: c.success, label: '#FFFFFF', border: undefined },
+    reward: { face: c.reward, lip: c.reward, label: c.onReward, border: undefined },
+    info: { face: c.info, lip: c.info, label: '#FFFFFF', border: undefined },
+    /** The quiet button: a soft aubergine wash. Use for every action that isn't the main one. */
+    secondary: { face: c.tintSoft, lip: c.tintSoft, label: c.tint, border: undefined },
   } as const;
   return {
     isDark,
@@ -268,15 +271,15 @@ function makeTheme(c: Palette, isDark: boolean) {
     layout,
     noWidows,
     buttons,
+    /** Kept under the old name so screens keep working: everything is flat now. */
     chunky: {
-      lip: lip(),
-      /** White card with a soft edge and a lip. */
-      card: { borderWidth: 2, borderColor: c.border, ...lip() } as ViewStyle,
-      /** A hard lip under a filled shape that doesn't move. */
-      button: (color: string = c.tintDeep): ViewStyle => lip(color, depth.small),
+      lip: {} as ViewStyle,
+      /** A plain white card on the paper page: no outline, no edge. */
+      card: {} as ViewStyle,
+      button: (_color?: string): ViewStyle => ({}),
     },
     shadow: {
-      card: isDark ? {} : { shadowColor: c.shadow, shadowOpacity: 0.08, shadowRadius: 14, shadowOffset: { width: 0, height: 6 } },
+      card: isDark ? {} : { shadowColor: c.shadow, shadowOpacity: 0.07, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
       floating: {
         shadowColor: isDark ? '#000' : c.shadow,
         shadowOpacity: isDark ? 0.5 : 0.18,
@@ -348,8 +351,8 @@ export const biscuit = {
   beans: '#F59D94',
   hat: '#FFFFFF',
   hatShade: '#F0E6DA',
-  /** Deeper than the app's buttons, so the two reds don't clash. */
-  scarf: '#B5302A',
+  /** The brand's aubergine, so Biscuit belongs to the app. */
+  scarf: '#74407C',
   heart: '#F05D6C',
   sweat: '#6DB6EA',
   flour: '#FFFFFF',

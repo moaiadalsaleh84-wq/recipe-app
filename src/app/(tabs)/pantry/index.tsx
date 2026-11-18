@@ -3,7 +3,6 @@ import { useMemo, useState } from 'react';
 import { StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
 import { Mascot } from '../../../components/mascot/Mascot';
-import { MascotSays } from '../../../components/mascot/MascotSays';
 import { noWidow } from '../../../lib/text';
 import { FoodIcon } from '../../../components/FoodIcon';
 import { Icon } from '../../../components/Icon';
@@ -62,15 +61,15 @@ export default function PantryScreen() {
     toast({ message: `Added ${n} ${n === 1 ? 'item' : 'items'} for ${m.recipe.title}`, icon: 'cartAdd', action: { label: 'View', onPress: () => router.navigate('/groceries') } });
   };
 
-  const line = !pantry.length
-    ? { text: 'What’s in your cupboards?', mood: 'thinking' as const }
-    : ready
-      ? { text: `Yay! You can cook ${ready} ${ready === 1 ? 'recipe' : 'recipes'} now!`, mood: 'hungry' as const }
-      : { text: 'So close! Just a few things missing.', mood: 'hungry' as const };
+  const status = ready ? `You can cook ${ready} ${ready === 1 ? 'recipe' : 'recipes'} right now.` : 'A few more things and you can cook.';
 
   return (
     <TabScreen title="Pantry" keyboardShouldPersistTaps="handled">
-      {pantry.length > 0 && <MascotSays line={line} size={88} style={{ marginBottom: t.layout.gap }} />}
+      {pantry.length > 0 && (
+        <Text style={[t.type.callout, { color: t.colors.secondaryLabel, marginTop: -8, marginBottom: 14 }]} testID="pantry-status">
+          {status}
+        </Text>
+      )}
 
       {/* Add */}
       <View style={[styles.addRow, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
@@ -102,7 +101,7 @@ export default function PantryScreen() {
 
       {!query && common.length > 0 && (
         <>
-          <Text style={[t.type.subhead, styles.label, { color: t.colors.secondaryLabel, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>Tap to add</Text>
+          <Text style={[t.type.subhead, styles.label, { color: t.colors.secondaryLabel, fontWeight: '600' }]}>Tap to add</Text>
           <View style={styles.grid}>
             {common.map((name) => (
               <Chip key={name} label={name} style={{ width: cell }} leading={<FoodIcon name={name} size={18} bare />} toggle={false} accessibilityLabel={`Add ${name}`} onPress={() => add(name)} />

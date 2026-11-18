@@ -17,10 +17,10 @@ import { biscuit as P } from '../../theme';
 import type { Brows, Eyes, Fx, Mouth, Prop } from './moods';
 
 /** Outer outline width and inner line width, in art units (the art is 200 units tall). */
-export const OUT = 5.6;
+export const OUT = 4.8;
 export const INNER = OUT * 0.6;
 /** At small sizes the lines are a little heavier, so they don't vanish. */
-export const OUT_SMALL = 7;
+export const OUT_SMALL = 6.4;
 
 export type Pass = 'line' | 'fill';
 
@@ -113,12 +113,12 @@ const BODY_HEM = 'M73 183 C85 190 115 190 127 183';
 
 /** The chef hat: puffy, with three soft bumps and a band. Sits snug between the ears. */
 const HAT_PUFF = 'M78 34 C62.5 34 58 16.5 71.5 12 C74.5 2 90 -1.5 100 4.5 C110 -1.5 125.5 2 128.5 12 C142 16.5 137.5 34 122 34 Z';
-const HAT_BAND = { x: 72, y: 30, w: 56, h: 17.5, r: 7 };
+/** The band curves with the head, like cloth, instead of a flat label. */
+const HAT_BAND = 'M71.5 31.5 Q100 36 128.5 31.5 Q131.5 31 131 34.5 L129.6 45.5 Q129.2 48.6 126 49 Q100 53.5 74 49 Q70.8 48.6 70.4 45.5 L69 34.5 Q68.5 31 71.5 31.5 Z';
 
 /** A neckerchief: a band under the chin and a small rounded point, tied with a small knot. */
 const SCARF_BAND = 'M66 139 C82 148.5 118 148.5 134 139 C136.5 142 137 146 135.5 149 C118 158 82 158 64.5 149 C63 146 63.5 142 66 139 Z';
 const SCARF_TIP = 'M88.5 152 C95 154.5 105 154.5 111.5 152 C110.5 159 106.5 165 101.5 168.2 C100.6 168.8 99.4 168.8 98.5 168.2 C93.5 165 89.5 159 88.5 152 Z';
-const SCARF_KNOT = { cx: 100, cy: 151.5, rx: 6.4, ry: 5.4 };
 
 /** An arm hanging from its shoulder: short, with a round paw a little wider than the arm. */
 const ARM_LEN = 19;
@@ -252,7 +252,6 @@ export function Scarf() {
     <>
       <Path d={SCARF_TIP} fill={P.scarf} {...inner()} />
       <Path d={SCARF_BAND} fill={P.scarf} {...inner()} />
-      <Ellipse {...SCARF_KNOT} fill={P.scarf} {...inner()} />
     </>
   );
 }
@@ -281,7 +280,7 @@ export function Head({ pass, look, uid, small }: { pass: Pass; look: Look; uid: 
       <Path d={HEAD} fill={P.fur} />
       <G clipPath={`url(#${id})`}>
         {/* the one highlight */}
-        <Ellipse cx={70} cy={66} rx={15} ry={7.5} fill={P.highlight} opacity={0.75} transform="rotate(-28 70 66)" />
+        <Ellipse cx={64} cy={64} rx={9} ry={4.4} fill={P.highlight} opacity={0.6} transform="rotate(-34 64 64)" />
         <Path d={MUZZLE} fill={P.cream} />
       </G>
       {/* three short rounded tabby stripes, on the forehead only */}
@@ -298,12 +297,11 @@ export function Head({ pass, look, uid, small }: { pass: Pass; look: Look; uid: 
 }
 
 export function Hat({ pass, look, uid }: { pass: Pass; look: Look; uid: string }) {
-  const { x, y, w, h, r } = HAT_BAND;
   if (pass === 'line')
     return (
       <>
         <Path d={HAT_PUFF} {...lineProps(look.out, look.color)} />
-        <Rect x={x} y={y} width={w} height={h} rx={r} {...lineProps(look.out, look.color)} />
+        <Path d={HAT_BAND} {...lineProps(look.out, look.color)} />
       </>
     );
   return (
@@ -316,7 +314,7 @@ export function Hat({ pass, look, uid }: { pass: Pass; look: Look; uid: string }
       <Path d={HAT_PUFF} fill={P.hat} />
       {/* a soft shade under the puff, no vertical lines */}
       <Path d="M50 22 C70 31 130 31 150 22 L150 40 L50 40 Z" fill={P.hatShade} clipPath={`url(#${uid}-hat)`} />
-      <Rect x={x} y={y} width={w} height={h} rx={r} fill={P.hat} {...inner()} />
+      <Path d={HAT_BAND} fill={P.hat} {...inner()} />
     </>
   );
 }

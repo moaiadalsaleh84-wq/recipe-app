@@ -128,7 +128,7 @@ export default function NewRecipe() {
           ) : (
             <>
               <Icon name="camera" size={28} color={t.colors.tint} />
-              <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: 'normal', fontFamily: t.fonts.rounded }]}>Add a photo</Text>
+              <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: '600' }]}>Add a photo</Text>
             </>
           )}
         </PressableScale>
@@ -203,7 +203,7 @@ export default function NewRecipe() {
 
 function Label({ text }: { text: string }) {
   const t = useTheme();
-  return <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, fontFamily: t.fonts.display, fontWeight: 'normal', fontSize: 15, marginTop: 16, marginBottom: 8 }]}>{text}</Text>;
+  return <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, fontWeight: '600', fontSize: 15, marginTop: 16, marginBottom: 8 }]}>{text}</Text>;
 }
 
 function Field({ label, hint, multiline, ...props }: TextInputProps & { label: string; hint?: string }) {

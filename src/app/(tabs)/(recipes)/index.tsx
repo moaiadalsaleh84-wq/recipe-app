@@ -2,9 +2,7 @@ import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
-import { Mascot } from '../../../components/mascot/Mascot';
-import { MascotSays } from '../../../components/mascot/MascotSays';
-import { greetingSituation, say } from '../../../components/mascot/lines';
+import { say } from '../../../components/mascot/lines';
 import { Chunky } from '../../../components/Chunky';
 import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
@@ -21,6 +19,13 @@ import { useStore } from '../../../state/store';
 import { useTheme } from '../../../theme';
 
 const todayIndex = (new Date().getDay() + 6) % 7; // Monday = 0
+
+/** A quiet, time-aware hello under the title. */
+function greeting(name: string) {
+  const h = new Date().getHours();
+  const part = h < 5 ? 'Good evening' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  return name ? `${part}, ${name}.` : `${part}.`;
+}
 /** Days since 1970, so the recipe of the day really changes daily. */
 const dayNumber = Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 86400000);
 
@@ -32,17 +37,15 @@ export default function RecipesScreen() {
 
   const [query, setQuery] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
-  const [tip, setTip] = useState(-1); // -1 = greeting, then cycles tips
-  const [petLine, setPetLine] = useState<ReturnType<typeof say> | null>(null);
   const { canAddRecipe, canAddCookbook, canImport, trialDaysLeft } = useProGate();
   const [reminderHidden, setReminderHidden] = useState(false);
   // Keeps the paywall's promise: a reminder in the app before the trial ends.
   const showTrialReminder = !reminderHidden && trialDaysLeft !== null && trialDaysLeft >= 0 && trialDaysLeft <= 2;
   // The screen's one main action: add a recipe (import from a link, or write your own).
   const addButton = (
-    <Chunky onPress={() => setMenuOpen(true)} accessibilityLabel="Add a recipe" face={t.colors.tintFill} lip={t.colors.tintDeep} depth={t.depth.small} radius={t.radius.pill} faceStyle={styles.addBtn}>
+    <Chunky onPress={() => setMenuOpen(true)} accessibilityLabel="Add a recipe" face={t.colors.tintFill} lip={t.colors.tintFill} radius={t.radius.pill} faceStyle={styles.addBtn}>
       <Icon name="plus" size={16} color={t.colors.onTint} weight="bold" />
-      <Text style={[t.type.subhead, { color: t.colors.onTint, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>Add</Text>
+      <Text style={[t.type.subhead, { color: t.colors.onTint, fontWeight: '600' }]}>Add</Text>
     </Chunky>
   );
 
@@ -64,9 +67,6 @@ export default function RecipesScreen() {
   const mains = allRecipes.filter((r) => r.category !== 'Dessert');
   const featured = tonight ?? mains[dayNumber % Math.max(1, mains.length)] ?? allRecipes[0];
   const firstName = profile.name.trim().split(/\s+/)[0] ?? '';
-  // Decided once per visit: now and then Biscuit greets you with something new.
-  const [surprise] = useState(() => Math.random());
-  const line = tip < 0 ? say(greetingSituation(), { name: firstName }, dayNumber, surprise) : say('tip', {}, tip);
 
   const margin = t.layout.screen;
   const contentWidth = Math.min(width, 900);
@@ -100,19 +100,11 @@ export default function RecipesScreen() {
         </View>
       )}
 
-      {/* 1. A short hello */}
+      {/* 1. A quiet hello */}
       {showExtras && (
-        <MascotSays
-          line={petLine ?? line}
-          size={88}
-          hint="Tap for a tip"
-          onNext={() => {
-            setPetLine(null);
-            setTip((n) => n + 1);
-          }}
-          onPet={() => setPetLine(say('pet', {}, tip + 1))}
-          style={{ marginBottom: t.layout.gap }}
-        />
+        <Text style={[t.type.callout, { color: t.colors.secondaryLabel, marginTop: -8, marginBottom: 14 }]} testID="greeting">
+          {greeting(firstName)}
+        </Text>
       )}
 
       {/* 2. Search */}
@@ -153,11 +145,11 @@ export default function RecipesScreen() {
           <>
             <View style={styles.sectionHeader}>
               <Text style={[t.type.title2, { color: t.colors.label, flex: 1 }]} accessibilityRole="header">
-                {tonight ? 'On the menu tonight' : 'Recipe of the day'}
+                {tonight ? 'Tonight' : 'Today’s pick'}
               </Text>
               <Chip label="Surprise me" icon="shuffle" toggle={false} accessibilityLabel="Can't decide? Let Biscuit pick" onPress={() => router.push('/buddy-pick')} />
             </View>
-            <FeaturedCard recipe={featured} label={tonight ? 'On the menu tonight' : 'Recipe of the day'} />
+            <FeaturedCard recipe={featured} label={tonight ? 'Planned for dinner tonight' : 'Today’s pick'} />
           </>
         )}
 
@@ -176,12 +168,12 @@ export default function RecipesScreen() {
               <PressableScale
                 onPress={() => (canAddCookbook ? router.push('/cookbook-edit') : showPaywall('cookbooks'))}
                 accessibilityLabel="New cookbook"
-                style={[styles.book, styles.newBook, { width: cardWidth, backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]}
+                style={[styles.book, styles.newBook, { width: cardWidth, backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius }]}
               >
                 <View style={[styles.newIcon, { backgroundColor: t.colors.tintSoft }]}>
                   <Icon name="plus" size={20} color={t.colors.tint} weight="bold" />
                 </View>
-                <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: 'normal', fontFamily: t.fonts.rounded }]}>New cookbook</Text>
+                <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: '600' }]}>New cookbook</Text>
               </PressableScale>
             </View>
           </>
@@ -252,7 +244,7 @@ function AddMenu({ visible, onClose, onImport, onWrite }: { visible: boolean; on
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} supportedOrientations={['portrait', 'landscape']}>
       <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: t.colors.scrim }]} onPress={onClose} accessibilityLabel="Close menu" />
-      <View style={[styles.menu, { top: insets.top + 64, backgroundColor: t.colors.elevated, ...t.chunky.card }]} accessibilityRole="menu">
+      <View style={[styles.menu, { top: insets.top + 64, backgroundColor: t.colors.elevated, ...t.shadow.floating }]} accessibilityRole="menu">
         {rows.map((r, i) => (
           <PressableScale key={r.label} onPress={r.onPress} accessibilityLabel={r.label} accessibilityRole="menuitem" style={[styles.menuRow, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.colors.separator }]} scaleTo={0.98}>
             <View style={[styles.pickIcon, { backgroundColor: t.colors.tintSoft }]}>
@@ -277,13 +269,13 @@ function CookbookTile({ id, name, recipes, width }: { id: string; name: string; 
     <PressableScale
       onPress={() => router.push({ pathname: '/cookbook/[id]', params: { id } })}
       accessibilityLabel={`${name} cookbook, ${recipes.length} recipes`}
-      style={[styles.book, { width, backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]}
+      style={[styles.book, { width, backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius }]}
     >
       <View style={[styles.covers, { backgroundColor: empty ? t.colors.tintSoft : t.colors.imagePlaceholder }]}>
         {empty ? (
-          // A friendly little picture instead of a grey box.
+          // A simple mark instead of a grey box.
           <View style={styles.emptyCover}>
-            <Mascot mood={id === FAVORITES_ID ? 'love' : 'idle'} size={64} petable={false} hold />
+            <Icon name={id === FAVORITES_ID ? 'heart' : 'book'} size={26} color={t.colors.tint} />
           </View>
         ) : (
           covers.map((r) => (
@@ -307,8 +299,8 @@ function CookbookTile({ id, name, recipes, width }: { id: string; name: string; 
 }
 
 const styles = StyleSheet.create({
-  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 40, paddingHorizontal: 16 },
-  reminder: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 16, paddingRight: 4, paddingVertical: 8, borderRadius: 20, borderWidth: 2, marginBottom: 16, borderCurve: 'continuous' },
+  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 18 },
+  reminder: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 16, paddingRight: 4, paddingVertical: 8, borderRadius: 20, marginBottom: 16, borderCurve: 'continuous' },
   reminderBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
   pickIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 24, marginBottom: 12, minHeight: 44 },

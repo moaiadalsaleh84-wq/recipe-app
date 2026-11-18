@@ -84,7 +84,7 @@ export default function ProgressScreen() {
 
       {/* Streak */}
       <View
-        style={[styles.card, { backgroundColor: t.colors.rewardSoft, borderColor: t.colors.reward, ...t.chunky.button(t.colors.reward) }]}
+        style={[styles.card, { backgroundColor: t.colors.rewardSoft }]}
         accessible
         accessibilityLabel={streak > 0 ? `${streak} day cooking streak` : 'No streak yet. Cook a meal today to start one.'}
       >
@@ -122,7 +122,7 @@ export default function ProgressScreen() {
               >
                 {d.done && <Icon name="check" size={14} color={t.colors.onReward} weight="bold" />}
               </View>
-              <Text style={[t.type.caption1, { color: d.today ? t.colors.label : t.colors.secondaryLabel, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>{d.label}</Text>
+              <Text style={[t.type.caption1, { color: d.today ? t.colors.label : t.colors.secondaryLabel, fontWeight: '600' }]}>{d.label}</Text>
             </View>
           ))}
         </View>
@@ -131,7 +131,7 @@ export default function ProgressScreen() {
       {/* Next badge */}
       {next && (
         <View style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card }]} accessible accessibilityLabel={`Next badge: ${next.badge.title}. ${next.badge.hint}. ${next.done} of ${next.needed}.`}>
-          <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>Next badge</Text>
+          <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, fontWeight: '600' }]}>Next badge</Text>
           <View style={styles.row}>
             <View style={[styles.medal, { backgroundColor: t.colors.rewardSoft }]}>
               <Icon name={next.badge.icon} size={24} color={t.colors.rewardText} weight="bold" />
@@ -170,7 +170,7 @@ export default function ProgressScreen() {
             </Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>Chef level</Text>
+            <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, fontWeight: '600' }]}>Chef level</Text>
             <Text style={[t.type.title3, { color: t.colors.label }]}>{lvl.title}</Text>
           </View>
         </View>
@@ -191,15 +191,15 @@ export default function ProgressScreen() {
             <View style={[styles.badgeCoin, { backgroundColor: t.colors.reward, ...t.chunky.button(t.colors.rewardDeep) }]}>
               <Icon name={b.icon} size={26} color={t.colors.onReward} weight="bold" />
             </View>
-            <Text style={[t.type.caption1, { color: t.colors.label, textAlign: 'center', fontFamily: t.fonts.display, fontWeight: 'normal' }]}>{b.title}</Text>
+            <Text style={[t.type.caption1, { color: t.colors.label, textAlign: 'center', fontWeight: '600' }]}>{b.title}</Text>
           </PressableScale>
         ))}
         {upcoming.map((b) => (
           <PressableScale key={b.id} onPress={() => toast({ message: `${b.title}: ${b.hint} to earn it.`, icon: 'lock', tone: 'info' })} accessibilityLabel={`${b.title}, not earned yet. ${b.hint}.`} style={styles.badge}>
-            <View style={[styles.badgeCoin, { backgroundColor: t.colors.fill, borderWidth: 2, borderColor: t.colors.border, borderStyle: 'dashed' }]}>
+            <View style={[styles.badgeCoin, { backgroundColor: t.colors.fill, borderWidth: 1.5, borderColor: t.colors.fillStrong, borderStyle: 'dashed' }]}>
               <Icon name={b.icon} size={24} color={t.colors.tertiaryLabel} weight="bold" />
             </View>
-            <Text style={[t.type.caption1, { color: t.colors.secondaryLabel, textAlign: 'center', fontFamily: t.fonts.display, fontWeight: 'normal' }]}>{b.title}</Text>
+            <Text style={[t.type.caption1, { color: t.colors.secondaryLabel, textAlign: 'center', fontWeight: '600' }]}>{b.title}</Text>
           </PressableScale>
         ))}
       </ScrollView>
@@ -314,14 +314,14 @@ function GoalRow({ label, unit, eaten, goal, color, children }: { label: string;
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: 20, borderWidth: 2, padding: 16, gap: 16, borderCurve: 'continuous', marginBottom: 16 },
+  card: { borderRadius: 20, padding: 18, gap: 16, borderCurve: 'continuous', marginBottom: 14 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   barRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   streakTop: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   flame: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center' },
   week: { flexDirection: 'row', justifyContent: 'space-between' },
   day: { alignItems: 'center', gap: 4 },
-  dayDot: { width: 34, height: 34, borderRadius: 17, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
+  dayDot: { width: 34, height: 34, borderRadius: 17, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   medal: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
   h: { marginTop: 16, marginBottom: 12 },
   badges: { flexDirection: 'row', gap: 12, paddingHorizontal: 16, paddingBottom: 6 },

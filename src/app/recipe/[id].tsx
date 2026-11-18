@@ -16,15 +16,13 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
-import { MascotSays } from '../../components/mascot/MascotSays';
-import { say, type Line } from '../../components/mascot/lines';
 import { FoodIcon } from '../../components/FoodIcon';
 import { Icon, type IconName } from '../../components/Icon';
 import { PressableScale } from '../../components/PressableScale';
 import { RecipePhoto } from '../../components/RecipeCard';
 import { useToast } from '../../components/Toast';
 import { Button, Chip, EmptyState, IconButton, Segmented, Separator, Stepper } from '../../components/ui';
-import { recipeKind, type DietTag, type Recipe, type Units } from '../../data/mock';
+import { type DietTag, type Recipe, type Units } from '../../data/mock';
 import { haptics } from '../../lib/haptics';
 import { pickPhoto } from '../../lib/photos';
 import { convertQty, convertStepText } from '../../lib/units';
@@ -51,8 +49,6 @@ export default function RecipeScreen() {
   const [menuOpen, setMenuOpen] = useState(false);
   // Where the big title ends, so the small one appears only once it has scrolled away.
   const [titleBottom, setTitleBottom] = useState(0);
-  const [lineN, setLineN] = useState(0);
-  const [reaction, setReaction] = useState<Line | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [noteDraft, setNoteDraft] = useState(recipe ? notes[recipe.id] ?? '' : '');
   const addedTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -104,11 +100,9 @@ export default function RecipeScreen() {
   const inCookbooks = cookbooks.filter((c) => c.recipeIds.includes(recipe.id)).length + (favorites.includes(recipe.id) ? 1 : 0);
   const scale = servings / recipe.servings;
   // Biscuit reacts to what you just did here (saved it, added it to the list), or to the recipe.
-  const line = reaction ?? say(recipeKind(recipe), { protein: recipe.nutrition.protein }, lineN);
 
   const onFavorite = () => {
     const now = toggleFavorite(recipe.id);
-    setReaction(now ? say('favorite') : null);
     toast({
       message: now ? 'Added to Favorites' : 'Removed from Favorites',
       icon: now ? 'heartFill' : 'heart',
@@ -119,7 +113,6 @@ export default function RecipeScreen() {
 
   const onAdd = () => {
     const n = addIngredients(recipe.id, recipe.ingredients, scale);
-    setReaction(say('addedToList'));
     setJustAdded(true);
     clearTimeout(addedTimer.current);
     addedTimer.current = setTimeout(() => setJustAdded(false), 1800);
@@ -202,7 +195,7 @@ export default function RecipeScreen() {
         </Animated.View>
 
         <View style={[styles.body, { backgroundColor: t.colors.background, borderRadius: t.radius.xl, marginTop: -t.radius.xl }]}>
-          <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>
+          <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, fontWeight: '600' }]}>
             {recipe.category}
             {recipe.custom ? (recipe.origin === 'import' ? ', imported' : ', my recipe') : ''}
           </Text>
@@ -250,12 +243,6 @@ export default function RecipeScreen() {
               ))}
             </View>
           )}
-
-          {/* Biscuit reacts to this recipe */}
-          <MascotSays line={line} size={80} onNext={() => {
-              setReaction(null);
-              setLineN((n) => n + 1);
-            }} style={{ marginTop: 24 }} />
 
           {/* Nutrition */}
           <Text style={[t.type.title2, styles.h2, { color: t.colors.label }]} accessibilityRole="header">

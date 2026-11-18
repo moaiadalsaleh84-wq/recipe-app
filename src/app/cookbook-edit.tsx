@@ -44,7 +44,7 @@ export default function CookbookEdit() {
     <View style={{ flex: 1, backgroundColor: t.colors.groupedBackground }}>
       <PageHeader title={existing ? 'Rename cookbook' : 'New cookbook'} mode="cancel" inSheet />
       <View style={styles.body}>
-        <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginBottom: 8, fontFamily: t.fonts.display, fontWeight: 'normal', fontSize: 15 }]}>Name</Text>
+        <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginBottom: 8, fontWeight: '600', fontSize: 15 }]}>Name</Text>
         <TextInput
           value={name}
           onChangeText={setName}

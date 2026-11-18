@@ -243,7 +243,7 @@ function PlanCard({ id, selected, onPress, title, price, note, badge }: { id: Pl
       aria-checked={selected}
       accessibilityLabel={`${title} plan, ${price}. ${note}`}
       testID={`plan-${id}`}
-      style={[styles.plan, { backgroundColor: selected ? t.colors.tintSoft : t.colors.cell, borderColor: selected ? t.colors.tintFill : t.colors.border }, selected ? t.chunky.button() : t.chunky.lip]}
+      style={[styles.plan, { backgroundColor: selected ? t.colors.tintSoft : t.colors.cell, borderColor: selected ? t.colors.tintFill : 'transparent' }]}
     >
       <View style={[styles.radio, { borderColor: selected ? t.colors.tintFill : t.colors.tertiaryLabel }]}>
         {selected && <View style={[styles.radioDot, { backgroundColor: t.colors.tintFill }]} />}
@@ -255,7 +255,7 @@ function PlanCard({ id, selected, onPress, title, price, note, badge }: { id: Pl
       <Text style={[t.type.headline, { color: t.colors.label }]}>{price}</Text>
       {badge && (
         <View style={[styles.planBadge, { backgroundColor: t.colors.success }]}>
-          <Text style={[t.type.caption2, { color: '#fff', fontWeight: 'normal', fontFamily: t.fonts.rounded }]}>{badge}</Text>
+          <Text style={[t.type.caption2, { color: '#fff', fontWeight: '600' }]}>{badge}</Text>
         </View>
       )}
     </PressableScale>
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
   card: { borderRadius: 22, padding: 16, gap: 12, marginTop: 18, borderCurve: 'continuous' },
   benefit: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   benefitIcon: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
-  plan: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, minHeight: 72, borderRadius: 20, borderWidth: 2.5, borderCurve: 'continuous' },
+  plan: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, minHeight: 72, borderRadius: 20, borderWidth: 2, borderCurve: 'continuous' },
   radio: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   radioDot: { width: 12, height: 12, borderRadius: 6 },
   planBadge: { position: 'absolute', top: -10, right: 16, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
