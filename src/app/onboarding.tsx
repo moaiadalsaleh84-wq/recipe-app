@@ -99,7 +99,7 @@ export default function Onboarding() {
                 maxLength={24}
                 onSubmitEditing={next}
                 accessibilityLabel="Your first name"
-                style={[styles.nameInput, { color: t.colors.label, backgroundColor: t.colors.cell, borderColor: name ? t.colors.tintFill : 'transparent' }]}
+                style={[styles.nameInput, { color: t.colors.label, backgroundColor: t.colors.cell, borderColor: name ? t.colors.tintFill : t.colors.border }]}
               />
             </View>
           )}
@@ -191,7 +191,7 @@ function OptionCard({ label, icon, selected, onPress, multi }: { label: string; 
       accessibilityRole={multi ? 'checkbox' : 'radio'}
       aria-checked={selected}
       accessibilityLabel={label}
-      style={[styles.option, { backgroundColor: selected ? t.colors.tintSoft : t.colors.cell, borderColor: selected ? t.colors.tintFill : 'transparent' }]}
+      style={[styles.option, { backgroundColor: selected ? t.colors.tintSoft : t.colors.cell, borderColor: selected ? t.colors.tintFill : t.colors.border }, selected ? t.chunky.button() : t.chunky.lip]}
     >
       {icon && (
         <View style={[styles.optionIcon, { backgroundColor: selected ? t.colors.tintFill : t.colors.fill }]}>
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
   count: { width: 44, textAlign: 'center', fontVariant: ['tabular-nums'] },
   content: { paddingHorizontal: 16, paddingTop: 8, width: '100%', maxWidth: 560, alignSelf: 'center' },
   duo: { alignItems: 'center', marginBottom: 4 },
-  nameInput: { minHeight: 60, borderRadius: 18, borderWidth: 2, paddingHorizontal: 18, fontSize: 22, fontWeight: '700', borderCurve: 'continuous', outlineStyle: 'none' } as never,
+  nameInput: { minHeight: 60, borderRadius: 18, borderWidth: 2.5, paddingHorizontal: 18, fontSize: 22, fontWeight: '700', borderCurve: 'continuous', outlineStyle: 'none' } as never,
   option: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12, minHeight: 60, borderRadius: 18, borderWidth: 2, borderCurve: 'continuous' },
   optionIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   footer: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 16, paddingTop: 12 },

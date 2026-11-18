@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
+import { Pressable, View, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from 'react-native-reanimated';
 import { haptics, type HapticKind } from '../lib/haptics';
 import { useTheme } from '../theme';
@@ -23,19 +23,17 @@ type Props = Omit<PressableProps, 'style' | 'children'> & {
 };
 
 /**
- * The app's pressable surface (the name is from the old 3D design; it is flat now).
- * While your finger is down it shrinks a touch and dims slightly, and springs back on release.
- * With Reduce Motion on, it only dims.
+ * A thick button that physically presses: the face sits on a darker lip, sinks onto it while
+ * your finger is down, and springs back up with a tiny bounce when you let go.
+ * With Reduce Motion on, the face moves without the spring.
  */
-export function Chunky({ children, face, lip: _lip, border, depth: _depth, radius, style, faceStyle, haptic = 'tap', disabled, onPressIn, onPressOut, onPress, ...rest }: Props) {
+export function Chunky({ children, face, lip, border, depth, radius, style, faceStyle, haptic = 'tap', disabled, onPressIn, onPressOut, onPress, ...rest }: Props) {
   const t = useTheme();
   const reduceMotion = useReducedMotion();
+  const d = depth ?? t.depth.button;
   const r = radius ?? t.radius.md;
   const down = useSharedValue(0);
-  const pressStyle = useAnimatedStyle(() => ({
-    opacity: 1 - down.get() * 0.12,
-    transform: [{ scale: reduceMotion ? 1 : 1 - down.get() * 0.025 }],
-  }));
+  const faceMove = useAnimatedStyle(() => ({ transform: [{ translateY: down.get() * d }] }));
 
   return (
     <Pressable
@@ -44,25 +42,28 @@ export function Chunky({ children, face, lip: _lip, border, depth: _depth, radiu
       disabled={disabled}
       aria-disabled={!!disabled}
       onPressIn={(e) => {
-        down.set(withSpring(1, t.motion.press));
+        down.set(reduceMotion ? 1 : withSpring(1, t.motion.press));
         onPressIn?.(e);
       }}
       onPressOut={(e) => {
-        down.set(withSpring(0, t.motion.release));
+        down.set(reduceMotion ? 0 : withSpring(0, t.motion.release));
         onPressOut?.(e);
       }}
       onPress={(e) => {
         if (haptic) haptics[haptic]();
         onPress?.(e);
       }}
-      style={[style, disabled && { opacity: 0.4 }]}
+      style={[style, disabled && { opacity: 0.45 }]}
     >
+      {/* The lip: same shape as the face, shifted down by the depth. The face covers it when pressed. */}
+      <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: d, bottom: 0, backgroundColor: lip, borderRadius: r, borderCurve: 'continuous' }} />
       <Animated.View
         style={[
           { backgroundColor: face, borderRadius: r, borderCurve: 'continuous' },
-          border ? { borderWidth: StyleSheet.hairlineWidth * 2, borderColor: border } : null,
+          border ? { borderWidth: 2, borderColor: border } : null,
           faceStyle,
-          pressStyle,
+          { marginBottom: d },
+          faceMove,
         ]}
       >
         {children}

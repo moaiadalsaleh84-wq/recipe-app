@@ -73,7 +73,7 @@ export function FavoriteButton({ recipe, onPhoto }: { recipe: Recipe; onPhoto?: 
 }
 
 /** The small print under a recipe's title. */
-const useMeta = () => (r: Recipe) => `${r.minutes} min, ${r.calories} kcal`;
+const useMeta = () => (r: Recipe) => `${r.minutes} min · ${r.calories} kcal`;
 
 /** Grid card: photo with title and meta below, App Store style. */
 export function RecipeCard({ recipe, width }: { recipe: Recipe; width: number }) {
@@ -94,7 +94,7 @@ export function RecipeCard({ recipe, width }: { recipe: Recipe; width: number })
       </View>
       {/* Room for two lines of title on every card, so a row of cards lines up; longer titles wrap instead of being cut. */}
       <View style={styles.cardTitle}>
-        <Text style={[t.type.headline, { color: t.colors.label }]}>
+        <Text style={[t.type.headline, { color: t.colors.label, fontSize: 17, lineHeight: 22 }]}>
           {recipe.title}
         </Text>
       </View>
@@ -124,15 +124,15 @@ export function FeaturedCard({ recipe, label }: { recipe: Recipe; /** For screen
       scaleTo={0.98}
       accessibilityLabel={`${label}: ${recipe.title}`}
       accessibilityHint="Opens the recipe"
-      style={[styles.featured, { borderRadius: t.layout.photoRadius, backgroundColor: t.colors.imagePlaceholder }]}
+      style={[styles.featured, { borderRadius: t.layout.cardRadius, backgroundColor: t.colors.imagePlaceholder }]}
     >
       <RecipePhoto recipe={recipe} iconSize={56} />
-      <LinearGradient colors={['rgba(20,12,24,0)', 'rgba(20,12,24,0.55)', 'rgba(20,12,24,0.82)']} locations={[0, 0.55, 1]} style={styles.featuredShade} pointerEvents="none" />
+      <LinearGradient colors={['rgba(30,14,6,0)', 'rgba(30,14,6,0.78)']} style={styles.featuredShade} pointerEvents="none" />
       <View style={styles.featuredFav}>
         <FavoriteButton recipe={recipe} onPhoto />
       </View>
       <View style={styles.featuredText}>
-        <Text style={[t.type.title1, { color: '#FFFFFF' }]} numberOfLines={2}>
+        <Text style={[t.type.title2, { color: '#FFFFFF' }]} numberOfLines={2}>
           {recipe.title}
         </Text>
         <Text style={[t.type.subhead, { color: 'rgba(255,255,255,0.92)', marginTop: 2 }]}>{meta(recipe)}</Text>
@@ -185,17 +185,17 @@ export function RecipeRow({
 }
 
 const styles = StyleSheet.create({
-  imageWrap: { width: '100%', aspectRatio: 4 / 5, overflow: 'hidden', borderCurve: 'continuous' },
-  cardTitle: { minHeight: 44, marginTop: 10, marginBottom: 2 },
+  imageWrap: { width: '100%', aspectRatio: 1, overflow: 'hidden', borderCurve: 'continuous' },
+  cardTitle: { minHeight: 44, marginTop: 8, marginBottom: 2 },
   noPhoto: { alignItems: 'center', justifyContent: 'center' },
   favOnPhoto: { position: 'absolute', top: 2, right: 2 },
   favTap: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  favDot: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.94)', alignItems: 'center', justifyContent: 'center', shadowColor: '#1F1724', shadowOpacity: 0.16, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
-  featured: { height: 300, overflow: 'hidden', borderCurve: 'continuous', justifyContent: 'flex-end' },
-  featuredShade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 180 },
+  favDot: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', shadowColor: '#3D2314', shadowOpacity: 0.18, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  featured: { height: 216, overflow: 'hidden', borderCurve: 'continuous', justifyContent: 'flex-end' },
+  featuredShade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 136 },
   featuredFav: { position: 'absolute', top: 2, right: 2 },
-  featuredText: { padding: 18, paddingBottom: 20 },
+  featuredText: { padding: 16 },
   row: { flexDirection: 'row', alignItems: 'center', paddingRight: 8 },
   rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingLeft: 16, paddingRight: 8, minHeight: 72 },
-  thumb: { width: 56, height: 56, borderRadius: 14, overflow: 'hidden', borderCurve: 'continuous' },
+  thumb: { width: 56, height: 56, borderRadius: 12, overflow: 'hidden', borderCurve: 'continuous' },
 });

@@ -9,7 +9,7 @@ import { useToast } from '../../../components/Toast';
 import { Button, CheckCircle, EmptyState, HeaderButton, IconButton, ProgressBar, Section, Separator } from '../../../components/ui';
 import { aisleOrder, type GroceryItem } from '../../../data/mock';
 import { MascotSays } from '../../../components/mascot/MascotSays';
-import { say } from '../../../components/mascot/lines';
+import { say, type Line } from '../../../components/mascot/lines';
 import { haptics } from '../../../lib/haptics';
 import { plainFractions } from '../../../lib/qty';
 import { TabScreen } from '../../../components/TabScreen';
@@ -20,7 +20,9 @@ export default function GroceriesScreen() {
   const t = useTheme();
   const toast = useToast();
   const { groceries, toggleGrocery, removeGrocery, clearCompleted, addCustomItem, undoGroceries } = useStore();
+  const [reaction, setReaction] = useState<{ line: Line; n: number } | null>(null);
   const [draft, setDraft] = useState('');
+  const [surprise] = useState(() => Math.random());
 
   const done = groceries.filter((g) => g.checked).length;
   const total = groceries.length;
@@ -56,6 +58,9 @@ export default function GroceriesScreen() {
     toggleGrocery(item.key);
     if (item.checked) return;
     if (done + 1 === total) haptics.success();
+    const next = (reaction?.n ?? 0) + 1;
+    const willBeDone = done + 1 === total;
+    setReaction({ line: say(willBeDone ? 'listDone' : 'itemChecked', {}, next, (surprise + next * 0.31) % 1), n: next });
   };
 
   const add = () => {
@@ -93,7 +98,7 @@ export default function GroceriesScreen() {
         {draft.trim().length > 0 && (
           <Animated.View entering={FadeIn.duration(150)} exiting={FadeOut.duration(150)}>
             <PressableScale onPress={add} accessibilityLabel="Add item to list" style={[styles.addButton, { backgroundColor: t.colors.tintFill }]}>
-              <Text style={[t.type.subhead, { color: t.colors.onTint, fontWeight: '600' }]}>Add</Text>
+              <Text style={[t.type.subhead, { color: t.colors.onTint, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>Add</Text>
             </PressableScale>
           </Animated.View>
         )}
@@ -124,12 +129,13 @@ export default function GroceriesScreen() {
                   </Text>
                   {done > 0 && (
                     <PressableScale onPress={clearDone} accessibilityLabel={`Clear ${done} completed items`} style={styles.clear}>
-                      <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: '600' }]}>Clear done</Text>
+                      <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>Clear done</Text>
                     </PressableScale>
                   )}
                 </View>
                 <ProgressBar value={done / total} height={12} label="Shopping progress" />
               </View>
+              {reaction && <MascotSays size={80} style={{ marginBottom: t.layout.gap }} line={reaction.line} />}
             </>
           )}
 
@@ -138,7 +144,7 @@ export default function GroceriesScreen() {
             {groups.map((g, gi) => (
               <Animated.View key={g.aisle} layout={LinearTransition.duration(220)}>
                 <View style={[styles.aisle, gi > 0 && { borderTopWidth: StyleSheet.hairlineWidth * 2, borderTopColor: t.colors.separator }, { backgroundColor: t.colors.fill }]}>
-                  <Text style={[t.type.subhead, { color: t.colors.label, fontWeight: '600' }]} accessibilityRole="header">
+                  <Text style={[t.type.subhead, { color: t.colors.label, fontFamily: t.fonts.display, fontWeight: 'normal' }]} accessibilityRole="header">
                     {g.aisle}
                   </Text>
                 </View>

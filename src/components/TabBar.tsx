@@ -1,5 +1,4 @@
 import type { BottomTabBarProps } from 'expo-router/tabs';
-import { BlurView } from 'expo-blur';
 import { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
@@ -17,15 +16,12 @@ const tabs: Record<string, { label: string; icon: IconName }> = {
   progress: { label: 'Progress', icon: 'trophy' },
 };
 
-/** The app's own tab bar: quiet icons on a frosted bar with a hairline; the current tab in aubergine. */
+/** The app's own tab bar: big icons in a soft pill, short labels, room to breathe. */
 export function TabBar({ state, emitter, navigateToTab, badges = {} }: BottomTabBarProps & { badges?: Record<string, number> }) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   return (
-    <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 10) }]} accessibilityRole="tablist">
-      <BlurView tint={t.isDark ? 'dark' : 'light'} intensity={50} style={StyleSheet.absoluteFill} />
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: t.colors.bar }]} />
-      <View style={[styles.hairline, { backgroundColor: t.colors.separator }]} />
+    <View style={[styles.bar, { backgroundColor: t.colors.cell, borderTopColor: t.colors.border, paddingBottom: Math.max(insets.bottom, 10) }]} accessibilityRole="tablist">
       {state.routes.map((route, i) => {
         const tab = tabs[route.name];
         if (!tab) return null;
@@ -47,7 +43,7 @@ export function TabBar({ state, emitter, navigateToTab, badges = {} }: BottomTab
             style={styles.item}
           >
             <TabIcon icon={tab.icon} selected={selected} badge={badge} />
-            <Text numberOfLines={1} style={[styles.label, { fontWeight: selected ? '600' : '500', color: selected ? t.colors.tint : t.colors.secondaryLabel }]}>
+            <Text numberOfLines={1} style={[styles.label, { fontFamily: selected ? t.fonts.display : t.fonts.displayMedium, color: selected ? t.colors.tint : t.colors.secondaryLabel }]}>
               {tab.label}
             </Text>
           </PressableScale>
@@ -62,16 +58,16 @@ function TabIcon({ icon, selected, badge }: { icon: IconName; selected: boolean;
   const reduceMotion = useReducedMotion();
   const pop = useSharedValue(1);
   useEffect(() => {
-    // A small, quick pop when a tab becomes selected.
-    if (selected && !reduceMotion) pop.set(withSequence(withTiming(0.9, { duration: 70 }), withSpring(1, t.motion.pop)));
+    // A small squash and pop when a tab becomes selected.
+    if (selected && !reduceMotion) pop.set(withSequence(withTiming(0.82, { duration: 80 }), withSpring(1, t.motion.pop)));
   }, [selected, reduceMotion, pop, t.motion.pop]);
   const style = useAnimatedStyle(() => ({ transform: [{ scale: pop.get() }] }));
   return (
-    <Animated.View style={[styles.pill, style]}>
-      <Icon name={icon} size={25} color={selected ? t.colors.tint : t.colors.secondaryLabel} weight={selected ? 'semibold' : 'regular'} />
+    <Animated.View style={[styles.pill, selected && { backgroundColor: t.colors.tintSoft }, style]}>
+      <Icon name={icon} size={24} color={selected ? t.colors.tint : t.colors.secondaryLabel} weight={selected ? 'bold' : 'semibold'} />
       {badge > 0 && (
-        <View style={[styles.badge, { backgroundColor: '#D23F5B', borderColor: t.isDark ? t.colors.background : t.colors.cell }]}>
-          <Text style={[t.type.caption2, { color: '#FFFFFF', fontWeight: '700' }]}>{badge > 99 ? '99+' : badge}</Text>
+        <View style={[styles.badge, { backgroundColor: t.colors.tintFill, borderColor: t.colors.cell }]}>
+          <Text style={[t.type.caption2, { color: t.colors.onTint, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>{badge > 99 ? '99+' : badge}</Text>
         </View>
       )}
     </Animated.View>
@@ -79,11 +75,10 @@ function TabIcon({ icon, selected, badge }: { icon: IconName; selected: boolean;
 }
 
 const styles = StyleSheet.create({
-  bar: { flexDirection: 'row', paddingTop: 6, overflow: 'hidden' },
-  hairline: { position: 'absolute', top: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth * 2 },
-  item: { flex: 1, alignItems: 'center', gap: 2, minHeight: 50, justifyContent: 'center' },
+  bar: { flexDirection: 'row', borderTopWidth: 2, paddingTop: 8, paddingHorizontal: 4 },
+  item: { flex: 1, alignItems: 'center', gap: 3, minHeight: 54, justifyContent: 'center' },
   // Small enough that the longest label (Groceries) keeps clear space on each side, even on an SE.
-  label: { fontSize: 11, lineHeight: 13, letterSpacing: -0.1 },
-  pill: { width: 48, height: 30, alignItems: 'center', justifyContent: 'center' },
-  badge: { position: 'absolute', top: -4, right: 3, minWidth: 18, height: 18, borderRadius: 9, borderWidth: 2, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center' },
+  label: { fontSize: 11, lineHeight: 14, fontWeight: 'normal', letterSpacing: 0.1 },
+  pill: { width: 54, height: 32, borderRadius: 14, borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center' },
+  badge: { position: 'absolute', top: -5, right: 2, minWidth: 20, height: 20, borderRadius: 10, borderWidth: 2, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center' },
 });

@@ -38,7 +38,7 @@ export function Chip({
   /** Layout of the whole chip (e.g. a fixed width in a grid). */
   style?: StyleProp<ViewStyle>;
   label: string;
-  /** Selected chips turn ink-dark. */
+  /** Selected chips turn green with a check. */
   selected?: boolean;
   onPress: () => void;
   /** A small icon before the label. */
@@ -52,8 +52,8 @@ export function Chip({
   toggle?: boolean;
 }) {
   const t = useTheme();
-  // Selected chips go dark (ink), so the aubergine stays reserved for the screen's main action.
-  const fg = selected ? t.colors.background : t.colors.label;
+  // Selected chips are green ("this is on"), so tomato stays reserved for the screen's main action.
+  const fg = selected ? '#FFFFFF' : t.colors.label;
   return (
     <Chunky
       onPress={onPress}
@@ -62,14 +62,16 @@ export function Chip({
       aria-selected={toggle ? selected : undefined}
       accessibilityLabel={accessibilityLabel ?? (toggle ? `${label} filter` : label)}
       hitSlop={{ top: 2, bottom: 2 }}
+      depth={t.depth.small}
       radius={t.radius.pill}
-      face={selected ? t.colors.label : t.colors.cell}
-      lip={selected ? t.colors.label : t.colors.cell}
+      face={selected ? t.colors.success : t.colors.cell}
+      lip={selected ? t.colors.successDeep : t.colors.lip}
+      border={selected ? undefined : t.colors.border}
       style={style}
-      faceStyle={[styles.chip, style ? styles.chipFill : null]}
+      faceStyle={[styles.chip, !selected && styles.chipBordered, style ? styles.chipFill : null]}
     >
-      {leading ? leading : icon ? <Icon name={icon} size={15} color={selected ? fg : t.colors.tint} weight="semibold" /> : null}
-      <Text style={[t.type.subhead, { color: fg, fontWeight: '600' }]}>{label}</Text>
+      {selected ? <Icon name="check" size={15} color={fg} weight="bold" /> : leading ? leading : icon ? <Icon name={icon} size={15} color={t.colors.tint} weight="bold" /> : null}
+      <Text style={[t.type.subhead, { color: fg, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>{label}</Text>
       {trailing && <Icon name={trailing} size={12} color={selected ? fg : t.colors.secondaryLabel} weight="bold" />}
     </Chunky>
   );
@@ -79,8 +81,8 @@ export function Chip({
 export function HeaderButton({ icon, onPress, accessibilityLabel, disabled }: { icon: IconName; onPress: () => void; accessibilityLabel: string; disabled?: boolean }) {
   const t = useTheme();
   return (
-    <Chunky onPress={onPress} disabled={disabled} accessibilityLabel={accessibilityLabel} radius={22} face={t.colors.cell} lip={t.colors.cell} faceStyle={styles.headerButton}>
-      <Icon name={icon} size={19} color={t.colors.label} weight="semibold" />
+    <Chunky onPress={onPress} disabled={disabled} accessibilityLabel={accessibilityLabel} depth={t.depth.small} radius={22} face={t.colors.cell} lip={t.colors.lip} border={t.colors.border} faceStyle={styles.headerButton}>
+      <Icon name={icon} size={19} color={t.colors.tint} weight="bold" />
     </Chunky>
   );
 }
@@ -92,8 +94,8 @@ type ButtonProps = {
   onPress: () => void;
   icon?: IconName;
   /**
-   * filled: the ONE main action on a screen (aubergine). success: finishing something (green).
-   * reward: claiming a reward (saffron). tinted: every other action (soft aubergine). plain: text only.
+   * filled: the ONE main action on a screen (tomato). success: finishing something (green).
+   * reward: claiming a reward (yellow). tinted: every other action (white). plain: text only.
    */
   variant?: 'filled' | 'success' | 'reward' | 'tinted' | 'plain';
   size?: 'large' | 'medium';
@@ -105,11 +107,11 @@ type ButtonProps = {
 export function Button({ label, onPress, icon, variant = 'filled', size = 'large', disabled, style, accessibilityLabel }: ButtonProps) {
   const t = useTheme();
   const large = size === 'large';
-  const text = [large ? t.type.button : t.type.subhead, large ? null : { fontWeight: '600' as const }];
+  const text = [large ? t.type.button : t.type.subhead, large ? null : { fontFamily: t.fonts.display, fontWeight: 'normal' as const }];
   if (variant === 'plain') {
     return (
       <PressableScale onPress={onPress} disabled={disabled} accessibilityLabel={accessibilityLabel ?? label} style={[styles.button, large ? styles.buttonLarge : styles.buttonMedium, !large && { alignSelf: 'center' }, style]}>
-        {icon && <Icon name={icon} size={large ? 19 : 16} color={t.colors.tint} weight="semibold" />}
+        {icon && <Icon name={icon} size={large ? 20 : 17} color={t.colors.tint} weight="bold" />}
         <Text style={[text, { color: t.colors.tint }]}>{label}</Text>
       </PressableScale>
     );
@@ -123,11 +125,12 @@ export function Button({ label, onPress, icon, variant = 'filled', size = 'large
       face={kind.face}
       lip={kind.lip}
       border={kind.border}
-      radius={large ? t.radius.md : 12}
+      depth={large ? t.depth.button : t.depth.small}
+      radius={large ? t.radius.md : 14}
       style={[!large && { alignSelf: 'center' }, style]}
       faceStyle={[styles.button, large ? styles.buttonLarge : styles.buttonMedium]}
     >
-      {icon && <Icon name={icon} size={large ? 19 : 16} color={kind.label} weight="semibold" />}
+      {icon && <Icon name={icon} size={large ? 20 : 17} color={kind.label} weight="bold" />}
       <Text style={[text, { color: kind.label }]}>{label}</Text>
     </Chunky>
   );
@@ -198,7 +201,7 @@ export function Stepper({
   const t = useTheme();
   return (
     <View
-      style={[styles.stepper, { backgroundColor: t.colors.fill }]}
+      style={[styles.stepper, { backgroundColor: t.colors.cell, ...t.chunky.card }]}
       accessible
       accessibilityRole="adjustable"
       accessibilityLabel={label}
@@ -249,7 +252,7 @@ export function CheckCircle({ checked, color }: { checked: boolean; color: strin
 
 /* ---------- Progress bar: fills with a small bounce ---------- */
 
-export function ProgressBar({ value, color, track, height = 8, label }: { /** 0 to 1 */ value: number; color?: string; track?: string; height?: number; label?: string }) {
+export function ProgressBar({ value, color, track, height = 14, label }: { /** 0 to 1 */ value: number; color?: string; track?: string; height?: number; label?: string }) {
   const t = useTheme();
   const reduceMotion = useReducedMotion();
   const pct = Math.max(0, Math.min(1, value));
@@ -258,7 +261,7 @@ export function ProgressBar({ value, color, track, height = 8, label }: { /** 0 
     shown.set(reduceMotion ? withTiming(pct, { duration: 200 }) : withSpring(pct, { damping: 14, stiffness: 120, mass: 0.9 }));
   }, [pct, reduceMotion, shown]);
   // Never an empty-looking bar: a small nub shows where it starts.
-  const fill = useAnimatedStyle(() => ({ width: `${Math.max(3, Math.min(100, shown.get() * 100))}%` }));
+  const fill = useAnimatedStyle(() => ({ width: `${Math.max(6, Math.min(100, shown.get() * 100))}%` }));
   return (
     <View
       style={{ height, borderRadius: height / 2, backgroundColor: track ?? t.colors.fillStrong, overflow: 'hidden' }}
@@ -266,7 +269,10 @@ export function ProgressBar({ value, color, track, height = 8, label }: { /** 0 
       accessibilityLabel={label}
       accessibilityValue={{ min: 0, max: 100, now: Math.round(pct * 100) }}
     >
-      <Animated.View style={[{ height, borderRadius: height / 2, backgroundColor: color ?? t.colors.success }, fill]} />
+      <Animated.View style={[{ height, borderRadius: height / 2, backgroundColor: color ?? t.colors.success }, fill]}>
+        {/* a soft highlight along the top, like the buttons' shine */}
+        <View style={{ position: 'absolute', left: height / 2, right: height / 2, top: height * 0.22, height: height * 0.22, borderRadius: height, backgroundColor: 'rgba(255,255,255,0.35)' }} />
+      </Animated.View>
     </View>
   );
 }
@@ -304,13 +310,13 @@ export function EmptyState({
   return (
     <View style={styles.empty} accessibilityRole="summary">
       {cat ? (
-        <Mascot mood={cat} size={120} />
+        <Mascot mood={cat} size={132} />
       ) : (
         <View style={[styles.emptyIcon, { backgroundColor: t.colors.tintSoft }]}>
           <Icon name={icon} size={30} color={t.colors.tint} weight="semibold" />
         </View>
       )}
-      <Text style={[t.type.title2, { color: t.colors.label, textAlign: 'center' }]}>{title}</Text>
+      <Text style={[t.type.title3, { color: t.colors.label, textAlign: 'center' }]}>{title}</Text>
       <Text style={[t.type.subhead, t.noWidows.style, { color: t.colors.secondaryLabel, textAlign: 'center', maxWidth: 280 }]} {...t.noWidows.props}>
         {noWidow(message)}
       </Text>
@@ -332,12 +338,14 @@ export function Section({ title, footer, children, right }: { title?: string; fo
     <View style={{ marginBottom: t.layout.section }}>
       {(title || right) && (
         <View style={styles.sectionHeader}>
-          {title && <Text style={[t.type.title2, { color: t.colors.label, flex: 1 }]}>{title}</Text>}
+          {title && <Text style={[t.type.title3, { color: t.colors.label, flex: 1 }]}>{title}</Text>}
           {right}
         </View>
       )}
-      {/* A plain white card; rows are clipped to its rounded corners. */}
-      <View style={[styles.sectionBody, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, overflow: 'hidden' }]}>{children}</View>
+      {/* Outer view draws the outline + lip; inner view clips rows to the rounded corners. */}
+      <View style={[styles.sectionBody, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]}>
+        <View style={{ borderRadius: t.layout.cardRadius - 2, overflow: 'hidden', borderCurve: 'continuous' }}>{children}</View>
+      </View>
       {footer && <Text style={[t.type.footnote, styles.sectionFooter, { color: t.colors.secondaryLabel }]}>{footer}</Text>}
     </View>
   );
@@ -353,13 +361,13 @@ export function Separator({ inset = 16 }: { inset?: number }) {
 export function SearchField({ value, onChangeText, placeholder, style, ...rest }: TextInputProps & { value: string; onChangeText: (s: string) => void }) {
   const t = useTheme();
   return (
-    <View style={[styles.search, { backgroundColor: t.colors.cell }, style]}>
+    <View style={[styles.search, { backgroundColor: t.colors.cell, ...t.chunky.card }, style]}>
       <Icon name="search" size={17} color={t.colors.secondaryLabel} />
       <TextInput
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor={t.colors.tertiaryLabel}
+        placeholderTextColor={t.colors.secondaryLabel}
         style={[t.type.body, styles.searchInput, { color: t.colors.label }]}
         returnKeyType="search"
         clearButtonMode="never"
@@ -379,9 +387,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    minHeight: 44,
+    minHeight: 40,
     paddingHorizontal: 16,
+    // With the lip the chip is 44 tall.
   },
+  // The 2pt border is part of the height, so bordered and filled chips match.
+  chipBordered: { minHeight: 40 },
   // In a grid: content starts on the left and the label can take the rest of the width.
   chipFill: { justifyContent: 'flex-start', paddingHorizontal: 12 },
   headerButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
@@ -393,17 +404,17 @@ const styles = StyleSheet.create({
   },
   buttonLarge: { minHeight: 52, paddingHorizontal: 22 },
   buttonMedium: { minHeight: 44, paddingHorizontal: 18 },
-  stepper: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, borderCurve: 'continuous' },
+  stepper: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, borderCurve: 'continuous' },
   stepperDivider: { width: StyleSheet.hairlineWidth, height: 18 },
   stepperValue: { minWidth: 36, textAlign: 'center', fontVariant: ['tabular-nums'] },
   check: { width: 28, height: 28, borderRadius: 14, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
   checkFill: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   empty: { alignItems: 'center', gap: 10, paddingVertical: 48, paddingHorizontal: 32 },
-  emptyIcon: { width: 64, height: 64, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 6, borderCurve: 'continuous' },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, minHeight: 28 },
+  emptyIcon: { width: 72, height: 72, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, minHeight: 28 },
   sectionBody: { borderCurve: 'continuous' },
   sectionFooter: { paddingHorizontal: 16, marginTop: 8 },
-  search: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 14, borderCurve: 'continuous', paddingLeft: 14, minHeight: 48 },
+  search: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 16, borderCurve: 'continuous', paddingLeft: 14, minHeight: 50 },
   searchInput: { flex: 1, alignSelf: 'stretch', minHeight: 44, paddingVertical: 0, outlineStyle: 'none' } as never,
 });
 
@@ -422,7 +433,7 @@ export function Segmented<T extends string>({
 }) {
   const t = useTheme();
   return (
-    <View style={[segStyles.wrap, { backgroundColor: t.colors.fill }]} accessibilityRole="radiogroup" accessibilityLabel={label}>
+    <View style={[segStyles.wrap, { backgroundColor: t.colors.fillStrong }]} accessibilityRole="radiogroup" accessibilityLabel={label}>
       {options.map((o) => {
         const selected = o.value === value;
         return (
@@ -435,9 +446,9 @@ export function Segmented<T extends string>({
             aria-checked={selected}
             accessibilityLabel={o.label}
             hitSlop={{ top: 4, bottom: 4 }}
-            style={[segStyles.item, selected && { backgroundColor: t.isDark ? t.colors.elevated : t.colors.cell, ...t.shadow.card }]}
+            style={[segStyles.item, selected && { backgroundColor: t.colors.cell, ...t.chunky.lip }]}
           >
-            <Text style={[t.type.footnote, { color: selected ? t.colors.label : t.colors.secondaryLabel, fontWeight: '600', fontSize: 14 }]}>{o.label}</Text>
+            <Text style={[t.type.footnote, { color: selected ? t.colors.label : t.colors.secondaryLabel, fontWeight: 'normal', fontFamily: t.fonts.rounded, fontSize: 14 }]}>{o.label}</Text>
           </PressableScale>
         );
       })}
@@ -446,6 +457,6 @@ export function Segmented<T extends string>({
 }
 
 const segStyles = StyleSheet.create({
-  wrap: { flexDirection: 'row', borderRadius: 14, padding: 3, borderCurve: 'continuous' },
-  item: { minHeight: 44, minWidth: 56, paddingHorizontal: 14, borderRadius: 11, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
+  wrap: { flexDirection: 'row', borderRadius: 16, padding: 4, paddingBottom: 6, borderCurve: 'continuous' },
+  item: { minHeight: 44, minWidth: 56, paddingHorizontal: 12, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
 });

@@ -37,7 +37,7 @@ export default function Settings() {
                   {trialDaysLeft !== null && trialDaysLeft >= 0 ? `Free trial, ${trialDaysLeft} ${trialDaysLeft === 1 ? 'day' : 'days'} left` : `${pro?.plan === 'yearly' ? 'Yearly' : 'Monthly'} plan`}
                 </Text>
               </View>
-              <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: '600' }]}>Manage</Text>
+              <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>Manage</Text>
             </PressableScale>
           ) : (
             <PressableScale onPress={() => showPaywall('settings')} style={styles.row} accessibilityLabel="Upgrade to Pro" scaleTo={0.99}>

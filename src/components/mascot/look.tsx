@@ -18,8 +18,8 @@ export type Look = {
 const LookContext = createContext<Look | null>(null);
 export const useLook = () => useContext(LookContext);
 
-/** How long the eyes stay on the last touch (kept with the other motion values). */
-export { FOLLOW_MS } from './springs';
+/** How long the eyes stay on the last touch. */
+export const FOLLOW_MS = 1800;
 
 export function LookProvider({ children }: { children: ReactNode }) {
   const x = useSharedValue(0);

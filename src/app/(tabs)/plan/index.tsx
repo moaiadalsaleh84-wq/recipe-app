@@ -9,6 +9,7 @@ import { useToast } from '../../../components/Toast';
 import { HeaderButton, IconButton, Section, Separator } from '../../../components/ui';
 import { meals, type Meal } from '../../../data/mock';
 import { Mascot } from '../../../components/mascot/Mascot';
+import { MascotSays } from '../../../components/mascot/MascotSays';
 import { say } from '../../../components/mascot/lines';
 import { haptics } from '../../../lib/haptics';
 import { noWidow } from '../../../lib/text';
@@ -89,7 +90,7 @@ export default function PlanScreen() {
     <TabScreen title="Plan" right={addWeek}>
 
       {/* The week, kept compact */}
-      <View style={[styles.week, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius }]} accessibilityRole="tablist">
+      <View style={[styles.week, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]} accessibilityRole="tablist">
         {weekDays.map((d) => {
           const selected = d.index === day;
           const count = meals.filter((m) => plan[d.index]?.[m]).length;
@@ -120,7 +121,7 @@ export default function PlanScreen() {
           {weekDays[day].isToday ? 'Today' : weekDays[day].long}
         </Text>
         <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]} testID="plan-count">
-          {plannedToday} of 3 planned{plannedToday > 0 ? `, about ${dayTotals.calories} kcal` : ''}
+          {plannedToday} of 3 planned
         </Text>
       </View>
 
@@ -128,7 +129,7 @@ export default function PlanScreen() {
         // An empty day: one compact card instead of three empty boxes.
         <View style={[styles.emptyCard, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]}>
           <View style={styles.emptyTop}>
-            <Mascot mood="thinking" size={64} />
+            <Mascot mood="thinking" size={80} />
             <View style={{ flex: 1 }}>
               <Text style={[t.type.title3, { color: t.colors.label }]}>{weekDays[day].isToday ? 'Plan today' : `Plan ${weekDays[day].long}`}</Text>
               <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]} testID="cat-line">
@@ -156,6 +157,7 @@ export default function PlanScreen() {
         </View>
       ) : (
         <>
+          <MascotSays size={80} style={{ marginBottom: t.layout.gap }} line={say('planDay', { calories: dayTotals.calories })} />
           <Section>
             {meals.map((meal, i) => {
               const recipe = getRecipe(dayPlan[meal]);

@@ -73,14 +73,14 @@ export function MascotSays({ line, onNext, size = 110, layout = 'row', style, hi
       style={[
         styles.bubble,
         layout === 'row' ? styles.bubbleRow : styles.bubbleColumn,
-        { backgroundColor: t.isDark ? t.colors.elevated : t.colors.cell },
+        { backgroundColor: t.colors.cell, borderColor: t.colors.border, ...t.chunky.lip },
       ]}
     >
       {/* tail */}
       {!hideCat && <View
         style={[
           layout === 'row' ? styles.tailLeft : styles.tailBottom,
-          { backgroundColor: t.isDark ? t.colors.elevated : t.colors.cell },
+          { backgroundColor: t.colors.cell, borderColor: t.colors.border },
         ]}
       />}
       <Text style={[t.type.callout, t.noWidows.style, { color: t.colors.label }]} {...t.noWidows.props} testID="cat-line">
@@ -99,9 +99,9 @@ export function MascotSays({ line, onNext, size = 110, layout = 'row', style, hi
     <View style={[layout === 'row' ? styles.row : styles.column, style]}>
       {layout === 'column' && <Animated.View key={line.text} entering={FadeIn.duration(180)}>{bubble}</Animated.View>}
       {!hideCat && <Mascot mood={line.mood} talking={!done} size={size} onPet={onPet} playKey={line.text} />}
-      {/* The bubble hugs its words, and sits low so the pointer meets Biscuit's mouth (about 61% down). */}
+      {/* The bubble hugs its words, and sits a little low so the pointer meets Biscuit's mouth. */}
       {layout === 'row' && (
-        <Animated.View key={line.text} entering={FadeIn.duration(180)} style={{ flexShrink: 1, marginTop: hideCat ? 0 : Math.round(size * 0.22) }}>
+        <Animated.View key={line.text} entering={FadeIn.duration(180)} style={{ flexShrink: 1, marginTop: hideCat ? 0 : Math.round(size * 0.12) }}>
           {bubble}
         </Animated.View>
       )}
@@ -112,9 +112,9 @@ export function MascotSays({ line, onNext, size = 110, layout = 'row', style, hi
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   column: { alignItems: 'center', gap: 6 },
-  bubble: { borderRadius: 18, borderCurve: 'continuous', paddingHorizontal: 16, paddingVertical: 12, minHeight: 48, justifyContent: 'center' },
+  bubble: { borderWidth: 2, borderRadius: 20, borderCurve: 'continuous', paddingHorizontal: 16, paddingVertical: 12, minHeight: 48, justifyContent: 'center' },
   bubbleRow: {},
   bubbleColumn: { maxWidth: 320 },
-  tailLeft: { position: 'absolute', left: -5, top: '50%', marginTop: -6, width: 12, height: 12, borderRadius: 2, transform: [{ rotate: '45deg' }] },
-  tailBottom: { position: 'absolute', bottom: -5, left: '50%', marginLeft: -6, width: 12, height: 12, borderRadius: 2, transform: [{ rotate: '45deg' }] },
+  tailLeft: { position: 'absolute', left: -8, top: '50%', marginTop: -7, width: 14, height: 14, borderLeftWidth: 2, borderBottomWidth: 2, transform: [{ rotate: '45deg' }] },
+  tailBottom: { position: 'absolute', bottom: -8, left: '50%', marginLeft: -7, width: 14, height: 14, borderRightWidth: 2, borderBottomWidth: 2, transform: [{ rotate: '45deg' }] },
 });

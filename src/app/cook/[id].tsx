@@ -197,7 +197,7 @@ export default function CookMode() {
 
         {page >= 1 && page <= steps.length && (
           <Animated.View key={page} entering={FadeInRight.duration(240)} style={[styles.card, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]}>
-            <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: '600' }]}>Step {page}</Text>
+            <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: 'normal', fontFamily: t.fonts.rounded }]}>Step {page}</Text>
             <Text style={[styles.stepText, t.noWidows.style, { color: t.colors.label }]} {...t.noWidows.props} testID="cook-step">
               {stepText}
             </Text>
@@ -293,7 +293,7 @@ function TimerPill({ timer: tm, now, first, page, recipeId, onStop, onPause, onR
   }
   const running = tm.status === 'running';
   return (
-    <Animated.View entering={FadeIn} layout={LinearTransition} style={[styles.pill, { backgroundColor: t.colors.cell }]}>
+    <Animated.View entering={FadeIn} layout={LinearTransition} style={[styles.pill, { backgroundColor: t.colors.cell, borderWidth: 2, borderColor: t.colors.border }]}>
       <Icon name="timer" size={18} color={t.colors.tint} weight="bold" />
       <Text style={[t.type.title3, { color: t.colors.label, fontVariant: ['tabular-nums'], minWidth: 56 }]} testID={first ? 'timer-display' : undefined}>
         {clock(secondsLeft(tm, now))}

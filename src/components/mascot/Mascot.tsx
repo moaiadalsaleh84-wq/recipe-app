@@ -36,14 +36,11 @@ export type MascotProps = {
   hold?: boolean;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
-  /** Lab only: force Reduce Motion on, or draw the black silhouette. */
-  reduceMotion?: boolean;
-  silhouette?: boolean;
 };
 
 export const MASCOT_NAME = 'Biscuit';
 
-export function Mascot({ mood = 'idle', talking = false, size = 160, onPet, petable = true, playKey = '', hold = false, style, accessibilityLabel, reduceMotion, silhouette }: MascotProps) {
+export function Mascot({ mood = 'idle', talking = false, size = 160, onPet, petable = true, playKey = '', hold = false, style, accessibilityLabel }: MascotProps) {
   const { addPet } = useStore();
   // Each tap restarts the delighted reaction.
   const [pets, setPets] = useState(0);
@@ -51,7 +48,7 @@ export function Mascot({ mood = 'idle', talking = false, size = 160, onPet, peta
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => () => clearTimeout(timer.current), []);
 
-  const rig = <BiscuitRig mood={petted ? 'love' : mood} talking={talking} size={size} playKey={petted ? `pet-${pets}` : playKey} hold={hold} reduceMotion={reduceMotion} silhouette={silhouette} />;
+  const rig = <BiscuitRig mood={petted ? 'love' : mood} talking={talking} size={size} playKey={petted ? `pet-${pets}` : playKey} hold={hold} />;
   if (!petable) return <View style={style}>{rig}</View>;
 
   return (
