@@ -7,8 +7,8 @@
  * the body with no seams. Inner lines are added only on purpose, as `detail` parts.
  * The silhouette check draws only the first pass, in black.
  */
-import type { ReactNode } from 'react';
-import Svg, { G, Path } from 'react-native-svg';
+import { useId, type ReactNode } from 'react';
+import Svg, { ClipPath, Defs, G, Path } from 'react-native-svg';
 
 export type Pose = 'idle' | 'happy' | 'excited';
 export const POSES: readonly Pose[] = ['idle', 'happy', 'excited'];
@@ -95,5 +95,51 @@ export function Frame({ size, pose, silhouette, ink, children }: { size: number;
       {!silhouette && <Path d={ell(100, 196, pose === 'excited' ? 34 : 44, 4.5)} fill={ink} opacity={0.12} />}
       <G transform={body}>{children}</G>
     </Svg>
+  );
+}
+
+/**
+ * Big, friendly eyes: a white eye with a large pupil that looks slightly toward the nose (at you),
+ * one shine, and lids in the face's color that change the shape for each mood.
+ * - idle: a soft upper lid covers the top of the eye (relaxed)
+ * - happy: the cheeks push a lower lid up, so the eye smiles
+ * - excited: no lids, the eye opens wider and the pupil grows
+ */
+export function Eye({ x, y, rx, ry, pose, side, lid, ink, pupil, w }: { x: number; y: number; rx: number; ry: number; pose: Pose; side: -1 | 1; lid: string; ink: string; pupil: string; w: number }) {
+  const id = `eye${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
+  const k = pose === 'excited' ? 1.08 : 1;
+  const ex = rx * k;
+  const ey = ry * k;
+  const pr = ex * (pose === 'excited' ? 0.66 : 0.6);
+  const pry = ey * (pose === 'excited' ? 0.7 : 0.64);
+  const px = x - side * ex * 0.16;
+  const py = y + ey * (pose === 'happy' ? -0.12 : 0.1);
+  const L = x - ex - 3;
+  const R = x + ex + 3;
+  const lidEdge =
+    pose === 'idle'
+      ? `M${L} ${y - ey * 0.5 + side * 1.5} Q${x} ${y - ey * 0.66} ${R} ${y - ey * 0.5 - side * 1.5}`
+      : pose === 'happy'
+        ? `M${L} ${y + ey * 0.62} Q${x} ${y - ey * 0.08} ${R} ${y + ey * 0.62}`
+        : null;
+  const lidShape = pose === 'idle' ? `${lidEdge} L${R} ${y - ey - 4} L${L} ${y - ey - 4} Z` : pose === 'happy' ? `${lidEdge} L${R} ${y + ey + 4} L${L} ${y + ey + 4} Z` : null;
+  const eye = ell(x, y, ex, ey);
+  return (
+    <G>
+      <Defs>
+        <ClipPath id={id}>
+          <Path d={eye} />
+        </ClipPath>
+      </Defs>
+      <Path d={eye} fill="#FFFFFF" />
+      <G clipPath={`url(#${id})`}>
+        <Path d={ell(px, py, pr, pry)} fill={pupil} />
+        <Path d={ell(px - pr * 0.32, py - pry * 0.38, pr * 0.36, pry * 0.34)} fill="#FFFFFF" />
+        {pose === 'excited' && <Path d={ell(px + pr * 0.42, py + pry * 0.42, pr * 0.15, pr * 0.15)} fill="#FFFFFF" />}
+        {lidShape && <Path d={lidShape} fill={lid} />}
+        {lidEdge && <Path d={lidEdge} stroke={ink} strokeWidth={w * 0.62} fill="none" strokeLinecap="round" />}
+      </G>
+      <Path d={eye} fill="none" stroke={ink} strokeWidth={w * 0.62} />
+    </G>
   );
 }

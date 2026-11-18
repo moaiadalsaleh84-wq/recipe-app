@@ -2,7 +2,7 @@
  * Concept A: Saffy, a saffron cat with a slouchy soufflé hat that tips to one side.
  */
 import { G, Path } from 'react-native-svg';
-import { capsule, ell, Frame, Layer, mirror, sparkle, type CharProps, type Part } from './kit';
+import { capsule, ell, Eye, Frame, Layer, mirror, sparkle, type CharProps, type Part } from './kit';
 
 export const saffy = {
   ink: '#3A1C3F',
@@ -33,35 +33,21 @@ const SHOULDER = { x: 70, y: 131 };
 
 const angles = { idle: [17, 17], happy: [48, 48], excited: [138, 138] } as const;
 
-function face(pose: CharProps['pose']) {
+function face(pose: CharProps['pose'], w: number) {
   const out = [];
-  // Eyes sit in the lower half of the head, well apart from the muzzle.
-  for (const x of [78, 122]) {
-    if (pose === 'happy') {
-      out.push(<Path key={`e${x}`} d={`M${x - 8} 96 Q${x} 85 ${x + 8} 96`} stroke={P.eye} strokeWidth={5} strokeLinecap="round" fill="none" />);
-    } else if (pose === 'excited') {
-      out.push(<Path key={`e${x}`} d={ell(x, 91, 8.5, 11)} fill={P.eye} />);
-      out.push(<Path key={`s${x}`} d={ell(x - 3, 86, 3.4, 4)} fill="#FFFFFF" />);
-      out.push(<Path key={`t${x}`} d={ell(x + 3, 96, 1.6, 1.6)} fill="#FFFFFF" />);
-      out.push(<Path key={`b${x}`} d={`M${x - 7} 75 Q${x} 70 ${x + 7} 74`} stroke={P.ink} strokeWidth={3.4} strokeLinecap="round" fill="none" />);
-    } else {
-      // Idle: an upright pill with a relaxed upper lid that covers the top of the eye.
-      out.push(<Path key={`e${x}`} d={ell(x, 93, 7, 9.5)} fill={P.eye} />);
-      const lid = x < 100 ? `M${x - 9} 81 H${x + 9} V88 C${x + 4} 86.5 ${x - 3} 86.5 ${x - 9} 89 Z` : `M${x - 9} 81 H${x + 9} V89 C${x + 3} 86.5 ${x - 4} 86.5 ${x - 9} 88 Z`;
-      out.push(<Path key={`l${x}`} d={lid} fill={P.fur} />);
-      out.push(<Path key={`s${x}`} d={ell(x - 2.5, 90.5, 2.2, 2.8)} fill="#FFFFFF" />);
-    }
-  }
-  out.push(<Path key="bl" d={ell(62, 107, 8, 4.8)} fill={P.blush} opacity={0.6} />);
-  out.push(<Path key="br" d={ell(138, 107, 8, 4.8)} fill={P.blush} opacity={0.6} />);
-  out.push(<Path key="muz" d={ell(100, 113, 15, 11)} fill={P.cream} />);
-  out.push(<Path key="nose" d="M95 106 Q100 103.5 105 106 Q103.5 110.5 100 111.5 Q96.5 110.5 95 106 Z" fill={P.nose} />);
+  // Big eyes in the lower half of the head, close together, well apart from the small muzzle.
+  out.push(<Eye key="el" x={80} y={90} rx={14} ry={15.5} pose={pose} side={-1} lid={P.fur} ink={P.ink} pupil={P.eye} w={w} />);
+  out.push(<Eye key="er" x={120} y={90} rx={14} ry={15.5} pose={pose} side={1} lid={P.fur} ink={P.ink} pupil={P.eye} w={w} />);
+  out.push(<Path key="bl" d={ell(60, 111, 7, 4.5)} fill={P.blush} opacity={0.6} />);
+  out.push(<Path key="br" d={ell(140, 111, 7, 4.5)} fill={P.blush} opacity={0.6} />);
+  out.push(<Path key="muz" d={ell(100, 119, 13, 9.5)} fill={P.cream} />);
+  out.push(<Path key="nose" d="M95.5 111.5 Q100 109.5 104.5 111.5 Q103 115.5 100 116.5 Q97 115.5 95.5 111.5 Z" fill={P.nose} />);
   if (pose === 'idle') {
-    out.push(<Path key="m" d="M93.5 115.5 Q100 121 106.5 115.5" stroke={P.mouth} strokeWidth={3} strokeLinecap="round" fill="none" />);
+    out.push(<Path key="m" d="M94.5 120.5 Q100 125.5 105.5 120.5" stroke={P.mouth} strokeWidth={3} strokeLinecap="round" fill="none" />);
   } else {
-    const big = pose === 'excited' ? 4 : 0;
-    out.push(<Path key="m" d={`M${91 - big / 2} 114.5 Q100 116 ${109 + big / 2} 114.5 Q${108 + big / 2} ${127 + big} 100 ${128 + big} Q${92 - big / 2} ${127 + big} ${91 - big / 2} 114.5 Z`} fill={P.mouth} />);
-    out.push(<Path key="tg" d={ell(100, 124.5 + big, 5.2, 3)} fill={P.tongue} />);
+    const big = pose === 'excited' ? 2 : 0;
+    out.push(<Path key="m" d={`M92.5 119.5 Q100 121 107.5 119.5 Q106.5 ${128.5 + big} 100 ${129.5 + big} Q93.5 ${128.5 + big} 92.5 119.5 Z`} fill={P.mouth} />);
+    out.push(<Path key="tg" d={ell(100, 126.5 + big, 4.4, 2.5)} fill={P.tongue} />);
   }
   return out;
 }
@@ -86,7 +72,7 @@ export function Saffy({ pose, size, silhouette }: CharProps) {
     { detail: <Path d={mirror(EAR_IN)} fill={P.pink} /> },
     { d: HEAD, fill: P.fur },
     { detail: <Path d="M54 72 C55 58 64 48 78 42 C69 51 63 60 61 74 Z" fill={P.hi} /> },
-    { detail: <>{face(pose)}</> },
+    { detail: <>{face(pose, w)}</> },
     { detail: <Path d="M72 125 C82 130.5 91 132 100 132 C109 132 118 130.5 128 125" stroke={P.ink} strokeWidth={inner} fill="none" strokeLinecap="round" /> },
     { d: ARM.d, fill: P.fur, t: armL },
     { d: ARM.d, fill: P.fur, t: armR },

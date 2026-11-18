@@ -2,7 +2,7 @@
  * Concept C: Nutmeg, a small hedgehog with soft scalloped quills and a trusty oven mitt.
  */
 import { Path } from 'react-native-svg';
-import { capsule, ell, Frame, Layer, sparkle, type CharProps, type Part } from './kit';
+import { capsule, ell, Eye, Frame, Layer, sparkle, type CharProps, type Part } from './kit';
 
 export const nutmeg = {
   ink: '#3A1C3F',
@@ -52,35 +52,21 @@ const SH = { x: 72, y: 133 };
 
 const angles = { idle: [16, 16], happy: [58, 46], excited: [146, 138] } as const;
 
-function face(pose: CharProps['pose']) {
+function face(pose: CharProps['pose'], w: number) {
   const out = [];
-  for (const x of [80, 120]) {
-    const side = x < 100 ? -1 : 1;
-    if (pose === 'happy') {
-      out.push(<Path key={`e${x}`} d={`M${x - 7.5} 95 Q${x} 85 ${x + 7.5} 95`} stroke={P.eye} strokeWidth={5} strokeLinecap="round" fill="none" />);
-    } else if (pose === 'excited') {
-      out.push(<Path key={`e${x}`} d={ell(x, 91, 8, 9.5)} fill={P.eye} />);
-      out.push(<Path key={`s${x}`} d={ell(x - 3, 87, 3.2, 3.6)} fill="#FFFFFF" />);
-      out.push(<Path key={`t${x}`} d={ell(x + 3, 95, 1.4, 1.4)} fill="#FFFFFF" />);
-      out.push(<Path key={`b${x}`} d={`M${x - 6 * side} 75 Q${x} 71 ${x + 6 * side} 74`} stroke={P.ink} strokeWidth={3.4} strokeLinecap="round" fill="none" />);
-    } else {
-      // Idle: careful eyes. The brows tilt up in the middle, a little earnest.
-      out.push(<Path key={`e${x}`} d={ell(x, 92, 6.5, 8.5)} fill={P.eye} />);
-      out.push(<Path key={`s${x}`} d={ell(x - 2.2, 89, 2.2, 2.6)} fill="#FFFFFF" />);
-      out.push(<Path key={`b${x}`} d={`M${x + 6 * side} 80 Q${x} 76 ${x - 6 * side} 77`} stroke={P.ink} strokeWidth={3.2} strokeLinecap="round" fill="none" />);
-    }
-  }
-  out.push(<Path key="bl" d={ell(66, 106, 7, 4.5)} fill={P.blush} opacity={0.6} />);
-  out.push(<Path key="br" d={ell(134, 106, 7, 4.5)} fill={P.blush} opacity={0.6} />);
-  out.push(<Path key="muz" d={ell(100, 113, 15, 11)} fill={P.cream} />);
-  out.push(<Path key="nose" d={ell(100, 106, 6.5, 5)} fill={P.nose} />);
-  out.push(<Path key="nh" d={ell(98, 104.5, 2.2, 1.4)} fill="#FFFFFF" opacity={0.55} />);
+  out.push(<Eye key="el" x={81} y={91} rx={12.5} ry={14} pose={pose} side={-1} lid={P.skin} ink={P.ink} pupil={P.eye} w={w} />);
+  out.push(<Eye key="er" x={119} y={91} rx={12.5} ry={14} pose={pose} side={1} lid={P.skin} ink={P.ink} pupil={P.eye} w={w} />);
+  out.push(<Path key="bl" d={ell(63, 111, 7, 4.5)} fill={P.blush} opacity={0.6} />);
+  out.push(<Path key="br" d={ell(137, 111, 7, 4.5)} fill={P.blush} opacity={0.6} />);
+  out.push(<Path key="muz" d={ell(100, 118, 12.5, 9.5)} fill={P.cream} />);
+  out.push(<Path key="nose" d={ell(100, 112, 5.8, 4.4)} fill={P.nose} />);
+  out.push(<Path key="nh" d={ell(98.2, 110.8, 2, 1.2)} fill="#FFFFFF" opacity={0.55} />);
   if (pose === 'idle') {
-    out.push(<Path key="m" d="M95 116 Q100 120 105 116" stroke={P.mouth} strokeWidth={3} strokeLinecap="round" fill="none" />);
+    out.push(<Path key="m" d="M95.5 120.5 Q100 124 104.5 120.5" stroke={P.mouth} strokeWidth={3} strokeLinecap="round" fill="none" />);
   } else {
-    const big = pose === 'excited' ? 3 : 0;
-    out.push(<Path key="m" d={`M92 114.5 Q100 116 108 114.5 Q107 ${125 + big} 100 ${126 + big} Q93 ${125 + big} 92 114.5 Z`} fill={P.mouth} />);
-    out.push(<Path key="tg" d={ell(100, 122.5 + big, 4.5, 2.6)} fill={P.tongue} />);
+    const big = pose === 'excited' ? 2 : 0;
+    out.push(<Path key="m" d={`M93 119 Q100 120.5 107 119 Q106 ${127 + big} 100 ${128 + big} Q94 ${127 + big} 93 119 Z`} fill={P.mouth} />);
+    out.push(<Path key="tg" d={ell(100, 125 + big, 4, 2.3)} fill={P.tongue} />);
   }
   return out;
 }
@@ -105,7 +91,7 @@ export function Nutmeg({ pose, size, silhouette }: CharProps) {
     { detail: <Path d="M52 74 C60 58 78 52 92 62 C96 65 98 69 100 71 C102 69 104 65 108 62 C122 52 140 58 148 74 C146 52 126 38 100 38 C74 38 54 52 52 74 Z" fill={P.quill} /> },
     { detail: <Path d="M58 62 C64 50 76 44 90 42 C78 48 70 54 64 64 Z" fill={P.quillHi} /> },
     { detail: <><Path d={ell(54, 80, 6, 7)} fill={P.skinShade} /><Path d={ell(146, 80, 6, 7)} fill={P.skinShade} /></> },
-    { detail: <>{face(pose)}</> },
+    { detail: <>{face(pose, w)}</> },
     { detail: <Path d="M72 124.5 C82 129 91 130 100 130 C109 130 118 129 128 124.5" stroke={P.ink} strokeWidth={inner} fill="none" strokeLinecap="round" /> },
     { d: ARM.d, fill: P.skin, t: armL },
     { d: ARM.d, fill: P.skin, t: armR },
