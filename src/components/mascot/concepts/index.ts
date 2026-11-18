@@ -1,8 +1,8 @@
 import type { ComponentType } from 'react';
+import { Clove } from './Clove';
+import { Crumb } from './Crumb';
 import type { CharProps } from './kit';
-import { Nutmeg } from './Nutmeg';
-import { Pip } from './Pip';
-import { Saffy } from './Saffy';
+import { Pop } from './Pop';
 
 export type Concept = {
   id: string;
@@ -14,36 +14,39 @@ export type Concept = {
   Art: ComponentType<CharProps>;
 };
 
-/** The mascot concepts, for the dev-only preview at /dev-mascots. Nothing in the app uses these yet. */
+/**
+ * Round 2 of the mascot concepts, for the dev-only preview at /dev-mascots. Nothing in the app uses
+ * these yet. Built like Duo and Waterllama's characters: one bold shape, no outlines, big eyes.
+ */
 export const CONCEPTS: Concept[] = [
   {
-    id: 'saffy',
-    letter: 'A',
-    name: 'Saffy',
-    species: 'Cat',
+    id: 'pop',
+    letter: 'D',
+    name: 'Pop',
+    species: 'Popcorn kernel',
     personality:
-      'A sunny, unhurried home cook who thinks every meal deserves a little sit-down. Saffy hums while chopping, tastes with a tiny spoon, never rushes you and cheers small wins like big ones. A bit vain about the hat.',
-    signature: 'A slouchy soufflé hat that leans to one side and tips further the happier Saffy gets.',
-    Art: Saffy,
+      'Bursting with energy and a little impatient. Pop gets excited fast, celebrates loudly and literally pops with joy when a meal comes together. Sweet, buttery and easily startled by hot pans. The app is called Pantry Pop, so Pop is the app.',
+    signature: 'Still wears its golden kernel shell like an apron, and little puffs pop off its head when it gets excited.',
+    Art: Pop,
   },
   {
-    id: 'pip',
-    letter: 'B',
-    name: 'Pip',
-    species: 'Otter',
+    id: 'crumb',
+    letter: 'E',
+    name: 'Crumb',
+    species: 'Cat loaf',
     personality:
-      'Playful, curious and always fiddling with something. Pip treats the kitchen like a playground: sniffs every new ingredient, drums on pots, invents "secret" spice mixes and floats belly-up to relax while things simmer. Big-hearted, easily delighted, a little chaotic.',
-    signature: 'A long wooden spoon Pip never puts down. It points, stirs, conducts, and goes up like a torch when something goes right.',
-    Art: Pip,
+      'A cosy, unbothered cat who sits like a loaf of bread and is warm like one. Crumb loves slow Sunday cooking, naps near the oven and judges your knife skills a little, but kindly. Keeps the "a cat helps you cook" idea.',
+    signature: 'Shaped like a loaf of bread. The tabby stripes are the baker\'s score marks on the crust.',
+    Art: Crumb,
   },
   {
-    id: 'nutmeg',
-    letter: 'C',
-    name: 'Nutmeg',
-    species: 'Hedgehog',
+    id: 'clove',
+    letter: 'F',
+    name: 'Clove',
+    species: 'Garlic bulb',
     personality:
-      'Small, careful and quietly brave. Nutmeg reads the whole recipe first, keeps everyone safe around hot pans and curls up a little when nervous. Gentle, dry humour, and the proudest tiny chef in the world when a dish turns out right.',
-    signature: 'A puffy berry-red oven mitt on one paw, plus soft rounded quills that make an instantly readable crown.',
-    Art: Nutmeg,
+      'Garlic goes in almost everything, and so does Clove: the loyal friend who\'s always in your pantry. Cheerful, a bit dramatic, firmly believes every recipe needs "one more clove", and wears the app\'s aubergine colour.',
+    signature: 'A green sprout on top that curls up when Clove is happy and droops when Clove is sad.',
+    Art: Clove,
   },
 ];
