@@ -1,5 +1,7 @@
 /**
- * <Mascot> is the only way the app shows Biscuit.
+ * <Mascot> is the only way the app shows the mascot. It currently draws Pop, a placeholder
+ * (pop/PopRig.tsx), until the final character design is ready. The name shown in the app
+ * (MASCOT_NAME) is unchanged until a new name is approved.
  *
  *   <Mascot mood="happy" talking size={120} />
  *
@@ -18,7 +20,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
 import { haptics } from '../../lib/haptics';
 import { useStore } from '../../state/store';
-import { BiscuitRig } from './BiscuitRig';
+import { PopRig } from './pop/PopRig';
 import type { Mood } from './moods';
 
 export type MascotProps = {
@@ -51,7 +53,7 @@ export function Mascot({ mood = 'idle', talking = false, size = 160, onPet, peta
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => () => clearTimeout(timer.current), []);
 
-  const rig = <BiscuitRig mood={petted ? 'love' : mood} talking={talking} size={size} playKey={petted ? `pet-${pets}` : playKey} hold={hold} reduceMotion={reduceMotion} silhouette={silhouette} />;
+  const rig = <PopRig mood={petted ? 'love' : mood} talking={talking} size={size} playKey={petted ? `pet-${pets}` : playKey} hold={hold} reduceMotion={reduceMotion} silhouette={silhouette} />;
   if (!petable) return <View style={style}>{rig}</View>;
 
   return (
