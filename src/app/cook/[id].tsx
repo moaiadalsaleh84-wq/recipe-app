@@ -221,6 +221,8 @@ export default function CookMode() {
             <Text style={[t.type.body, t.noWidows.style, { color: t.colors.secondaryLabel, textAlign: 'center', maxWidth: 300 }]} {...t.noWidows.props}>
               {noWidow(`${recipe.title} is ready. Log it to keep your streak going.`)}
             </Text>
+            {/* Show it off: a story-sized card for TikTok and Instagram */}
+            <Button label="Share your dish" icon="share" variant="tinted" size="medium" onPress={() => router.push({ pathname: '/share-card', params: { id: recipe.id } })} />
           </Animated.View>
         ) : (
           <MascotSays line={line} size={96} style={{ marginTop: 16 }} />

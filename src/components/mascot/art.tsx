@@ -1,5 +1,6 @@
 /**
- * Biscuit's drawing: an original chef cat, built from simple rounded shapes in a 200 x 200 space.
+ * Biscuit's drawing: a little golden dough bun in a chef's toque, built from simple rounded shapes
+ * in a 200 x 200 space.
  *
  * How the lines work:
  * - "line" pass: every part is drawn filled with the outline color and a thick stroke. Together they
@@ -53,125 +54,56 @@ function mirrorPath(d: string) {
   });
 }
 
+/** How far the face sits below where it was designed (the face drawings use one shared layout). */
+export const FACE_DY = 21;
+
 /** Joints, in art space. */
 export const PIVOT = {
-  /** The whole body turns and squashes at the feet. */
-  feet: [100, 194] as Pt,
-  /** The head turns at the neck. */
-  neck: [100, 140] as Pt,
-  shoulderL: [74, 151] as Pt,
-  shoulderR: [126, 151] as Pt,
-  earL: [mx(146), 66] as Pt,
-  earR: [146, 66] as Pt,
-  hat: [100, 44] as Pt,
-  tailBase: [128, 182] as Pt,
-  tailJoint: [162, 174] as Pt,
-  eyes: [100, 101] as Pt,
-  mouth: [100, 121] as Pt,
+  /** The whole body squashes at the feet. */
+  feet: [100, 192] as Pt,
+  /** The bun leans and wobbles from its bottom. */
+  neck: [100, 182] as Pt,
+  shoulderL: [30, 140] as Pt,
+  shoulderR: [170, 140] as Pt,
+  /** Biscuit has no ears or tail; these are unused but keep the rig's layers simple. */
+  earL: [70, 60] as Pt,
+  earR: [130, 60] as Pt,
+  hat: [100, 54] as Pt,
+  tailBase: [150, 170] as Pt,
+  tailJoint: [160, 160] as Pt,
+  eyes: [100, 101 + FACE_DY] as Pt,
+  mouth: [100, 121 + FACE_DY] as Pt,
 };
 export const EYE_L: Pt = [72, 101];
 export const EYE_R: Pt = [128, 101];
 
-/** One soft, slightly wide head, with two small round tufts of cheek fur on each side. */
-const HEAD = symmetric(
-  [100, 44],
+/** Biscuit: one plump, soft bun, a little wider at the bottom, like dough that has settled. */
+const BUN = symmetric(
+  [100, 50],
   [
-    [134, 44, 158, 57, 163, 81],
-    [166, 95, 165, 105, 161, 111],
-    [167, 113, 169, 120, 163, 123.5],
-    [167, 127, 164, 134.5, 156, 134.5],
-    [145, 143, 125, 146, 100, 146],
+    [138, 50, 168, 74, 172, 110],
+    [175.5, 140, 168, 168, 140, 177.5],
+    [124, 182.5, 112, 182.5, 100, 182.5],
   ],
 );
-/** The chin: the one inner line where the head sits on the body. */
-const CHIN = 'M156 134.5 C145 143 125 146 100 146 C75 146 55 143 44 134.5';
-/** The muzzle and lower face: cream, flowing into the chin. */
-const MUZZLE = symmetric(
-  [100, 105],
-  [
-    [113, 105, 124, 111, 128, 120],
-    [131, 128, 132, 136, 128, 142],
-    [120, 147, 110, 147, 100, 147],
-  ],
-);
-/** Short rounded ears, tilted outward, with soft tips. */
-const EAR_R = 'M124 60 C131 47 146 35.5 159 30.5 C166 28 171 32.5 169 40 C166 52 164 64 161.5 77 Z';
-const EAR_INNER_R = 'M132.5 57 C138.5 48 148.5 40.5 156.5 37.5 C160 36.5 162 39 161 43 C159 51.5 157.5 59.5 156.5 67.5 Z';
-const EAR_L = mirrorPath(EAR_R);
-const EAR_INNER_L = mirrorPath(EAR_INNER_R);
 
-/** The body: one smooth bean. */
-const BODY = symmetric(
-  [100, 128],
-  [
-    [121, 128, 137, 140, 139, 160],
-    [141, 179, 127, 188.5, 100, 188.5],
-  ],
-);
-/** The edge of the body between the feet. */
-const BODY_HEM = 'M73 183 C85 190 115 190 127 183';
+/** The chef hat: a puffy toque with three soft bumps, an aubergine band and a sprig of herbs. */
+const HAT_PUFF = 'M74 49 C51 49 45 24 63.5 16.5 C65.5 1 86 -7 100 1.5 C114 -7 134.5 1 136.5 16.5 C155 24 149 49 126 49 Z';
+const HAT_BAND = 'M70 45.5 Q100 50 130 45.5 Q133 45.1 132.6 48.3 L131.7 55.6 Q131.3 58.7 128.1 59.1 Q100 63.6 71.9 59.1 Q68.7 58.7 68.3 55.6 L67.4 48.3 Q67 45.1 70 45.5 Z';
+const SPRIG = ['M127 48 C128 37 137 30.5 146 32 C144.5 41.5 136.5 47.5 127 48 Z', 'M128.5 49.5 C135.5 44.5 145 45.5 151 51.5 C143 57 134 56 128.5 49.5 Z'];
 
-/** The chef hat: puffy, with three soft bumps and a band. Sits snug between the ears. */
-const HAT_PUFF = 'M78 34 C62.5 34 58 16.5 71.5 12 C74.5 2 90 -1.5 100 4.5 C110 -1.5 125.5 2 128.5 12 C142 16.5 137.5 34 122 34 Z';
-/** The band curves with the head, like cloth, instead of a flat label. */
-const HAT_BAND = 'M71.5 31.5 Q100 36 128.5 31.5 Q131.5 31 131 34.5 L129.6 45.5 Q129.2 48.6 126 49 Q100 53.5 74 49 Q70.8 48.6 70.4 45.5 L69 34.5 Q68.5 31 71.5 31.5 Z';
-
-/** A neckerchief: a band under the chin and a small rounded point, tied with a small knot. */
-const SCARF_BAND = 'M66 139 C82 148.5 118 148.5 134 139 C136.5 142 137 146 135.5 149 C118 158 82 158 64.5 149 C63 146 63.5 142 66 139 Z';
-const SCARF_TIP = 'M88.5 152 C95 154.5 105 154.5 111.5 152 C110.5 159 106.5 165 101.5 168.2 C100.6 168.8 99.4 168.8 98.5 168.2 C93.5 165 89.5 159 88.5 152 Z';
-
-/** An arm hanging from its shoulder: short, with a round paw a little wider than the arm. */
-const ARM_LEN = 19;
+/** A short, round arm growing out of the side of the bun. */
+const ARM_LEN = 16;
 function armPath([x, y]: Pt) {
-  const r0 = 6.4;
-  const r1 = 7.6;
+  const r0 = 8.6;
+  const r1 = 10;
   return `M${x - r0} ${y} L${x - r1} ${y + ARM_LEN} A${r1} ${r1} 0 0 0 ${x + r1} ${y + ARM_LEN} L${x + r0} ${y} A${r0} ${r0} 0 0 0 ${x - r0} ${y} Z`;
 }
 const ARM_L = armPath(PIVOT.shoulderL);
 const ARM_R = armPath(PIVOT.shoulderR);
 
-/** Two small round feet peeking out under the body. */
-const FOOT = { y: 188.5, dx: 15.5, rx: 11, ry: 7.2 };
-
-/** The tail, in two tapered pieces so the tip can follow through. Thick at the base, thin at the tip. */
-function taper(from: Pt, to: Pt, w0: number, w1: number, bend: number) {
-  const [x0, y0] = from;
-  const [x1, y1] = to;
-  const dx = x1 - x0;
-  const dy = y1 - y0;
-  const len = Math.hypot(dx, dy);
-  const nx = -dy / len;
-  const ny = dx / len;
-  const mxp = (x0 + x1) / 2 + nx * bend;
-  const myp = (y0 + y1) / 2 + ny * bend;
-  const a0 = [x0 + nx * w0, y0 + ny * w0];
-  const b0 = [x0 - nx * w0, y0 - ny * w0];
-  const a1 = [x1 + nx * w1, y1 + ny * w1];
-  const b1 = [x1 - nx * w1, y1 - ny * w1];
-  const wm = (w0 + w1) / 2;
-  return [
-    `M${f(a0[0])} ${f(a0[1])}`,
-    `Q${f(mxp + nx * wm)} ${f(myp + ny * wm)} ${f(a1[0])} ${f(a1[1])}`,
-    `A${w1} ${w1} 0 0 0 ${f(b1[0])} ${f(b1[1])}`,
-    `Q${f(mxp - nx * wm)} ${f(myp - ny * wm)} ${f(b0[0])} ${f(b0[1])}`,
-    `A${w0} ${w0} 0 0 0 ${f(a0[0])} ${f(a0[1])} Z`,
-  ].join(' ');
-}
-const TAIL_END: Pt = [182, 144];
-const TAIL_BASE = taper(PIVOT.tailBase, PIVOT.tailJoint, 8.4, 7, 2);
-const TAIL_TIP = taper(PIVOT.tailJoint, TAIL_END, 7, 5.2, 5);
-/** A point part-way along a line. */
-const along = (a: Pt, b: Pt, t: number): Pt => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
-/** A stripe across a tail piece at t (0 at the start, 1 at the end). */
-function stripeAcross(a: Pt, b: Pt, t: number, half = 14) {
-  const [cx, cy] = along(a, b, t);
-  const dx = b[0] - a[0];
-  const dy = b[1] - a[1];
-  const len = Math.hypot(dx, dy);
-  const nx = (-dy / len) * half;
-  const ny = (dx / len) * half;
-  return `M${f(cx - nx)} ${f(cy - ny)} L${f(cx + nx)} ${f(cy + ny)}`;
-}
+/** Two small round feet peeking out under the bun. */
+const FOOT = { y: 184, dx: 20, rx: 13, ry: 8 };
 
 /* ------------------------------------------------------------------ */
 /* Drawing helpers                                                      */
@@ -189,109 +121,52 @@ export type Look = { out: number; color: string };
 /* Parts                                                                */
 /* ------------------------------------------------------------------ */
 
-export function Tail({ piece, pass, look, uid }: { piece: 'base' | 'tip'; pass: Pass; look: Look; uid: string }) {
-  const d = piece === 'base' ? TAIL_BASE : TAIL_TIP;
-  if (pass === 'line') return <Path d={d} {...lineProps(look.out, look.color)} />;
-  const id = `${uid}-tail-${piece}`;
-  const [a, b] = piece === 'base' ? [PIVOT.tailBase, PIVOT.tailJoint] : [PIVOT.tailJoint, TAIL_END];
-  return (
-    <>
-      <Defs>
-        <ClipPath id={id}>
-          <Path d={d} />
-        </ClipPath>
-      </Defs>
-      <Path d={d} fill={P.fur} />
-      <G clipPath={`url(#${id})`}>
-        {/* soft stripes, kept inside the shape */}
-        {piece === 'base' ? (
-          <Path d={stripeAcross(a, b, 0.42)} stroke={P.stripe} strokeWidth={4.6} strokeLinecap="round" />
-        ) : (
-          <>
-            <Path d={stripeAcross(a, b, 0.2)} stroke={P.stripe} strokeWidth={4.2} strokeLinecap="round" />
-            {/* cream tip */}
-            <Circle cx={TAIL_END[0]} cy={TAIL_END[1]} r={11.5} fill={P.cream} />
-          </>
-        )}
-      </G>
-    </>
-  );
+/** Biscuit is a bun: no tail. (Kept so the rig's layers stay the same.) */
+export function Tail(_: { piece: 'base' | 'tip'; pass: Pass; look: Look; uid: string }) {
+  return null;
 }
 
 export function Feet({ pass, look }: { pass: Pass; look: Look }) {
   const feet = [100 - FOOT.dx, 100 + FOOT.dx].map((x) => (
-    <Ellipse key={x} cx={x} cy={FOOT.y} rx={FOOT.rx} ry={FOOT.ry} {...(pass === 'line' ? lineProps(look.out, look.color) : { fill: P.fur })} />
+    <Ellipse key={x} cx={x} cy={FOOT.y} rx={FOOT.rx} ry={FOOT.ry} {...(pass === 'line' ? lineProps(look.out, look.color) : { fill: P.furShade })} />
   ));
   return <>{feet}</>;
 }
 
-export function Body({ pass, look, uid }: { pass: Pass; look: Look; uid: string }) {
-  if (pass === 'line') return <Path d={BODY} {...lineProps(look.out, look.color)} />;
-  const id = `${uid}-body`;
-  return (
-    <>
-      <Defs>
-        <ClipPath id={id}>
-          <Path d={BODY} />
-        </ClipPath>
-      </Defs>
-      <Path d={BODY} fill={P.fur} />
-      {/* the one shade tone: the far side of the body */}
-      <G clipPath={`url(#${id})`}>
-        <Ellipse cx={150} cy={170} rx={22} ry={34} fill={P.furShade} />
-      </G>
-      {/* one clean belly */}
-      <Ellipse cx={100} cy={167} rx={19} ry={15.5} fill={P.cream} />
-      <Path d={BODY_HEM} fill="none" {...inner()} />
-    </>
-  );
+/** The bun is drawn as the "head" so it can lean and wobble as one; there is no separate body. */
+export function Body(_: { pass: Pass; look: Look; uid: string }) {
+  return null;
 }
 
+/** No scarf: the aubergine is on the hat band. */
 export function Scarf() {
-  return (
-    <>
-      <Path d={SCARF_TIP} fill={P.scarf} {...inner()} />
-      <Path d={SCARF_BAND} fill={P.scarf} {...inner()} />
-    </>
-  );
+  return null;
 }
 
-export function Ear({ side, pass, look }: { side: 'L' | 'R'; pass: Pass; look: Look }) {
-  const d = side === 'L' ? EAR_L : EAR_R;
-  if (pass === 'line') return <Path d={d} {...lineProps(look.out, look.color)} />;
-  return (
-    <>
-      <Path d={d} fill={P.fur} />
-      <Path d={side === 'L' ? EAR_INNER_L : EAR_INNER_R} fill={P.earPink} />
-    </>
-  );
+/** No ears. */
+export function Ear(_: { side: 'L' | 'R'; pass: Pass; look: Look }) {
+  return null;
 }
 
-export function Head({ pass, look, uid, small }: { pass: Pass; look: Look; uid: string; small?: boolean }) {
-  if (pass === 'line') return <Path d={HEAD} {...lineProps(look.out, look.color)} />;
-  const id = `${uid}-head`;
+/** The bun itself: golden dough with one soft shine and one shade along the bottom. */
+export function Head({ pass, look, uid }: { pass: Pass; look: Look; uid: string; small?: boolean }) {
+  if (pass === 'line') return <Path d={BUN} {...lineProps(look.out, look.color)} />;
+  const id = `${uid}-bun`;
   return (
     <>
       <Defs>
         <ClipPath id={id}>
-          <Path d={HEAD} />
+          <Path d={BUN} />
         </ClipPath>
       </Defs>
-      <Path d={HEAD} fill={P.fur} />
+      <Path d={BUN} fill={P.fur} />
       <G clipPath={`url(#${id})`}>
-        {/* the one highlight */}
-        <Ellipse cx={64} cy={64} rx={9} ry={4.4} fill={P.highlight} opacity={0.6} transform="rotate(-34 64 64)" />
-        <Path d={MUZZLE} fill={P.cream} />
+        {/* the one shade: dough settling at the bottom */}
+        <Ellipse cx={100} cy={204} rx={96} ry={42} fill={P.furShade} />
+        {/* the one shine, top left */}
+        <Ellipse cx={62} cy={80} rx={15} ry={7.5} fill={P.highlight} opacity={0.9} transform="rotate(-38 62 80)" />
+        <Circle cx={79} cy={67} r={3.2} fill={P.highlight} opacity={0.9} />
       </G>
-      {/* three short rounded tabby stripes, on the forehead only */}
-      {!small && (
-        <G stroke={P.stripe} strokeWidth={4.4} strokeLinecap="round">
-          <Path d="M100 55 L100 66" />
-          <Path d="M89 57 L90.5 65.5" />
-          <Path d="M111 57 L109.5 65.5" />
-        </G>
-      )}
-      <Path d={CHIN} fill="none" {...inner()} />
     </>
   );
 }
@@ -300,6 +175,9 @@ export function Hat({ pass, look, uid }: { pass: Pass; look: Look; uid: string }
   if (pass === 'line')
     return (
       <>
+        {SPRIG.map((d) => (
+          <Path key={d} d={d} {...lineProps(look.out * 0.8, look.color)} />
+        ))}
         <Path d={HAT_PUFF} {...lineProps(look.out, look.color)} />
         <Path d={HAT_BAND} {...lineProps(look.out, look.color)} />
       </>
@@ -313,8 +191,12 @@ export function Hat({ pass, look, uid }: { pass: Pass; look: Look; uid: string }
       </Defs>
       <Path d={HAT_PUFF} fill={P.hat} />
       {/* a soft shade under the puff, no vertical lines */}
-      <Path d="M50 22 C70 31 130 31 150 22 L150 40 L50 40 Z" fill={P.hatShade} clipPath={`url(#${uid}-hat)`} />
-      <Path d={HAT_BAND} fill={P.hat} {...inner()} />
+      <Path d="M42 36 C66 49 134 49 158 36 L158 56 L42 56 Z" fill={P.hatShade} clipPath={`url(#${uid}-hat)`} />
+      <Path d={HAT_BAND} fill={P.scarf} {...inner()} />
+      {/* a sprig of herbs tucked into the band */}
+      {SPRIG.map((d) => (
+        <Path key={d} d={d} fill={P.herb} {...inner(2.4)} />
+      ))}
     </>
   );
 }
@@ -331,7 +213,7 @@ export function Arm({ side, pass, look, layer, palm, prop }: { side: 'L' | 'R'; 
       {prop === 'knife' || prop === 'ladle' ? held : null}
       <Path d={d} fill={P.fur} {...(layer === 'back' ? {} : inner())} />
       {/* hide the arm's line at the shoulder, so the arm grows out of the body */}
-      {layer !== 'back' && <Circle cx={x} cy={y} r={6.8} fill={P.fur} />}
+      {layer !== 'back' && <Circle cx={x} cy={y} r={8.8} fill={P.fur} />}
       {palm && (
         <G fill={P.beans}>
           <Ellipse cx={x} cy={end + 1.6} rx={3.6} ry={2.8} />
@@ -352,8 +234,8 @@ function Held({ prop, x, y, side }: { prop: 'spoon' | 'ladle' | 'knife'; x: numb
     // eating: a small spoon pointing on from the paw toward the mouth
     return (
       <G transform={`rotate(${-30 * s} ${x} ${y})`}>
-        <Rect x={x - 2.4} y={y - 4} width={4.8} height={20} rx={2.4} fill={P.steel} {...inner(2.4)} />
-        <Ellipse cx={x} cy={y + 20} rx={7} ry={5.4} fill={P.steel} {...inner(2.4)} />
+        <Rect x={x - 3} y={y - 4} width={6} height={24} rx={3} fill={P.steel} {...inner(2.4)} />
+        <Ellipse cx={x} cy={y + 25} rx={9} ry={7} fill={P.steel} {...inner(2.4)} />
       </G>
     );
   if (prop === 'ladle')
@@ -391,15 +273,15 @@ function Eye({ kind, c, side }: { kind: Eyes; c: Pt; side: 'L' | 'R' }) {
     case 'oval':
       return (
         <>
-          <Ellipse cx={cx} cy={cy} rx={9.5} ry={12} fill={P.eye} />
-          {shine(cx, cy)}
+          <Ellipse cx={cx} cy={cy} rx={10.6} ry={13.2} fill={P.eye} />
+          {shine(cx, cy, 4.2, 2)}
         </>
       );
     case 'sparkle':
       return (
         <>
-          <Ellipse cx={cx} cy={cy} rx={10.4} ry={13} fill={P.eye} />
-          {shine(cx, cy, 4.6, 2.3)}
+          <Ellipse cx={cx} cy={cy} rx={11.4} ry={14.2} fill={P.eye} />
+          {shine(cx, cy, 4.9, 2.4)}
           {/* a tiny star for the sparkle */}
           <Path d={`M${cx + 1} ${cy - 3} L${cx + 2} ${cy} L${cx + 5} ${cy + 1} L${cx + 2} ${cy + 2} L${cx + 1} ${cy + 5} L${cx} ${cy + 2} L${cx - 3} ${cy + 1} L${cx} ${cy} Z`} fill={P.eyeShine} opacity={0.9} />
         </>

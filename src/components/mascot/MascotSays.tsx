@@ -99,9 +99,9 @@ export function MascotSays({ line, onNext, size = 110, layout = 'row', style, hi
     <View style={[layout === 'row' ? styles.row : styles.column, style]}>
       {layout === 'column' && <Animated.View key={line.text} entering={FadeIn.duration(180)}>{bubble}</Animated.View>}
       {!hideCat && <Mascot mood={line.mood} talking={!done} size={size} onPet={onPet} playKey={line.text} />}
-      {/* The bubble hugs its words, and sits low so the pointer meets Biscuit's mouth (about 61% down). */}
+      {/* The bubble hugs its words, and sits low so the pointer meets Biscuit's face (about 65% down). */}
       {layout === 'row' && (
-        <Animated.View key={line.text} entering={FadeIn.duration(180)} style={{ flexShrink: 1, marginTop: hideCat ? 0 : Math.round(size * 0.22) }}>
+        <Animated.View key={line.text} entering={FadeIn.duration(180)} style={{ flexShrink: 1, marginTop: hideCat ? 0 : Math.round(size * 0.3) }}>
           {bubble}
         </Animated.View>
       )}

@@ -33,7 +33,7 @@ import Animated, {
   type SharedValue,
   type WithSpringConfig,
 } from 'react-native-reanimated';
-import Svg from 'react-native-svg';
+import Svg, { G } from 'react-native-svg';
 import { biscuit } from '../../theme';
 import * as art from './art';
 import { useLook } from './look';
@@ -79,7 +79,7 @@ export function BiscuitRig({ mood, talking, size, playKey, hold, reduceMotion: f
   const uid = `b${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
 
   // The art's view box: the whole cat, or head and shoulders when small.
-  const vb = small ? { x: 20, y: -6, w: 160, h: 160 } : { x: -6, y: -10, w: 212, h: 212 };
+  const vb = small ? { x: 0, y: -10, w: 202, h: 202 } : { x: -8, y: -14, w: 216, h: 216 };
   const k = size / vb.w; // art units → points
   const org = (p: readonly [number, number]) => `${((p[0] - vb.x) / vb.w) * 100}% ${((p[1] - vb.y) / vb.h) * 100}%`;
   // Pivot points as plain strings, worked out here on the JS side. Animation code runs on the UI
@@ -104,7 +104,8 @@ export function BiscuitRig({ mood, talking, size, playKey, hold, reduceMotion: f
   const [layers, setLayers] = useState(() => ({
     mood,
     playKey,
-    emotion: isReaction(mood) ? ('idle' as Mood) : mood,
+    // Starting with a reaction (a celebration, a heart), Biscuit settles into happy afterwards.
+    emotion: isReaction(mood) ? ('happy' as Mood) : mood,
     reaction: isReaction(mood) ? { mood, key: playKey } : (null as { mood: Mood; key: string } | null),
   }));
   if (layers.mood !== mood || layers.playKey !== playKey) {
@@ -435,18 +436,23 @@ export function BiscuitRig({ mood, talking, size, playKey, hold, reduceMotion: f
   const faceSlot = (fc: typeof face, style: object, key: string) => (
     <A key={key} style={[StyleSheet.absoluteFill, style]} pointerEvents="none">
       <Layer box={box}>
-        <art.Cheeks strong={fc.blush} puff={fc.puff && !small} flour={fc.flour} sweat={fc.sweat} />
-        <art.BrowsArt kind={fc.brows} />
-        <art.Nose />
+        <G transform={`translate(0 ${art.FACE_DY})`}>
+          <art.Cheeks strong={fc.blush} puff={fc.puff && !small} flour={fc.flour} sweat={fc.sweat} />
+          <art.BrowsArt kind={fc.brows} />
+        </G>
       </Layer>
       <A style={[StyleSheet.absoluteFill, { transformOrigin: O.eyes }, eyesStyle]}>
         <Layer box={box}>
-          <art.EyesArt kind={fc.eyes} />
+          <G transform={`translate(0 ${art.FACE_DY})`}>
+            <art.EyesArt kind={fc.eyes} />
+          </G>
         </Layer>
       </A>
       <A style={[StyleSheet.absoluteFill, { transformOrigin: O.mouth }, mouthStyle]}>
         <Layer box={box}>
-          <art.MouthArt kind={fc.mouth} />
+          <G transform={`translate(0 ${art.FACE_DY})`}>
+            <art.MouthArt kind={fc.mouth} />
+          </G>
         </Layer>
       </A>
     </A>
@@ -471,10 +477,7 @@ export function BiscuitRig({ mood, talking, size, playKey, hold, reduceMotion: f
       <Layer box={box}>
         {!small && <art.Feet pass={p} look={look} />}
         <art.Body pass={p} look={look} uid={uid} />
-        {p === 'fill' && !small && spec.props.includes('pot') && <art.Pot />}
-        {p === 'fill' && !small && spec.props.includes('board') && <art.Board />}
       </Layer>
-      {p === 'fill' && armsIn(p, 'front')}
       {/* the scarf sits over the tops of the arms */}
       {p === 'fill' && (
         <Layer box={box}>
@@ -501,7 +504,9 @@ export function BiscuitRig({ mood, talking, size, playKey, hold, reduceMotion: f
             {faceSlot(slots.b, slotB, 'b')}
             <A style={[StyleSheet.absoluteFill, { transformOrigin: O.mouth }, talkStyle]} pointerEvents="none">
               <Layer box={box}>
-                <art.TalkMouth />
+                <G transform={`translate(0 ${art.FACE_DY})`}>
+                  <art.TalkMouth />
+                </G>
               </Layer>
             </A>
           </>
@@ -512,6 +517,14 @@ export function BiscuitRig({ mood, talking, size, playKey, hold, reduceMotion: f
           </Layer>
         </A>
       </A>
+      {/* Biscuit is round, so anything in front of him (a pot, a board, paws held together) comes after the bun */}
+      {p === 'fill' && !small && (spec.props.includes('pot') || spec.props.includes('board')) && (
+        <Layer box={box}>
+          {spec.props.includes('pot') && <art.Pot />}
+          {spec.props.includes('board') && <art.Board />}
+        </Layer>
+      )}
+      {p === 'fill' && armsIn(p, 'front')}
       {p === 'fill' && armsIn(p, 'over')}
     </>
   );

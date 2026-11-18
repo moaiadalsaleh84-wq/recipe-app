@@ -57,7 +57,8 @@
           "enablePushNotifications": false,
           "widgets": []
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "scheme": "pantrypop"
   }

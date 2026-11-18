@@ -215,8 +215,8 @@ export const layout = {
   cardPadding: 16,
   cardRadius: 20,
   photoRadius: 24,
-  /** Bottom padding of scrolling screens. */
-  bottom: 32,
+  /** Bottom padding of scrolling screens (room for Biscuit, who sits on the tab bar). */
+  bottom: 56,
 } as const;
 
 /** Use with `borderCurve: 'continuous'` for Apple-style squircle corners. */
@@ -329,30 +329,31 @@ export type LiveActivityPalette = typeof liveActivity;
  * The same palette is used in light and dark mode so Biscuit always looks like Biscuit.
  */
 export const biscuit = {
-  /** The one outline color: the outer silhouette (3% of height) and the thinner inner lines (60% of that). */
-  outline: '#4A2B1D',
-  fur: '#F5A253',
-  /** The one shade tone: under the head, the far side of the body and tail. */
-  furShade: '#E68D42',
-  /** Tabby stripes on the forehead and tail. */
-  stripe: '#D06F2C',
-  /** Muzzle, belly, tail tip. */
-  cream: '#FFF1DE',
-  /** The one highlight, top left of the head. */
-  highlight: '#FFD9A8',
+  /** The one outline color (aubergine-ink): the outer silhouette, and thinner inner lines (60%). */
+  outline: '#3B2440',
+  /** Golden dough. */
+  fur: '#F7C978',
+  /** The one shade tone: dough settling at the bottom, and the feet. */
+  furShade: '#ECB45F',
+  stripe: '#D9963F',
+  cream: '#FFF3DE',
+  /** The one shine, top left. */
+  highlight: '#FFF7E6',
   earPink: '#F6ADA4',
-  blush: '#F59089',
+  blush: '#F7928C',
   nose: '#E7716C',
-  eye: '#33201A',
+  eye: '#2A1A2E',
   eyeShine: '#FFFFFF',
-  mouth: '#8E3A2E',
+  mouth: '#8E3A4E',
   tongue: '#F27F7A',
-  /** Toe beans, shown only when a paw is raised. */
-  beans: '#F59D94',
+  /** Paw pads, shown only when a paw is raised. */
+  beans: '#F2A07E',
   hat: '#FFFFFF',
-  hatShade: '#F0E6DA',
-  /** The brand's aubergine, so Biscuit belongs to the app. */
+  hatShade: '#EFE8F0',
+  /** The hat band: the brand's aubergine, so Biscuit belongs to the app. */
   scarf: '#74407C',
+  /** The sprig of herbs in the hat band: Biscuit's signature. */
+  herb: '#6FA35E',
   heart: '#F05D6C',
   sweat: '#6DB6EA',
   flour: '#FFFFFF',
