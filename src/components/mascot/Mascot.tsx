@@ -40,7 +40,19 @@ export type MascotProps = {
 
 export const MASCOT_NAME = 'Biscuit';
 
-export function Mascot({ mood = 'idle', talking = false, size = 160, onPet, petable = true, playKey = '', hold = false, style, accessibilityLabel }: MascotProps) {
+/**
+ * The mascot is switched off while the final character is being designed. Every screen shows
+ * the mascot only through <Mascot> and <MascotSays>, so turning this back on brings him back
+ * everywhere without redesigning any screen.
+ */
+export const MASCOT_ON = false;
+
+export function Mascot(props: MascotProps) {
+  if (!MASCOT_ON) return null;
+  return <MascotOn {...props} />;
+}
+
+function MascotOn({ mood = 'idle', talking = false, size = 160, onPet, petable = true, playKey = '', hold = false, style, accessibilityLabel }: MascotProps) {
   const { addPet } = useStore();
   // Each tap restarts the delighted reaction.
   const [pets, setPets] = useState(0);

@@ -16,7 +16,7 @@ import Animated, {
 import type { HapticKind } from '../lib/haptics';
 import { noWidow } from '../lib/text';
 import { useTheme } from '../theme';
-import { Mascot } from './mascot/Mascot';
+import { Mascot, MASCOT_ON } from './mascot/Mascot';
 import type { Mood } from './mascot/moods';
 import { Icon, type IconName } from './Icon';
 import { Chunky } from './Chunky';
@@ -309,7 +309,7 @@ export function EmptyState({
   const t = useTheme();
   return (
     <View style={styles.empty} accessibilityRole="summary">
-      {cat ? (
+      {cat && MASCOT_ON ? (
         <Mascot mood={cat} size={132} />
       ) : (
         <View style={[styles.emptyIcon, { backgroundColor: t.colors.tintSoft }]}>

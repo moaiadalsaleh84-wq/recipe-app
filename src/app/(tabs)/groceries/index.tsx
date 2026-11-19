@@ -8,8 +8,6 @@ import { PressableScale } from '../../../components/PressableScale';
 import { useToast } from '../../../components/Toast';
 import { Button, CheckCircle, EmptyState, HeaderButton, IconButton, ProgressBar, Section, Separator } from '../../../components/ui';
 import { aisleOrder, type GroceryItem } from '../../../data/mock';
-import { MascotSays } from '../../../components/mascot/MascotSays';
-import { say, type Line } from '../../../components/mascot/lines';
 import { haptics } from '../../../lib/haptics';
 import { plainFractions } from '../../../lib/qty';
 import { TabScreen } from '../../../components/TabScreen';
@@ -20,15 +18,17 @@ export default function GroceriesScreen() {
   const t = useTheme();
   const toast = useToast();
   const { groceries, toggleGrocery, removeGrocery, clearCompleted, addCustomItem, undoGroceries } = useStore();
-  const [reaction, setReaction] = useState<{ line: Line; n: number } | null>(null);
   const [draft, setDraft] = useState('');
-  const [surprise] = useState(() => Math.random());
 
   const done = groceries.filter((g) => g.checked).length;
   const total = groceries.length;
 
   const groups = useMemo(
-    () => aisleOrder.map((aisle) => ({ aisle, items: groceries.filter((g) => g.aisle === aisle) })).filter((g) => g.items.length),
+    // Within each aisle, what's still to buy comes first; ticked items move to the bottom.
+    () =>
+      aisleOrder
+        .map((aisle) => ({ aisle, items: groceries.filter((g) => g.aisle === aisle).sort((a, b) => Number(a.checked) - Number(b.checked)) }))
+        .filter((g) => g.items.length),
     [groceries],
   );
 
@@ -58,9 +58,6 @@ export default function GroceriesScreen() {
     toggleGrocery(item.key);
     if (item.checked) return;
     if (done + 1 === total) haptics.success();
-    const next = (reaction?.n ?? 0) + 1;
-    const willBeDone = done + 1 === total;
-    setReaction({ line: say(willBeDone ? 'listDone' : 'itemChecked', {}, next, (surprise + next * 0.31) % 1), n: next });
   };
 
   const add = () => {
@@ -107,9 +104,8 @@ export default function GroceriesScreen() {
       {total === 0 ? (
         <EmptyState
           icon="cart"
-          cat="thinking"
           title="Your list is empty"
-          message={say('listEmpty').text}
+          message="Add items here, or add a recipe’s ingredients from its page or your weekly plan."
           action={{ label: 'Browse recipes', icon: 'book', onPress: () => router.navigate('/') }}
         />
       ) : (
@@ -117,7 +113,15 @@ export default function GroceriesScreen() {
           {done === total ? (
             // Everything is in the basket: one celebration, then the clear next step.
             <View style={[styles.done, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
-              <MascotSays size={88} line={say('listDone')} />
+              <View style={styles.doneTop}>
+                <View style={[styles.doneIcon, { backgroundColor: t.colors.successSoft }]}>
+                  <Icon name="check" size={22} color={t.colors.success} weight="bold" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[t.type.title3, { color: t.colors.label }]}>Everything’s in the basket</Text>
+                  <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]}>Nice shopping. Clear the list when you’re ready.</Text>
+                </View>
+              </View>
               <Button label="Clear done" icon="check" variant="success" onPress={clearDone} accessibilityLabel={`Clear ${done} completed items`} />
             </View>
           ) : (
@@ -135,7 +139,6 @@ export default function GroceriesScreen() {
                 </View>
                 <ProgressBar value={done / total} height={12} label="Shopping progress" />
               </View>
-              {reaction && <MascotSays size={80} style={{ marginBottom: t.layout.gap }} line={reaction.line} />}
             </>
           )}
 
@@ -247,6 +250,8 @@ const styles = StyleSheet.create({
   addInput: { flex: 1, paddingVertical: 12, outlineStyle: 'none' } as never,
   addButton: { minHeight: 40, paddingHorizontal: 16, borderRadius: 12, justifyContent: 'center', borderCurve: 'continuous' },
   progressWrap: { gap: 4, marginTop: 16, marginBottom: 16 },
+  doneTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  doneIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   done: { marginTop: 16, marginBottom: 24, padding: 16, gap: 16, borderRadius: 20, borderCurve: 'continuous' },
   aisle: { paddingHorizontal: 16, paddingVertical: 8, minHeight: 36, justifyContent: 'center' },
   progressTop: { flexDirection: 'row', alignItems: 'center', minHeight: 44 },

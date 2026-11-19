@@ -235,7 +235,7 @@ export const motion = {
 } as const;
 
 /** How thick the lip under a pressable is. */
-export const depth = { button: 5, small: 4, card: 4 } as const;
+export const depth = { button: 4, small: 3, card: 3 } as const;
 
 function makeTheme(c: Palette, isDark: boolean) {
   /** A solid bottom edge drawn as a hard shadow, for things that don't press down. */
@@ -271,7 +271,7 @@ function makeTheme(c: Palette, isDark: boolean) {
     chunky: {
       lip: lip(),
       /** White card with a soft edge and a lip. */
-      card: { borderWidth: 2, borderColor: c.border, ...lip() } as ViewStyle,
+      card: { borderWidth: 1.5, borderColor: c.border, ...lip() } as ViewStyle,
       /** A hard lip under a filled shape that doesn't move. */
       button: (color: string = c.tintDeep): ViewStyle => lip(color, depth.small),
     },

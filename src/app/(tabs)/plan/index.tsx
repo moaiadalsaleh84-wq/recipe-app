@@ -6,13 +6,9 @@ import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
 import { RecipeRow } from '../../../components/RecipeCard';
 import { useToast } from '../../../components/Toast';
-import { HeaderButton, IconButton, Section, Separator } from '../../../components/ui';
+import { Button, IconButton, Section, Separator } from '../../../components/ui';
 import { meals, type Meal } from '../../../data/mock';
-import { Mascot } from '../../../components/mascot/Mascot';
-import { MascotSays } from '../../../components/mascot/MascotSays';
-import { say } from '../../../components/mascot/lines';
 import { haptics } from '../../../lib/haptics';
-import { noWidow } from '../../../lib/text';
 import { TabScreen } from '../../../components/TabScreen';
 import { totalsFor, useStore } from '../../../state/store';
 import { useTheme } from '../../../theme';
@@ -33,29 +29,20 @@ export default function PlanScreen() {
     [plan],
   );
 
-  const addWeek = (
-    <HeaderButton
-      icon="cartAdd"
-      accessibilityLabel="Add this week's meals to the grocery list"
-      onPress={() => {
-        if (weekRecipes.length === 0) {
-          toast({ message: 'Plan a meal first, then add its ingredients', tone: 'warning' });
-          return;
-        }
-        let count = 0;
-        for (const id of weekRecipes) {
-          const r = getRecipe(id);
-          if (r) count += addIngredients(r.id, r.ingredients);
-        }
-        haptics.success();
-        toast({
-          message: `Added ${count} items from ${weekRecipes.length} meals`,
-          icon: 'cart',
-          action: { label: 'View', onPress: () => router.navigate('/groceries') },
-        });
-      }}
-    />
-  );
+  // Same ingredients from different recipes are combined on the list (the store adds them up).
+  const addWeek = () => {
+    let count = 0;
+    for (const id of weekRecipes) {
+      const r = getRecipe(id);
+      if (r) count += addIngredients(r.id, r.ingredients);
+    }
+    haptics.success();
+    toast({
+      message: `Added ${count} items from ${weekRecipes.length} meals`,
+      icon: 'cart',
+      action: { label: 'View', onPress: () => router.navigate('/groceries') },
+    });
+  };
 
   const remove = (meal: Meal, recipeId: string) => {
     setMeal(day, meal, null);
@@ -84,10 +71,11 @@ export default function PlanScreen() {
     return out;
   }, [allRecipes, dayPlan, day]);
 
+  // Adding and changing a meal both open the recipe picker for that slot.
   const addMeal = (meal: Meal) => router.push({ pathname: '/plan-picker', params: { day: String(day), meal } });
 
   return (
-    <TabScreen title="Plan" right={addWeek}>
+    <TabScreen title="Plan">
 
       {/* The week, kept compact */}
       <View style={[styles.week, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]} accessibilityRole="tablist">
@@ -121,7 +109,7 @@ export default function PlanScreen() {
           {weekDays[day].isToday ? 'Today' : weekDays[day].long}
         </Text>
         <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]} testID="plan-count">
-          {plannedToday} of 3 planned
+          {plannedToday} of 3 planned{plannedToday > 0 ? ` · about ${dayTotals.calories} kcal` : ''}
         </Text>
       </View>
 
@@ -129,12 +117,12 @@ export default function PlanScreen() {
         // An empty day: one compact card instead of three empty boxes.
         <View style={[styles.emptyCard, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]}>
           <View style={styles.emptyTop}>
-            <Mascot mood="thinking" size={80} />
+            <View style={[styles.emptyIcon, { backgroundColor: t.colors.tintSoft }]}>
+              <Icon name="calendar" size={22} color={t.colors.tint} weight="semibold" />
+            </View>
             <View style={{ flex: 1 }}>
-              <Text style={[t.type.title3, { color: t.colors.label }]}>{weekDays[day].isToday ? 'Plan today' : `Plan ${weekDays[day].long}`}</Text>
-              <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]} testID="cat-line">
-                {noWidow(say('planEmptyDay').text)}
-              </Text>
+              <Text style={[t.type.title3, { color: t.colors.label }]}>Nothing planned yet</Text>
+              <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]}>Pick a meal or two. Your grocery list can build itself from the plan.</Text>
             </View>
           </View>
           {/* Three slots, one per meal: the words always fit. */}
@@ -157,7 +145,6 @@ export default function PlanScreen() {
         </View>
       ) : (
         <>
-          <MascotSays size={80} style={{ marginBottom: t.layout.gap }} line={say('planDay', { calories: dayTotals.calories })} />
           <Section>
             {meals.map((meal, i) => {
               const recipe = getRecipe(dayPlan[meal]);
@@ -169,7 +156,12 @@ export default function PlanScreen() {
                       <RecipeRow
                         recipe={recipe}
                         subtitle={`${meal} · ${recipe.minutes} min · ${recipe.calories} kcal`}
-                        trailing={<IconButton icon="close" accessibilityLabel={`Remove ${recipe.title} from ${meal}`} color={t.colors.secondaryLabel} iconSize={14} onPress={() => remove(meal, recipe.id)} />}
+                        trailing={
+                          <View style={styles.rowActions}>
+                            <IconButton icon="shuffle" accessibilityLabel={`Change ${meal.toLowerCase()}: ${recipe.title}`} color={t.colors.secondaryLabel} iconSize={15} onPress={() => addMeal(meal)} />
+                            <IconButton icon="close" accessibilityLabel={`Remove ${recipe.title} from ${meal}`} color={t.colors.secondaryLabel} iconSize={14} onPress={() => remove(meal, recipe.id)} />
+                          </View>
+                        }
                       />
                     </Animated.View>
                   ) : (
@@ -190,6 +182,19 @@ export default function PlanScreen() {
             </Text>
           )}
         </>
+      )}
+
+      {/* The week's shopping, in one tap. */}
+      {weekRecipes.length > 0 && (
+        <View style={[styles.weekCard, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]} testID="week-groceries">
+          <View style={{ flex: 1 }}>
+            <Text style={[t.type.headline, { color: t.colors.label }]}>This week</Text>
+            <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]}>
+              {weekRecipes.length} {weekRecipes.length === 1 ? 'meal' : 'meals'} planned. Same ingredients are added up on the list.
+            </Text>
+          </View>
+          <Button label="Add this week to groceries" icon="cartAdd" variant="tinted" size="medium" onPress={addWeek} style={{ alignSelf: 'stretch' }} />
+        </View>
       )}
 
       {/* Ideas to fill the day: one tap plans them. */}
@@ -241,6 +246,9 @@ const styles = StyleSheet.create({
   dayHeader: { flexDirection: 'row', alignItems: 'baseline', marginTop: 24, marginBottom: 12 },
   emptyCard: { padding: 16, gap: 16, borderCurve: 'continuous' },
   emptyTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  emptyIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  rowActions: { flexDirection: 'row', alignItems: 'center' },
+  weekCard: { padding: 16, gap: 12, marginTop: 8, borderCurve: 'continuous' },
   addSlot: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, minHeight: 72 },
   addIcon: { width: 56, height: 56, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
 });

@@ -1,0 +1,58 @@
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '../theme';
+import { Icon, type IconName } from './Icon';
+import { PressableScale } from './PressableScale';
+
+export type MenuRow = {
+  label: string;
+  hint?: string;
+  icon?: IconName;
+  /** Shows a check: the current choice (e.g. the sort order). */
+  selected?: boolean;
+  onPress: () => void;
+};
+
+/**
+ * A small floating menu anchored near the top right of the screen (the + menu, sort options).
+ * Tapping outside closes it.
+ */
+export function Menu({ visible, onClose, rows, top = 64, label }: { visible: boolean; onClose: () => void; rows: MenuRow[]; top?: number; label: string }) {
+  const t = useTheme();
+  const insets = useSafeAreaInsets();
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} supportedOrientations={['portrait', 'landscape']}>
+      <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: t.colors.scrim }]} onPress={onClose} accessibilityLabel="Close menu" />
+      <View style={[styles.menu, { top: insets.top + top, backgroundColor: t.colors.elevated, ...t.chunky.card }]} accessibilityRole="menu" accessibilityLabel={label}>
+        {rows.map((r, i) => (
+          <PressableScale
+            key={r.label}
+            onPress={r.onPress}
+            accessibilityLabel={r.label}
+            accessibilityRole="menuitem"
+            aria-selected={r.selected}
+            style={[styles.row, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.colors.separator }]}
+            scaleTo={0.98}
+          >
+            {r.icon && (
+              <View style={[styles.icon, { backgroundColor: t.colors.tintSoft }]}>
+                <Icon name={r.icon} size={18} color={t.colors.tint} />
+              </View>
+            )}
+            <View style={{ flex: 1 }}>
+              <Text style={[t.type.headline, { color: t.colors.label }]}>{r.label}</Text>
+              {r.hint && <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{r.hint}</Text>}
+            </View>
+            {r.selected && <Icon name="check" size={16} color={t.colors.tint} weight="bold" />}
+          </PressableScale>
+        ))}
+      </View>
+    </Modal>
+  );
+}
+
+const styles = StyleSheet.create({
+  menu: { position: 'absolute', right: 16, width: 300, maxWidth: '92%', borderRadius: 20, overflow: 'hidden', borderCurve: 'continuous' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12, minHeight: 56 },
+  icon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+});

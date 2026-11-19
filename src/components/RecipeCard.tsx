@@ -80,26 +80,23 @@ export function RecipeCard({ recipe, width }: { recipe: Recipe; width: number })
   const t = useTheme();
   const meta = useMeta();
   return (
-    <PressableScale
-      onPress={() => openRecipe(recipe.id)}
-      accessibilityLabel={`${recipe.title}, ${recipe.minutes} minutes, ${recipe.calories} calories`}
-      accessibilityHint="Opens the recipe"
-      style={{ width }}
-    >
-      <View style={[styles.imageWrap, { borderRadius: t.layout.cardRadius, backgroundColor: t.colors.imagePlaceholder }]}>
-        <RecipePhoto recipe={recipe} />
-        <View style={styles.favOnPhoto}>
-          <FavoriteButton recipe={recipe} onPhoto />
+    // The heart sits on top of the card, beside its button (a button inside a button confuses
+    // screen readers and the web).
+    <View style={{ width }}>
+      <PressableScale onPress={() => openRecipe(recipe.id)} accessibilityLabel={`${recipe.title}, ${recipe.minutes} minutes, ${recipe.calories} calories`} accessibilityHint="Opens the recipe">
+        <View style={[styles.imageWrap, { borderRadius: t.layout.cardRadius, backgroundColor: t.colors.imagePlaceholder }]}>
+          <RecipePhoto recipe={recipe} />
         </View>
+        {/* Room for two lines of title on every card, so a row of cards lines up; longer titles wrap instead of being cut. */}
+        <View style={styles.cardTitle}>
+          <Text style={[t.type.headline, { color: t.colors.label, fontSize: 17, lineHeight: 22 }]}>{recipe.title}</Text>
+        </View>
+        <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{meta(recipe)}</Text>
+      </PressableScale>
+      <View style={styles.favOnPhoto}>
+        <FavoriteButton recipe={recipe} onPhoto />
       </View>
-      {/* Room for two lines of title on every card, so a row of cards lines up; longer titles wrap instead of being cut. */}
-      <View style={styles.cardTitle}>
-        <Text style={[t.type.headline, { color: t.colors.label, fontSize: 17, lineHeight: 22 }]}>
-          {recipe.title}
-        </Text>
-      </View>
-      <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{meta(recipe)}</Text>
-    </PressableScale>
+    </View>
   );
 }
 
@@ -117,27 +114,28 @@ export function RecipeCardSkeleton({ width }: { width: number }) {
 /** Large featured card with the title over the photo. */
 export function FeaturedCard({ recipe, label }: { recipe: Recipe; /** For screen readers: why it's featured. */ label: string }) {
   const t = useTheme();
-  const meta = useMeta();
   return (
-    <PressableScale
-      onPress={() => openRecipe(recipe.id)}
-      scaleTo={0.98}
-      accessibilityLabel={`${label}: ${recipe.title}`}
-      accessibilityHint="Opens the recipe"
-      style={[styles.featured, { borderRadius: t.layout.cardRadius, backgroundColor: t.colors.imagePlaceholder }]}
-    >
-      <RecipePhoto recipe={recipe} iconSize={56} />
-      <LinearGradient colors={['rgba(30,14,6,0)', 'rgba(30,14,6,0.78)']} style={styles.featuredShade} pointerEvents="none" />
+    <View>
+      <PressableScale
+        onPress={() => openRecipe(recipe.id)}
+        scaleTo={0.98}
+        accessibilityLabel={`${label}: ${recipe.title}`}
+        accessibilityHint="Opens the recipe"
+        style={[styles.featured, { borderRadius: t.layout.cardRadius, backgroundColor: t.colors.imagePlaceholder }]}
+      >
+        <RecipePhoto recipe={recipe} iconSize={56} />
+        <LinearGradient colors={['rgba(30,14,6,0)', 'rgba(30,14,6,0.78)']} style={styles.featuredShade} pointerEvents="none" />
+        <View style={styles.featuredText}>
+          <Text style={[t.type.title2, { color: '#FFFFFF' }]} numberOfLines={2}>
+            {recipe.title}
+          </Text>
+          <Text style={[t.type.subhead, { color: 'rgba(255,255,255,0.92)', marginTop: 2 }]}>{`${recipe.minutes} min · ${recipe.difficulty} · ${recipe.calories} kcal`}</Text>
+        </View>
+      </PressableScale>
       <View style={styles.featuredFav}>
         <FavoriteButton recipe={recipe} onPhoto />
       </View>
-      <View style={styles.featuredText}>
-        <Text style={[t.type.title2, { color: '#FFFFFF' }]} numberOfLines={2}>
-          {recipe.title}
-        </Text>
-        <Text style={[t.type.subhead, { color: 'rgba(255,255,255,0.92)', marginTop: 2 }]}>{meta(recipe)}</Text>
-      </View>
-    </PressableScale>
+    </View>
   );
 }
 
@@ -159,23 +157,13 @@ export function RecipeRow({
   const meta = useMeta();
   return (
     <View style={styles.row}>
-      <PressableScale
-        onPress={onPress ?? (() => openRecipe(recipe.id))}
-        scaleTo={0.98}
-        accessibilityLabel={`${recipe.title}, ${subtitle ?? meta(recipe)}`}
-        accessibilityHint={accessibilityHint}
-        style={styles.rowMain}
-      >
+      <PressableScale onPress={onPress ?? (() => openRecipe(recipe.id))} scaleTo={0.98} accessibilityLabel={`${recipe.title}, ${subtitle ?? meta(recipe)}`} accessibilityHint={accessibilityHint} style={styles.rowMain}>
         <View style={[styles.thumb, { backgroundColor: t.colors.imagePlaceholder }]}>
           <RecipePhoto recipe={recipe} iconSize={24} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={[t.type.headline, { color: t.colors.label }]}>
-            {recipe.title}
-          </Text>
-          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 2 }]}>
-            {subtitle ?? meta(recipe)}
-          </Text>
+          <Text style={[t.type.headline, { color: t.colors.label }]}>{recipe.title}</Text>
+          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 2 }]}>{subtitle ?? meta(recipe)}</Text>
         </View>
         {!trailing && <Icon name="chevronRight" size={14} color={t.colors.tertiaryLabel} weight="semibold" />}
       </PressableScale>
@@ -190,7 +178,18 @@ const styles = StyleSheet.create({
   noPhoto: { alignItems: 'center', justifyContent: 'center' },
   favOnPhoto: { position: 'absolute', top: 2, right: 2 },
   favTap: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  favDot: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', shadowColor: '#3D2314', shadowOpacity: 0.18, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  favDot: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#3D2314',
+    shadowOpacity: 0.18,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+  },
   featured: { height: 216, overflow: 'hidden', borderCurve: 'continuous', justifyContent: 'flex-end' },
   featuredShade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 136 },
   featuredFav: { position: 'absolute', top: 2, right: 2 },

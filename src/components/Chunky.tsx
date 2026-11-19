@@ -60,7 +60,7 @@ export function Chunky({ children, face, lip, border, depth, radius, style, face
       <Animated.View
         style={[
           { backgroundColor: face, borderRadius: r, borderCurve: 'continuous' },
-          border ? { borderWidth: 2, borderColor: border } : null,
+          border ? { borderWidth: 1.5, borderColor: border } : null,
           faceStyle,
           { marginBottom: d },
           faceMove,

@@ -58,6 +58,9 @@ const icons = {
   fridge: { ios: 'refrigerator', md: 'kitchen' },
   sun: { ios: 'sun.max.fill', md: 'light_mode' },
   moon: { ios: 'moon.fill', md: 'dark_mode' },
+  sort: { ios: 'arrow.up.arrow.down', md: 'swap_vert' },
+  chevronDown: { ios: 'chevron.down', md: 'expand_more' },
+  paste: { ios: 'doc.on.clipboard', md: 'content_paste' },
 } as const satisfies Record<string, { ios: SFSymbol; md: string }>;
 
 export type IconName = keyof typeof icons;

@@ -2,17 +2,14 @@ import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
-import { Mascot } from '../../../components/mascot/Mascot';
-import { MascotSays } from '../../../components/mascot/MascotSays';
-import { noWidow } from '../../../lib/text';
 import { FoodIcon } from '../../../components/FoodIcon';
 import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
 import { RecipePhoto, openRecipe } from '../../../components/RecipeCard';
 import { useToast } from '../../../components/Toast';
-import { Button, Chip, EmptyState } from '../../../components/ui';
+import { Button, Chip, EmptyState, IconButton, Section, Separator } from '../../../components/ui';
 import { haptics } from '../../../lib/haptics';
-import { COMMON_ITEMS, smartSuggestions, suggestionsFor, whatCanICook, type PantryMatch } from '../../../lib/pantry';
+import { COMMON_ITEMS, PANTRY_CATEGORIES, pantryCategory, smartSuggestions, suggestionsFor, whatCanICook, type PantryMatch } from '../../../lib/pantry';
 import { showPaywall, useProGate } from '../../../lib/pro';
 import { TabScreen } from '../../../components/TabScreen';
 import { FREE_LIMITS, useStore } from '../../../state/store';
@@ -62,16 +59,15 @@ export default function PantryScreen() {
     toast({ message: `Added ${n} ${n === 1 ? 'item' : 'items'} for ${m.recipe.title}`, icon: 'cartAdd', action: { label: 'View', onPress: () => router.navigate('/groceries') } });
   };
 
-  const line = !pantry.length
-    ? { text: 'What’s in your cupboards?', mood: 'thinking' as const }
-    : ready
-      ? { text: `Yay! You can cook ${ready} ${ready === 1 ? 'recipe' : 'recipes'} now!`, mood: 'hungry' as const }
-      : { text: 'So close! Just a few things missing.', mood: 'hungry' as const };
+  // Your items, grouped by kitchen category. Typing in the box also narrows the list.
+  const q = query.trim().toLowerCase();
+  const groups = useMemo(() => {
+    const shownItems = q ? pantry.filter((p) => p.toLowerCase().includes(q)) : pantry;
+    return PANTRY_CATEGORIES.map((cat) => ({ cat, items: shownItems.filter((p) => pantryCategory(p) === cat).sort((a, b) => a.localeCompare(b)) })).filter((g) => g.items.length > 0);
+  }, [pantry, q]);
 
   return (
     <TabScreen title="Pantry" keyboardShouldPersistTaps="handled">
-      {pantry.length > 0 && <MascotSays line={line} size={88} style={{ marginBottom: t.layout.gap }} />}
-
       {/* Add */}
       <View style={[styles.addRow, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
         <Icon name="plus" size={18} color={t.colors.tint} weight="bold" />
@@ -79,7 +75,7 @@ export default function PantryScreen() {
           value={query}
           onChangeText={setQuery}
           onSubmitEditing={() => add(query)}
-          placeholder="Add what you have, e.g. eggs"
+          placeholder={pantry.length ? 'Add or find an item' : 'Add what you have, e.g. eggs'}
           placeholderTextColor={t.colors.tertiaryLabel}
           returnKeyType="done"
           accessibilityLabel="Add a pantry item"
@@ -125,18 +121,42 @@ export default function PantryScreen() {
       </View>
       {pantry.length === 0 ? (
         <View style={[styles.empty, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
-          <Mascot mood="thinking" size={72} />
-          <Text style={[t.type.callout, { color: t.colors.label, flex: 1 }]} testID="pantry-empty">
-            {noWidow('Add what you have and I’ll find recipes.')}
-          </Text>
+          <View style={[styles.emptyIcon, { backgroundColor: t.colors.tintSoft }]}>
+            <Icon name="fridge" size={22} color={t.colors.tint} weight="semibold" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[t.type.headline, { color: t.colors.label }]}>Your pantry is empty</Text>
+            <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]} testID="pantry-empty">
+              Add what’s in your kitchen. You’ll see which recipes you can cook and what’s missing.
+            </Text>
+          </View>
         </View>
+      ) : groups.length === 0 ? (
+        <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, marginTop: 8 }]}>Nothing in your pantry matches “{query.trim()}”.</Text>
       ) : (
-        <Animated.View layout={LinearTransition.duration(200)} style={styles.grid}>
-          {pantry.map((name) => (
-            <Animated.View key={name} entering={FadeIn.duration(180)} style={{ width: cell }}>
-              <Chip label={name} style={{ width: cell }} leading={<FoodIcon name={name} size={18} bare />} trailing="close" toggle={false} accessibilityLabel={`Remove ${name}`} onPress={() => remove(name)} />
-            </Animated.View>
-          ))}
+        // One list with a small header per category, like the aisles on the grocery list.
+        <Animated.View layout={LinearTransition.duration(200)} style={{ marginTop: 8 }}>
+          <Section>
+            {groups.map(({ cat, items }, gi) => (
+              <View key={cat}>
+                <View style={[styles.groupLabel, { backgroundColor: t.colors.fill }, gi > 0 && { borderTopWidth: StyleSheet.hairlineWidth * 2, borderTopColor: t.colors.separator }]}>
+                  <Text style={[t.type.subhead, { color: t.colors.label, fontFamily: t.fonts.display, fontWeight: 'normal' }]} accessibilityRole="header">
+                    {cat}
+                  </Text>
+                </View>
+                {items.map((name, i) => (
+                  <Animated.View key={name} entering={FadeIn.duration(180)}>
+                    {i > 0 && <Separator inset={52} />}
+                    <View style={styles.itemRow}>
+                      <FoodIcon name={name} size={22} bare />
+                      <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>{name}</Text>
+                      <IconButton icon="close" accessibilityLabel={`Remove ${name}`} color={t.colors.secondaryLabel} iconSize={13} onPress={() => remove(name)} />
+                    </View>
+                  </Animated.View>
+                ))}
+              </View>
+            ))}
+          </Section>
         </Animated.View>
       )}
       {!isPro && pantry.length >= FREE_LIMITS.pantry && (
@@ -151,6 +171,9 @@ export default function PantryScreen() {
         <>
           <Text style={[t.type.title2, { color: t.colors.label, marginTop: 32, marginBottom: 4 }]} accessibilityRole="header">
             What can I cook?
+          </Text>
+          <Text style={[t.type.subhead, { color: ready ? t.colors.successText : t.colors.secondaryLabel, marginBottom: 2, fontWeight: '600' }]} testID="ready-count">
+            {ready ? `You can cook ${ready} ${ready === 1 ? 'recipe' : 'recipes'} right now` : 'You’re a few items away from these'}
           </Text>
           <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginBottom: 12 }]}>Sorted by how much you already have. Salt, pepper and water are assumed.</Text>
 
@@ -200,9 +223,7 @@ function MatchCard({ match, onAddMissing }: { match: PantryMatch; onAddMissing: 
           <RecipePhoto recipe={recipe} iconSize={22} />
         </View>
         <View style={{ flex: 1, gap: 2 }}>
-          <Text style={[t.type.headline, { color: t.colors.label }]}>
-            {recipe.title}
-          </Text>
+          <Text style={[t.type.headline, { color: t.colors.label }]}>{recipe.title}</Text>
           <Text style={[t.type.footnote, { color: missing.length ? t.colors.secondaryLabel : t.colors.success, fontWeight: '600' }]}>
             {missing.length ? `You have ${have.length} of ${needed}` : 'You have everything'}
           </Text>
@@ -215,20 +236,31 @@ function MatchCard({ match, onAddMissing }: { match: PantryMatch; onAddMissing: 
         </View>
       </PressableScale>
       {missing.length > 0 && (
-        <Button label="Add missing to groceries" icon="cartAdd" size="medium" variant="tinted" onPress={onAddMissing} accessibilityLabel={`Add missing for ${recipe.title} to Groceries`} style={{ marginTop: 12, alignSelf: 'stretch' }} />
+        <Button
+          label="Add missing to groceries"
+          icon="cartAdd"
+          size="medium"
+          variant="tinted"
+          onPress={onAddMissing}
+          accessibilityLabel={`Add missing for ${recipe.title} to Groceries`}
+          style={{ marginTop: 12, alignSelf: 'stretch' }}
+        />
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-    addRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 16, paddingRight: 4, minHeight: 50, borderRadius: 16, borderCurve: 'continuous' },
+  addRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 16, paddingRight: 4, minHeight: 50, borderRadius: 16, borderCurve: 'continuous' },
   addInput: { flex: 1, minHeight: 48, outlineStyle: 'none' } as never,
   addBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   label: { marginTop: 16 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  empty: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, paddingRight: 16, borderRadius: 20, marginTop: 8, borderCurve: 'continuous' },
+  empty: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: 20, marginTop: 8, borderCurve: 'continuous' },
+  emptyIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  groupLabel: { paddingHorizontal: 16, paddingVertical: 8, minHeight: 36, justifyContent: 'center' },
+  itemRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingLeft: 16, paddingRight: 4, minHeight: 52 },
   headerRow: { flexDirection: 'row', alignItems: 'baseline', marginTop: 32, marginBottom: 4 },
   limit: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderRadius: 16, marginTop: 12 },
   card: { borderRadius: 20, padding: 16, borderCurve: 'continuous' },

@@ -52,6 +52,16 @@ type Saved = {
 
 const STORAGE_KEY = 'recipe-app-state-v1';
 
+/** An ingredient name for matching on the grocery list: lower case, each word singular. "Red Peppers" → "red pepper". */
+export const groceryName = (name: string) =>
+  name
+    .toLowerCase()
+    .replace(/\(.*?\)/g, ' ')
+    .split(/[^a-z]+/)
+    .filter(Boolean)
+    .map((w) => (w.length > 3 ? w.replace(/ies$/, 'y').replace(/(oes|ches|shes|sses)$/, (x) => x.slice(0, -2)).replace(/([^s])s$/, '$1') : w))
+    .join(' ');
+
 const initialSaved: Saved = {
   buddy: null,
   // A new user starts empty: no pretend favorites, plans or shopping lists.
@@ -366,7 +376,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         for (const ing of ingredients) {
           const key = `${ing.id}|${ing.unit}`;
           const qty = roundQty(ing.quantity * scale);
-          const idx = next.findIndex((i) => i.key === key);
+          // The same ingredient from another recipe adds up ("2 onions" + "3 onions" = 5), matched by
+          // name and unit, since imported recipes number their ingredient ids. Units are never converted.
+          const same = groceryName(ing.name);
+          const idx = next.findIndex((i) => i.key === key || (i.unit === ing.unit && groceryName(i.name) === same));
           if (idx >= 0) {
             const existing = next[idx];
             next[idx] = {

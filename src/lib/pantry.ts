@@ -91,3 +91,28 @@ export function suggestionsFor(query: string, recipes: Recipe[], pantry: string[
     .sort((a, b) => Number(!a.toLowerCase().startsWith(q)) - Number(!b.toLowerCase().startsWith(q)) || a.length - b.length)
     .slice(0, 6);
 }
+
+/* ------------------------------------------------------------------ */
+/* Kitchen categories, worked out from the name (nothing extra is saved) */
+/* ------------------------------------------------------------------ */
+
+export const PANTRY_CATEGORIES = ['Vegetables', 'Fruits', 'Dairy and eggs', 'Meat and fish', 'Grains and pasta', 'Spices, oils and sauces', 'Other'] as const;
+export type PantryCategory = (typeof PANTRY_CATEGORIES)[number];
+
+const CATEGORY_WORDS: [PantryCategory, string[]][] = [
+  ['Meat and fish', ['chicken', 'beef', 'mince', 'pork', 'bacon', 'ham', 'lamb', 'turkey', 'sausage', 'salmon', 'tuna', 'fish', 'cod', 'prawn', 'shrimp', 'steak', 'chorizo', 'anchovy']],
+  ['Dairy and eggs', ['egg', 'milk', 'butter', 'cheese', 'cheddar', 'feta', 'parmesan', 'mozzarella', 'yogurt', 'yoghurt', 'cream', 'paneer', 'ghee', 'ricotta']],
+  ['Grains and pasta', ['rice', 'pasta', 'spaghetti', 'penne', 'noodle', 'flour', 'bread', 'oat', 'quinoa', 'couscous', 'tortilla', 'bun', 'pastry', 'cereal', 'cracker', 'lentil', 'bean', 'chickpea', 'batter']],
+  ['Fruits', ['apple', 'banana', 'lemon', 'lime', 'orange', 'berry', 'strawberry', 'blueberry', 'raspberry', 'grape', 'mango', 'pear', 'peach', 'pineapple', 'cherry', 'avocado', 'melon', 'kiwi', 'date', 'raisin']],
+  ['Vegetables', ['onion', 'garlic', 'tomato', 'potato', 'carrot', 'pepper', 'spinach', 'lettuce', 'cucumber', 'broccoli', 'cauliflower', 'mushroom', 'pea', 'corn', 'zucchini', 'courgette', 'cabbage', 'kale', 'celery', 'leek', 'ginger', 'chilli', 'chili', 'aubergine', 'eggplant', 'squash', 'pumpkin', 'basil', 'coriander', 'cilantro', 'parsley', 'herb', 'shallot', 'scallion']],
+  ['Spices, oils and sauces', ['oil', 'salt', 'sugar', 'honey', 'vinegar', 'sauce', 'soy', 'ketchup', 'mayonnaise', 'mustard', 'spice', 'cumin', 'paprika', 'turmeric', 'cinnamon', 'masala', 'chilli flake', 'oregano', 'thyme', 'stock', 'syrup', 'vanilla', 'yeast', 'baking']],
+];
+
+/** Which kitchen category an item belongs to, e.g. "Chicken thighs" → Meat and fish. Best guess; "Other" when unsure. */
+export function pantryCategory(name: string): PantryCategory {
+  const w = words(name);
+  // "Olive oil" is an oil, not a fruit; "pepper" alone is a vegetable unless it's "black pepper".
+  if (w.includes('oil') || w.includes('sauce') || /black pepper|peppercorn/i.test(name)) return 'Spices, oils and sauces';
+  for (const [cat, list] of CATEGORY_WORDS) if (w.some((x) => list.includes(x))) return cat;
+  return 'Other';
+}

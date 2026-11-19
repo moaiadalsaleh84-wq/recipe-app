@@ -5,7 +5,7 @@ import { haptics } from '../../lib/haptics';
 import { noWidow } from '../../lib/text';
 import { useTheme } from '../../theme';
 import { PressableScale } from '../PressableScale';
-import { Mascot } from './Mascot';
+import { Mascot, MASCOT_ON } from './Mascot';
 import type { Line } from './lines';
 
 type Props = {
@@ -26,7 +26,13 @@ type Props = {
  * Biscuit with a speech bubble. Text types out letter by letter while Biscuit's
  * mouth moves, and Biscuit acts out the line's mood.
  */
-export function MascotSays({ line, onNext, size = 110, layout = 'row', style, hint, onPet, hideCat }: Props) {
+export function MascotSays(props: Props) {
+  // While the mascot is off, his lines are not shown either (screens stay clean without him).
+  if (!MASCOT_ON) return null;
+  return <Says {...props} />;
+}
+
+function Says({ line, onNext, size = 110, layout = 'row', style, hint, onPet, hideCat }: Props) {
   const t = useTheme();
   // A line can have a longer version (a tip). It opens on tap, and belongs to that line only.
   const [openFor, setOpenFor] = useState<string | null>(null);

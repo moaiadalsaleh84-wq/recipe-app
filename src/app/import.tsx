@@ -36,7 +36,7 @@ type Phase = { name: 'input' } | { name: 'loading' } | { name: 'failed'; failure
 export default function ImportScreen() {
   const t = useTheme();
   const toast = useToast();
-  const params = useLocalSearchParams<{ url?: string; from?: string }>();
+  const params = useLocalSearchParams<{ url?: string; from?: string; auto?: string }>();
   const fromOnboarding = params.from === 'onboarding';
   const { addRecipe, countImport, setDraft } = useStore();
   const { canImport, importsLeft } = useProGate();
@@ -106,6 +106,15 @@ export default function ImportScreen() {
       setPhase({ name: 'failed', failure: res });
     }
   };
+
+  // A link pasted on the Recipes screen starts reading right away (once).
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (params.auto !== '1' || autoStarted.current || !input.trim()) return;
+    autoStarted.current = true;
+    void run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const save = async (result: ImportSuccess) => {
     const recipe = toRecipe(result.recipe);

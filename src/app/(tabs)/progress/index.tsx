@@ -3,8 +3,6 @@ import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { Icon } from '../../../components/Icon';
-import { say, type Line } from '../../../components/mascot/lines';
-import { MascotSays } from '../../../components/mascot/MascotSays';
 import { PressableScale } from '../../../components/PressableScale';
 import { RecipeRow } from '../../../components/RecipeCard';
 import { useToast } from '../../../components/Toast';
@@ -33,8 +31,7 @@ export default function ProgressScreen() {
   const { cooked, getRecipe, goals, setGoals, customRecipes, plan, favorites, fun } = useStore();
   const { isPro } = useProGate();
   const [showAll, setShowAll] = useState(false);
-  const [petLine, setPetLine] = useState<Line | null>(null);
-  const [pets, setPets] = useState(0);
+  const [allHistory, setAllHistory] = useState(false);
 
   const now = new Date();
   const streak = streakOf(cooked.map((c) => c.date));
@@ -45,8 +42,15 @@ export default function ProgressScreen() {
   const earned = BADGES.filter((b) => fun.badges.includes(b.id));
   const upcoming = BADGES.filter((b) => !fun.badges.includes(b.id)).slice(0, 2);
   const today = cooked.filter((c) => dayKey(new Date(c.date)) === dayKey(now));
-  const eaten = totalsFor(today.map((c) => c.recipeId), getRecipe);
-  const recent = useMemo(() => cooked.slice(0, 5), [cooked]);
+  const eaten = totalsFor(
+    today.map((c) => c.recipeId),
+    getRecipe,
+  );
+  // Newest first. Five at a time unless you ask for everything.
+  const history = useMemo(() => [...cooked].sort((a, b) => b.date.localeCompare(a.date)), [cooked]);
+  const recent = allHistory ? history : history.slice(0, 5);
+  const tried = new Set(cooked.map((c) => c.recipeId)).size;
+  const saved = favorites.length + customRecipes.length;
 
   // This week, Monday to Sunday: which days had a cooked meal.
   const cookedDays = new Set(cooked.map((c) => dayKey(new Date(c.date))));
@@ -56,31 +60,27 @@ export default function ProgressScreen() {
     d.setDate(now.getDate() - todayIndex + i);
     return { label, done: cookedDays.has(dayKey(d)), today: i === todayIndex, future: i > todayIndex };
   });
-  const cookedToday = week[todayIndex].done;
-
-  const line: Line =
-    petLine ??
-    // Biscuit cheers you on; the cards below hold the numbers, so the words never repeat them.
-    (streak >= 3
-      ? { text: 'Look at you go, chef!', mood: 'proud' }
-      : cookedToday
-        ? { text: 'I’m so proud of you!', mood: 'proud' }
-        : streak > 0
-          ? { text: 'Ready for today’s dish?', mood: 'proud' }
-          : { text: 'Every chef starts somewhere!', mood: 'proud' });
 
   return (
     <TabScreen title="Progress" right={<HeaderButton icon="gear" accessibilityLabel="Settings" onPress={() => router.push('/settings')} />}>
-
-      <MascotSays
-        line={line}
-        size={88}
-        onPet={() => {
-          setPetLine(say('pet', {}, pets));
-          setPets((n) => n + 1);
-        }}
-        style={{ marginBottom: t.spacing.md }}
-      />
+      {/* Milestones at a glance, from what you've actually done */}
+      {cooked.length + saved > 0 && (
+        <View style={styles.stats}>
+          {[
+            { n: cooked.length, label: cooked.length === 1 ? 'meal cooked' : 'meals cooked', icon: 'pot' as const },
+            { n: tried, label: tried === 1 ? 'recipe tried' : 'recipes tried', icon: 'fork' as const },
+            { n: saved, label: 'saved', icon: 'heart' as const },
+          ].map((s) => (
+            <View key={s.label} style={[styles.stat, { backgroundColor: t.colors.cell, ...t.chunky.card }]} accessible accessibilityLabel={`${s.n} ${s.label}`}>
+              <Icon name={s.icon} size={16} color={t.colors.tint} weight="semibold" />
+              <Text style={[t.type.title2, { color: t.colors.label, fontVariant: ['tabular-nums'] }]}>{s.n}</Text>
+              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]} numberOfLines={1}>
+                {s.label}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
 
       {/* Streak */}
       <View
@@ -154,15 +154,17 @@ export default function ProgressScreen() {
             </View>
           ) : (
             // A one-time badge: no bar, just the way to get it.
-            BADGE_ACTION[next.badge.id] && (
-              <Button label={BADGE_ACTION[next.badge.id]!.label} variant="tinted" onPress={() => router.navigate(BADGE_ACTION[next.badge.id]!.href)} />
-            )
+            BADGE_ACTION[next.badge.id] && <Button label={BADGE_ACTION[next.badge.id]!.label} variant="tinted" onPress={() => router.navigate(BADGE_ACTION[next.badge.id]!.href)} />
           )}
         </View>
       )}
 
       {/* Chef level */}
-      <View style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card }]} accessible accessibilityLabel={`Chef level ${lvl.level}, ${lvl.title}. ${xp} XP${lvl.next ? `, ${lvl.toNext} to the next level` : ''}`}>
+      <View
+        style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card }]}
+        accessible
+        accessibilityLabel={`Chef level ${lvl.level}, ${lvl.title}. ${xp} XP${lvl.next ? `, ${lvl.toNext} to the next level` : ''}`}
+      >
         <View style={styles.row}>
           <View style={[styles.medal, { backgroundColor: t.colors.reward, ...t.chunky.button(t.colors.rewardDeep) }]}>
             <Text style={[t.type.title2, { color: t.colors.onReward }]} testID="chef-level">
@@ -203,13 +205,7 @@ export default function ProgressScreen() {
           </PressableScale>
         ))}
       </ScrollView>
-      <Button
-        label={showAll ? 'Hide the other badges' : earned.length ? `See what else you can earn` : 'See all badges'}
-        variant="plain"
-        size="medium"
-        onPress={() => setShowAll((v) => !v)}
-        style={{ marginTop: 4 }}
-      />
+      <Button label={showAll ? 'Hide the other badges' : earned.length ? `See what else you can earn` : 'See all badges'} variant="plain" size="medium" onPress={() => setShowAll((v) => !v)} style={{ marginTop: 4 }} />
       {showAll && (
         <Animated.View entering={FadeIn.duration(200)}>
           <Section>
@@ -274,7 +270,7 @@ export default function ProgressScreen() {
       {recent.length > 0 && (
         <>
           <Text style={[t.type.title3, styles.h, { color: t.colors.label }]} accessibilityRole="header">
-            Recently cooked
+            Cooking history
           </Text>
           <Section>
             {recent.map((c, i) => {
@@ -288,9 +284,9 @@ export default function ProgressScreen() {
               );
             })}
           </Section>
+          {history.length > 5 && <Button label={allHistory ? 'Show less' : `Show all ${history.length}`} variant="plain" size="medium" onPress={() => setAllHistory((v) => !v)} style={{ marginTop: -12 }} />}
         </>
       )}
-
     </TabScreen>
   );
 }
@@ -314,7 +310,9 @@ function GoalRow({ label, unit, eaten, goal, color, children }: { label: string;
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: 20, borderWidth: 2, padding: 16, gap: 16, borderCurve: 'continuous', marginBottom: 16 },
+  stats: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+  stat: { flex: 1, borderRadius: 20, padding: 12, gap: 2, borderCurve: 'continuous' },
+  card: { borderRadius: 20, borderWidth: 1.5, padding: 16, gap: 16, borderCurve: 'continuous', marginBottom: 16 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   barRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   streakTop: { flexDirection: 'row', alignItems: 'center', gap: 14 },
