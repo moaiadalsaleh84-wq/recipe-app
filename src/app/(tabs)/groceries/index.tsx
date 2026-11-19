@@ -14,7 +14,7 @@ import { haptics } from '../../../lib/haptics';
 import { plainFractions } from '../../../lib/qty';
 import { TabScreen } from '../../../components/TabScreen';
 import { formatQty, useStore } from '../../../state/store';
-import { useTheme } from '../../../theme';
+import { cook, useTheme } from '../../../theme';
 
 export default function GroceriesScreen() {
   const t = useTheme();
@@ -92,28 +92,28 @@ export default function GroceriesScreen() {
       {/* Where you are: a ring that fills as items go in the basket */}
       {total > 0 && (
         <Reveal index={0}>
-        <View style={[styles.hero, { backgroundColor: done === total ? t.colors.successSoft : t.colors.cell, borderColor: done === total ? t.colors.successSoft : t.colors.border }, done !== total && t.chunky.card]}>
-          <Ring value={done / total} size={64} stroke={7} label="Shopping progress">
+        <View style={[styles.hero, { backgroundColor: t.isDark ? t.colors.elevated : cook.background, borderColor: t.isDark ? t.colors.border : cook.background }, t.shadow.card]}>
+          <Ring value={done / total} size={64} stroke={7} color={done === total ? cook.done : cook.accent} track={cook.track} label="Shopping progress">
             {done === total ? (
-              <Icon name="check" size={24} color={t.colors.success} weight="bold" />
+              <Icon name="check" size={24} color={cook.done} weight="bold" />
             ) : (
-              <Text style={[t.type.headline, { color: t.colors.label, fontVariant: ['tabular-nums'] }]}>
+              <Text style={[t.type.headline, { color: cook.label, fontVariant: ['tabular-nums'] }]}>
                 {done}/{total}
               </Text>
             )}
           </Ring>
           <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
-            <Text style={[t.type.title3, { color: t.colors.label }]} testID="grocery-progress">
+            <Text style={[t.type.title3, { color: cook.label }]} testID="grocery-progress">
               {done === total ? 'Everything’s in the basket' : `${done} of ${total} in your basket`}
             </Text>
-            <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
+            <Text style={[t.type.footnote, { color: cook.secondaryLabel }]}>
               {done === total
                 ? 'Nice shopping. Clear the list when you’re ready.'
                 : [fromRecipes ? `From ${fromRecipes} ${fromRecipes === 1 ? 'recipe' : 'recipes'}` : '', own ? `${own} of your own` : ''].filter(Boolean).join(' · ')}
             </Text>
             {done > 0 && (
-            <PressableScale onPress={clearDone} hitSlop={6} accessibilityLabel={`Clear ${done} completed ${done === 1 ? 'item' : 'items'}`} style={[styles.clear, { backgroundColor: done === total ? t.colors.success : t.colors.fill }]}>
-              <Text style={[t.type.footnote, { color: done === total ? '#FFFFFF' : t.colors.label, fontFamily: t.fonts.bold }]}>Clear done</Text>
+            <PressableScale onPress={clearDone} hitSlop={6} accessibilityLabel={`Clear ${done} completed ${done === 1 ? 'item' : 'items'}`} style={[styles.clear, { backgroundColor: done === total ? cook.accent : cook.cardStrong }]}>
+              <Text style={[t.type.footnote, { color: done === total ? cook.onAccent : cook.label, fontFamily: t.fonts.bold }]}>Clear done</Text>
             </PressableScale>
             )}
           </View>

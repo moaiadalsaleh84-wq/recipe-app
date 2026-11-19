@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import Svg, { Circle } from 'react-native-svg';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import Animated, { FadeIn, FadeInLeft, FadeInRight, LinearTransition, SlideInDown, ZoomIn } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInLeft, FadeInRight, FadeInUp, LinearTransition, SlideInDown, ZoomIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FoodIcon } from '../../components/FoodIcon';
 import { ConfettiBurst } from '../../components/ConfettiBurst';
@@ -202,10 +202,10 @@ export default function CookMode() {
                     accessibilityRole="checkbox"
                     aria-checked={!!gathered[key]}
                     accessibilityLabel={label}
-                    style={[styles.gatherRow, { backgroundColor: gathered[key] ? t.colors.successSoft : 'transparent' }]}
+                    style={[styles.gatherRow, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth * 2, borderTopColor: t.colors.separator }]}
                   >
-                    <CheckCircle checked={!!gathered[key]} color={t.colors.success} />
-                    <Text style={[t.type.body, { color: gathered[key] ? t.colors.secondaryLabel : t.colors.label, flex: 1, textDecorationLine: gathered[key] ? 'line-through' : 'none' }]}>{label}</Text>
+                    <CheckCircle checked={!!gathered[key]} color={t.isDark ? cook.accent : cook.background} checkColor={t.isDark ? cook.onAccent : cook.accent} />
+                    <Text style={[t.type.body, { color: gathered[key] ? t.colors.tertiaryLabel : t.colors.label, flex: 1 }]}>{label}</Text>
                     <FoodIcon name={ing.name} aisle={ing.aisle} size={28} />
                   </PressableScale>
                 );
@@ -244,10 +244,12 @@ export default function CookMode() {
 
         {/* The best moment in the app: confetti falls and a chime plays. */}
         {done && (
-          <Animated.View key="done" entering={ZoomIn.springify().damping(12)} style={styles.done}>
-            <View style={[styles.doneBadge, { backgroundColor: cook.done }]}>
-              <Icon name="check" size={56} color={cook.background} weight="bold" />
-            </View>
+          // A calm arrival: the badge grows in once (no bounce), then the words fade up a little.
+          <Animated.View key="done" entering={FadeIn.duration(300)} style={styles.done}>
+            <Animated.View entering={ZoomIn.duration(420)} style={[styles.doneBadge, { backgroundColor: cook.accent }]}>
+              <Icon name="check" size={52} color={cook.onAccent} weight="bold" />
+            </Animated.View>
+            <Animated.View entering={FadeInUp.duration(420).delay(180)} style={styles.doneText}>
             <Text style={[t.type.largeTitle, { color: cook.label, textAlign: 'center' }]} accessibilityRole="header">
               You made it!
             </Text>
@@ -257,6 +259,7 @@ export default function CookMode() {
             <Text style={[t.type.footnote, { color: cook.secondaryLabel, textAlign: 'center' }]}>
               {steps.length} steps · {servings} {servings === 1 ? 'serving' : 'servings'}
             </Text>
+            </Animated.View>
           </Animated.View>
         )}
       </ScrollView>
@@ -278,8 +281,8 @@ export default function CookMode() {
             {recipe.ingredients.map((ing, i) => {
               const key = `${ing.id}-${i}`;
               return (
-                <PressableScale key={key} onPress={() => toggleGathered(key)} haptic="select" scaleTo={0.98} accessibilityRole="checkbox" aria-checked={!!gathered[key]} accessibilityLabel={amountOf(ing)} style={[styles.gatherRow, { backgroundColor: gathered[key] ? t.colors.successSoft : 'transparent' }]}>
-                  <CheckCircle checked={!!gathered[key]} color={t.colors.success} />
+                <PressableScale key={key} onPress={() => toggleGathered(key)} haptic="select" scaleTo={0.98} accessibilityRole="checkbox" aria-checked={!!gathered[key]} accessibilityLabel={amountOf(ing)} style={[styles.gatherRow, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth * 2, borderTopColor: t.colors.separator }]}>
+                  <CheckCircle checked={!!gathered[key]} color={t.isDark ? cook.accent : cook.background} checkColor={t.isDark ? cook.onAccent : cook.accent} />
                   <Text style={[t.type.body, { color: gathered[key] ? t.colors.secondaryLabel : t.colors.label, flex: 1 }]}>{amountOf(ing)}</Text>
                   <FoodIcon name={ing.name} aisle={ing.aisle} size={28} />
                 </PressableScale>
@@ -449,12 +452,13 @@ const styles = StyleSheet.create({
   card: { padding: 8, borderCurve: 'continuous' },
   gatherHead: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   stepText: { fontFamily: fonts.serifMedium, fontSize: 30, lineHeight: 39, letterSpacing: -0.3 },
-  gatherRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingHorizontal: 8, borderRadius: 14, borderCurve: 'continuous' },
+  gatherRow: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 58, paddingHorizontal: 8 },
   inStep: { padding: 16, gap: 6 },
   inStepRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 32 },
   dot: { width: 8, height: 8, borderRadius: 4 },
   done: { alignItems: 'center', gap: 8, paddingTop: 40 },
-  doneBadge: { width: 112, height: 112, borderRadius: 56, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  doneBadge: { width: 104, height: 104, borderRadius: 52, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  doneText: { alignItems: 'center', gap: 8 },
   sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 16, paddingTop: 16, borderCurve: 'continuous' },
   sheetHead: { flexDirection: 'row', alignItems: 'center' },
   footer: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', gap: 12, paddingHorizontal: 16, paddingTop: 12 },

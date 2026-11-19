@@ -75,10 +75,10 @@ export const recipes: Recipe[] = [
       { id: 'olive-oil', name: 'Olive oil', quantity: 3, unit: 'tbsp', aisle: 'Pantry' },
     ],
     steps: [
-      'Heat the oven to 220°C. Slice the peppers, toss with oil and roast for 18 minutes.',
-      'Cook the penne in well-salted water until al dente. Save a mug of pasta water.',
-      'Fry the sliced garlic in olive oil for 1 minute, then add the roasted peppers.',
-      'Toss in the pasta with a splash of pasta water. Crumble over feta and tear in basil.',
+      'Turn the oven on to 220°C. Cut the peppers into strips, mix them with a little oil and bake for 18 minutes.',
+      'Boil the penne in salted water for 10 minutes. Keep one cup of the pasta water.',
+      'Slice the garlic and fry it in olive oil for 1 minute. Add the peppers.',
+      'Add the pasta and a little pasta water and stir. Top with crumbled feta and basil leaves.',
     ],
   },
   {
@@ -103,10 +103,10 @@ export const recipes: Recipe[] = [
       { id: 'vegetable-oil', name: 'Vegetable oil', quantity: 2, unit: 'tbsp', aisle: 'Pantry' },
     ],
     steps: [
-      'Boil the potatoes until tender, then peel and roughly crush.',
-      'Pop the mustard seeds in hot oil, add the onion and turmeric, then fold in the potato.',
-      'Spread a ladle of batter thinly on a hot pan. Drizzle with oil and cook until crisp.',
-      'Spoon the potato down the middle, fold and serve with tomato chutney.',
+      'Boil the potatoes for 20 minutes until soft. Peel them and mash them roughly.',
+      'Heat the oil and add the mustard seeds. Wait until they pop. Add the onion and turmeric, then stir in the potato.',
+      'Pour a spoonful of batter into a hot pan and spread it thin. Add a few drops of oil and cook until crispy.',
+      'Put the potato in the middle, fold the dosa over and serve with tomato chutney.',
     ],
   },
   {
@@ -130,10 +130,10 @@ export const recipes: Recipe[] = [
       { id: 'vegetable-oil', name: 'Vegetable oil', quantity: 1, unit: 'tbsp', aisle: 'Pantry' },
     ],
     steps: [
-      'Dice the chicken and stir-fry in a very hot pan until golden. Push to one side.',
-      'Scramble the eggs in the empty side of the pan.',
-      'Add the peas, carrots and cold rice. Fry for 4 minutes without stirring too often.',
-      'Season with soy sauce and a pinch of white pepper.',
+      'Cut the chicken into small pieces. Fry them in a very hot pan until golden, then move them to one side.',
+      'Crack the eggs into the empty side of the pan and stir until cooked.',
+      'Add the peas, carrots and cold rice. Fry for 4 minutes and stir only now and then.',
+      'Add the soy sauce and a pinch of pepper. Stir and serve.',
     ],
   },
   {
@@ -157,10 +157,10 @@ export const recipes: Recipe[] = [
       { id: 'cream', name: 'Double cream', quantity: 100, unit: 'ml', aisle: 'Dairy & Eggs' },
     ],
     steps: [
-      'Marinate the chicken in yogurt, garam masala and salt for at least 15 minutes.',
-      'Sear the chicken in a hot pan until charred at the edges. Set aside.',
-      'Melt the butter, add the passata and simmer for 10 minutes until thick.',
-      'Stir in the cream and chicken. Simmer 10 minutes more and serve with rice.',
+      'Mix the chicken with the yogurt, garam masala and a little salt. Leave it for 15 minutes.',
+      'Fry the chicken in a hot pan until the edges turn dark brown. Put it on a plate.',
+      'Melt the butter in the pan. Add the tomato sauce and cook gently for 10 minutes until thick.',
+      'Stir in the cream and the chicken. Cook gently for 10 more minutes. Serve with rice.',
     ],
   },
   {
@@ -184,10 +184,10 @@ export const recipes: Recipe[] = [
       { id: 'mayo', name: 'Mayonnaise', quantity: 3, unit: 'tbsp', aisle: 'Pantry' },
     ],
     steps: [
-      'Season the mince well and shape into 4 patties slightly wider than the buns.',
-      'Shred the cabbage and onion, then mix with mayo and a squeeze of lemon.',
-      'Cook the patties for 5 minutes per side. Add the cheese for the final minute.',
-      'Toast the buns and stack: slaw, patty, more slaw.',
+      'Add salt and pepper to the mince. Shape it into 4 flat patties, a little wider than the buns.',
+      'Cut the cabbage and onion very thin. Mix them with mayo and a little lemon juice.',
+      'Fry the patties for 5 minutes on each side. Put the cheese on top for the last minute.',
+      'Toast the buns. Build each burger: cabbage mix, patty, then more cabbage mix.',
     ],
   },
   {
@@ -210,10 +210,10 @@ export const recipes: Recipe[] = [
       { id: 'egg', name: 'Eggs', quantity: 1, unit: '', aisle: 'Dairy & Eggs' },
     ],
     steps: [
-      'Dice the apples and cook with sugar and cinnamon for 6 minutes. Let cool.',
-      'Cut the pastry into 6 squares and spoon filling onto one half of each.',
-      'Fold into triangles, press the edges and brush with beaten egg.',
-      'Bake at 200°C for 18 minutes until puffed and golden. Dust with sugar.',
+      'Cut the apples into small cubes. Cook them with the sugar and cinnamon for 6 minutes, then let them cool.',
+      'Cut the pastry into 6 squares. Put some apple on one half of each square.',
+      'Fold each square into a triangle and press the edges shut. Brush the tops with beaten egg.',
+      'Bake at 200°C for 18 minutes until puffy and golden. Sprinkle with sugar.',
     ],
   },
   {
@@ -237,10 +237,10 @@ export const recipes: Recipe[] = [
       { id: 'olive-oil', name: 'Olive oil', quantity: 1, unit: 'tbsp', aisle: 'Pantry' },
     ],
     steps: [
-      'Cook the spaghetti until 1 minute short of al dente.',
-      'Fry the sliced mushrooms in a hot pan until deeply browned, then add the garlic.',
-      'Pour in the cream and a ladle of pasta water. Bubble for 2 minutes.',
-      'Toss in the pasta and parmesan until glossy. Finish with black pepper.',
+      'Boil the spaghetti in salted water for 8 minutes. It should still be a little firm.',
+      'Slice the mushrooms and fry them in a hot pan until brown. Add the garlic.',
+      'Pour in the cream and a little pasta water. Let it bubble for 2 minutes.',
+      'Add the spaghetti and parmesan and stir until creamy. Add black pepper and serve.',
     ],
   },
   {
@@ -264,10 +264,10 @@ export const recipes: Recipe[] = [
       { id: 'olive-oil', name: 'Olive oil', quantity: 1, unit: 'tbsp', aisle: 'Pantry' },
     ],
     steps: [
-      'Heat the oven to its highest setting with a tray inside for 20 minutes.',
-      'Stretch each dough ball into a thin round on a floured surface.',
-      'Spread with passata, tear over mozzarella and scatter the halved tomatoes.',
-      'Bake for 8 to 10 minutes until blistered. Top with basil and olive oil.',
+      'Put a baking tray in the oven. Turn the oven to its highest setting and heat it for 20 minutes.',
+      'Dust the table with flour. Press and stretch each dough ball into a thin circle.',
+      'Spread tomato sauce on the dough. Add torn mozzarella and the cherry tomatoes, cut in half.',
+      'Bake for 8 to 10 minutes until the edges are brown. Add basil and a little olive oil.',
     ],
   },
   {
@@ -290,10 +290,10 @@ export const recipes: Recipe[] = [
       { id: 'veg-oil', name: 'Vegetable oil', quantity: 500, unit: 'ml', aisle: 'Pantry' },
     ],
     steps: [
-      'Rub 4 tbsp oil into the flour, add water to form a firm dough and rest 20 minutes.',
-      'Boil and crush the potatoes, then fry with cumin and peas.',
-      'Roll the dough into ovals, halve, shape into cones and fill. Seal the edges.',
-      'Fry at 160°C for 8 minutes until deep golden. Drain well.',
+      'Mix the flour with 4 tbsp oil. Add water bit by bit until you have a firm dough. Leave it for 20 minutes.',
+      'Boil the potatoes and mash them. Fry them with the cumin and peas.',
+      'Roll the dough into ovals and cut each in half. Fold each half into a cone, fill it and press the edges shut.',
+      'Fry in oil at 160°C for 8 minutes until golden brown. Let them drain on paper towels.',
     ],
   },
   {
@@ -318,10 +318,10 @@ export const recipes: Recipe[] = [
       { id: 'vegetable-oil', name: 'Vegetable oil', quantity: 3, unit: 'tbsp', aisle: 'Pantry' },
     ],
     steps: [
-      'Marinate the chicken in yogurt and masala for 30 minutes.',
-      'Fry the sliced onions slowly until deep brown and crisp. Set half aside.',
-      'Par-boil the rice for 5 minutes. Layer chicken, onions and rice in a heavy pot.',
-      'Drizzle saffron milk on top, seal and cook on low heat for 35 minutes.',
+      'Mix the chicken with the yogurt and biryani spices. Leave it for 30 minutes.',
+      'Slice the onions and fry them slowly until brown and crispy. Keep half for the top.',
+      'Boil the rice for 5 minutes and drain it. In a heavy pot, add layers of chicken, onions and rice.',
+      'Pour the saffron milk on top. Put the lid on and cook on low heat for 35 minutes.',
     ],
   },
   {
@@ -345,10 +345,10 @@ export const recipes: Recipe[] = [
       { id: 'raspberries', name: 'Raspberries', quantity: 150, unit: 'g', aisle: 'Produce' },
     ],
     steps: [
-      'Heat the oven to 180°C and grease a bundt tin well.',
-      'Melt the butter with the cocoa, then whisk in the sugar and eggs.',
-      'Fold in the flour and pour into the tin. Bake for 45 minutes.',
-      'Cool for 15 minutes, turn out and top with raspberries and icing sugar.',
+      'Turn the oven on to 180°C. Rub butter all over the inside of the cake tin.',
+      'Melt the butter with the cocoa. Then mix in the sugar and eggs.',
+      'Gently stir in the flour and pour it into the tin. Bake for 45 minutes.',
+      'Let it cool for 15 minutes, then turn it out of the tin. Top with raspberries and powdered sugar.',
     ],
   },
   {
@@ -371,10 +371,10 @@ export const recipes: Recipe[] = [
       { id: 'icing-sugar', name: 'Icing sugar', quantity: 2, unit: 'tbsp', aisle: 'Pantry' },
     ],
     steps: [
-      'Whip the cream with vanilla and icing sugar to soft peaks.',
-      'Slice the sponge in half horizontally and spread the bottom with cream.',
-      'Add a layer of sliced strawberries, then the top sponge and more cream.',
-      'Chill for 20 minutes, cut into squares and top with whole strawberries.',
+      'Beat the cream with the vanilla and powdered sugar until thick and soft.',
+      'Cut the cake in half to make a top and a bottom layer. Spread cream on the bottom layer.',
+      'Add sliced strawberries, then the top layer and more cream.',
+      'Put it in the fridge for 20 minutes. Cut it into squares and add a strawberry on each.',
     ],
   },
 ];

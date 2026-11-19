@@ -13,7 +13,7 @@ import { meals, type Meal, type Recipe } from '../../../data/mock';
 import { haptics } from '../../../lib/haptics';
 import { TabScreen } from '../../../components/TabScreen';
 import { totalsFor, useStore } from '../../../state/store';
-import { useTheme } from '../../../theme';
+import { cook, useTheme } from '../../../theme';
 import { weekDays } from '../../../lib/week';
 
 
@@ -97,14 +97,14 @@ export default function PlanScreen() {
               accessibilityRole="tab"
               aria-selected={selected}
               accessibilityLabel={`${d.long}${d.isToday ? ', today' : ''}, ${count} meals planned`}
-              style={[styles.day, { backgroundColor: selected ? t.colors.tintFill : t.colors.cell, borderColor: selected ? t.colors.tintFill : t.colors.border }, !selected && t.chunky.lip]}
+              style={[styles.day, { backgroundColor: selected ? (t.isDark ? t.colors.tintFill : cook.background) : t.colors.cell, borderColor: selected ? (t.isDark ? t.colors.tintFill : cook.background) : t.colors.border }, !selected && t.chunky.lip]}
             >
               <Text style={[t.type.caption1, { color: selected ? 'rgba(255,255,255,0.85)' : t.colors.secondaryLabel }]}>{d.short}</Text>
               <Text style={[t.type.title3, { color: selected ? t.colors.onTint : t.colors.label, fontVariant: ['tabular-nums'] }]}>{d.date}</Text>
               {/* Dots: one per planned meal; today's are saffron. */}
               <View style={styles.dots}>
                 {[0, 1, 2].map((n) => (
-                  <View key={n} style={[styles.dot, { backgroundColor: n < count ? (selected ? '#FFFFFF' : d.isToday ? t.colors.reward : t.colors.success) : 'transparent' }]} />
+                  <View key={n} style={[styles.dot, { backgroundColor: n < count ? (selected ? cook.accent : d.isToday ? t.colors.reward : t.colors.success) : 'transparent' }]} />
                 ))}
               </View>
             </PressableScale>

@@ -43,7 +43,8 @@ export function TabBar({ state, emitter, navigateToTab, badges = {} }: BottomTab
           const selected = state.index === i;
           const badge = badges[route.name] ?? 0;
           return (
-            <Animated.View key={route.key} layout={LinearTransition.duration(220)} style={{ flex: selected ? 1.7 : 1 }}>
+            // The selected capsule takes the width its label needs; the other tabs share the rest.
+            <Animated.View key={route.key} layout={LinearTransition.duration(220)} style={selected ? styles.activeSlot : styles.slot}>
               <PressableScale
                 haptic="select"
                 scaleTo={0.92}
@@ -60,7 +61,7 @@ export function TabBar({ state, emitter, navigateToTab, badges = {} }: BottomTab
                 {selected ? (
                   <View style={[styles.active, { backgroundColor: t.colors.tintFill }]}>
                     <TabIcon icon={tab.icon} selected badge={0} />
-                    <Text numberOfLines={1} style={[styles.activeLabel, { color: t.colors.onTint, fontFamily: t.fonts.bold }]}>
+                    <Text style={[styles.activeLabel, { color: t.colors.onTint, fontFamily: t.fonts.bold }]} maxFontSizeMultiplier={1.15}>
                       {tab.label}
                     </Text>
                     {/* On the selected tab the count sits after the label, so it never covers it. */}
@@ -73,7 +74,7 @@ export function TabBar({ state, emitter, navigateToTab, badges = {} }: BottomTab
                 ) : (
                   <>
                     <TabIcon icon={tab.icon} selected={false} badge={badge} />
-                    <Text numberOfLines={1} style={[styles.label, { color: t.colors.secondaryLabel, fontFamily: t.fonts.semibold }]}>
+                    <Text numberOfLines={1} maxFontSizeMultiplier={1.15} style={[styles.label, { color: t.colors.secondaryLabel, fontFamily: t.fonts.semibold }]}>
                       {tab.label}
                     </Text>
                   </>
@@ -112,9 +113,11 @@ const styles = StyleSheet.create({
   // Floats over the screen; the screens leave room for it (useTabBarSpace).
   wrap: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 12, alignItems: 'center' },
   bar: { flexDirection: 'row', alignItems: 'center', height: BAR_HEIGHT, width: '100%', maxWidth: 520, borderRadius: BAR_HEIGHT / 2, borderWidth: 1, paddingHorizontal: 6, borderCurve: 'continuous' },
+  slot: { flex: 1, minWidth: 0 },
+  activeSlot: { flexShrink: 0, paddingHorizontal: 2 },
   item: { alignItems: 'center', justifyContent: 'center', gap: 2, minHeight: 52 },
   active: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 48, paddingHorizontal: 14, borderRadius: 24, borderCurve: 'continuous' },
-  activeLabel: { fontSize: 15, lineHeight: 19 },
+  activeLabel: { fontSize: 14, lineHeight: 18 },
   label: { fontSize: 11, lineHeight: 14, letterSpacing: 0.1 },
   inlineBadge: { minWidth: 20, height: 20, borderRadius: 10, paddingHorizontal: 5, alignItems: 'center', justifyContent: 'center' },
   badge: { position: 'absolute', top: -7, right: -12, minWidth: 20, height: 20, borderRadius: 10, borderWidth: 2, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center' },

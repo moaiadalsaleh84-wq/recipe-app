@@ -31,7 +31,7 @@ import { pickPhoto } from '../../lib/photos';
 import { convertQty, convertStepText } from '../../lib/units';
 import { formatQty, roundQty, useStore } from '../../state/store';
 import { ingredientText } from '../../lib/qty';
-import { useTheme } from '../../theme';
+import { brand, cook, useTheme } from '../../theme';
 
 export default function RecipeScreen() {
   const t = useTheme();
@@ -240,14 +240,22 @@ export default function RecipeScreen() {
           )}
 
           <Reveal index={1}>
-          <View style={[styles.stats, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]}>
-            {stats.map((s, i) => (
-              <View key={s.label} style={[styles.stat, i > 0 && { borderLeftWidth: 2, borderLeftColor: t.colors.separator }]} accessible accessibilityLabel={`${s.label}: ${s.value}`}>
-                {s.icon === 'hats' ? <ChefHats level={level} /> : <Icon name={s.icon} size={18} color={t.colors.tint} />}
-                <Text style={[t.type.headline, { color: t.colors.label }]}>{s.value}</Text>
-                <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]}>{s.label}</Text>
-              </View>
-            ))}
+          {/* Three facts as a small bento row: saffron, basil and dark, like the You tab. */}
+          <View style={styles.stats}>
+            {stats.map((s, i) => {
+              const tile = [
+                { bg: t.colors.reward, fg: brand.ink, sub: 'rgba(20,32,25,0.72)' },
+                { bg: t.colors.tintFill, fg: '#FFFFFF', sub: 'rgba(255,255,255,0.85)' },
+                { bg: t.isDark ? t.colors.elevated : cook.background, fg: cook.label, sub: cook.secondaryLabel },
+              ][i];
+              return (
+                <View key={s.label} style={[styles.stat, { backgroundColor: tile.bg }]} accessible accessibilityLabel={`${s.label}: ${s.value}`}>
+                  {s.icon === 'hats' ? <ChefHats level={level} color={cook.accent} empty={cook.secondaryLabel} /> : <Icon name={s.icon} size={18} color={tile.fg} weight="semibold" />}
+                  <Text style={[t.type.headline, { color: tile.fg }]}>{s.value}</Text>
+                  <Text style={[t.type.caption1, { color: tile.sub }]}>{s.label}</Text>
+                </View>
+              );
+            })}
           </View>
           </Reveal>
 
@@ -513,7 +521,7 @@ function Nutrition({ recipe, proteinGoal }: { recipe: Recipe; proteinGoal?: numb
 }
 
 /** Difficulty as one to three little chef hats. */
-function ChefHats({ level }: { level: number }) {
+function ChefHats({ level, color, empty }: { level: number; color?: string; empty?: string }) {
   const t = useTheme();
   return (
     <View style={{ flexDirection: 'row', gap: 2, height: 18, alignItems: 'center' }} accessibilityElementsHidden>
@@ -521,8 +529,8 @@ function ChefHats({ level }: { level: number }) {
         <Svg key={i} width={16} height={16} viewBox="0 0 24 24">
           <Path
             d="M6 15 C 2 14 2 8 6 8 C 6 4 11 2 13 5 C 16 2 22 5 19 9 C 22 11 20 15 18 15 Z M6 16 L 18 16 L 18 20 C 18 21 17 21.5 16 21.5 L 8 21.5 C 7 21.5 6 21 6 20 Z"
-            fill={i <= level ? t.colors.tint : 'none'}
-            stroke={i <= level ? t.colors.tint : t.colors.tertiaryLabel}
+            fill={i <= level ? (color ?? t.colors.tint) : 'none'}
+            stroke={i <= level ? (color ?? t.colors.tint) : (empty ?? t.colors.tertiaryLabel)}
             strokeWidth={1.8}
             strokeLinejoin="round"
           />
@@ -590,8 +598,8 @@ const styles = StyleSheet.create({
   photoBtn: { position: 'absolute', right: 16, flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 14, borderRadius: 22 },
   body: { paddingHorizontal: 16, paddingTop: 24, borderBottomLeftRadius: 0, borderBottomRightRadius: 0, borderCurve: 'continuous' },
   source: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, alignSelf: 'flex-start' },
-  stats: { flexDirection: 'row', marginTop: 16, paddingVertical: 14, borderCurve: 'continuous' },
-  stat: { flex: 1, alignItems: 'center', gap: 3 },
+  stats: { flexDirection: 'row', marginTop: 16, gap: 8 },
+  stat: { flex: 1, alignItems: 'flex-start', gap: 4, padding: 12, borderRadius: 18, borderCurve: 'continuous' },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },
   kicker: { flexDirection: 'row', gap: 6 },
   pill: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999 },

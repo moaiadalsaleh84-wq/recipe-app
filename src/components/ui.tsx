@@ -237,7 +237,7 @@ export function Stepper({
 
 /* ---------- Animated checkmark circle ---------- */
 
-export function CheckCircle({ checked, color }: { checked: boolean; color: string }) {
+export function CheckCircle({ checked, color, checkColor = '#FFFFFF' }: { checked: boolean; color: string; /** The tick itself (white by default). */ checkColor?: string }) {
   const t = useTheme();
   const reduceMotion = useReducedMotion();
   const scale = useSharedValue(checked ? 1 : 0);
@@ -258,7 +258,7 @@ export function CheckCircle({ checked, color }: { checked: boolean; color: strin
   return (
     <Animated.View style={[styles.check, { borderColor: checked ? color : t.colors.fillStrong, backgroundColor: t.colors.cell }, ringStyle]}>
       <Animated.View style={[styles.checkFill, { backgroundColor: color }, fillStyle]}>
-        <Icon name="check" size={14} color="#FFFFFF" weight="bold" />
+        <Icon name="check" size={14} color={checkColor} weight="bold" />
       </Animated.View>
     </Animated.View>
   );

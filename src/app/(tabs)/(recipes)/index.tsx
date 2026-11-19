@@ -17,7 +17,7 @@ import { haptics } from '../../../lib/haptics';
 import { showPaywall, useProGate } from '../../../lib/pro';
 import { MANAGE_SUBSCRIPTIONS_URL } from '../../../lib/purchases';
 import { useStore } from '../../../state/store';
-import { useTheme } from '../../../theme';
+import { cook, useTheme } from '../../../theme';
 
 const todayIndex = (new Date().getDay() + 6) % 7; // Monday = 0
 /** Days since 1970, so the recipe of the day really changes daily. */
@@ -194,8 +194,13 @@ export default function RecipesScreen() {
           <>
             <SectionHeader
               title={tonight ? 'Tonight' : 'Today’s pick'}
-              subtitle={tonight ? 'Dinner from your meal plan' : 'A new recipe every day'}
-              right={<Chip label="Surprise me" icon="shuffle" toggle={false} accessibilityLabel="Can't decide? Pick a random recipe" onPress={() => router.push('/buddy-pick')} />}
+              subtitle={tonight ? 'From your meal plan' : 'New every day'}
+              right={
+                <PressableScale onPress={() => router.push('/buddy-pick')} accessibilityLabel="Can't decide? Pick a random recipe" style={styles.surprise}>
+                  <Icon name="shuffle" size={14} color={t.colors.tint} weight="bold" />
+                  <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.bold }]}>Surprise me</Text>
+                </PressableScale>
+              }
             />
             <Reveal index={3}>
               <FeaturedCard recipe={featured} label={tonight ? 'On the menu tonight' : 'Recipe of the day'} />
@@ -364,14 +369,14 @@ function ImportBox({ onImport }: { onImport: (url?: string) => void }) {
     }
   };
   return (
-    <View style={[styles.importBox, { backgroundColor: t.colors.tintFill, borderRadius: t.radius.xl, ...t.shadow.card }]} testID="import-box">
+    <View style={[styles.importBox, { backgroundColor: t.isDark ? t.colors.elevated : cook.background, borderRadius: t.radius.xl, ...t.shadow.card }]} testID="import-box">
       <View style={styles.importHead}>
         <View style={{ flex: 1, gap: 2 }}>
-          <Text style={[t.type.title2, { color: '#FFFFFF' }]}>Save a recipe from a link</Text>
-          <Text style={[t.type.subhead, { color: 'rgba(255,255,255,0.86)' }]}>TikTok, Instagram, YouTube or any recipe site</Text>
+          <Text style={[t.type.title3, { color: cook.label }]}>Save a recipe from a link</Text>
+          <Text style={[t.type.footnote, { color: cook.secondaryLabel }]}>TikTok, Instagram, YouTube or any recipe site</Text>
         </View>
-        <View style={styles.importIcon}>
-          <Icon name="link" size={20} color="#FFFFFF" weight="bold" />
+        <View style={[styles.importIcon, { backgroundColor: t.colors.success }]}>
+          <Icon name="link" size={18} color="#FFFFFF" weight="bold" />
         </View>
       </View>
       <View style={styles.importField}>
@@ -389,9 +394,9 @@ function ImportBox({ onImport }: { onImport: (url?: string) => void }) {
           accessibilityLabel="Recipe link"
         />
         {!value && (
+          // Just an icon: a second "Paste" word next to the hint looked like a glitch on narrow phones.
           <PressableScale onPress={paste} accessibilityLabel="Paste link from clipboard" style={styles.pasteBtn}>
-            <Icon name="paste" size={15} color="#FFFFFF" weight="semibold" />
-            <Text style={[t.type.subhead, { color: '#FFFFFF', fontFamily: t.fonts.bold }]}>Paste</Text>
+            <Icon name="paste" size={18} color="#FFFFFF" weight="semibold" />
           </PressableScale>
         )}
         <Chunky onPress={() => onImport(value || undefined)} accessibilityLabel={value ? 'Import recipe' : 'Open recipe import'} face={t.colors.reward} faceStyle={styles.importBtn}>
@@ -463,11 +468,12 @@ const styles = StyleSheet.create({
   chips: { gap: 8, paddingVertical: 4, alignItems: 'center', minHeight: 52 },
   chipDivider: { width: 2, height: 24, marginHorizontal: 4, borderRadius: 1 },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
-  importBox: { padding: 18, gap: 16, borderCurve: 'continuous' },
+  importBox: { padding: 16, gap: 14, borderCurve: 'continuous' },
+  surprise: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingLeft: 8 },
   importHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  importIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.16)' },
-  importField: { flexDirection: 'row', alignItems: 'center', minHeight: 52, paddingLeft: 18, paddingRight: 4, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.14)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.22)', borderCurve: 'continuous' },
+  importIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  importField: { flexDirection: 'row', alignItems: 'center', minHeight: 52, paddingLeft: 18, paddingRight: 4, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.14)', borderCurve: 'continuous' },
   importInput: { flex: 1, minWidth: 0, alignSelf: 'stretch', minHeight: 44, paddingVertical: 0, outlineStyle: 'none' } as never,
-  pasteBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 10 },
+  pasteBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   importBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 44, paddingHorizontal: 16 },
 });
