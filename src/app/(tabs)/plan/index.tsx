@@ -18,7 +18,7 @@ import { weekDays } from '../../../lib/week';
 export default function PlanScreen() {
   const t = useTheme();
   const toast = useToast();
-  const { plan, setMeal, addIngredients, getRecipe, goals, isPro, allRecipes } = useStore();
+  const { plan, setMeal, addWeekToGroceries, getRecipe, goals, isPro, allRecipes } = useStore();
   const [day, setDay] = useState(weekDays.find((d) => d.isToday)?.index ?? 0);
   const dayPlan = useMemo(() => plan[day] ?? {}, [plan, day]);
   const plannedToday = meals.filter((m) => dayPlan[m]).length;
@@ -29,16 +29,18 @@ export default function PlanScreen() {
     [plan],
   );
 
-  // Same ingredients from different recipes are combined on the list (the store adds them up).
+  // Safe to press again: meals already added this week are skipped, and the same ingredient
+  // from different recipes is added up on the list (see lib/groceries.ts).
   const addWeek = () => {
-    let count = 0;
-    for (const id of weekRecipes) {
-      const r = getRecipe(id);
-      if (r) count += addIngredients(r.id, r.ingredients);
+    const { meals: added, items } = addWeekToGroceries();
+    if (added === 0) {
+      haptics.select();
+      toast({ message: 'This week’s meals are already on your list', icon: 'check', tone: 'info', action: { label: 'View', onPress: () => router.navigate('/groceries') } });
+      return;
     }
     haptics.success();
     toast({
-      message: `Added ${count} items from ${weekRecipes.length} meals`,
+      message: `Added ${items} ${items === 1 ? 'item' : 'items'} from ${added} ${added === 1 ? 'meal' : 'meals'}`,
       icon: 'cart',
       action: { label: 'View', onPress: () => router.navigate('/groceries') },
     });
@@ -190,7 +192,7 @@ export default function PlanScreen() {
           <View style={{ flex: 1 }}>
             <Text style={[t.type.headline, { color: t.colors.label }]}>This week</Text>
             <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]}>
-              {weekRecipes.length} {weekRecipes.length === 1 ? 'meal' : 'meals'} planned. Same ingredients are added up on the list.
+              {weekRecipes.length} {weekRecipes.length === 1 ? 'meal' : 'meals'} planned. Same ingredients are added up, and meals already on the list aren’t added twice.
             </Text>
           </View>
           <Button label="Add this week to groceries" icon="cartAdd" variant="tinted" size="medium" onPress={addWeek} style={{ alignSelf: 'stretch' }} />

@@ -1,4 +1,4 @@
-import { roundQty } from '../lib/qty';
+import { addWeekToList, mergeIngredients, weekId } from '../lib/groceries';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState, Platform } from 'react-native';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -48,19 +48,13 @@ type Saved = {
   importsUsed: number;
   /** Ingredients the user has at home, as typed. */
   pantry: string[];
+  /** Planned meals already added to groceries this week (see addWeekToList), so adding the week twice adds nothing. */
+  planAdded: string[];
 };
 
 const STORAGE_KEY = 'recipe-app-state-v1';
 
-/** An ingredient name for matching on the grocery list: lower case, each word singular. "Red Peppers" → "red pepper". */
-export const groceryName = (name: string) =>
-  name
-    .toLowerCase()
-    .replace(/\(.*?\)/g, ' ')
-    .split(/[^a-z]+/)
-    .filter(Boolean)
-    .map((w) => (w.length > 3 ? w.replace(/ies$/, 'y').replace(/(oes|ches|shes|sses)$/, (x) => x.slice(0, -2)).replace(/([^s])s$/, '$1') : w))
-    .join(' ');
+export { groceryName } from '../lib/groceries';
 
 const initialSaved: Saved = {
   buddy: null,
@@ -80,6 +74,7 @@ const initialSaved: Saved = {
   fun: { pets: 0, listsDone: 0, badges: [], lastLevel: 1 },
   importsUsed: 0,
   pantry: [],
+  planAdded: [],
 };
 
 /** What the free version includes. `customRecipes` counts recipes written by hand, not imports. */
@@ -150,6 +145,8 @@ type Store = Saved & {
   // Groceries
   toggleGrocery: (key: string) => void;
   addIngredients: (recipeId: string, ingredients: Ingredient[], scale?: number) => number;
+  /** Adds every planned meal of this week that isn't on the list yet. Returns what was new. */
+  addWeekToGroceries: () => { meals: number; items: number };
   addCustomItem: (name: string) => void;
   removeGrocery: (key: string) => void;
   clearCompleted: () => number;
@@ -371,33 +368,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const addIngredients = useCallback(
     (recipeId: string, ingredients: Ingredient[], scale = 1) => {
-      setGroceries((prev) => {
-        const next = [...prev];
-        for (const ing of ingredients) {
-          const key = `${ing.id}|${ing.unit}`;
-          const qty = roundQty(ing.quantity * scale);
-          // The same ingredient from another recipe adds up ("2 onions" + "3 onions" = 5), matched by
-          // name and unit, since imported recipes number their ingredient ids. Units are never converted.
-          const same = groceryName(ing.name);
-          const idx = next.findIndex((i) => i.key === key || (i.unit === ing.unit && groceryName(i.name) === same));
-          if (idx >= 0) {
-            const existing = next[idx];
-            next[idx] = {
-              ...existing,
-              quantity: roundQty(existing.quantity + qty),
-              checked: false,
-              recipeIds: existing.recipeIds.includes(recipeId) ? existing.recipeIds : [...existing.recipeIds, recipeId],
-            };
-          } else {
-            next.push({ key, name: ing.name, quantity: qty, unit: ing.unit, aisle: ing.aisle, recipeIds: [recipeId], checked: false });
-          }
-        }
-        return next;
-      });
+      setGroceries((prev) => mergeIngredients(prev, recipeId, ingredients, scale));
       return ingredients.length;
     },
     [setGroceries],
   );
+
+  /** "Add this week to groceries": safe to repeat. Each planned meal is added once per week. */
+  const addWeekToGroceries = useCallback(() => {
+    let result = { meals: 0, items: 0 };
+    setSaved((s) => {
+      const all = [...s.customRecipes, ...builtInRecipes];
+      const out = addWeekToList(s.groceries, s.plan, s.planAdded ?? [], (id) => all.find((r) => r.id === id)?.ingredients, weekId());
+      result = { meals: out.meals, items: out.items };
+      if (out.meals === 0) return s;
+      lastGroceries.current = s.groceries;
+      return { ...s, groceries: out.list, planAdded: out.added };
+    });
+    return result;
+  }, []);
 
   const addCustomItem = useCallback(
     (name: string) => {
@@ -470,6 +459,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setMeal,
       toggleGrocery,
       addIngredients,
+      addWeekToGroceries,
       addCustomItem,
       removeGrocery,
       clearCompleted,
@@ -478,7 +468,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [
       saved, hydrated, setBuddy, setProfile, completeOnboarding, setPro, addPet, addListDone, unlockBadges, setLastLevel, countImport, draft, addPantry, removePantry, restorePantry, allRecipes, getRecipe, addRecipe, manualRecipeCount, deleteRecipe, setRecipeImage, setNote, setUnits, setGoals, logCooked,
       category, tags, toggleTag, showOnlyTag, clearFilters, isFavorite, toggleFavorite, addCookbook, renameCookbook,
-      deleteCookbook, restoreCookbook, toggleInCookbook, setMeal, toggleGrocery, addIngredients, addCustomItem,
+      deleteCookbook, restoreCookbook, toggleInCookbook, setMeal, toggleGrocery, addIngredients, addWeekToGroceries, addCustomItem,
       removeGrocery, clearCompleted, undoGroceries,
     ],
   );
