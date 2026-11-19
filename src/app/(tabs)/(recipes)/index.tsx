@@ -111,7 +111,8 @@ export default function RecipesScreen() {
   const railWidth = Math.min(168, Math.floor((contentWidth - margin * 2) / 2.3));
   const countLabel = `${filtered.length} ${filtered.length === 1 ? 'recipe' : 'recipes'}`;
 
-  const books = [{ id: FAVORITES_ID, name: 'Favorites', recipeIds: favorites }, ...cookbooks];
+  // Favorites only shows up once you've hearted something, so it never opens to an empty page.
+  const books = favorites.length ? [{ id: FAVORITES_ID, name: 'Favorites', recipeIds: favorites }, ...cookbooks] : cookbooks;
 
   const startImport = (url?: string) => {
     if (!canImport) {
@@ -221,10 +222,13 @@ export default function RecipesScreen() {
         )}
         {showExtras && quick.length > 1 && <Rail title="Quick meals" subtitle="Ready in 30 minutes or less" recipes={quick} width={railWidth} action={{ label: 'See all', onPress: () => showOnlyTag(QUICK_FILTER) }} />}
 
-        {/* 6. Cookbooks, on their own soft band so the section stands apart */}
+        {/* 6. Cookbooks, on the same background as the rest of the page */}
         {showExtras && (
-          <View style={[styles.band, { marginHorizontal: -margin, paddingHorizontal: margin, backgroundColor: t.isDark ? t.colors.cell : t.colors.imagePlaceholder }]}>
-            <SectionHeader title="Cookbooks" subtitle={`${books.length} ${books.length === 1 ? 'collection' : 'collections'}`} style={{ marginTop: 0 }} />
+          <View>
+            <SectionHeader
+              title="Cookbooks"
+              subtitle={books.length ? `${books.length} ${books.length === 1 ? 'collection' : 'collections'}` : 'Save recipes you love in one place'}
+            />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -margin }} contentContainerStyle={[styles.rail, { paddingHorizontal: margin, gap: t.spacing.sm }]}>
               {books.map((b) => (
                 <CookbookTile key={b.id} id={b.id} name={b.name} width={railWidth} recipes={b.recipeIds.map((id) => getRecipe(id)).filter((r): r is Recipe => !!r)} />
@@ -372,8 +376,8 @@ function ImportBox({ onImport }: { onImport: (url?: string) => void }) {
     <View style={[styles.importBox, { backgroundColor: t.isDark ? t.colors.elevated : cook.background, borderRadius: t.radius.xl, ...t.shadow.card }]} testID="import-box">
       <View style={styles.importHead}>
         <View style={{ flex: 1, gap: 2 }}>
-          <Text style={[t.type.title3, { color: cook.label }]}>Save a recipe from a link</Text>
-          <Text style={[t.type.footnote, { color: cook.secondaryLabel }]}>TikTok, Instagram, YouTube or any recipe site</Text>
+          <Text style={[t.type.title3, { color: cook.label }]}>Save a recipe</Text>
+          <Text style={[t.type.footnote, { color: cook.secondaryLabel }]}>From TikTok, Instagram, YouTube or any recipe site</Text>
         </View>
         <View style={[styles.importIcon, { backgroundColor: t.colors.success }]}>
           <Icon name="link" size={18} color="#FFFFFF" weight="bold" />
@@ -385,6 +389,8 @@ function ImportBox({ onImport }: { onImport: (url?: string) => void }) {
           onChangeText={setLink}
           placeholder="Paste a link"
           placeholderTextColor="rgba(255,255,255,0.75)"
+          // Capped so very large text still fits the hint; the box grows taller instead of cutting it.
+          maxFontSizeMultiplier={1.3}
           style={[t.type.input, styles.importInput, { color: '#FFFFFF' }]}
           autoCapitalize="none"
           autoCorrect={false}
@@ -399,9 +405,9 @@ function ImportBox({ onImport }: { onImport: (url?: string) => void }) {
             <Icon name="paste" size={18} color="#FFFFFF" weight="semibold" />
           </PressableScale>
         )}
+        {/* A round arrow, like a send button, so the link field keeps almost the whole row. */}
         <Chunky onPress={() => onImport(value || undefined)} accessibilityLabel={value ? 'Import recipe' : 'Open recipe import'} face={t.colors.reward} faceStyle={styles.importBtn}>
-          <Text style={[t.type.subhead, { color: t.colors.onReward, fontFamily: t.fonts.extrabold }]}>Import</Text>
-          <Icon name="arrowRight" size={14} color={t.colors.onReward} weight="bold" />
+          <Icon name="arrowRight" size={20} color={t.colors.onReward} weight="bold" />
         </Chunky>
       </View>
     </View>
@@ -446,7 +452,7 @@ function CookbookTile({ id, name, recipes, width }: { id: string; name: string; 
         </Text>
       </View>
       <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, paddingHorizontal: 12 }]} numberOfLines={1}>
-        {empty ? (fav ? 'Tap ♥ on a recipe to save it' : 'Nothing yet') : `${recipes.length} ${recipes.length === 1 ? 'recipe' : 'recipes'}`}
+        {empty ? (fav ? 'Nothing saved yet' : 'Nothing yet') : `${recipes.length} ${recipes.length === 1 ? 'recipe' : 'recipes'}`}
       </Text>
     </PressableScale>
   );
@@ -458,7 +464,6 @@ const COVER_H = 120;
 const styles = StyleSheet.create({
   reminder: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 16, paddingRight: 4, paddingVertical: 8, borderRadius: 20, borderWidth: 1.5, marginBottom: 16, borderCurve: 'continuous' },
   reminderBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
-  band: { marginTop: 36, paddingVertical: 24 },
   sortBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', minHeight: 44, marginTop: -10, marginBottom: 8 },
   rail: { paddingBottom: 4 },
   book: { borderCurve: 'continuous', paddingBottom: 12, minHeight: 164 },
@@ -476,5 +481,5 @@ const styles = StyleSheet.create({
   importField: { flexDirection: 'row', alignItems: 'center', minHeight: 52, paddingLeft: 18, paddingRight: 4, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.14)', borderCurve: 'continuous' },
   importInput: { flex: 1, minWidth: 0, alignSelf: 'stretch', minHeight: 44, paddingVertical: 0, paddingRight: 4, outlineStyle: 'none' } as never,
   pasteBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  importBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 44, paddingHorizontal: 16 },
+  importBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 });
