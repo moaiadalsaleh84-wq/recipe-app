@@ -467,7 +467,7 @@ const styles = StyleSheet.create({
   importHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   importIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   importField: { flexDirection: 'row', alignItems: 'center', minHeight: 48, paddingLeft: 14, paddingRight: 4, borderCurve: 'continuous' },
-  importInput: { flex: 1, alignSelf: 'stretch', minHeight: 44, paddingVertical: 0, outlineStyle: 'none' } as never,
+  importInput: { flex: 1, minWidth: 0, alignSelf: 'stretch', minHeight: 44, paddingVertical: 0, outlineStyle: 'none' } as never,
   pasteBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 10 },
   importBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 48 },
 });
