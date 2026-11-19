@@ -3,6 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
+import { Reveal } from '../../components/Reveal';
 import { Linking, Modal, Pressable, Share, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import Animated, {
@@ -238,6 +239,7 @@ export default function RecipeScreen() {
             </PressableScale>
           )}
 
+          <Reveal index={1}>
           <View style={[styles.stats, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]}>
             {stats.map((s, i) => (
               <View key={s.label} style={[styles.stat, i > 0 && { borderLeftWidth: 2, borderLeftColor: t.colors.separator }]} accessible accessibilityLabel={`${s.label}: ${s.value}`}>
@@ -247,6 +249,7 @@ export default function RecipeScreen() {
               </View>
             ))}
           </View>
+          </Reveal>
 
           {recipe.tags.length > 0 && (
             <View style={styles.tags}>
@@ -257,7 +260,9 @@ export default function RecipeScreen() {
           )}
 
           {/* Nutrition: a one-line summary that opens into the details */}
-          <Nutrition recipe={recipe} proteinGoal={isPro ? goals.protein : undefined} />
+          <Reveal index={2}>
+            <Nutrition recipe={recipe} proteinGoal={isPro ? goals.protein : undefined} />
+          </Reveal>
 
           {/* Ingredients */}
           <Text style={[t.type.title2, styles.h2, { color: t.colors.label }]} accessibilityRole="header">
@@ -288,8 +293,8 @@ export default function RecipeScreen() {
               const c = convertQty(roundQty(ing.quantity * scale), ing.unit, units);
               const { amount, text } = ingredientText(c.quantity, c.unit, ing.name);
               return (
-                <View key={`${ing.id}-${i}`}>
-                  {i > 0 && <Separator inset={60} />}
+                <Animated.View key={`${ing.id}-${i}`} entering={FadeIn.duration(260).delay(120 + Math.min(i, 12) * 40)}>
+                  {i > 0 && <Separator inset={16} />}
                   <View style={styles.ingredient} accessible accessibilityLabel={`${amount} ${text}${have.has(ing.id) ? ', in your pantry' : ''}`.trim()}>
                     <FoodIcon name={ing.name} aisle={ing.aisle} />
                     {/* "3/4 red pepper": the amount in bold, then what it is */}
@@ -308,7 +313,7 @@ export default function RecipeScreen() {
                       </View>
                     )}
                   </View>
-                </View>
+                </Animated.View>
               );
             })}
           </View>

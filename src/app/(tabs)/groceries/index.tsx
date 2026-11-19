@@ -5,6 +5,8 @@ import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeabl
 import Animated, { FadeIn, FadeInDown, FadeOut, LinearTransition, useAnimatedStyle, type SharedValue } from 'react-native-reanimated';
 import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
+import { Reveal } from '../../../components/Reveal';
+import { ConfettiBurst } from '../../../components/ConfettiBurst';
 import { useToast } from '../../../components/Toast';
 import { CheckCircle, EmptyState, HeaderButton, IconButton, Ring, Section, Separator } from '../../../components/ui';
 import { aisleOrder, type GroceryItem } from '../../../data/mock';
@@ -19,6 +21,8 @@ export default function GroceriesScreen() {
   const toast = useToast();
   const { groceries, toggleGrocery, removeGrocery, clearCompleted, addCustomItem, undoGroceries } = useStore();
   const [draft, setDraft] = useState('');
+  // Confetti once, when the last item goes in the basket.
+  const [party, setParty] = useState(0);
 
   const done = groceries.filter((g) => g.checked).length;
   const total = groceries.length;
@@ -57,7 +61,10 @@ export default function GroceriesScreen() {
   const toggle = (item: GroceryItem) => {
     toggleGrocery(item.key);
     if (item.checked) return;
-    if (done + 1 === total) haptics.success();
+    if (done + 1 === total) {
+      haptics.success();
+      setParty((n) => n + 1);
+    }
   };
 
   const add = () => {
@@ -80,9 +87,11 @@ export default function GroceriesScreen() {
   const toBuy = total - done;
 
   return (
+    <View style={{ flex: 1 }}>
     <TabScreen title="Grocery list" kicker={total === 0 ? 'Nothing to buy yet' : toBuy === 0 ? 'All done' : `${toBuy} ${toBuy === 1 ? 'thing' : 'things'} to buy`} right={headerRight} keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled">
       {/* Where you are: a ring that fills as items go in the basket */}
       {total > 0 && (
+        <Reveal index={0}>
         <View style={[styles.hero, { backgroundColor: done === total ? t.colors.successSoft : t.colors.cell, borderColor: done === total ? t.colors.successSoft : t.colors.border }, done !== total && t.chunky.card]}>
           <Ring value={done / total} size={64} stroke={7} label="Shopping progress">
             {done === total ? (
@@ -109,6 +118,7 @@ export default function GroceriesScreen() {
             )}
           </View>
         </View>
+        </Reveal>
       )}
 
       {/* Quick add */}
@@ -169,6 +179,8 @@ export default function GroceriesScreen() {
         </>
       )}
     </TabScreen>
+    {party > 0 && done === total && <ConfettiBurst key={party} count={60} />}
+    </View>
   );
 }
 

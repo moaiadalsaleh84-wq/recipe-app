@@ -39,6 +39,14 @@ export function TabScreen({ title, kicker, right, children, maxWidth = 700, cont
   });
   // The small bar fades in as the large title slides under it.
   const fadeAt = kicker ? TITLE + 20 : TITLE;
+  // The big title stretches a little when you pull down, and shrinks and fades as you scroll up.
+  const titleStyle = useAnimatedStyle(() => {
+    const v = y.get();
+    return {
+      opacity: interpolate(v, [0, fadeAt - 8], [1, 0], Extrapolation.CLAMP),
+      transform: [{ scale: interpolate(v, [-120, 0, fadeAt], [1.12, 1, 0.92], Extrapolation.CLAMP) }, { translateY: interpolate(v, [0, fadeAt], [0, 10], Extrapolation.CLAMP) }],
+    };
+  });
   const barStyle = useAnimatedStyle(() => ({ opacity: interpolate(y.get(), [fadeAt - 24, fadeAt - 4], [0, 1], Extrapolation.CLAMP) }));
 
   return (
@@ -56,7 +64,7 @@ export function TabScreen({ title, kicker, right, children, maxWidth = 700, cont
         ]}
       >
         <View style={styles.titleRow}>
-          <View style={{ flex: 1 }}>
+          <Animated.View style={[{ flex: 1, transformOrigin: 'left bottom' }, titleStyle]}>
             {kicker ? (
               <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, fontFamily: t.fonts.semibold }]} numberOfLines={1} testID="screen-kicker">
                 {kicker}
@@ -65,7 +73,7 @@ export function TabScreen({ title, kicker, right, children, maxWidth = 700, cont
             <Text style={[t.type.largeTitle, { color: t.colors.label }]} accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
               {title}
             </Text>
-          </View>
+          </Animated.View>
           {right ? <View style={styles.actions}>{right}</View> : null}
         </View>
         {children}

@@ -6,13 +6,14 @@ import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
 import { RecipeRow } from '../../../components/RecipeCard';
 import { useToast } from '../../../components/Toast';
-import { Button, HeaderButton, ProgressBar, Ring, Section, SectionHeader, Separator, Stepper } from '../../../components/ui';
+import { AnimatedNumber, Button, HeaderButton, ProgressBar, Ring, Section, SectionHeader, Separator, Stepper } from '../../../components/ui';
+import { Reveal } from '../../../components/Reveal';
 import { showPaywall, useProGate } from '../../../lib/pro';
 import { BADGES, levelFor, nextBadge, streakOf, xpFor } from '../../../lib/progress';
 import { TabScreen } from '../../../components/TabScreen';
 import { totalsFor, useStore } from '../../../state/store';
 import { noWidow } from '../../../lib/text';
-import { cook, fonts, useTheme } from '../../../theme';
+import { brand, cook, fonts, useTheme } from '../../../theme';
 
 const dayKey = (d: Date) => d.toDateString();
 const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -64,6 +65,7 @@ export default function ProgressScreen() {
   return (
     <TabScreen title="Your kitchen" kicker={profile.name.trim() ? `${profile.name.trim().split(/\s+/)[0]}’s progress` : 'Your progress'} right={<HeaderButton icon="gear" accessibilityLabel="Settings" onPress={() => router.push('/settings')} />}>
       {/* Your chef level: the hero of this screen. A saffron ring fills toward the next level. */}
+      <Reveal index={0}>
       <View
         style={[styles.hero, { backgroundColor: t.isDark ? '#1E3A2B' : cook.background, ...t.shadow.card }]}
         accessible
@@ -82,74 +84,77 @@ export default function ProgressScreen() {
           </Text>
         </View>
       </View>
+      </Reveal>
 
-      {/* Milestones at a glance, from what you've actually done */}
-      {cooked.length + saved > 0 && (
-        <View style={styles.stats}>
-          {[
-            { n: cooked.length, label: cooked.length === 1 ? 'meal cooked' : 'meals cooked', icon: 'pot' as const },
-            { n: tried, label: tried === 1 ? 'recipe tried' : 'recipes tried', icon: 'fork' as const },
-            { n: saved, label: 'saved', icon: 'heart' as const },
-          ].map((s) => (
-            <View key={s.label} style={[styles.stat, { backgroundColor: t.colors.cell, ...t.chunky.card }]} accessible accessibilityLabel={`${s.n} ${s.label}`}>
-              <Icon name={s.icon} size={16} color={t.colors.tint} weight="semibold" />
-              <Text style={[t.type.title2, { color: t.colors.label, fontVariant: ['tabular-nums'] }]}>{s.n}</Text>
-              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
-                {s.label}
-              </Text>
-            </View>
-          ))}
-        </View>
-      )}
-
-      {/* Streak */}
-      <View
-        style={[styles.card, { backgroundColor: t.colors.rewardSoft, borderColor: t.colors.reward, ...t.chunky.button(t.colors.reward) }]}
-        accessible
-        accessibilityLabel={streak > 0 ? `${streak} day cooking streak` : 'No streak yet. Cook a meal today to start one.'}
-      >
-        <View style={styles.streakTop}>
-          <View style={[styles.flame, { backgroundColor: streak > 0 ? t.colors.reward : t.colors.cell }]}>
-            <Icon name="flameFill" size={30} color={streak > 0 ? t.colors.tintFill : t.colors.tertiaryLabel} weight="bold" />
+      {/* Bento: the streak, meals cooked and recipes tried as bold tiles, then this week. */}
+      <Reveal index={1} style={styles.bento}>
+        <View
+          style={[styles.tile, styles.tall, { backgroundColor: t.colors.reward }]}
+          accessible
+          accessibilityLabel={streak > 0 ? `${streak} day cooking streak` : 'No streak yet. Cook a meal today to start one.'}
+        >
+          <View style={[styles.tileIcon, { backgroundColor: 'rgba(20,32,25,0.1)' }]}>
+            <Icon name="flameFill" size={22} color={brand.ink} weight="bold" />
           </View>
-          <View style={{ flex: 1 }}>
+          <View>
             {streak > 0 ? (
               <>
-                <Text style={[t.type.largeTitle, { color: t.colors.label }]} testID="streak-count">
-                  {streak}
+                <AnimatedNumber value={streak} style={[styles.big, { color: brand.ink }]} />
+                <Text style={[t.type.headline, { color: brand.ink }]} testID="streak-count">
+                  {streak === 1 ? 'day streak' : 'days in a row'}
                 </Text>
-                <Text style={[t.type.headline, { color: t.colors.rewardText, marginTop: -4 }]}>day streak</Text>
               </>
             ) : (
               <>
-                <Text style={[t.type.title2, { color: t.colors.label }]} testID="streak-count">
+                <Text style={[t.type.title2, { color: brand.ink }]} testID="streak-count">
                   Start a streak
                 </Text>
-                <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]}>Cook a meal today</Text>
+                <Text style={[t.type.subhead, { color: 'rgba(20,32,25,0.75)' }]}>Cook a meal today</Text>
               </>
             )}
           </View>
         </View>
-        <View style={styles.week}>
-          {week.map((d, i) => (
-            <View key={i} style={styles.day}>
-              <View
-                style={[
-                  styles.dayDot,
-                  { backgroundColor: d.done ? t.colors.reward : t.colors.cell, borderColor: d.today ? t.colors.tintFill : d.done ? t.colors.rewardDeep : t.colors.border },
-                  d.future && { opacity: 0.55 },
-                ]}
-              >
-                {d.done && <Icon name="check" size={14} color={t.colors.onReward} weight="bold" />}
-              </View>
-              <Text style={[t.type.caption1, { color: d.today ? t.colors.label : t.colors.secondaryLabel, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>{d.label}</Text>
-            </View>
-          ))}
+        <View style={styles.col}>
+          <View style={[styles.tile, { backgroundColor: t.colors.tintFill }]} accessible accessibilityLabel={`${cooked.length} meals cooked`}>
+            <AnimatedNumber value={cooked.length} style={[styles.mid, { color: '#FFFFFF' }]} />
+            <Text style={[t.type.footnote, { color: 'rgba(255,255,255,0.88)', fontFamily: t.fonts.bold }]}>{cooked.length === 1 ? 'meal cooked' : 'meals cooked'}</Text>
+          </View>
+          <View style={[styles.tile, { backgroundColor: t.colors.cell, ...t.chunky.card }]} accessible accessibilityLabel={`${tried} recipes tried, ${saved} saved`}>
+            <AnimatedNumber value={tried} style={[styles.mid, { color: t.colors.label }]} />
+            <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, fontFamily: t.fonts.bold }]}>
+              {tried === 1 ? 'recipe tried' : 'recipes tried'} · {saved} saved
+            </Text>
+          </View>
         </View>
-      </View>
+      </Reveal>
+
+      <Reveal index={2}>
+        <View style={[styles.weekTile, { backgroundColor: t.isDark ? t.colors.elevated : cook.background }]} accessible accessibilityLabel={`This week: cooked on ${week.filter((d) => d.done).length} days`}>
+          <View style={styles.weekHead}>
+            <Text style={[t.type.title3, { color: cook.label }]}>This week</Text>
+            <Text style={[t.type.footnote, { color: cook.secondaryLabel, fontFamily: t.fonts.bold }]}>
+              {week.filter((d) => d.done).length} of 7 days
+            </Text>
+          </View>
+          <View style={styles.week}>
+            {week.map((d, i) => (
+              <View key={i} style={styles.day}>
+                <Animated.View
+                  entering={ZoomIn.duration(240).delay(200 + i * 45)}
+                  style={[styles.dayDot, { backgroundColor: d.done ? cook.accent : 'transparent', borderColor: d.today ? cook.accent : d.done ? cook.accent : cook.track }, d.future && { opacity: 0.5 }]}
+                >
+                  {d.done && <Icon name="check" size={14} color={cook.onAccent} weight="bold" />}
+                </Animated.View>
+                <Text style={[t.type.caption1, { color: d.today ? cook.label : cook.secondaryLabel }]}>{d.label}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      </Reveal>
 
       {/* Next badge */}
       {next && (
+        <Reveal index={3}>
         <View style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card }]} accessible accessibilityLabel={`Next badge: ${next.badge.title}. ${next.badge.hint}. ${next.done} of ${next.needed}.`}>
           <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>Next badge</Text>
           <View style={styles.row}>
@@ -177,6 +182,7 @@ export default function ProgressScreen() {
             BADGE_ACTION[next.badge.id] && <Button label={BADGE_ACTION[next.badge.id]!.label} variant="tinted" onPress={() => router.navigate(BADGE_ACTION[next.badge.id]!.href)} />
           )}
         </View>
+        </Reveal>
       )}
 
       {/* Badges: the ones you have, then the next two still to earn, softly faded. */}
@@ -304,7 +310,15 @@ function GoalRow({ label, unit, eaten, goal, color, children }: { label: string;
 }
 
 const styles = StyleSheet.create({
-  stats: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+  bento: { flexDirection: 'row', gap: 12, marginBottom: 12 },
+  tile: { borderRadius: 24, padding: 16, gap: 4, justifyContent: 'flex-end', borderCurve: 'continuous' },
+  tall: { flex: 1, minHeight: 200, justifyContent: 'space-between' },
+  col: { flex: 1, gap: 12 },
+  tileIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  big: { fontFamily: fonts.serifBold, fontSize: 64, lineHeight: 68 },
+  mid: { fontFamily: fonts.serifBold, fontSize: 36, lineHeight: 40 },
+  weekTile: { borderRadius: 24, padding: 16, gap: 14, marginBottom: 16, borderCurve: 'continuous' },
+  weekHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
   stat: { flex: 1, borderRadius: 20, padding: 12, gap: 2, borderCurve: 'continuous' },
   card: { borderRadius: 22, borderWidth: 1, padding: 16, gap: 16, borderCurve: 'continuous', marginBottom: 16 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14 },

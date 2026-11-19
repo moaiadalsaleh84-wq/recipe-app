@@ -2,8 +2,8 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
-import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
-import { useState } from 'react';
+import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import { useEffect, useState } from 'react';
 import type { Recipe, RecipeImage } from '../data/mock';
 import { photoUri } from '../lib/photos';
 import { useStore } from '../state/store';
@@ -42,11 +42,18 @@ export function FavoriteButton({ recipe, onPhoto }: { recipe: Recipe; onPhoto?: 
   const fav = isFavorite(recipe.id);
   const pop = useSharedValue(1);
   const popStyle = useAnimatedStyle(() => ({ transform: [{ scale: pop.get() }] }));
+  // The burst when you save: a ring and six little hearts flying out.
+  const burst = useSharedValue(0);
+  const ringStyle = useAnimatedStyle(() => ({ opacity: burst.get() > 0 && burst.get() < 1 ? 1 - burst.get() : 0, transform: [{ scale: 0.6 + burst.get() * 1.2 }] }));
   const onPress = () => {
     const now = toggleFavorite(recipe.id);
     if (now) haptics.success();
     else haptics.select();
-    if (now && !reduceMotion) pop.set(withSequence(withTiming(0.7, { duration: 80 }), withSpring(1, t.motion.pop)));
+    if (now && !reduceMotion) {
+      pop.set(withSequence(withTiming(0.6, { duration: 80 }), withSpring(1.15, { damping: 6, stiffness: 300 }), withSpring(1, t.motion.pop)));
+      burst.set(0);
+      burst.set(withTiming(1, { duration: 520, easing: Easing.out(Easing.cubic) }));
+    }
     toast({
       message: now ? 'Added to Favorites' : 'Removed from Favorites',
       icon: now ? 'heartFill' : 'heart',
@@ -59,6 +66,10 @@ export function FavoriteButton({ recipe, onPhoto }: { recipe: Recipe; onPhoto?: 
     // On photos: a small solid white circle (32pt) inside a full 44pt tap area.
     return (
       <PressableScale onPress={onPress} haptic={null} scaleTo={0.9} accessibilityLabel={label} style={styles.favTap}>
+        <Animated.View pointerEvents="none" style={[styles.burstRing, { borderColor: brand.chili }, ringStyle]} />
+        {SPARKS.map((sp, i) => (
+          <Spark key={i} dx={sp[0]} dy={sp[1]} burst={burst} />
+        ))}
         <Animated.View style={[styles.favDot, popStyle]}>
           <Icon name={fav ? 'heartFill' : 'heart'} size={17} color={fav ? brand.chili : brand.ink} weight="bold" />
         </Animated.View>
@@ -73,6 +84,36 @@ export function FavoriteButton({ recipe, onPhoto }: { recipe: Recipe; onPhoto?: 
 }
 
 /** The small print under a recipe's title. */
+/** Where the six little hearts fly to (worked out once, outside the animation). */
+const SPARKS = Array.from({ length: 6 }, (_, i) => {
+  const a = (i / 6) * Math.PI * 2 - Math.PI / 2;
+  return [Math.cos(a) * 26, Math.sin(a) * 26] as const;
+});
+
+function Spark({ dx, dy, burst }: { dx: number; dy: number; burst: ReturnType<typeof useSharedValue<number>> }) {
+  const style = useAnimatedStyle(() => {
+    const b = burst.get();
+    return { opacity: b > 0 && b < 1 ? 1 - b : 0, transform: [{ translateX: dx * b }, { translateY: dy * b }, { scale: 1 - b * 0.4 }] };
+  });
+  return <Animated.View pointerEvents="none" style={[styles.spark, { backgroundColor: brand.chili }, style]} />;
+}
+
+/** A photo that drifts in very slowly (a gentle zoom), so the featured card feels alive. Still with Reduce Motion. */
+function DriftingPhoto({ recipe }: { recipe: Recipe }) {
+  const reduceMotion = useReducedMotion();
+  const zoom = useSharedValue(1);
+  useEffect(() => {
+    if (reduceMotion) return;
+    zoom.set(withRepeat(withTiming(1.08, { duration: 9000, easing: Easing.inOut(Easing.quad) }), -1, true));
+  }, [reduceMotion, zoom]);
+  const style = useAnimatedStyle(() => ({ transform: [{ scale: zoom.get() }] }));
+  return (
+    <Animated.View style={[StyleSheet.absoluteFill, style]}>
+      <RecipePhoto recipe={recipe} iconSize={56} />
+    </Animated.View>
+  );
+}
+
 const useMeta = () => (r: Recipe) => `${r.minutes} min · ${r.calories} kcal`;
 
 /** Grid card: a tall food photo in a white card, then the name in serif and time · difficulty. */
@@ -134,7 +175,7 @@ export function FeaturedCard({ recipe, label }: { recipe: Recipe; /** For screen
         style={[styles.featured, { borderRadius: t.radius.xl, backgroundColor: t.colors.imagePlaceholder, ...t.shadow.card }]}
       >
         <View style={[StyleSheet.absoluteFill, { borderRadius: t.radius.xl, overflow: 'hidden' }]}>
-          <RecipePhoto recipe={recipe} iconSize={56} />
+          <DriftingPhoto recipe={recipe} />
           <LinearGradient colors={['rgba(10,18,13,0)', 'rgba(10,18,13,0.12)', 'rgba(10,18,13,0.86)']} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFill} pointerEvents="none" />
         </View>
         <View style={styles.featuredText}>
@@ -196,6 +237,8 @@ const styles = StyleSheet.create({
   noPhoto: { alignItems: 'center', justifyContent: 'center' },
   favOnPhoto: { position: 'absolute', top: 8, right: 8 },
   favTap: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  burstRing: { position: 'absolute', width: 34, height: 34, borderRadius: 17, borderWidth: 2 },
+  spark: { position: 'absolute', width: 6, height: 6, borderRadius: 3 },
   favDot: {
     width: 34,
     height: 34,

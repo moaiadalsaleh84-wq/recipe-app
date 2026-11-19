@@ -7,6 +7,7 @@ import { Chunky } from '../../../components/Chunky';
 import { Icon } from '../../../components/Icon';
 import { Menu } from '../../../components/Menu';
 import { PressableScale } from '../../../components/PressableScale';
+import { Reveal } from '../../../components/Reveal';
 import { FeaturedCard, RecipeCard, RecipePhoto } from '../../../components/RecipeCard';
 import { TabScreen } from '../../../components/TabScreen';
 import { useToast } from '../../../components/Toast';
@@ -147,10 +148,16 @@ export default function RecipesScreen() {
       )}
 
       {/* 1. Import: the fastest way to get a recipe in */}
-      {showExtras && <ImportBox onImport={startImport} />}
+      {showExtras && (
+        <Reveal index={0}>
+          <ImportBox onImport={startImport} />
+        </Reveal>
+      )}
 
       {/* 2. Search */}
-      <SearchField value={query} onChangeText={setQuery} placeholder="Search recipes or ingredients" style={{ marginTop: showExtras ? t.spacing.md : 0 }} />
+      <Reveal index={1}>
+        <SearchField value={query} onChangeText={setQuery} placeholder="Search recipes or ingredients" style={{ marginTop: showExtras ? t.spacing.md : 0 }} />
+      </Reveal>
 
       {/* 3. Filters: one category at a time, any number of tags. The row scrolls sideways. */}
       <ScrollView
@@ -190,7 +197,9 @@ export default function RecipesScreen() {
               subtitle={tonight ? 'Dinner from your meal plan' : 'A new recipe every day'}
               right={<Chip label="Surprise me" icon="shuffle" toggle={false} accessibilityLabel="Can't decide? Pick a random recipe" onPress={() => router.push('/buddy-pick')} />}
             />
-            <FeaturedCard recipe={featured} label={tonight ? 'On the menu tonight' : 'Recipe of the day'} />
+            <Reveal index={3}>
+              <FeaturedCard recipe={featured} label={tonight ? 'On the menu tonight' : 'Recipe of the day'} />
+            </Reveal>
           </>
         )}
 

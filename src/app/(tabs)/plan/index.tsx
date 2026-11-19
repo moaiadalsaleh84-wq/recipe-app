@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
+import { Pop, Reveal } from '../../../components/Reveal';
 import { RecipePhoto, RecipeRow, openRecipe } from '../../../components/RecipeCard';
 import { Chunky } from '../../../components/Chunky';
 import { useToast } from '../../../components/Toast';
@@ -82,13 +83,14 @@ export default function PlanScreen() {
   return (
     <TabScreen title="Meal plan" kicker={weekDays[day].isToday ? weekDays[day].full : `Today is ${weekDays.find((d) => d.isToday)?.long ?? ''}`}>
       {/* The week as date pills: today has a saffron dot, the chosen day is basil. */}
-      <View style={styles.week} accessibilityRole="tablist">
+      <Reveal index={0} style={styles.week}>
+      <View style={styles.weekInner} accessibilityRole="tablist">
         {weekDays.map((d) => {
           const selected = d.index === day;
           const count = meals.filter((m) => plan[d.index]?.[m]).length;
           return (
+            <Pop key={d.index} active={selected} style={{ flex: 1 }}>
             <PressableScale
-              key={d.index}
               haptic="select"
               scaleTo={0.92}
               onPress={() => setDay(d.index)}
@@ -106,9 +108,11 @@ export default function PlanScreen() {
                 ))}
               </View>
             </PressableScale>
+            </Pop>
           );
         })}
       </View>
+      </Reveal>
 
       <SectionHeader
         title={weekDays[day].isToday ? 'Today' : weekDays[day].long}
@@ -154,6 +158,7 @@ export default function PlanScreen() {
 
       {/* The week's shopping, in one tap: a basil banner. */}
       {weekRecipes.length > 0 && (
+        <Reveal index={4}>
         <View style={[styles.weekCard, { backgroundColor: t.colors.tintFill, ...t.shadow.card }]} testID="week-groceries">
           <View style={styles.weekTop}>
             <View style={{ flex: 1, gap: 2 }}>
@@ -171,6 +176,7 @@ export default function PlanScreen() {
             <Text style={[t.type.button, { color: t.colors.onReward }]}>Add this week to groceries</Text>
           </Chunky>
         </View>
+        </Reveal>
       )}
 
       {/* Ideas to fill the day: one tap plans them. */}
@@ -238,8 +244,9 @@ function MealCard({ meal, recipe, onChange, onRemove }: { meal: string; recipe: 
 }
 
 const styles = StyleSheet.create({
-  week: { flexDirection: 'row', justifyContent: 'space-between', gap: 6 },
-  day: { flex: 1, alignItems: 'center', gap: 1, paddingTop: 8, paddingBottom: 6, borderRadius: 18, borderWidth: 1, minHeight: 72, borderCurve: 'continuous' },
+  week: {},
+  weekInner: { flexDirection: 'row', justifyContent: 'space-between', gap: 6 },
+  day: { alignItems: 'center', gap: 1, paddingTop: 8, paddingBottom: 6, borderRadius: 18, borderWidth: 1, minHeight: 72, borderCurve: 'continuous' },
   dots: { flexDirection: 'row', gap: 3, height: 5 },
   dot: { width: 5, height: 5, borderRadius: 3 },
   hidden: { position: 'absolute', width: 1, height: 1, opacity: 0 },

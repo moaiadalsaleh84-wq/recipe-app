@@ -2,9 +2,10 @@
  * Small building blocks shared across screens.
  * All tappable pieces are at least 44pt and give press + haptic feedback.
  */
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { StyleSheet, Text, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from 'react-native';
 import Animated, {
+  useAnimatedProps,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -55,9 +56,22 @@ export function Chip({
   toggle?: boolean;
 }) {
   const t = useTheme();
+  const reduceMotion = useReducedMotion();
+  // A small bounce whenever the chip is switched on.
+  const pop = useSharedValue(1);
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    if (selected && !reduceMotion) pop.set(withSequence(withTiming(1.12, { duration: 110 }), withSpring(1, t.motion.pop)));
+  }, [selected, reduceMotion, pop, t.motion.pop]);
+  const popStyle = useAnimatedStyle(() => ({ transform: [{ scale: pop.get() }] }));
   // Selected chips turn dark pine ("this is on"), so basil stays reserved for the screen's main action.
   const fg = selected ? (t.isDark ? t.colors.background : '#FFFFFF') : t.colors.label;
   return (
+    <Animated.View style={[popStyle, style]}>
     <Chunky
       onPress={onPress}
       haptic="select"
@@ -75,6 +89,7 @@ export function Chip({
       <Text style={[t.type.subhead, { color: fg, fontFamily: t.fonts.bold }]}>{label}</Text>
       {trailing && <Icon name={trailing} size={12} color={selected ? fg : t.colors.secondaryLabel} weight="bold" />}
     </Chunky>
+    </Animated.View>
   );
 }
 
@@ -275,22 +290,59 @@ export function ProgressBar({ value, color, track, height = 8, label }: { /** 0 
 
 /* ---------- Progress ring ---------- */
 
-/** A ring that fills clockwise, with anything in the middle (a count, an icon, a level). */
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
+/** A ring that fills clockwise with a spring when it appears or changes, with anything in the middle. */
 export function Ring({ value, size = 56, stroke = 6, color, track, children, label }: { /** 0 to 1 */ value: number; size?: number; stroke?: number; color?: string; track?: string; children?: ReactNode; label?: string }) {
   const t = useTheme();
+  const reduceMotion = useReducedMotion();
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const pct = Math.max(0, Math.min(1, value));
+  const shown = useSharedValue(reduceMotion ? pct : 0);
+  useEffect(() => {
+    shown.set(reduceMotion ? withTiming(pct, { duration: 200 }) : withSpring(pct, { damping: 16, stiffness: 90, mass: 1 }));
+  }, [pct, reduceMotion, shown]);
+  // Only numbers in here (c is worked out above): this runs on the UI thread.
+  const arc = useAnimatedProps(() => ({ strokeDashoffset: c * (1 - Math.max(0, Math.min(1, shown.get()))) }));
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }} accessibilityRole="progressbar" accessibilityLabel={label} accessibilityValue={{ min: 0, max: 100, now: Math.round(pct * 100) }}>
       <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
         <Circle cx={size / 2} cy={size / 2} r={r} stroke={track ?? t.colors.fillStrong} strokeWidth={stroke} fill="none" />
-        {pct > 0 && (
-          <Circle cx={size / 2} cy={size / 2} r={r} stroke={color ?? t.colors.success} strokeWidth={stroke} fill="none" strokeLinecap="round" strokeDasharray={`${c * pct} ${c}`} transform={`rotate(-90 ${size / 2} ${size / 2})`} />
-        )}
+        <AnimatedCircle cx={size / 2} cy={size / 2} r={r} stroke={color ?? t.colors.success} strokeWidth={stroke} fill="none" strokeLinecap="round" strokeDasharray={`${c} ${c}`} animatedProps={arc} transform={`rotate(-90 ${size / 2} ${size / 2})`} opacity={pct > 0 ? 1 : 0} />
       </Svg>
       {children}
     </View>
+  );
+}
+
+/** A number that counts up to its value (quickly, with an ease-out). Shows the value at once with Reduce Motion. */
+export function AnimatedNumber({ value, style, duration = 700 }: { value: number; style?: StyleProp<import('react-native').TextStyle>; duration?: number }) {
+  const reduceMotion = useReducedMotion();
+  const [shown, setShown] = useState(reduceMotion ? value : 0);
+  const from = useRef(reduceMotion ? value : 0);
+  useEffect(() => {
+    if (reduceMotion) {
+      from.current = value;
+      return;
+    }
+    const start = Date.now();
+    const a = from.current;
+    let raf = 0;
+    const step = () => {
+      const p = Math.min(1, (Date.now() - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setShown(Math.round(a + (value - a) * eased));
+      if (p < 1) raf = requestAnimationFrame(step);
+      else from.current = value;
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [value, reduceMotion, duration]);
+  return (
+    <Text style={[{ fontVariant: ['tabular-nums'] }, style]} accessibilityLabel={String(value)}>
+      {reduceMotion ? value : shown}
+    </Text>
   );
 }
 

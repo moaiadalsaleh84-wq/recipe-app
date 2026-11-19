@@ -5,6 +5,7 @@ import Animated, { FadeIn, FadeInDown, LinearTransition } from 'react-native-rea
 import { FoodIcon } from '../../../components/FoodIcon';
 import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
+import { Reveal } from '../../../components/Reveal';
 import { RecipePhoto, openRecipe } from '../../../components/RecipeCard';
 import { useToast } from '../../../components/Toast';
 import { Button, Chip, EmptyState, IconButton, ProgressBar, Section, SectionHeader, Separator } from '../../../components/ui';
@@ -66,6 +67,7 @@ export default function PantryScreen() {
   return (
     <TabScreen title="Pantry" kicker={pantry.length ? `${pantry.length} ${pantry.length === 1 ? 'thing' : 'things'} at home` : 'What’s in your kitchen?'} keyboardShouldPersistTaps="handled">
       {/* Add */}
+      <Reveal index={0}>
       <View style={[styles.addRow, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
         <Icon name="plus" size={18} color={t.colors.tint} weight="bold" />
         <TextInput
@@ -84,6 +86,7 @@ export default function PantryScreen() {
           </PressableScale>
         ) : null}
       </View>
+      </Reveal>
 
       {typed.length > 0 && (
         <View style={styles.chips}>
@@ -126,7 +129,7 @@ export default function PantryScreen() {
         <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, marginTop: 8 }]}>Nothing in your pantry matches “{query.trim()}”.</Text>
       ) : (
         // One list with a small header per category, like the aisles on the grocery list.
-        <Animated.View layout={LinearTransition.duration(200)} style={{ marginTop: 8 }}>
+        <Animated.View layout={LinearTransition.duration(200)} entering={FadeInDown.duration(420).delay(140)} style={{ marginTop: 8 }}>
           <Section>
             {groups.map(({ cat, items }, gi) => (
               <View key={cat}>
