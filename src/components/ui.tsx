@@ -503,7 +503,7 @@ export function SearchField({ value, onChangeText, placeholder, style, ...rest }
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={t.colors.secondaryLabel}
-        style={[t.type.body, styles.searchInput, { color: t.colors.label }]}
+        style={[t.type.input, styles.searchInput, { color: t.colors.label }]}
         returnKeyType="search"
         clearButtonMode="never"
         autoCorrect={false}

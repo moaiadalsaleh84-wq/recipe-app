@@ -346,7 +346,7 @@ function ReadyRing({ done, total }: { done: number; total: number }) {
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }} accessibilityElementsHidden>
       <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
         <Circle cx={size / 2} cy={size / 2} r={r} stroke={t.colors.fillStrong} strokeWidth={stroke} fill="none" />
-        <Circle cx={size / 2} cy={size / 2} r={r} stroke={full ? t.colors.success : t.colors.reward} strokeWidth={stroke} fill="none" strokeLinecap="round" strokeDasharray={`${c * pct} ${c}`} transform={`rotate(-90 ${size / 2} ${size / 2})`} />
+        <Circle cx={size / 2} cy={size / 2} r={r} stroke={full ? t.colors.success : t.colors.reward} strokeWidth={stroke} fill="none" strokeLinecap="round" strokeDasharray={`${c * pct} ${c}`} transform={`rotate(-90 ${size / 2} ${size / 2})`} opacity={pct > 0 ? 1 : 0} />
       </Svg>
       {full ? (
         <Icon name="check" size={24} color={t.colors.success} weight="bold" />
@@ -414,7 +414,7 @@ function TimerCard({ timer: tm, now, first, page, recipeId, dark, onStop, onPaus
       <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }} accessibilityElementsHidden>
         <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
           <Circle cx={size / 2} cy={size / 2} r={r} stroke={dark ? cook.track : t.colors.fillStrong} strokeWidth={stroke} fill="none" />
-          <Circle cx={size / 2} cy={size / 2} r={r} stroke={cook.accent} strokeWidth={stroke} fill="none" strokeLinecap="round" strokeDasharray={`${c * pct} ${c}`} transform={`rotate(-90 ${size / 2} ${size / 2})`} />
+          <Circle cx={size / 2} cy={size / 2} r={r} stroke={cook.accent} strokeWidth={stroke} fill="none" strokeLinecap="round" strokeDasharray={`${c * pct} ${c}`} transform={`rotate(-90 ${size / 2} ${size / 2})`} opacity={pct > 0 ? 1 : 0} />
         </Svg>
         <Icon name={running ? 'timer' : 'pause'} size={18} color={label} weight="bold" />
       </View>

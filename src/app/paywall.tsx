@@ -148,7 +148,7 @@ export default function Paywall() {
             onPress={() => setPlan('yearly')}
             title="Yearly"
             price={`${money(yearly.price)} / year`}
-            note={`Just ${money(perWeek('yearly'))} a week${yearly.trialDays ? ` · ${yearly.trialDays} days free` : ''}`}
+            note={`${money(perWeek('yearly'))} a week${yearly.trialDays ? ` · ${yearly.trialDays} days free` : ''}`}
             badge={`Best value · Save ${yearlySavingsPct()}%`}
           />
           <PlanCard id="monthly" selected={plan === 'monthly'} onPress={() => setPlan('monthly')} title="Monthly" price={`${money(monthly.price)} / month`} note="Flexible, cancel anytime" />
@@ -250,7 +250,9 @@ function PlanCard({ id, selected, onPress, title, price, note, badge }: { id: Pl
       </View>
       <View style={{ flex: 1 }}>
         <Text style={[t.type.headline, { color: t.colors.label }]}>{title}</Text>
-        <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 1 }]}>{note}</Text>
+        <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 1 }, t.noWidows.style]} {...t.noWidows.props}>
+          {note}
+        </Text>
       </View>
       <Text style={[t.type.headline, { color: t.colors.label }]}>{price}</Text>
       {badge && (

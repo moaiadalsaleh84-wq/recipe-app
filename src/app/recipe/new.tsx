@@ -160,12 +160,13 @@ export default function NewRecipe() {
           <Stepper value={servings} onChange={setServings} label="servings" />
         </View>
 
-        <View style={{ flexDirection: 'row', gap: 10 }}>
+        {/* Bottom-aligned, so the two boxes stay level even if a label wraps with large text. */}
+        <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-end' }}>
           <View style={{ flex: 1 }}>
-            <Field label="Calories / serving (estimate)" value={calories} onChangeText={(v) => setCalories(v.replace(/[^0-9]/g, ''))} placeholder="Optional" keyboardType="number-pad" />
+            <Field label="Kcal per serving" value={calories} onChangeText={(v) => setCalories(v.replace(/[^0-9]/g, ''))} placeholder="Optional guess" keyboardType="number-pad" />
           </View>
           <View style={{ flex: 1 }}>
-            <Field label="Protein g (estimate)" value={protein} onChangeText={(v) => setProtein(v.replace(/[^0-9]/g, ''))} placeholder="Optional" keyboardType="number-pad" />
+            <Field label="Protein (g)" value={protein} onChangeText={(v) => setProtein(v.replace(/[^0-9]/g, ''))} placeholder="Optional guess" keyboardType="number-pad" />
           </View>
         </View>
 
@@ -216,7 +217,7 @@ function Field({ label, hint, multiline, ...props }: TextInputProps & { label: s
         multiline={multiline}
         placeholderTextColor={t.colors.tertiaryLabel}
         accessibilityLabel={label}
-        style={[t.type.body, styles.input, multiline && styles.multiline, { color: t.colors.label, backgroundColor: t.colors.cell, ...t.chunky.card }]}
+        style={[multiline ? t.type.body : t.type.input, styles.input, multiline && styles.multiline, { color: t.colors.label, backgroundColor: t.colors.cell, ...t.chunky.card }]}
       />
       {hint && <Text style={[t.type.caption1, { color: t.colors.secondaryLabel, marginTop: 6, marginLeft: 4 }]}>{hint}</Text>}
     </View>

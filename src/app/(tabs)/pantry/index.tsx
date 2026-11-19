@@ -78,7 +78,7 @@ export default function PantryScreen() {
           placeholderTextColor={t.colors.tertiaryLabel}
           returnKeyType="done"
           accessibilityLabel="Add a pantry item"
-          style={[t.type.body, styles.addInput, { color: t.colors.label }]}
+          style={[t.type.input, styles.addInput, { color: t.colors.label }]}
         />
         {query.trim() ? (
           <PressableScale onPress={() => add(query)} accessibilityLabel={`Add ${query.trim()}`} style={[styles.addBtn, { backgroundColor: t.colors.tintFill }]}>
@@ -268,6 +268,6 @@ const styles = StyleSheet.create({
   card: { borderRadius: 20, padding: 16, borderCurve: 'continuous' },
   locked: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 },
   match: { marginBottom: 12 },
-  matchTop: { flexDirection: 'row', gap: 12, alignItems: 'center' },
+  matchTop: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
   thumb: { width: 92, height: 92, borderRadius: 16, overflow: 'hidden', borderCurve: 'continuous' },
 });

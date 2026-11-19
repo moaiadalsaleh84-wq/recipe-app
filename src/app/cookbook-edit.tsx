@@ -55,7 +55,7 @@ export default function CookbookEdit() {
           onSubmitEditing={save}
           maxLength={40}
           accessibilityLabel="Cookbook name"
-          style={[t.type.body, styles.input, { color: t.colors.label, backgroundColor: t.colors.cell, ...t.chunky.card }]}
+          style={[t.type.input, styles.input, { color: t.colors.label, backgroundColor: t.colors.cell, ...t.chunky.card }]}
         />
         <Button label={existing ? 'Save' : 'Create cookbook'} icon={existing ? 'check' : 'plus'} onPress={save} disabled={!valid} style={{ marginTop: 20 }} />
       </View>

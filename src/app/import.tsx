@@ -190,7 +190,7 @@ export default function ImportScreen() {
                   </PressableScale>
                 ) : null}
                 <PressableScale onPress={paste} accessibilityLabel="Paste from clipboard" style={[styles.smallBtn, { backgroundColor: t.colors.tintSoft }]}>
-                  <Icon name="notes" size={15} color={t.colors.tint} />
+                  <Icon name="paste" size={15} color={t.colors.tint} />
                   <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>Paste</Text>
                 </PressableScale>
               </View>

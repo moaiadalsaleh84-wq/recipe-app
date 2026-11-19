@@ -133,7 +133,7 @@ export default function GroceriesScreen() {
           returnKeyType="done"
           blurOnSubmit={false}
           accessibilityLabel="New grocery item"
-          style={[t.type.body, styles.addInput, { color: t.colors.label }]}
+          style={[t.type.input, styles.addInput, { color: t.colors.label }]}
         />
         {draft.trim().length > 0 && (
           <Animated.View entering={FadeIn.duration(150)} exiting={FadeOut.duration(150)}>

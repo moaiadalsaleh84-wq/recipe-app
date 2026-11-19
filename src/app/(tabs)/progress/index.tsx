@@ -122,8 +122,9 @@ export default function ProgressScreen() {
           <View style={[styles.tile, { backgroundColor: t.colors.cell, ...t.chunky.card }]} accessible accessibilityLabel={`${tried} recipes tried, ${saved} saved`}>
             <AnimatedNumber value={tried} style={[styles.mid, { color: t.colors.label }]} />
             <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, fontFamily: t.fonts.bold }]}>
-              {tried === 1 ? 'recipe tried' : 'recipes tried'} · {saved} saved
+              {tried === 1 ? 'recipe tried' : 'recipes tried'}
             </Text>
+            <Text style={[t.type.caption1, { color: t.colors.tertiaryLabel }]}>{saved} saved</Text>
           </View>
         </View>
       </Reveal>

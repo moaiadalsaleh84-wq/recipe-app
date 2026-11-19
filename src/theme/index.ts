@@ -214,6 +214,12 @@ export const type = {
   footnote: face(13, 18, fonts.medium),
   caption1: face(12, 16, fonts.semibold),
   caption2: face(11, 13, fonts.semibold),
+  /**
+   * Text you type into a one-line field. No letterSpacing and no lineHeight on purpose: on iPhone
+   * either one can cut off the last letter of the hint text (the "k" in "Paste a link") or push the
+   * text off center. Multi-line fields use `body`.
+   */
+  input: { fontSize: 17, fontFamily: fonts.regular, fontWeight: 'normal' },
 } as const satisfies Record<string, TextStyle>;
 
 /** An 8pt grid (4 and 12 are the only half steps). */

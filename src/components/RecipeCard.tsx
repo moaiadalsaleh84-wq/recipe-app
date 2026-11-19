@@ -164,7 +164,8 @@ export function RecipeCardSkeleton({ width }: { width: number }) {
 /** Large featured card: a big photo, a saffron tag, and the name in serif over a dark fade. */
 export function FeaturedCard({ recipe, label }: { recipe: Recipe; /** For screen readers, and the tag: why it's featured. */ label: string }) {
   const t = useTheme();
-  const tag = /tonight/i.test(label) ? 'Tonight' : 'Today’s pick';
+  // The section title above already says why it's featured, so the tag names the meal instead.
+  const tag = recipe.category;
   return (
     <View>
       <PressableScale

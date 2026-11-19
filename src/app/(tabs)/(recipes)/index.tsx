@@ -385,7 +385,7 @@ function ImportBox({ onImport }: { onImport: (url?: string) => void }) {
           onChangeText={setLink}
           placeholder="Paste a link"
           placeholderTextColor="rgba(255,255,255,0.75)"
-          style={[t.type.body, styles.importInput, { color: '#FFFFFF' }]}
+          style={[t.type.input, styles.importInput, { color: '#FFFFFF' }]}
           autoCapitalize="none"
           autoCorrect={false}
           keyboardType="url"
@@ -426,10 +426,11 @@ function CookbookTile({ id, name, recipes, width }: { id: string; name: string; 
         ) : (
           covers.map((r, i) => {
             // One photo fills the cover; two side by side; three: one wide on top and two below; four as a grid.
-            const w = width - 12;
+            // Percentages, not pixel halves: two rounded halves could add up to a hair more than the
+            // cover and push a photo onto a hidden row, leaving a white gap.
             const n = covers.length;
             const wide = n === 1 || (n === 3 && i === 0);
-            const size = { width: wide ? w : w / 2, height: n <= 2 ? COVER_H : COVER_H / 2 };
+            const size = { width: wide ? '100%' : '50%', height: n <= 2 ? '100%' : '50%' } as const;
             return (
               <View key={r.id} style={[size, { overflow: 'hidden' }]}>
                 <RecipePhoto recipe={r} iconSize={16} />
@@ -473,7 +474,7 @@ const styles = StyleSheet.create({
   importHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   importIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   importField: { flexDirection: 'row', alignItems: 'center', minHeight: 52, paddingLeft: 18, paddingRight: 4, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.14)', borderCurve: 'continuous' },
-  importInput: { flex: 1, minWidth: 0, alignSelf: 'stretch', minHeight: 44, paddingVertical: 0, outlineStyle: 'none' } as never,
+  importInput: { flex: 1, minWidth: 0, alignSelf: 'stretch', minHeight: 44, paddingVertical: 0, paddingRight: 4, outlineStyle: 'none' } as never,
   pasteBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   importBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 44, paddingHorizontal: 16 },
 });
