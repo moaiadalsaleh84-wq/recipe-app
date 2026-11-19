@@ -143,7 +143,7 @@ export default function RecipesScreen() {
             accessibilityLabel="Manage subscription"
             style={styles.reminderBtn}
           >
-            <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: '700' }]}>Manage</Text>
+            <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.bold }]}>Manage</Text>
           </PressableScale>
           <IconButton icon="close" accessibilityLabel="Dismiss trial reminder" iconSize={13} color={t.colors.secondaryLabel} onPress={() => setReminderHidden(true)} />
         </View>

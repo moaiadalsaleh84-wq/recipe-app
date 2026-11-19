@@ -66,7 +66,7 @@ export default function SaveToCookbook() {
               <View style={[styles.plus, { backgroundColor: t.colors.tintSoft }]}>
                 <Icon name="plus" size={15} color={t.colors.tint} weight="bold" />
               </View>
-              <Text style={[t.type.body, { color: t.colors.tint, fontWeight: '600' }]}>New cookbook…</Text>
+              <Text style={[t.type.body, { color: t.colors.tint, fontFamily: t.fonts.semibold }]}>New cookbook…</Text>
             </PressableScale>
           </Section>
         )}

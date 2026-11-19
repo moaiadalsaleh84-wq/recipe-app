@@ -20,7 +20,7 @@ import { findTimers } from '../../lib/timers';
 import { convertQty, convertStepText } from '../../lib/units';
 import { formatQty, nameFor, roundQty, useStore } from '../../state/store';
 import { useTimers } from '../../state/timers';
-import { useTheme } from '../../theme';
+import { fonts, useTheme } from '../../theme';
 
 export default function CookMode() {
   // The screen stays on while you cook. Leaving quickly can deactivate before activation finishes; that's harmless.
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
   content: { padding: 16, paddingTop: 8, paddingBottom: 140, width: '100%', maxWidth: 640, alignSelf: 'center' },
   card: { padding: 16, paddingTop: 20, gap: 8, borderCurve: 'continuous' },
   gatherBar: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 4, marginBottom: 4 },
-  stepText: { fontSize: 26, lineHeight: 35, fontWeight: '600', marginTop: 4 },
+  stepText: { fontSize: 26, lineHeight: 35, fontFamily: fonts.semibold, marginTop: 4 },
   gatherRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, marginHorizontal: -8, paddingHorizontal: 8, borderRadius: 14, borderCurve: 'continuous' },
   inStep: { paddingTop: 16, gap: 4 },
   inStepRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 40 },

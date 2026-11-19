@@ -88,12 +88,12 @@ function ToastView({ toast, onDone }: { toast: ToastState; onDone: () => void })
         accessibilityRole="alert"
         style={[
           styles.toast,
-          { backgroundColor: t.colors.elevated, borderColor: t.colors.separator, ...t.shadow.floating },
+          { backgroundColor: t.isDark ? t.colors.elevated : t.colors.label, borderColor: t.isDark ? t.colors.border : t.colors.label, ...t.shadow.floating },
         ]}
       >
         <PressableScale onPress={onDone} haptic={null} style={styles.main} accessibilityLabel={`${toast.message}. Dismiss`}>
           <Icon name={icon} size={22} color={toneColor} weight="semibold" />
-          <Text style={[t.type.subhead, styles.message, { color: t.colors.label }]} numberOfLines={2}>
+          <Text style={[t.type.subhead, styles.message, { color: t.isDark ? t.colors.label : '#FFFFFF' }]} numberOfLines={2}>
             {toast.message}
           </Text>
         </PressableScale>
@@ -106,7 +106,7 @@ function ToastView({ toast, onDone }: { toast: ToastState; onDone: () => void })
             style={styles.action}
             accessibilityLabel={toast.action.label}
           >
-            <Text style={[t.type.headline, { color: t.colors.tint }]}>{toast.action.label}</Text>
+            <Text style={[t.type.headline, { color: t.colors.reward }]}>{toast.action.label}</Text>
           </PressableScale>
         )}
       </Animated.View>
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     minHeight: 52,
   },
   main: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12 },
-  message: { flex: 1, fontWeight: '500' },
+  message: { flex: 1 },
   action: { minHeight: 44, minWidth: 60, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center' },
 });
 

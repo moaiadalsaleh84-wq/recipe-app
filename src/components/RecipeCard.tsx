@@ -60,7 +60,7 @@ export function FavoriteButton({ recipe, onPhoto }: { recipe: Recipe; onPhoto?: 
     return (
       <PressableScale onPress={onPress} haptic={null} scaleTo={0.9} accessibilityLabel={label} style={styles.favTap}>
         <Animated.View style={[styles.favDot, popStyle]}>
-          <Icon name={fav ? 'heartFill' : 'heart'} size={16} color={fav ? t.colors.accent : brand.cocoa} weight="bold" />
+          <Icon name={fav ? 'heartFill' : 'heart'} size={17} color={fav ? brand.chili : brand.ink} weight="bold" />
         </Animated.View>
       </PressableScale>
     );
@@ -75,23 +75,32 @@ export function FavoriteButton({ recipe, onPhoto }: { recipe: Recipe; onPhoto?: 
 /** The small print under a recipe's title. */
 const useMeta = () => (r: Recipe) => `${r.minutes} min · ${r.calories} kcal`;
 
-/** Grid card: photo with title and meta below, App Store style. */
+/** Grid card: a tall food photo in a white card, then the name in serif and time · difficulty. */
 export function RecipeCard({ recipe, width }: { recipe: Recipe; width: number }) {
   const t = useTheme();
-  const meta = useMeta();
   return (
     // The heart sits on top of the card, beside its button (a button inside a button confuses
     // screen readers and the web).
     <View style={{ width }}>
-      <PressableScale onPress={() => openRecipe(recipe.id)} accessibilityLabel={`${recipe.title}, ${recipe.minutes} minutes, ${recipe.calories} calories`} accessibilityHint="Opens the recipe">
-        <View style={[styles.imageWrap, { borderRadius: t.layout.cardRadius, backgroundColor: t.colors.imagePlaceholder }]}>
+      <PressableScale
+        onPress={() => openRecipe(recipe.id)}
+        accessibilityLabel={`${recipe.title}, ${recipe.minutes} minutes, ${recipe.calories} calories`}
+        accessibilityHint="Opens the recipe"
+        style={[styles.card, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]}
+      >
+        <View style={[styles.imageWrap, { borderRadius: t.layout.cardRadius - 6, backgroundColor: t.colors.imagePlaceholder }]}>
           <RecipePhoto recipe={recipe} />
         </View>
         {/* Room for two lines of title on every card, so a row of cards lines up; longer titles wrap instead of being cut. */}
         <View style={styles.cardTitle}>
-          <Text style={[t.type.headline, { color: t.colors.label, fontSize: 17, lineHeight: 22 }]}>{recipe.title}</Text>
+          <Text style={[t.type.title3, { color: t.colors.label, fontSize: 17, lineHeight: 21 }]}>{recipe.title}</Text>
         </View>
-        <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{meta(recipe)}</Text>
+        <View style={styles.meta}>
+          <Icon name="clock" size={13} color={t.colors.secondaryLabel} weight="semibold" />
+          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, fontFamily: t.fonts.semibold }]}>
+            {recipe.minutes} min · {recipe.difficulty}
+          </Text>
+        </View>
       </PressableScale>
       <View style={styles.favOnPhoto}>
         <FavoriteButton recipe={recipe} onPhoto />
@@ -111,9 +120,10 @@ export function RecipeCardSkeleton({ width }: { width: number }) {
   );
 }
 
-/** Large featured card with the title over the photo. */
-export function FeaturedCard({ recipe, label }: { recipe: Recipe; /** For screen readers: why it's featured. */ label: string }) {
+/** Large featured card: a big photo, a saffron tag, and the name in serif over a dark fade. */
+export function FeaturedCard({ recipe, label }: { recipe: Recipe; /** For screen readers, and the tag: why it's featured. */ label: string }) {
   const t = useTheme();
+  const tag = /tonight/i.test(label) ? 'Tonight' : 'Today’s pick';
   return (
     <View>
       <PressableScale
@@ -121,15 +131,20 @@ export function FeaturedCard({ recipe, label }: { recipe: Recipe; /** For screen
         scaleTo={0.98}
         accessibilityLabel={`${label}: ${recipe.title}`}
         accessibilityHint="Opens the recipe"
-        style={[styles.featured, { borderRadius: t.layout.cardRadius, backgroundColor: t.colors.imagePlaceholder }]}
+        style={[styles.featured, { borderRadius: t.radius.xl, backgroundColor: t.colors.imagePlaceholder, ...t.shadow.card }]}
       >
-        <RecipePhoto recipe={recipe} iconSize={56} />
-        <LinearGradient colors={['rgba(30,14,6,0)', 'rgba(30,14,6,0.78)']} style={styles.featuredShade} pointerEvents="none" />
+        <View style={[StyleSheet.absoluteFill, { borderRadius: t.radius.xl, overflow: 'hidden' }]}>
+          <RecipePhoto recipe={recipe} iconSize={56} />
+          <LinearGradient colors={['rgba(10,18,13,0)', 'rgba(10,18,13,0.12)', 'rgba(10,18,13,0.86)']} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFill} pointerEvents="none" />
+        </View>
         <View style={styles.featuredText}>
-          <Text style={[t.type.title2, { color: '#FFFFFF' }]} numberOfLines={2}>
+          <View style={[styles.tag, { backgroundColor: t.colors.reward }]}>
+            <Text style={[t.type.caption1, { color: t.colors.onReward, fontFamily: t.fonts.extrabold }]}>{tag}</Text>
+          </View>
+          <Text style={[t.type.title1, { color: '#FFFFFF' }]} numberOfLines={2}>
             {recipe.title}
           </Text>
-          <Text style={[t.type.subhead, { color: 'rgba(255,255,255,0.92)', marginTop: 2 }]}>{`${recipe.minutes} min · ${recipe.difficulty} · ${recipe.calories} kcal`}</Text>
+          <Text style={[t.type.subhead, { color: 'rgba(255,255,255,0.92)', fontFamily: t.fonts.semibold }]}>{`${recipe.minutes} min · ${recipe.difficulty} · ${recipe.calories} kcal`}</Text>
         </View>
       </PressableScale>
       <View style={styles.featuredFav}>
@@ -139,7 +154,7 @@ export function FeaturedCard({ recipe, label }: { recipe: Recipe; /** For screen
   );
 }
 
-/** List row with thumbnail, used in Saved, Plan and the picker. */
+/** List row with a rounded photo, used in Saved, Plan and the picker. */
 export function RecipeRow({
   recipe,
   onPress,
@@ -161,9 +176,9 @@ export function RecipeRow({
         <View style={[styles.thumb, { backgroundColor: t.colors.imagePlaceholder }]}>
           <RecipePhoto recipe={recipe} iconSize={24} />
         </View>
-        <View style={{ flex: 1 }}>
-          <Text style={[t.type.headline, { color: t.colors.label }]}>{recipe.title}</Text>
-          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 2 }]}>{subtitle ?? meta(recipe)}</Text>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={[t.type.title3, { color: t.colors.label, fontSize: 17, lineHeight: 21 }]}>{recipe.title}</Text>
+          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{subtitle ?? meta(recipe)}</Text>
         </View>
         {!trailing && <Icon name="chevronRight" size={14} color={t.colors.tertiaryLabel} weight="semibold" />}
       </PressableScale>
@@ -173,28 +188,31 @@ export function RecipeRow({
 }
 
 const styles = StyleSheet.create({
-  imageWrap: { width: '100%', aspectRatio: 1, overflow: 'hidden', borderCurve: 'continuous' },
-  cardTitle: { minHeight: 44, marginTop: 8, marginBottom: 2 },
+  card: { padding: 6, paddingBottom: 12, borderCurve: 'continuous' },
+  // Tall photos (4:5): food is the star.
+  imageWrap: { width: '100%', aspectRatio: 4 / 5, overflow: 'hidden', borderCurve: 'continuous' },
+  cardTitle: { minHeight: 44, marginTop: 10, marginBottom: 4, paddingHorizontal: 6 },
+  meta: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 6 },
   noPhoto: { alignItems: 'center', justifyContent: 'center' },
-  favOnPhoto: { position: 'absolute', top: 2, right: 2 },
+  favOnPhoto: { position: 'absolute', top: 8, right: 8 },
   favTap: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   favDot: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#3D2314',
-    shadowOpacity: 0.18,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
+    shadowColor: '#142019',
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
   },
-  featured: { height: 216, overflow: 'hidden', borderCurve: 'continuous', justifyContent: 'flex-end' },
-  featuredShade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 136 },
-  featuredFav: { position: 'absolute', top: 2, right: 2 },
-  featuredText: { padding: 16 },
+  featured: { height: 300, justifyContent: 'flex-end', borderCurve: 'continuous' },
+  featuredFav: { position: 'absolute', top: 8, right: 8 },
+  featuredText: { padding: 18, gap: 6 },
+  tag: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999 },
   row: { flexDirection: 'row', alignItems: 'center', paddingRight: 8 },
-  rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingLeft: 16, paddingRight: 8, minHeight: 72 },
-  thumb: { width: 56, height: 56, borderRadius: 12, overflow: 'hidden', borderCurve: 'continuous' },
+  rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 10, paddingLeft: 12, paddingRight: 8, minHeight: 84 },
+  thumb: { width: 64, height: 64, borderRadius: 16, overflow: 'hidden', borderCurve: 'continuous' },
 });

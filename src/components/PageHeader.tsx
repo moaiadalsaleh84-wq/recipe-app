@@ -40,12 +40,12 @@ export function PageHeader({
           <IconButton icon="back" accessibilityLabel="Back" onPress={back} color={t.colors.tint} iconSize={19} />
         ) : (
           <PressableScale onPress={back} style={styles.textButton} accessibilityLabel={cancelLabel}>
-            <Text style={[t.type.body, { color: t.colors.tint }]}>{cancelLabel}</Text>
+            <Text style={[t.type.body, { color: t.colors.tint, fontFamily: t.fonts.semibold }]}>{cancelLabel}</Text>
           </PressableScale>
         )}
       </View>
       <View style={styles.titleWrap} pointerEvents="none">
-        <Text style={[t.type.headline, { color: t.colors.label }]} numberOfLines={1} accessibilityRole="header">
+        <Text style={[t.type.title3, { color: t.colors.label }]} numberOfLines={1} accessibilityRole="header">
           {title}
         </Text>
         {subtitle && <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]}>{subtitle}</Text>}

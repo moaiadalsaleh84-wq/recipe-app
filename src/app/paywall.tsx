@@ -113,7 +113,7 @@ export default function Paywall() {
       <View style={[styles.top, { paddingTop: insets.top + 4 }]}>
         <IconButton icon="close" accessibilityLabel={source === 'onboarding' ? 'Close and continue with the free version' : 'Close'} onPress={close} color={t.colors.label} background={t.colors.fill} />
         <PressableScale onPress={onRestore} style={styles.restore} accessibilityLabel="Restore purchases" disabled={!!busy}>
-          {busy === 'restore' ? <ActivityIndicator color={t.colors.tint} /> : <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: '600' }]}>Restore</Text>}
+          {busy === 'restore' ? <ActivityIndicator color={t.colors.tint} /> : <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.semibold }]}>Restore</Text>}
         </PressableScale>
       </View>
 
@@ -197,7 +197,7 @@ export default function Paywall() {
           )}
         </Text>
         <PressableScale onPress={close} style={styles.free} accessibilityLabel={source === 'onboarding' ? 'Continue with the free version' : 'Not now'}>
-          <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: '600' }]}>{source === 'onboarding' ? 'Continue with the free version' : 'Not now'}</Text>
+          <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.semibold }]}>{source === 'onboarding' ? 'Continue with the free version' : 'Not now'}</Text>
         </PressableScale>
       </View>
     </View>
@@ -274,7 +274,7 @@ function TimelineRow({ icon, title, detail, first, last }: { icon: IconName; tit
         {!last && <View style={[styles.tlLine, { backgroundColor: t.colors.tintSoft, top: 38, bottom: -4 }]} />}
       </View>
       <View style={{ flex: 1, paddingBottom: last ? 0 : 14 }}>
-        <Text style={[t.type.subhead, { color: t.colors.label, fontWeight: '700' }]}>{title}</Text>
+        <Text style={[t.type.subhead, { color: t.colors.label, fontFamily: t.fonts.bold }]}>{title}</Text>
         <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 1 }]}>{detail}</Text>
       </View>
     </View>

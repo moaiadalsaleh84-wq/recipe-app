@@ -1,39 +1,48 @@
 import type { ReactNode } from 'react';
-import { Pressable, View, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
+import { Pressable, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from 'react-native-reanimated';
 import { haptics, type HapticKind } from '../lib/haptics';
 import { useTheme } from '../theme';
 
 type Props = Omit<PressableProps, 'style' | 'children'> & {
   children: ReactNode;
-  /** The top surface. */
+  /** The button's color. */
   face: string;
-  /** The darker edge underneath. */
-  lip: string;
-  /** A soft outline around the face (for white buttons on a light page). */
+  /** Older prop (buttons used to sit on a darker lip). Unused: kept so callers don't change. */
+  lip?: string;
+  /** A subtle outline, for white buttons on a light page. */
   border?: string;
-  /** How thick the lip is, and how far the face travels when pressed. */
+  /** Older prop. Unused. */
   depth?: number;
   radius?: number;
   /** Layout of the whole button (margins, flex, width). */
   style?: StyleProp<ViewStyle>;
-  /** Layout inside the face (padding, row, height). */
+  /** Layout inside the button (padding, row, height). */
   faceStyle?: StyleProp<ViewStyle>;
   haptic?: HapticKind | null;
 };
 
 /**
- * A thick button that physically presses: the face sits on a darker lip, sinks onto it while
- * your finger is down, and springs back up with a tiny bounce when you let go.
- * With Reduce Motion on, the face moves without the spring.
+ * The app's pressable surface: a flat pill (or rounded shape) that shrinks a little while your
+ * finger is down and springs back when you let go. Filled buttons cast a soft shadow in their own
+ * color; white ones get a subtle outline and a soft grey shadow.
+ * With Reduce Motion on, it only dims instead of shrinking.
  */
-export function Chunky({ children, face, lip, border, depth, radius, style, faceStyle, haptic = 'tap', disabled, onPressIn, onPressOut, onPress, ...rest }: Props) {
+export function Chunky({ children, face, border, radius, style, faceStyle, haptic = 'tap', disabled, onPressIn, onPressOut, onPress, ...rest }: Props) {
   const t = useTheme();
   const reduceMotion = useReducedMotion();
-  const d = depth ?? t.depth.button;
-  const r = radius ?? t.radius.md;
+  const r = radius ?? t.radius.pill;
   const down = useSharedValue(0);
-  const faceMove = useAnimatedStyle(() => ({ transform: [{ translateY: down.get() * d }] }));
+  // Scale is worked out from a plain number on the UI thread (no helper functions in here).
+  const pressStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: reduceMotion ? 1 : 1 - down.get() * 0.035 }],
+    opacity: reduceMotion ? 1 - down.get() * 0.25 : 1,
+  }));
+  const lifted: ViewStyle = border
+    ? { borderWidth: 1, borderColor: border, ...t.chunky.lip }
+    : t.isDark
+      ? {}
+      : { shadowColor: face, shadowOpacity: 0.28, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 3 };
 
   return (
     <Pressable
@@ -42,11 +51,11 @@ export function Chunky({ children, face, lip, border, depth, radius, style, face
       disabled={disabled}
       aria-disabled={!!disabled}
       onPressIn={(e) => {
-        down.set(reduceMotion ? 1 : withSpring(1, t.motion.press));
+        down.set(withSpring(1, t.motion.press));
         onPressIn?.(e);
       }}
       onPressOut={(e) => {
-        down.set(reduceMotion ? 0 : withSpring(0, t.motion.release));
+        down.set(withSpring(0, t.motion.release));
         onPressOut?.(e);
       }}
       onPress={(e) => {
@@ -55,19 +64,7 @@ export function Chunky({ children, face, lip, border, depth, radius, style, face
       }}
       style={[style, disabled && { opacity: 0.45 }]}
     >
-      {/* The lip: same shape as the face, shifted down by the depth. The face covers it when pressed. */}
-      <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: d, bottom: 0, backgroundColor: lip, borderRadius: r, borderCurve: 'continuous' }} />
-      <Animated.View
-        style={[
-          { backgroundColor: face, borderRadius: r, borderCurve: 'continuous' },
-          border ? { borderWidth: 1.5, borderColor: border } : null,
-          faceStyle,
-          { marginBottom: d },
-          faceMove,
-        ]}
-      >
-        {children}
-      </Animated.View>
+      <Animated.View style={[{ backgroundColor: face, borderRadius: r, borderCurve: 'continuous' }, lifted, faceStyle, pressStyle]}>{children}</Animated.View>
     </Pressable>
   );
 }

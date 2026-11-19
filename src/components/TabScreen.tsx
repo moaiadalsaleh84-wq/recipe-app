@@ -1,9 +1,9 @@
 /**
- * The frame of every tab: a large title that collapses into a small centered title on a blurred
- * cream bar with a hairline as you scroll. A solid strip always sits behind the clock and battery,
- * so content never shows under the status bar.
+ * The frame of every tab: an optional friendly line (a greeting, today's date) above a large
+ * serif title that collapses into a small centered title on a blurred bar as you scroll. A solid
+ * strip always sits behind the clock and battery, and the bottom leaves room for the floating tab bar.
  *
- *   <TabScreen title="Pantry" right={<HeaderButton … />}>…</TabScreen>
+ *   <TabScreen title="Pantry" kicker="8 things at home" right={<HeaderButton … />}>…</TabScreen>
  */
 import { BlurView } from 'expo-blur';
 import type { ReactNode } from 'react';
@@ -11,6 +11,7 @@ import { StyleSheet, Text, View, type ScrollViewProps } from 'react-native';
 import Animated, { Extrapolation, interpolate, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme';
+import { useTabBarSpace } from './TabBar';
 
 /** Height of the small bar under the status bar. */
 export const BAR = 44;
@@ -19,6 +20,8 @@ const TITLE = 56;
 
 type Props = Omit<ScrollViewProps, 'children'> & {
   title: string;
+  /** A short friendly line above the title, e.g. "Good evening, Sam". */
+  kicker?: string;
   /** Actions on the right of the large title (e.g. an Add or Settings button). */
   right?: ReactNode;
   children: ReactNode;
@@ -26,15 +29,17 @@ type Props = Omit<ScrollViewProps, 'children'> & {
   maxWidth?: number;
 };
 
-export function TabScreen({ title, right, children, maxWidth = 700, contentContainerStyle, ...rest }: Props) {
+export function TabScreen({ title, kicker, right, children, maxWidth = 700, contentContainerStyle, ...rest }: Props) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
+  const tabSpace = useTabBarSpace();
   const y = useSharedValue(0);
   const onScroll = useAnimatedScrollHandler((e) => {
     y.set(e.contentOffset.y);
   });
   // The small bar fades in as the large title slides under it.
-  const barStyle = useAnimatedStyle(() => ({ opacity: interpolate(y.get(), [TITLE - 24, TITLE - 4], [0, 1], Extrapolation.CLAMP) }));
+  const fadeAt = kicker ? TITLE + 20 : TITLE;
+  const barStyle = useAnimatedStyle(() => ({ opacity: interpolate(y.get(), [fadeAt - 24, fadeAt - 4], [0, 1], Extrapolation.CLAMP) }));
 
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.background }}>
@@ -46,14 +51,21 @@ export function TabScreen({ title, right, children, maxWidth = 700, contentConta
         automaticallyAdjustContentInsets={false}
         style={{ flex: 1, backgroundColor: t.colors.background }}
         contentContainerStyle={[
-          { paddingTop: insets.top + 8, paddingHorizontal: t.layout.screen, paddingBottom: t.layout.bottom, width: '100%', maxWidth, alignSelf: 'center' },
+          { paddingTop: insets.top + 12, paddingHorizontal: t.layout.screen, paddingBottom: t.layout.bottom + tabSpace, width: '100%', maxWidth, alignSelf: 'center' },
           contentContainerStyle,
         ]}
       >
         <View style={styles.titleRow}>
-          <Text style={[t.type.largeTitle, { color: t.colors.label, flex: 1 }]} accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
-            {title}
-          </Text>
+          <View style={{ flex: 1 }}>
+            {kicker ? (
+              <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, fontFamily: t.fonts.semibold }]} numberOfLines={1} testID="screen-kicker">
+                {kicker}
+              </Text>
+            ) : null}
+            <Text style={[t.type.largeTitle, { color: t.colors.label }]} accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+              {title}
+            </Text>
+          </View>
           {right ? <View style={styles.actions}>{right}</View> : null}
         </View>
         {children}
@@ -66,7 +78,7 @@ export function TabScreen({ title, right, children, maxWidth = 700, contentConta
         <BlurView tint={t.isDark ? 'dark' : 'light'} intensity={40} style={StyleSheet.absoluteFill} />
         <View style={[StyleSheet.absoluteFill, { backgroundColor: t.colors.bar }]} />
         <View style={[styles.hairline, { backgroundColor: t.colors.separator }]} />
-        <Text style={[t.type.headline, { color: t.colors.label }]} numberOfLines={1}>
+        <Text style={[t.type.title3, { color: t.colors.label }]} numberOfLines={1}>
           {title}
         </Text>
       </Animated.View>
@@ -75,7 +87,7 @@ export function TabScreen({ title, right, children, maxWidth = 700, contentConta
 }
 
 const styles = StyleSheet.create({
-  titleRow: { flexDirection: 'row', alignItems: 'center', height: TITLE, marginBottom: 12, gap: 12 },
+  titleRow: { flexDirection: 'row', alignItems: 'flex-end', minHeight: TITLE, marginBottom: 16, gap: 12 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   status: { position: 'absolute', top: 0, left: 0, right: 0 },
   bar: { position: 'absolute', left: 0, right: 0, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },

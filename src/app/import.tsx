@@ -199,7 +199,7 @@ export default function ImportScreen() {
             <View style={styles.helpRow}>
               <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, flex: 1 }]}>Websites, TikTok, YouTube and Instagram.</Text>
               <PressableScale onPress={() => setHelpOpen((v) => !v)} accessibilityLabel="What works?" aria-expanded={helpOpen} style={styles.helpLink}>
-                <Text style={[t.type.footnote, { color: t.colors.tint, fontWeight: '700' }]}>What works?</Text>
+                <Text style={[t.type.footnote, { color: t.colors.tint, fontFamily: t.fonts.bold }]}>What works?</Text>
               </PressableScale>
             </View>
             {helpOpen && (
@@ -323,7 +323,7 @@ function Review({ result, onSave, onEdit, onDiscard }: { result: ImportSuccess; 
       <View style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card, gap: 10 }]}>
         {r.steps.map((s, k) => (
           <Text key={k} style={[t.type.body, { color: t.colors.label }]}>
-            <Text style={{ fontWeight: '700', color: t.colors.tint }}>{k + 1}. </Text>
+            <Text style={{ fontFamily: t.fonts.bold, color: t.colors.tint }}>{k + 1}. </Text>
             {s}
           </Text>
         ))}

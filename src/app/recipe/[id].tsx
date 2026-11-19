@@ -195,7 +195,7 @@ export default function RecipeScreen() {
               style={[styles.photoBtn, { bottom: t.radius.xl + 12, backgroundColor: t.colors.scrim }]}
             >
               <Icon name="camera" size={16} color="#FFFFFF" />
-              <Text style={[t.type.subhead, { color: '#FFFFFF', fontWeight: '700' }]}>{recipe.image ? 'Change photo' : 'Add photo'}</Text>
+              <Text style={[t.type.subhead, { color: '#FFFFFF', fontFamily: t.fonts.bold }]}>{recipe.image ? 'Change photo' : 'Add photo'}</Text>
             </PressableScale>
           )}
         </Animated.View>
@@ -232,7 +232,7 @@ export default function RecipeScreen() {
               style={styles.source}
             >
               <Icon name="link" size={15} color={t.colors.tint} />
-              <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: '600' }]} numberOfLines={1}>
+              <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.semibold }]} numberOfLines={1}>
                 Original at {hostOf(recipe.sourceUrl)}
               </Text>
             </PressableScale>

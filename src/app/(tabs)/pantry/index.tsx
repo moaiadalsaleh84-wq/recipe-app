@@ -162,7 +162,7 @@ export default function PantryScreen() {
       {!isPro && pantry.length >= FREE_LIMITS.pantry && (
         <PressableScale onPress={() => showPaywall('pantry')} accessibilityLabel="Unlock an unlimited pantry" style={[styles.limit, { backgroundColor: t.colors.tintSoft }]}>
           <Icon name="lock" size={16} color={t.colors.tint} />
-          <Text style={[t.type.footnote, { color: t.colors.tint, flex: 1, fontWeight: '600' }]}>The free pantry holds {FREE_LIMITS.pantry} items. Pro has no limit.</Text>
+          <Text style={[t.type.footnote, { color: t.colors.tint, flex: 1, fontFamily: t.fonts.semibold }]}>The free pantry holds {FREE_LIMITS.pantry} items. Pro has no limit.</Text>
         </PressableScale>
       )}
 
@@ -172,7 +172,7 @@ export default function PantryScreen() {
           <Text style={[t.type.title2, { color: t.colors.label, marginTop: 32, marginBottom: 4 }]} accessibilityRole="header">
             What can I cook?
           </Text>
-          <Text style={[t.type.subhead, { color: ready ? t.colors.successText : t.colors.secondaryLabel, marginBottom: 2, fontWeight: '600' }]} testID="ready-count">
+          <Text style={[t.type.subhead, { color: ready ? t.colors.successText : t.colors.secondaryLabel, marginBottom: 2, fontFamily: t.fonts.semibold }]} testID="ready-count">
             {ready ? `You can cook ${ready} ${ready === 1 ? 'recipe' : 'recipes'} right now` : 'You’re a few items away from these'}
           </Text>
           <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginBottom: 12 }]}>Sorted by how much you already have. Salt, pepper and water are assumed.</Text>
@@ -184,7 +184,7 @@ export default function PantryScreen() {
                 <Text style={[t.type.headline, { color: t.colors.label, marginBottom: 6 }]}>Buy one thing, cook more</Text>
                 {suggestions.map((s) => (
                   <Text key={s.name} style={[t.type.subhead, { color: t.colors.secondaryLabel, paddingVertical: 3 }]}>
-                    <Text style={{ color: t.colors.label, fontWeight: '700' }}>{s.name}</Text> → {s.completes.map((r) => r.title).join(', ')}
+                    <Text style={{ color: t.colors.label, fontFamily: t.fonts.bold }}>{s.name}</Text> → {s.completes.map((r) => r.title).join(', ')}
                   </Text>
                 ))}
               </View>
@@ -224,7 +224,7 @@ function MatchCard({ match, onAddMissing }: { match: PantryMatch; onAddMissing: 
         </View>
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={[t.type.headline, { color: t.colors.label }]}>{recipe.title}</Text>
-          <Text style={[t.type.footnote, { color: missing.length ? t.colors.secondaryLabel : t.colors.success, fontWeight: '600' }]}>
+          <Text style={[t.type.footnote, { color: missing.length ? t.colors.secondaryLabel : t.colors.success, fontFamily: t.fonts.semibold }]}>
             {missing.length ? `You have ${have.length} of ${needed}` : 'You have everything'}
           </Text>
           {missing.length > 0 && (
