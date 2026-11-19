@@ -16,15 +16,15 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
-import { MascotSays } from '../../components/mascot/MascotSays';
-import { say, type Line } from '../../components/mascot/lines';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { pantryHas } from '../../lib/pantry';
 import { FoodIcon } from '../../components/FoodIcon';
 import { Icon, type IconName } from '../../components/Icon';
 import { PressableScale } from '../../components/PressableScale';
 import { RecipePhoto } from '../../components/RecipeCard';
 import { useToast } from '../../components/Toast';
 import { Button, Chip, EmptyState, IconButton, Segmented, Separator, Stepper } from '../../components/ui';
-import { recipeKind, type DietTag, type Recipe, type Units } from '../../data/mock';
+import { type DietTag, type Recipe, type Units } from '../../data/mock';
 import { haptics } from '../../lib/haptics';
 import { pickPhoto } from '../../lib/photos';
 import { convertQty, convertStepText } from '../../lib/units';
@@ -40,19 +40,17 @@ export default function RecipeScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const {
     getRecipe, isFavorite, toggleFavorite, addIngredients, showOnlyTag, units, setUnits, notes, setNote,
-    cookbooks, favorites, deleteRecipe, setRecipeImage, goals, profile, isPro,
+    cookbooks, favorites, deleteRecipe, setRecipeImage, goals, profile, isPro, pantry,
   } = useStore();
   const recipe = getRecipe(id);
 
   // Opens sized for your household (from onboarding), or the recipe's own servings.
   const [servings, setServings] = useState(profile.household ?? recipe?.servings ?? 2);
-  const [justAdded, setJustAdded] = useState(false);
+  const [justAdded, setJustAdded] = useState<'all' | 'missing' | null>(null);
   const [barVisible, setBarVisible] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   // Where the big title ends, so the small one appears only once it has scrolled away.
   const [titleBottom, setTitleBottom] = useState(0);
-  const [lineN, setLineN] = useState(0);
-  const [reaction, setReaction] = useState<Line | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [noteDraft, setNoteDraft] = useState(recipe ? notes[recipe.id] ?? '' : '');
   const addedTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -95,7 +93,7 @@ export default function RecipeScreen() {
   if (!recipe) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', backgroundColor: t.colors.background }}>
-        <EmptyState icon="fork" cat="oops" title="Recipe not found" message="It may have been removed." action={{ label: 'Back to recipes', onPress: goBack }} />
+        <EmptyState icon="fork" title="Recipe not found" message="It may have been removed." action={{ label: 'Back to recipes', onPress: goBack }} />
       </View>
     );
   }
@@ -103,12 +101,13 @@ export default function RecipeScreen() {
   const fav = isFavorite(recipe.id);
   const inCookbooks = cookbooks.filter((c) => c.recipeIds.includes(recipe.id)).length + (favorites.includes(recipe.id) ? 1 : 0);
   const scale = servings / recipe.servings;
-  // Biscuit reacts to what you just did here (saved it, added it to the list), or to the recipe.
-  const line = reaction ?? say(recipeKind(recipe), { protein: recipe.nutrition.protein }, lineN);
+  // What you already have at home (from the Pantry tab), so you only buy the rest.
+  const have = new Set(pantry.length ? recipe.ingredients.filter((i) => pantryHas(pantry, i.name)).map((i) => i.id) : []);
+  const missing = recipe.ingredients.filter((i) => !have.has(i.id));
 
   const onFavorite = () => {
     const now = toggleFavorite(recipe.id);
-    setReaction(now ? say('favorite') : null);
+    if (now) haptics.success();
     toast({
       message: now ? 'Added to Favorites' : 'Removed from Favorites',
       icon: now ? 'heartFill' : 'heart',
@@ -117,14 +116,14 @@ export default function RecipeScreen() {
     });
   };
 
-  const onAdd = () => {
-    const n = addIngredients(recipe.id, recipe.ingredients, scale);
-    setReaction(say('addedToList'));
-    setJustAdded(true);
+  const onAdd = (which: 'all' | 'missing') => {
+    const n = addIngredients(recipe.id, which === 'all' ? recipe.ingredients : missing, scale);
+    haptics.success();
+    setJustAdded(which);
     clearTimeout(addedTimer.current);
-    addedTimer.current = setTimeout(() => setJustAdded(false), 1800);
+    addedTimer.current = setTimeout(() => setJustAdded(null), 1800);
     toast({
-      message: `Added ${n} ingredients for ${servings} ${servings === 1 ? 'serving' : 'servings'}`,
+      message: `Added ${n} ${which === 'missing' ? 'missing ' : ''}${n === 1 ? 'ingredient' : 'ingredients'} for ${servings} ${servings === 1 ? 'serving' : 'servings'}`,
       icon: 'cart',
       action: { label: 'View', onPress: () => router.navigate('/groceries') },
     });
@@ -158,7 +157,7 @@ export default function RecipeScreen() {
 
   const level = recipe.difficulty === 'Easy' ? 1 : recipe.difficulty === 'Medium' ? 2 : 3;
   const stats: { icon: IconName | 'hats'; value: string; label: string }[] = [
-    { icon: 'clock', value: `${recipe.minutes} min`, label: 'Time' },
+    { icon: 'clock', value: `${recipe.minutes} min`, label: 'Total time' },
     { icon: 'people', value: `${recipe.servings}`, label: 'Serves' },
     { icon: 'hats', value: recipe.difficulty, label: 'Difficulty' },
   ];
@@ -202,10 +201,16 @@ export default function RecipeScreen() {
         </Animated.View>
 
         <View style={[styles.body, { backgroundColor: t.colors.background, borderRadius: t.radius.xl, marginTop: -t.radius.xl }]}>
-          <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>
-            {recipe.category}
-            {recipe.custom ? (recipe.origin === 'import' ? ', imported' : ', my recipe') : ''}
-          </Text>
+          <View style={styles.kicker}>
+            <View style={[styles.pill, { backgroundColor: t.colors.tintSoft }]}>
+              <Text style={[t.type.footnote, { color: t.colors.tint, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>{recipe.category}</Text>
+            </View>
+            {recipe.custom && (
+              <View style={[styles.pill, { backgroundColor: t.colors.fill }]}>
+                <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>{recipe.origin === 'import' ? 'Imported' : 'My recipe'}</Text>
+              </View>
+            )}
+          </View>
           <Text
             style={[t.type.largeTitle, t.noWidows.style, { color: t.colors.label, marginTop: 4 }]}
             {...t.noWidows.props}
@@ -251,16 +256,7 @@ export default function RecipeScreen() {
             </View>
           )}
 
-          {/* Biscuit reacts to this recipe */}
-          <MascotSays line={line} size={80} onNext={() => {
-              setReaction(null);
-              setLineN((n) => n + 1);
-            }} style={{ marginTop: 24 }} />
-
-          {/* Nutrition */}
-          <Text style={[t.type.title2, styles.h2, { color: t.colors.label }]} accessibilityRole="header">
-            Nutrition
-          </Text>
+          {/* Nutrition: a one-line summary that opens into the details */}
           <Nutrition recipe={recipe} proteinGoal={isPro ? goals.protein : undefined} />
 
           {/* Ingredients */}
@@ -294,7 +290,7 @@ export default function RecipeScreen() {
               return (
                 <View key={`${ing.id}-${i}`}>
                   {i > 0 && <Separator inset={60} />}
-                  <View style={styles.ingredient} accessible accessibilityLabel={`${amount} ${text}`.trim()}>
+                  <View style={styles.ingredient} accessible accessibilityLabel={`${amount} ${text}${have.has(ing.id) ? ', in your pantry' : ''}`.trim()}>
                     <FoodIcon name={ing.name} aisle={ing.aisle} />
                     {/* "3/4 red pepper": the amount in bold, then what it is */}
                     <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>
@@ -305,6 +301,12 @@ export default function RecipeScreen() {
                       ) : null}
                       {text}
                     </Text>
+                    {have.has(ing.id) && (
+                      <View style={[styles.have, { backgroundColor: t.colors.successSoft }]}>
+                        <Icon name="check" size={11} color={t.colors.successText} weight="bold" />
+                        <Text style={[t.type.caption1, { color: t.colors.successText }]}>Have it</Text>
+                      </View>
+                    )}
                   </View>
                 </View>
               );
@@ -312,13 +314,23 @@ export default function RecipeScreen() {
           </View>
           {/* Right under the list, where you decide what to buy */}
           <Button
-            label={justAdded ? 'Added' : 'Add to groceries'}
-            icon={justAdded ? 'check' : 'cartAdd'}
-            variant={justAdded ? 'success' : 'tinted'}
-            onPress={onAdd}
+            label={justAdded === 'all' ? 'Added' : have.size ? 'Add all to groceries' : 'Add to groceries'}
+            icon={justAdded === 'all' ? 'check' : 'cartAdd'}
+            variant={justAdded === 'all' ? 'success' : 'tinted'}
+            onPress={() => onAdd('all')}
             style={{ marginTop: 16 }}
-            accessibilityLabel={justAdded ? 'Added to the grocery list' : `Add ingredients for ${servings} servings to the grocery list`}
+            accessibilityLabel={justAdded === 'all' ? 'Added to the grocery list' : `Add ingredients for ${servings} servings to the grocery list`}
           />
+          {have.size > 0 && missing.length > 0 && (
+            <Button
+              label={justAdded === 'missing' ? 'Added' : `Add only what’s missing (${missing.length})`}
+              icon={justAdded === 'missing' ? 'check' : 'cartAdd'}
+              variant={justAdded === 'missing' ? 'success' : 'tinted'}
+              onPress={() => onAdd('missing')}
+              style={{ marginTop: 12 }}
+              accessibilityLabel={`Add the ${missing.length} ingredients you don't have to the grocery list`}
+            />
+          )}
 
           {/* Method */}
           <Text style={[t.type.title2, styles.h2, { color: t.colors.label }]} accessibilityRole="header">
@@ -421,8 +433,26 @@ export default function RecipeScreen() {
  * Per-serving nutrition: the calories, then one bar split by where those calories come from,
  * then each macro with its grams and share. With a protein goal, shows its share too.
  */
+const NUTRITION_KEY = 'pantry-pop-nutrition-open';
+
+/**
+ * Per-serving nutrition. Closed, it's one line with the calories; open, it shows where those
+ * calories come from (one split bar) and each macro. Your choice to open or close it is remembered.
+ */
 function Nutrition({ recipe, proteinGoal }: { recipe: Recipe; proteinGoal?: number }) {
   const t = useTheme();
+  const [open, setOpen] = useState(true);
+  useEffect(() => {
+    AsyncStorage.getItem(NUTRITION_KEY)
+      .then((v) => v === '0' && setOpen(false))
+      .catch(() => {});
+  }, []);
+  const toggle = () => {
+    setOpen((o) => {
+      AsyncStorage.setItem(NUTRITION_KEY, o ? '0' : '1').catch(() => {});
+      return !o;
+    });
+  };
   const { protein, carbs, fat } = recipe.nutrition;
   const kcalFrom = { protein: protein * 4, carbs: carbs * 4, fat: fat * 9 };
   const total = kcalFrom.protein + kcalFrom.carbs + kcalFrom.fat;
@@ -432,16 +462,25 @@ function Nutrition({ recipe, proteinGoal }: { recipe: Recipe; proteinGoal?: numb
     { key: 'fat', label: 'Fat', grams: fat, color: t.colors.fat },
   ] as const;
   return (
-    <View style={[styles.card, styles.nutrition, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]} accessible accessibilityLabel={`${recipe.calories} calories, ${protein} grams protein, ${carbs} grams carbs, ${fat} grams fat per serving`}>
-      <View style={styles.kcal}>
-        <Text style={[t.type.title1, { color: t.colors.label }]}>{recipe.calories}</Text>
-        <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]}>kcal per serving, estimated</Text>
-      </View>
-      {total > 0 && (
-        <>
+    <View style={[styles.card, styles.nutrition, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]}>
+      <PressableScale
+        onPress={toggle}
+        haptic="select"
+        scaleTo={0.99}
+        accessibilityRole="button"
+        aria-expanded={open}
+        accessibilityLabel={`Nutrition: ${recipe.calories} calories per serving, estimated. ${open ? 'Hide details' : 'Show details'}`}
+        style={styles.kcal}
+      >
+        <Text style={[t.type.title2, { color: t.colors.label }]}>{recipe.calories}</Text>
+        <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, flex: 1 }]}>kcal per serving, estimated</Text>
+        <Icon name={open ? 'chevronDown' : 'chevronRight'} size={14} color={t.colors.tertiaryLabel} weight="semibold" />
+      </PressableScale>
+      {open && total > 0 && (
+        <Animated.View entering={FadeIn.duration(200)} style={{ gap: 16 }} accessible accessibilityLabel={`${protein} grams protein, ${carbs} grams carbs, ${fat} grams fat per serving`}>
           <View style={styles.split}>
             {rows.map((r) => (
-              <Animated.View key={r.key} entering={FadeIn.duration(400)} style={{ flex: Math.max(kcalFrom[r.key], total * 0.03), backgroundColor: r.color, borderRadius: 6 }} />
+              <View key={r.key} style={{ flex: Math.max(kcalFrom[r.key], total * 0.03), backgroundColor: r.color, borderRadius: 6 }} />
             ))}
           </View>
           <View style={styles.macros}>
@@ -456,13 +495,14 @@ function Nutrition({ recipe, proteinGoal }: { recipe: Recipe; proteinGoal?: numb
               </View>
             ))}
           </View>
-        </>
+          {proteinGoal ? (
+            <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
+              {Math.round((protein / proteinGoal) * 100)}% of your {proteinGoal} g daily protein goal
+            </Text>
+          ) : null}
+          <Text style={[t.type.caption1, { color: t.colors.tertiaryLabel }]}>Estimated from the ingredients. Not medical advice.</Text>
+        </Animated.View>
       )}
-      {proteinGoal ? (
-        <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
-          {Math.round((protein / proteinGoal) * 100)}% of your {proteinGoal} g daily protein goal
-        </Text>
-      ) : null}
     </View>
   );
 }
@@ -548,12 +588,15 @@ const styles = StyleSheet.create({
   stats: { flexDirection: 'row', marginTop: 16, paddingVertical: 14, borderCurve: 'continuous' },
   stat: { flex: 1, alignItems: 'center', gap: 3 },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },
+  kicker: { flexDirection: 'row', gap: 6 },
+  pill: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999 },
+  have: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
   h2: { marginTop: 32, marginBottom: 12 },
   servings: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
   units: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 16 },
   card: { overflow: 'hidden', borderCurve: 'continuous' },
-  nutrition: { gap: 16, padding: 16, overflow: 'visible' },
-  kcal: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
+  nutrition: { gap: 16, padding: 16, overflow: 'visible', marginTop: 16 },
+  kcal: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, marginVertical: -4 },
   split: { flexDirection: 'row', gap: 3, height: 16 },
   macros: { flexDirection: 'row' },
   macro: { flex: 1, gap: 2 },

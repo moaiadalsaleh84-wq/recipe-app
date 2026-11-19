@@ -60,7 +60,7 @@ export default function BuddyPick() {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.groupedBackground }}>
-      <PageHeader title="Let Biscuit pick" mode="cancel" inSheet={isIOS} />
+      <PageHeader title="Pick for me" mode="cancel" inSheet={isIOS} />
       <View style={[styles.body, { paddingBottom: insets.bottom + 16 }]}>
         <View style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card }]} accessibilityLiveRegion="polite" accessibilityLabel={rolling ? 'Shuffling recipes' : `Picked: ${recipe.title}`}>
           <Animated.View key={`${round}-${index}-${rolling}`} entering={FadeIn.duration(rolling ? 60 : 220)} style={styles.photo}>

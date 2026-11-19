@@ -2,18 +2,16 @@ import { useKeepAwake } from 'expo-keep-awake';
 import { router, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeIn, FadeInRight, LinearTransition, ZoomIn } from 'react-native-reanimated';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeIn, FadeInLeft, FadeInRight, LinearTransition, SlideInDown, ZoomIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FoodIcon } from '../../components/FoodIcon';
-import { Mascot } from '../../components/mascot/Mascot';
-import { MascotSays } from '../../components/mascot/MascotSays';
 import { ConfettiBurst } from '../../components/ConfettiBurst';
-import { say, stepSituation, type Line } from '../../components/mascot/lines';
 import { Icon } from '../../components/Icon';
 import { PressableScale } from '../../components/PressableScale';
 import { useToast } from '../../components/Toast';
-import { Button, CheckCircle, Chip, EmptyState, IconButton, ProgressBar } from '../../components/ui';
+import { Button, CheckCircle, EmptyState, IconButton, ProgressBar } from '../../components/ui';
+import { words } from '../../lib/pantry';
 import { haptics } from '../../lib/haptics';
 import { playSuccess } from '../../lib/sounds';
 import { noWidow } from '../../lib/text';
@@ -36,10 +34,11 @@ export default function CookMode() {
   const servings = Number(params.servings) || recipe?.servings || 1;
 
   const [page, setPage] = useState(0); // 0 = get ready, 1..n = steps, n+1 = done
+  // Kept for the whole cook: going back never resets what you've set out.
   const [gathered, setGathered] = useState<Record<string, boolean>>({});
-  const [override, setOverride] = useState<Line | null>(null);
-  // Decided once per cook: on some steps Biscuit says something new.
-  const [surprise] = useState(() => Math.random());
+  const [listOpen, setListOpen] = useState(false);
+  // Which way the last move went, so the next step slides in from the right side.
+  const [forward, setForward] = useState(true);
   // Timers live app-wide (src/state/timers.tsx): they keep going outside Cook Mode and ring when the app is closed.
   const { timers, now, support, start, pause, resume, restart, stop } = useTimers();
   const ringing = timers.filter((tm) => tm.status === 'ringing');
@@ -47,34 +46,23 @@ export default function CookMode() {
   const steps = recipe?.steps ?? [];
   const last = steps.length + 1;
 
-  // A ringing timer always gets the cat's attention.
-  const line: Line = ringing.length
-    ? say('timerDone')
-    : override
-      ? override
-      : page === 0
-        ? say('cookStart')
-        : page === last
-          ? say('cookDone')
-          : say(stepSituation(steps[page - 1] ?? ''), {}, 0, (surprise + page * 0.37) % 1);
 
   if (!recipe) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', backgroundColor: t.colors.background }}>
-        <EmptyState icon="fork" cat="oops" title="Recipe not found" message="It may have been removed." action={{ label: 'Close', onPress: () => router.back() }} />
+        <EmptyState icon="fork" title="Recipe not found" message="It may have been removed." action={{ label: 'Close', onPress: () => router.back() }} />
       </View>
     );
   }
 
   const stopAlarm = (id: string) => {
     stop(id);
-    setOverride(say('timerStopped'));
     haptics.success();
   };
 
   const go = (p: number) => {
     haptics.select();
-    setOverride(null);
+    setForward(p >= page);
     // A finished timer doesn't follow you to the next step. Running ones keep counting.
     for (const tm of timers) if (tm.status === 'ringing' || tm.status === 'done') stop(tm.id);
     setPage(Math.max(0, Math.min(last, p)));
@@ -82,7 +70,6 @@ export default function CookMode() {
 
   const startTimer = (label: string, seconds: number) => {
     start({ label, total: seconds, recipeId: recipe.id, recipeTitle: recipe.title, step: page, stepText: shortStep(steps[page - 1] ?? '') });
-    setOverride(say('timerStart'));
     haptics.success();
     // Said once, the first time: where timers can and can't ring.
     if (support.reason) {
@@ -109,7 +96,28 @@ export default function CookMode() {
   const active = (label: string) => timers.some((tm) => tm.recipeId === recipe.id && tm.step === page && tm.label === label && (tm.status === 'running' || tm.status === 'paused'));
   const stepTimers = stepText ? findTimers(stepText).filter((tm) => !active(tm.label)) : [];
   const setOut = recipe.ingredients.filter((ing, i) => gathered[`${ing.id}-${i}`]).length;
+  const allOut = setOut === recipe.ingredients.length && setOut > 0;
   const done = page === last;
+  const scale = servings / recipe.servings;
+  /** "300 g chicken breast", scaled and in your units. */
+  const amountOf = (ing: (typeof recipe.ingredients)[number]) => {
+    const c = convertQty(roundQty(ing.quantity * scale), ing.unit, units);
+    return `${formatQty(c.quantity, c.unit)} ${nameFor(c.quantity, c.unit, ing.name)}`.trim();
+  };
+  // The ingredients this step mentions, so you don't have to scroll back to the list.
+  const stepWords = new Set(words(stepText));
+  const inStep = stepText
+    ? recipe.ingredients.filter((ing) => {
+        const w = words(ing.name);
+        return w.length > 0 && (w.every((x) => stepWords.has(x)) || stepWords.has(w[0]));
+      })
+    : [];
+  const toggleGathered = (key: string) => {
+    const next = { ...gathered, [key]: !gathered[key] };
+    setGathered(next);
+    // The last one set out: a small "ready" moment.
+    if (!gathered[key] && recipe.ingredients.every((ing, i) => next[`${ing.id}-${i}`])) haptics.success();
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.background }}>
@@ -124,13 +132,16 @@ export default function CookMode() {
             {page === 0 ? 'Get ready' : done ? 'Done!' : `Step ${page} of ${steps.length}`}
           </Text>
         </View>
-        <View style={{ width: 44 }} />
+        <IconButton icon="notes" accessibilityLabel="Show all ingredients" onPress={() => setListOpen(true)} color={t.colors.label} background={t.colors.fill} />
       </View>
 
       {/* One segment per step. Getting the ingredients out isn't a step. */}
-      <View style={styles.segments} accessibilityRole="progressbar" accessibilityLabel="Steps done" accessibilityValue={{ min: 0, max: steps.length, now: Math.min(page, steps.length) }}>
+      {/* One segment per step; tap one to jump there. The current step is tomato, finished ones green. */}
+      <View style={styles.segments} accessibilityLabel="Steps" accessibilityValue={{ min: 0, max: steps.length, now: Math.min(page, steps.length) }}>
         {steps.map((_, i) => (
-          <View key={i} testID="cook-segment" style={[styles.segment, { backgroundColor: i < page ? t.colors.success : t.colors.fillStrong }]} />
+          <PressableScale key={i} onPress={() => go(i + 1)} haptic={null} scaleTo={0.96} accessibilityLabel={`Go to step ${i + 1}${i + 1 < page ? ', done' : i + 1 === page ? ', current' : ''}`} style={styles.segmentTap}>
+            <View testID="cook-segment" style={[styles.segment, { backgroundColor: i + 1 < page || done ? t.colors.success : i + 1 === page ? t.colors.tintFill : t.colors.fillStrong }]} />
+          </PressableScale>
         ))}
       </View>
 
@@ -156,7 +167,7 @@ export default function CookMode() {
 
       <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="never" automaticallyAdjustContentInsets={false} contentContainerStyle={styles.content}>
         {page === 0 && (
-          <Animated.View key="gather" entering={FadeInRight.duration(240)} style={[styles.card, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]}>
+          <Animated.View key="gather" entering={(forward ? FadeInRight : FadeInLeft).duration(240)} style={[styles.card, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]}>
             <Text style={[t.type.title2, { color: t.colors.label }]} accessibilityRole="header">
               Ingredients
             </Text>
@@ -165,26 +176,25 @@ export default function CookMode() {
             </Text>
             <View style={styles.gatherBar}>
               <View style={{ flex: 1 }}>
-                <ProgressBar value={setOut / Math.max(1, recipe.ingredients.length)} height={10} label="Ingredients set out" />
+                <ProgressBar value={setOut / Math.max(1, recipe.ingredients.length)} height={10} color={allOut ? t.colors.success : t.colors.reward} label="Ingredients set out" />
               </View>
-              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, fontVariant: ['tabular-nums'] }]} testID="gather-count">
-                {setOut} of {recipe.ingredients.length}
+              <Text style={[t.type.footnote, { color: allOut ? t.colors.successText : t.colors.secondaryLabel, fontVariant: ['tabular-nums'], fontWeight: allOut ? '700' : '400' }]} testID="gather-count">
+                {allOut ? 'Everything’s ready' : `${setOut} of ${recipe.ingredients.length}`}
               </Text>
             </View>
             {recipe.ingredients.map((ing, i) => {
               const key = `${ing.id}-${i}`;
-              const c = convertQty(roundQty(ing.quantity * (servings / recipe.servings)), ing.unit, units);
-              const label = `${formatQty(c.quantity, c.unit)} ${nameFor(c.quantity, c.unit, ing.name)}`.trim();
+              const label = amountOf(ing);
               return (
                 <PressableScale
                   key={key}
-                  onPress={() => setGathered((g) => ({ ...g, [key]: !g[key] }))}
+                  onPress={() => toggleGathered(key)}
                   haptic="select"
                   scaleTo={0.98}
                   accessibilityRole="checkbox"
                   aria-checked={!!gathered[key]}
                   accessibilityLabel={label}
-                  style={styles.gatherRow}
+                  style={[styles.gatherRow, { backgroundColor: gathered[key] ? t.colors.successSoft : 'transparent' }]}
                 >
                   <CheckCircle checked={!!gathered[key]} color={t.colors.success} />
                   <Text style={[t.type.body, { color: gathered[key] ? t.colors.secondaryLabel : t.colors.label, flex: 1, textDecorationLine: gathered[key] ? 'line-through' : 'none' }]}>{label}</Text>
@@ -196,38 +206,78 @@ export default function CookMode() {
         )}
 
         {page >= 1 && page <= steps.length && (
-          <Animated.View key={page} entering={FadeInRight.duration(240)} style={[styles.card, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]}>
-            <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: 'normal', fontFamily: t.fonts.rounded }]}>Step {page}</Text>
-            <Text style={[styles.stepText, t.noWidows.style, { color: t.colors.label }]} {...t.noWidows.props} testID="cook-step">
-              {stepText}
-            </Text>
-            {stepTimers.length > 0 && (
-              <View style={styles.timerChips}>
-                {stepTimers.map((tm) => (
-                  <Chip key={tm.label} label={`Start ${tm.label}`} icon="timer" toggle={false} accessibilityLabel={`Start a ${tm.label} timer`} onPress={() => startTimer(tm.label, tm.seconds)} />
+          <Animated.View key={page} entering={(forward ? FadeInRight : FadeInLeft).duration(240)} style={{ gap: 16 }}>
+            <View style={[styles.card, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]}>
+              <Text style={[t.type.headline, { color: t.colors.tint }]}>
+                Step {page}
+              </Text>
+              <Text style={[styles.stepText, t.noWidows.style, { color: t.colors.label }]} {...t.noWidows.props} testID="cook-step" accessibilityRole="header">
+                {stepText}
+              </Text>
+              {stepTimers.map((tm) => (
+                <Button key={tm.label} label={`Start ${tm.label} timer`} icon="timer" variant="tinted" size="medium" onPress={() => startTimer(tm.label, tm.seconds)} style={{ alignSelf: 'stretch', marginTop: 8 }} accessibilityLabel={`Start a ${tm.label} timer`} />
+              ))}
+            </View>
+            {inStep.length > 0 && (
+              <View style={[styles.card, styles.inStep, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]} testID="in-step">
+                <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>In this step</Text>
+                {inStep.map((ing) => (
+                  <View key={ing.id} style={styles.inStepRow}>
+                    <FoodIcon name={ing.name} aisle={ing.aisle} size={26} />
+                    <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>{amountOf(ing)}</Text>
+                  </View>
                 ))}
               </View>
             )}
           </Animated.View>
         )}
 
-        {/* The best moment in the app: Biscuit cheers, confetti falls, a chime plays. */}
-        {done ? (
+        {/* The best moment in the app: confetti falls and a chime plays. */}
+        {done && (
           <Animated.View key="done" entering={ZoomIn.springify().damping(12)} style={styles.done}>
-            <Mascot mood="celebrating" size={200} playKey="done" />
+            <View style={[styles.doneBadge, { backgroundColor: t.colors.success, ...t.chunky.button(t.colors.successDeep) }]}>
+              <Icon name="check" size={56} color="#FFFFFF" weight="bold" />
+            </View>
             <Text style={[t.type.largeTitle, { color: t.colors.label, textAlign: 'center' }]} accessibilityRole="header">
               You made it!
             </Text>
             <Text style={[t.type.body, t.noWidows.style, { color: t.colors.secondaryLabel, textAlign: 'center', maxWidth: 300 }]} {...t.noWidows.props}>
-              {noWidow(`${recipe.title} is ready. Log it to keep your streak going.`)}
+              {noWidow(`${recipe.title} is ready. Log the meal to add it to your progress.`)}
+            </Text>
+            <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, textAlign: 'center' }]}>
+              {steps.length} steps · {servings} {servings === 1 ? 'serving' : 'servings'}
             </Text>
           </Animated.View>
-        ) : (
-          <MascotSays line={line} size={96} style={{ marginTop: 16 }} />
         )}
       </ScrollView>
 
       {done && <Celebrate />}
+
+      {/* Every ingredient, any time, without leaving the step */}
+      <Modal visible={listOpen} transparent animationType="fade" onRequestClose={() => setListOpen(false)}>
+        <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: t.colors.scrim }]} onPress={() => setListOpen(false)} accessibilityLabel="Close ingredients" />
+        <Animated.View entering={SlideInDown.duration(260)} style={[styles.sheet, { backgroundColor: t.colors.background, paddingBottom: Math.max(insets.bottom, 16) }]} accessibilityViewIsModal>
+          <View style={styles.sheetHead}>
+            <Text style={[t.type.title2, { color: t.colors.label, flex: 1 }]} accessibilityRole="header">
+              Ingredients
+            </Text>
+            <IconButton icon="close" accessibilityLabel="Close ingredients" onPress={() => setListOpen(false)} color={t.colors.label} background={t.colors.fill} />
+          </View>
+          <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, marginBottom: 8 }]}>For {servings} {servings === 1 ? 'serving' : 'servings'}</Text>
+          <ScrollView style={{ maxHeight: 420 }}>
+            {recipe.ingredients.map((ing, i) => {
+              const key = `${ing.id}-${i}`;
+              return (
+                <PressableScale key={key} onPress={() => toggleGathered(key)} haptic="select" scaleTo={0.98} accessibilityRole="checkbox" aria-checked={!!gathered[key]} accessibilityLabel={amountOf(ing)} style={[styles.gatherRow, { backgroundColor: gathered[key] ? t.colors.successSoft : 'transparent' }]}>
+                  <CheckCircle checked={!!gathered[key]} color={t.colors.success} />
+                  <Text style={[t.type.body, { color: gathered[key] ? t.colors.secondaryLabel : t.colors.label, flex: 1 }]}>{amountOf(ing)}</Text>
+                  <FoodIcon name={ing.name} aisle={ing.aisle} size={28} />
+                </PressableScale>
+              );
+            })}
+          </ScrollView>
+        </Animated.View>
+      </Modal>
 
       {/* Navigation: one main button */}
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16), backgroundColor: t.colors.background }]}>
@@ -312,17 +362,22 @@ const NOTE_KEY = 'pantry-pop-timer-note-seen';
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8, gap: 8 },
-  segments: { flexDirection: 'row', gap: 4, paddingHorizontal: 16, marginBottom: 8 },
-  segment: { flex: 1, height: 8, borderRadius: 4 },
+  segments: { flexDirection: 'row', gap: 4, paddingHorizontal: 16, marginBottom: 4 },
+  segmentTap: { flex: 1, height: 24, justifyContent: 'center' },
+  segment: { height: 8, borderRadius: 4 },
   timers: { paddingHorizontal: 16, gap: 8, marginBottom: 8 },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 16, paddingRight: 4, borderRadius: 26, borderCurve: 'continuous', minHeight: 52 },
   stopBtn: { minHeight: 44, minWidth: 80, paddingHorizontal: 16, borderRadius: 999, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
   content: { padding: 16, paddingTop: 8, paddingBottom: 140, width: '100%', maxWidth: 640, alignSelf: 'center' },
   card: { padding: 16, paddingTop: 20, gap: 8, borderCurve: 'continuous' },
   gatherBar: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 4, marginBottom: 4 },
-  stepText: { fontSize: 24, lineHeight: 32, fontWeight: '600' },
-  timerChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  gatherRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52 },
+  stepText: { fontSize: 26, lineHeight: 35, fontWeight: '600', marginTop: 4 },
+  gatherRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, marginHorizontal: -8, paddingHorizontal: 8, borderRadius: 14, borderCurve: 'continuous' },
+  inStep: { paddingTop: 16, gap: 4 },
+  inStepRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 40 },
+  doneBadge: { width: 112, height: 112, borderRadius: 56, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 16, paddingTop: 16, borderCurve: 'continuous' },
+  sheetHead: { flexDirection: 'row', alignItems: 'center' },
   done: { alignItems: 'center', gap: 8, paddingTop: 24 },
   footer: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', gap: 12, paddingHorizontal: 16, paddingTop: 12 },
 });

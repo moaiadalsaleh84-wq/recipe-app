@@ -19,6 +19,7 @@ import { Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
 import { haptics } from '../../lib/haptics';
 import { useStore } from '../../state/store';
 import { BiscuitRig } from './BiscuitRig';
+import { MASCOT_ON } from './config';
 import type { Mood } from './moods';
 
 export type MascotProps = {
@@ -39,13 +40,7 @@ export type MascotProps = {
 };
 
 export const MASCOT_NAME = 'Biscuit';
-
-/**
- * The mascot is switched off while the final character is being designed. Every screen shows
- * the mascot only through <Mascot> and <MascotSays>, so turning this back on brings him back
- * everywhere without redesigning any screen.
- */
-export const MASCOT_ON = false;
+export { MASCOT_ON };
 
 export function Mascot(props: MascotProps) {
   if (!MASCOT_ON) return null;

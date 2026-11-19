@@ -84,7 +84,7 @@ export default function Onboarding() {
                 Every recipe you save, ready to cook.
               </Animated.Text>
               <Text style={[t.type.body, { color: t.colors.secondaryLabel, textAlign: 'center', marginTop: 8, marginBottom: 24 }]}>
-                Import recipes from TikTok, YouTube, Instagram and any website. Plan your week, shop by aisle, and cook with Biscuit by your side.
+                Import recipes from TikTok, YouTube, Instagram and any website. Plan your week, shop by aisle, and cook step by step.
               </Text>
               <Text style={[t.type.headline, { color: t.colors.label, marginBottom: 8 }]}>What should we call you?</Text>
               <TextInput

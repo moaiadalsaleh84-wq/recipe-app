@@ -3,6 +3,7 @@
  * never drift or double-count: cook a meal, add a recipe, finish a list, earn a badge.
  */
 import type { IconName } from '../components/Icon';
+import { MASCOT_ON } from '../components/mascot/config';
 import type { CookedEntry, Recipe, WeekPlan } from '../data/mock';
 
 export const XP = { cooked: 50, ownRecipe: 30, listDone: 20, badge: 25, pet: 2, petCap: 25 } as const;
@@ -57,7 +58,8 @@ export const BADGES: Badge[] = [
   badge('planner', 'Week Planner', 'Plan 7 meals in one week', 'calendar', (p) => [Object.values(p.plan).reduce((n, d) => n + Object.keys(d).length, 0), 7]),
   badge('shopper', 'Shopping Champ', 'Tick off a whole grocery list', 'cart', (p) => [p.fun.listsDone, 1]),
   badge('collector', 'Collector', 'Save 5 favorite recipes', 'heartFill', (p) => [p.favorites.length, 5]),
-  badge('best-friends', 'Best Friends', 'Pet Biscuit 10 times', 'paw', (p) => [p.fun.pets, 10]),
+  // Needs the mascot on screen to pet; hidden while the mascot is switched off.
+  ...(MASCOT_ON ? [badge('best-friends', 'Best Friends', 'Pet Biscuit 10 times', 'paw', (p) => [p.fun.pets, 10])] : []),
 ];
 
 /**
