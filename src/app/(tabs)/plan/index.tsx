@@ -1,13 +1,14 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
-import { RecipeRow } from '../../../components/RecipeCard';
+import { RecipePhoto, RecipeRow, openRecipe } from '../../../components/RecipeCard';
+import { Chunky } from '../../../components/Chunky';
 import { useToast } from '../../../components/Toast';
-import { Button, IconButton, Section, Separator } from '../../../components/ui';
-import { meals, type Meal } from '../../../data/mock';
+import { IconButton, Section, SectionHeader, Separator } from '../../../components/ui';
+import { meals, type Meal, type Recipe } from '../../../data/mock';
 import { haptics } from '../../../lib/haptics';
 import { TabScreen } from '../../../components/TabScreen';
 import { totalsFor, useStore } from '../../../state/store';
@@ -76,11 +77,12 @@ export default function PlanScreen() {
   // Adding and changing a meal both open the recipe picker for that slot.
   const addMeal = (meal: Meal) => router.push({ pathname: '/plan-picker', params: { day: String(day), meal } });
 
-  return (
-    <TabScreen title="Plan">
+  const plannedWeek = weekDays.filter((d) => meals.some((m) => plan[d.index]?.[m])).length;
 
-      {/* The week, kept compact */}
-      <View style={[styles.week, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]} accessibilityRole="tablist">
+  return (
+    <TabScreen title="Meal plan" kicker={weekDays[day].isToday ? weekDays[day].full : `Today is ${weekDays.find((d) => d.isToday)?.long ?? ''}`}>
+      {/* The week as date pills: today has a saffron dot, the chosen day is basil. */}
+      <View style={styles.week} accessibilityRole="tablist">
         {weekDays.map((d) => {
           const selected = d.index === day;
           const count = meals.filter((m) => plan[d.index]?.[m]).length;
@@ -93,122 +95,92 @@ export default function PlanScreen() {
               accessibilityRole="tab"
               aria-selected={selected}
               accessibilityLabel={`${d.long}${d.isToday ? ', today' : ''}, ${count} meals planned`}
-              style={styles.day}
+              style={[styles.day, { backgroundColor: selected ? t.colors.tintFill : t.colors.cell, borderColor: selected ? t.colors.tintFill : t.colors.border }, !selected && t.chunky.lip]}
             >
-              <Text style={[t.type.caption1, { color: d.isToday ? t.colors.tint : t.colors.secondaryLabel }]}>{d.short}</Text>
-              <View style={[styles.dateCircle, selected && { backgroundColor: t.colors.tintFill }]}>
-                <Text style={[t.type.headline, { color: selected ? t.colors.onTint : t.colors.label, fontVariant: ['tabular-nums'] }]}>{d.date}</Text>
+              <Text style={[t.type.caption1, { color: selected ? 'rgba(255,255,255,0.85)' : t.colors.secondaryLabel }]}>{d.short}</Text>
+              <Text style={[t.type.title3, { color: selected ? t.colors.onTint : t.colors.label, fontVariant: ['tabular-nums'] }]}>{d.date}</Text>
+              {/* Dots: one per planned meal; today's are saffron. */}
+              <View style={styles.dots}>
+                {[0, 1, 2].map((n) => (
+                  <View key={n} style={[styles.dot, { backgroundColor: n < count ? (selected ? '#FFFFFF' : d.isToday ? t.colors.reward : t.colors.success) : 'transparent' }]} />
+                ))}
               </View>
-              {/* a green dot when something is planned */}
-              <View style={[styles.dot, { backgroundColor: count > 0 ? t.colors.success : 'transparent' }]} />
             </PressableScale>
           );
         })}
       </View>
 
-      <View style={styles.dayHeader}>
-        <Text style={[t.type.title2, { color: t.colors.label, flex: 1 }]} accessibilityRole="header">
-          {weekDays[day].isToday ? 'Today' : weekDays[day].long}
-        </Text>
-        <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]} testID="plan-count">
-          {plannedToday} of 3 planned{plannedToday > 0 ? ` · about ${dayTotals.calories} kcal` : ''}
-        </Text>
-      </View>
+      <SectionHeader
+        title={weekDays[day].isToday ? 'Today' : weekDays[day].long}
+        subtitle={plannedToday > 0 ? `${plannedToday} of 3 planned · about ${dayTotals.calories} kcal` : 'Nothing planned yet. Pick a meal or two.'}
+        style={{ marginTop: 24 }}
+      />
+      <Text style={styles.hidden} testID="plan-count">
+        {plannedToday} of 3 planned
+      </Text>
 
-      {plannedToday === 0 ? (
-        // An empty day: one compact card instead of three empty boxes.
-        <View style={[styles.emptyCard, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]}>
-          <View style={styles.emptyTop}>
-            <View style={[styles.emptyIcon, { backgroundColor: t.colors.tintSoft }]}>
-              <Icon name="calendar" size={22} color={t.colors.tint} weight="semibold" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[t.type.title3, { color: t.colors.label }]}>Nothing planned yet</Text>
-              <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]}>Pick a meal or two. Your grocery list can build itself from the plan.</Text>
-            </View>
-          </View>
-          {/* Three slots, one per meal: the words always fit. */}
-          <View style={[styles.slots, { borderColor: t.colors.separator }]}>
-            {meals.map((meal, i) => (
-              <PressableScale
-                key={meal}
-                onPress={() => addMeal(meal)}
-                accessibilityLabel={`Add ${meal.toLowerCase()} for ${weekDays[day].long}`}
-                scaleTo={0.98}
-                style={[styles.slot, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth * 2, borderTopColor: t.colors.separator }]}
-              >
-                <View style={[styles.slotIcon, { backgroundColor: t.colors.tintSoft }]}>
-                  <Icon name="plus" size={16} color={t.colors.tint} weight="bold" />
-                </View>
+      {/* Breakfast, lunch and dinner: a photo card when planned, a dashed slot when not. */}
+      <View style={{ gap: 12 }}>
+        {meals.map((meal, i) => {
+          const recipe = getRecipe(dayPlan[meal]);
+          return recipe ? (
+            <Animated.View key={`${meal}-${recipe.id}`} entering={FadeInDown.duration(300).delay(i * 60)} exiting={FadeOut.duration(150)}>
+              <MealCard meal={meal} recipe={recipe} onChange={() => addMeal(meal)} onRemove={() => remove(meal, recipe.id)} />
+            </Animated.View>
+          ) : (
+            <PressableScale
+              key={meal}
+              onPress={() => addMeal(meal)}
+              accessibilityLabel={`Add ${meal.toLowerCase()} for ${weekDays[day].long}`}
+              scaleTo={0.98}
+              style={[styles.slot, { borderColor: t.colors.fillStrong }]}
+            >
+              <View style={[styles.slotIcon, { backgroundColor: t.colors.tintSoft }]}>
+                <Icon name="plus" size={20} color={t.colors.tint} weight="bold" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]}>{meal}</Text>
                 <Text style={[t.type.headline, { color: t.colors.tint }]}>Add {meal.toLowerCase()}</Text>
-              </PressableScale>
-            ))}
-          </View>
-        </View>
-      ) : (
-        <>
-          <Section>
-            {meals.map((meal, i) => {
-              const recipe = getRecipe(dayPlan[meal]);
-              return (
-                <View key={meal}>
-                  {i > 0 && <Separator inset={16} />}
-                  {recipe ? (
-                    <Animated.View key={recipe.id} entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)}>
-                      <RecipeRow
-                        recipe={recipe}
-                        subtitle={`${meal} · ${recipe.minutes} min · ${recipe.calories} kcal`}
-                        trailing={
-                          <View style={styles.rowActions}>
-                            <IconButton icon="shuffle" accessibilityLabel={`Change ${meal.toLowerCase()}: ${recipe.title}`} color={t.colors.secondaryLabel} iconSize={15} onPress={() => addMeal(meal)} />
-                            <IconButton icon="close" accessibilityLabel={`Remove ${recipe.title} from ${meal}`} color={t.colors.secondaryLabel} iconSize={14} onPress={() => remove(meal, recipe.id)} />
-                          </View>
-                        }
-                      />
-                    </Animated.View>
-                  ) : (
-                    <PressableScale onPress={() => addMeal(meal)} accessibilityLabel={`Add ${meal.toLowerCase()} for ${weekDays[day].long}`} scaleTo={0.98} style={styles.addSlot}>
-                      <View style={[styles.addIcon, { backgroundColor: t.colors.tintSoft }]}>
-                        <Icon name="plus" size={18} color={t.colors.tint} weight="bold" />
-                      </View>
-                      <Text style={[t.type.headline, { color: t.colors.tint }]}>Add {meal.toLowerCase()}</Text>
-                    </PressableScale>
-                  )}
-                </View>
-              );
-            })}
-          </Section>
-          {isPro && (
-            <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: -8 }]}>
-              {dayTotals.protein >= goals.protein ? 'Protein goal covered.' : `${Math.round((dayTotals.protein / goals.protein) * 100)}% of your ${goals.protein} g protein goal.`}
-            </Text>
-          )}
-        </>
+              </View>
+            </PressableScale>
+          );
+        })}
+      </View>
+      {isPro && plannedToday > 0 && (
+        <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 10 }]}>
+          {dayTotals.protein >= goals.protein ? 'Protein goal covered.' : `${Math.round((dayTotals.protein / goals.protein) * 100)}% of your ${goals.protein} g protein goal.`}
+        </Text>
       )}
 
-      {/* The week's shopping, in one tap. */}
+      {/* The week's shopping, in one tap: a basil banner. */}
       {weekRecipes.length > 0 && (
-        <View style={[styles.weekCard, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]} testID="week-groceries">
-          <View style={{ flex: 1 }}>
-            <Text style={[t.type.headline, { color: t.colors.label }]}>This week</Text>
-            <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]}>
-              {weekRecipes.length} {weekRecipes.length === 1 ? 'meal' : 'meals'} planned. Same ingredients are added up, and meals already on the list aren’t added twice.
-            </Text>
+        <View style={[styles.weekCard, { backgroundColor: t.colors.tintFill, ...t.shadow.card }]} testID="week-groceries">
+          <View style={styles.weekTop}>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={[t.type.title2, { color: '#FFFFFF' }]}>This week</Text>
+              <Text style={[t.type.subhead, { color: 'rgba(255,255,255,0.88)' }]}>
+                {weekRecipes.length} {weekRecipes.length === 1 ? 'meal' : 'meals'} across {plannedWeek} {plannedWeek === 1 ? 'day' : 'days'}. Same ingredients are added up, and nothing is added twice.
+              </Text>
+            </View>
+            <View style={styles.weekIcon}>
+              <Icon name="cart" size={22} color="#FFFFFF" weight="bold" />
+            </View>
           </View>
-          <Button label="Add this week to groceries" icon="cartAdd" variant="tinted" size="medium" onPress={addWeek} style={{ alignSelf: 'stretch' }} />
+          <Chunky onPress={addWeek} face={t.colors.reward} accessibilityLabel="Add this week to groceries" faceStyle={styles.weekBtn}>
+            <Icon name="cartAdd" size={17} color={t.colors.onReward} weight="bold" />
+            <Text style={[t.type.button, { color: t.colors.onReward }]}>Add this week to groceries</Text>
+          </Chunky>
         </View>
       )}
 
       {/* Ideas to fill the day: one tap plans them. */}
       {ideas.length > 0 && (
         <>
-          <Text style={[t.type.title3, styles.ideasTitle, { color: t.colors.label }]} accessibilityRole="header">
-            Ideas for {weekDays[day].isToday ? 'today' : weekDays[day].long}
-          </Text>
+          <SectionHeader title={`Ideas for ${weekDays[day].isToday ? 'today' : weekDays[day].long}`} subtitle="One tap adds them to the plan" />
           <Section>
             {ideas.map(({ recipe, meal }, i) => (
               <View key={recipe.id}>
-                {i > 0 && <Separator inset={84} />}
+                {i > 0 && <Separator inset={88} />}
                 <RecipeRow
                   recipe={recipe}
                   subtitle={`${meal} · ${recipe.minutes} min · ${recipe.calories} kcal`}
@@ -216,8 +188,8 @@ export default function PlanScreen() {
                     <IconButton
                       icon="plus"
                       accessibilityLabel={`Plan ${recipe.title} for ${meal.toLowerCase()} on ${weekDays[day].long}`}
-                      color={t.colors.tint}
-                      background={t.colors.tintSoft}
+                      color={t.colors.onTint}
+                      background={t.colors.tintFill}
                       iconSize={16}
                       onPress={() => {
                         setMeal(day, meal, recipe.id);
@@ -236,21 +208,50 @@ export default function PlanScreen() {
   );
 }
 
+/** A planned meal: a wide food photo with the meal and recipe over a soft fade, and change or remove. */
+function MealCard({ meal, recipe, onChange, onRemove }: { meal: string; recipe: Recipe; onChange: () => void; onRemove: () => void }) {
+  const t = useTheme();
+  return (
+    <View style={[styles.meal, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
+      <PressableScale onPress={() => openRecipe(recipe.id)} scaleTo={0.98} accessibilityLabel={`${meal}: ${recipe.title}, ${recipe.minutes} min, ${recipe.calories} kcal`} accessibilityHint="Opens the recipe" style={styles.mealMain}>
+        <View style={[styles.mealPhoto, { backgroundColor: t.colors.imagePlaceholder }]}>
+          <RecipePhoto recipe={recipe} iconSize={24} />
+        </View>
+        <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
+          <View style={[styles.mealTag, { backgroundColor: t.colors.rewardSoft }]}>
+            <Text style={[t.type.caption1, { color: t.colors.rewardText, fontFamily: t.fonts.extrabold }]}>{meal}</Text>
+          </View>
+          <Text style={[t.type.title3, { color: t.colors.label }]} numberOfLines={2}>
+            {recipe.title}
+          </Text>
+          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
+            {recipe.minutes} min · {recipe.calories} kcal
+          </Text>
+        </View>
+      </PressableScale>
+      <View style={styles.mealActions}>
+        <IconButton icon="shuffle" accessibilityLabel={`Change ${meal.toLowerCase()}: ${recipe.title}`} color={t.colors.secondaryLabel} iconSize={15} onPress={onChange} />
+        <IconButton icon="close" accessibilityLabel={`Remove ${recipe.title} from ${meal}`} color={t.colors.secondaryLabel} iconSize={14} onPress={onRemove} />
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  week: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 4, paddingTop: 8, paddingBottom: 6, borderCurve: 'continuous' },
-  day: { flex: 1, alignItems: 'center', gap: 2, minHeight: 44 },
-  slots: { borderTopWidth: StyleSheet.hairlineWidth * 2, marginHorizontal: -16, marginBottom: -16 },
-  slot: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, minHeight: 56 },
-  slotIcon: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  ideasTitle: { marginTop: 24, marginBottom: 12 },
-  dateCircle: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  dot: { width: 6, height: 6, borderRadius: 3 },
-  dayHeader: { flexDirection: 'row', alignItems: 'baseline', marginTop: 24, marginBottom: 12 },
-  emptyCard: { padding: 16, gap: 16, borderCurve: 'continuous' },
-  emptyTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  emptyIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
-  rowActions: { flexDirection: 'row', alignItems: 'center' },
-  weekCard: { padding: 16, gap: 12, marginTop: 8, borderCurve: 'continuous' },
-  addSlot: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, minHeight: 72 },
-  addIcon: { width: 56, height: 56, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
+  week: { flexDirection: 'row', justifyContent: 'space-between', gap: 6 },
+  day: { flex: 1, alignItems: 'center', gap: 1, paddingTop: 8, paddingBottom: 6, borderRadius: 18, borderWidth: 1, minHeight: 72, borderCurve: 'continuous' },
+  dots: { flexDirection: 'row', gap: 3, height: 5 },
+  dot: { width: 5, height: 5, borderRadius: 3 },
+  hidden: { position: 'absolute', width: 1, height: 1, opacity: 0 },
+  slot: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14, minHeight: 84, borderRadius: 22, borderWidth: 2, borderStyle: 'dashed', borderCurve: 'continuous' },
+  slotIcon: { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
+  meal: { flexDirection: 'row', alignItems: 'center', borderRadius: 22, padding: 8, paddingRight: 0, borderCurve: 'continuous' },
+  mealMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14 },
+  mealPhoto: { width: 96, height: 96, borderRadius: 16, overflow: 'hidden', borderCurve: 'continuous' },
+  mealTag: { alignSelf: 'flex-start', paddingHorizontal: 9, paddingVertical: 2, borderRadius: 999 },
+  mealActions: { alignItems: 'center' },
+  weekCard: { padding: 18, gap: 16, marginTop: 24, borderRadius: 28, borderCurve: 'continuous' },
+  weekTop: { flexDirection: 'row', gap: 12 },
+  weekIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.16)' },
+  weekBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 52, paddingHorizontal: 18 },
 });

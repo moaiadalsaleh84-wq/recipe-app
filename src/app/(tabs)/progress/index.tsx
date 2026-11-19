@@ -1,18 +1,18 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import { StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
 import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
 import { RecipeRow } from '../../../components/RecipeCard';
 import { useToast } from '../../../components/Toast';
-import { Button, HeaderButton, ProgressBar, Section, Separator, Stepper } from '../../../components/ui';
+import { Button, HeaderButton, ProgressBar, Ring, Section, SectionHeader, Separator, Stepper } from '../../../components/ui';
 import { showPaywall, useProGate } from '../../../lib/pro';
 import { BADGES, levelFor, nextBadge, streakOf, xpFor } from '../../../lib/progress';
 import { TabScreen } from '../../../components/TabScreen';
 import { totalsFor, useStore } from '../../../state/store';
 import { noWidow } from '../../../lib/text';
-import { useTheme } from '../../../theme';
+import { cook, fonts, useTheme } from '../../../theme';
 
 const dayKey = (d: Date) => d.toDateString();
 const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -28,7 +28,7 @@ const BADGE_ACTION: Record<string, { label: string; href: '/' | '/recipe/new' | 
 export default function ProgressScreen() {
   const t = useTheme();
   const toast = useToast();
-  const { cooked, getRecipe, goals, setGoals, customRecipes, plan, favorites, fun } = useStore();
+  const { cooked, getRecipe, goals, setGoals, customRecipes, plan, favorites, fun, profile } = useStore();
   const { isPro } = useProGate();
   const [showAll, setShowAll] = useState(false);
   const [allHistory, setAllHistory] = useState(false);
@@ -62,7 +62,27 @@ export default function ProgressScreen() {
   });
 
   return (
-    <TabScreen title="Progress" right={<HeaderButton icon="gear" accessibilityLabel="Settings" onPress={() => router.push('/settings')} />}>
+    <TabScreen title="Your kitchen" kicker={profile.name.trim() ? `${profile.name.trim().split(/\s+/)[0]}’s progress` : 'Your progress'} right={<HeaderButton icon="gear" accessibilityLabel="Settings" onPress={() => router.push('/settings')} />}>
+      {/* Your chef level: the hero of this screen. A saffron ring fills toward the next level. */}
+      <View
+        style={[styles.hero, { backgroundColor: t.isDark ? '#1E3A2B' : cook.background, ...t.shadow.card }]}
+        accessible
+        accessibilityLabel={`Chef level ${lvl.level}, ${lvl.title}. ${xp} XP${lvl.next ? `, ${lvl.toNext} to the next level` : ''}`}
+      >
+        <Ring value={lvl.progress} size={92} stroke={9} color={cook.accent} track={cook.track}>
+          <Text style={[styles.levelNum, { color: cook.label }]} testID="chef-level">
+            {lvl.level}
+          </Text>
+        </Ring>
+        <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
+          <Text style={[t.type.footnote, { color: cook.secondaryLabel, fontFamily: t.fonts.bold }]}>Chef level {lvl.level}</Text>
+          <Text style={[t.type.title1, { color: cook.label }]}>{lvl.title}</Text>
+          <Text style={[t.type.footnote, { color: cook.secondaryLabel }]} testID="xp-label">
+            {lvl.next ? `${lvl.toNext} XP to ${lvl.next.title}` : 'Top level!'}
+          </Text>
+        </View>
+      </View>
+
       {/* Milestones at a glance, from what you've actually done */}
       {cooked.length + saved > 0 && (
         <View style={styles.stats}>
@@ -159,52 +179,30 @@ export default function ProgressScreen() {
         </View>
       )}
 
-      {/* Chef level */}
-      <View
-        style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card }]}
-        accessible
-        accessibilityLabel={`Chef level ${lvl.level}, ${lvl.title}. ${xp} XP${lvl.next ? `, ${lvl.toNext} to the next level` : ''}`}
-      >
-        <View style={styles.row}>
-          <View style={[styles.medal, { backgroundColor: t.colors.reward, ...t.chunky.button(t.colors.rewardDeep) }]}>
-            <Text style={[t.type.title2, { color: t.colors.onReward }]} testID="chef-level">
-              {lvl.level}
-            </Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>Chef level</Text>
-            <Text style={[t.type.title3, { color: t.colors.label }]}>{lvl.title}</Text>
-          </View>
-        </View>
-        <ProgressBar value={lvl.progress} color={t.colors.reward} label="Progress to the next chef level" />
-        <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]} testID="xp-label">
-          {lvl.next ? `${lvl.toNext} XP to ${lvl.next.title}` : 'Top level!'}
-          {cooked.length > 0 ? ` · ${cooked.length} ${cooked.length === 1 ? 'meal' : 'meals'} cooked` : ''}
-        </Text>
-      </View>
-
       {/* Badges: the ones you have, then the next two still to earn, softly faded. */}
-      <Text style={[t.type.title3, styles.h, { color: t.colors.label }]} accessibilityRole="header">
-        Your badges
-      </Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={styles.badges}>
-        {earned.map((b) => (
-          <PressableScale key={b.id} onPress={() => toast({ message: `${b.title}: ${b.hint}. Done!`, icon: b.icon, tone: 'info' })} accessibilityLabel={`${b.title}, earned`} style={styles.badge}>
-            <View style={[styles.badgeCoin, { backgroundColor: t.colors.reward, ...t.chunky.button(t.colors.rewardDeep) }]}>
-              <Icon name={b.icon} size={26} color={t.colors.onReward} weight="bold" />
-            </View>
-            <Text style={[t.type.caption1, { color: t.colors.label, textAlign: 'center', fontFamily: t.fonts.display, fontWeight: 'normal' }]}>{b.title}</Text>
-          </PressableScale>
+      <SectionHeader title="Your badges" subtitle={`${earned.length} of ${BADGES.length} earned`} />
+      <View style={styles.badges}>
+        {earned.map((b, i) => (
+          <Animated.View key={b.id} entering={ZoomIn.duration(260).delay(i * 50)} style={styles.badgeCell}>
+            <PressableScale onPress={() => toast({ message: `${b.title}: ${b.hint}. Done!`, icon: b.icon, tone: 'info' })} accessibilityLabel={`${b.title}, earned`} style={[styles.badge, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
+              <View style={[styles.badgeCoin, { backgroundColor: t.colors.reward }]}>
+                <Icon name={b.icon} size={26} color={t.colors.onReward} weight="bold" />
+              </View>
+              <Text style={[t.type.caption1, { color: t.colors.label, textAlign: 'center', fontFamily: t.fonts.bold }]}>{b.title}</Text>
+            </PressableScale>
+          </Animated.View>
         ))}
         {upcoming.map((b) => (
-          <PressableScale key={b.id} onPress={() => toast({ message: `${b.title}: ${b.hint} to earn it.`, icon: 'lock', tone: 'info' })} accessibilityLabel={`${b.title}, not earned yet. ${b.hint}.`} style={styles.badge}>
-            <View style={[styles.badgeCoin, { backgroundColor: t.colors.fill, borderWidth: 2, borderColor: t.colors.border, borderStyle: 'dashed' }]}>
-              <Icon name={b.icon} size={24} color={t.colors.tertiaryLabel} weight="bold" />
-            </View>
-            <Text style={[t.type.caption1, { color: t.colors.secondaryLabel, textAlign: 'center', fontFamily: t.fonts.display, fontWeight: 'normal' }]}>{b.title}</Text>
-          </PressableScale>
+          <View key={b.id} style={styles.badgeCell}>
+            <PressableScale onPress={() => toast({ message: `${b.title}: ${b.hint} to earn it.`, icon: 'lock', tone: 'info' })} accessibilityLabel={`${b.title}, not earned yet. ${b.hint}.`} style={[styles.badge, { borderWidth: 1.5, borderColor: t.colors.fillStrong, borderStyle: 'dashed' }]}>
+              <View style={[styles.badgeCoin, { backgroundColor: t.colors.fill }]}>
+                <Icon name={b.icon} size={24} color={t.colors.tertiaryLabel} weight="bold" />
+              </View>
+              <Text style={[t.type.caption1, { color: t.colors.secondaryLabel, textAlign: 'center', fontFamily: t.fonts.bold }]}>{b.title}</Text>
+            </PressableScale>
+          </View>
         ))}
-      </ScrollView>
+      </View>
       <Button label={showAll ? 'Hide the other badges' : earned.length ? `See what else you can earn` : 'See all badges'} variant="plain" size="medium" onPress={() => setShowAll((v) => !v)} style={{ marginTop: 4 }} />
       {showAll && (
         <Animated.View entering={FadeIn.duration(200)}>
@@ -236,9 +234,7 @@ export default function ProgressScreen() {
       )}
 
       {/* Goals */}
-      <Text style={[t.type.title3, styles.h, { color: t.colors.label }]} accessibilityRole="header">
-        Daily goals
-      </Text>
+      <SectionHeader title="Daily goals" subtitle="Protein and calories from meals you cook" />
       {!isPro ? (
         <View style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
           <View style={styles.row}>
@@ -269,9 +265,7 @@ export default function ProgressScreen() {
       {/* Recently cooked */}
       {recent.length > 0 && (
         <>
-          <Text style={[t.type.title3, styles.h, { color: t.colors.label }]} accessibilityRole="header">
-            Cooking history
-          </Text>
+          <SectionHeader title="Cooking history" subtitle="Tap a meal to cook it again" />
           <Section>
             {recent.map((c, i) => {
               const r = getRecipe(c.recipeId);
@@ -312,7 +306,7 @@ function GoalRow({ label, unit, eaten, goal, color, children }: { label: string;
 const styles = StyleSheet.create({
   stats: { flexDirection: 'row', gap: 12, marginBottom: 16 },
   stat: { flex: 1, borderRadius: 20, padding: 12, gap: 2, borderCurve: 'continuous' },
-  card: { borderRadius: 20, borderWidth: 1.5, padding: 16, gap: 16, borderCurve: 'continuous', marginBottom: 16 },
+  card: { borderRadius: 22, borderWidth: 1, padding: 16, gap: 16, borderCurve: 'continuous', marginBottom: 16 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   barRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   streakTop: { flexDirection: 'row', alignItems: 'center', gap: 14 },
@@ -322,8 +316,11 @@ const styles = StyleSheet.create({
   dayDot: { width: 34, height: 34, borderRadius: 17, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
   medal: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
   h: { marginTop: 16, marginBottom: 12 },
-  badges: { flexDirection: 'row', gap: 12, paddingHorizontal: 16, paddingBottom: 6 },
-  badge: { width: 88, alignItems: 'center', gap: 8, minHeight: 44 },
+  hero: { flexDirection: 'row', alignItems: 'center', gap: 18, padding: 18, borderRadius: 28, marginBottom: 16, borderCurve: 'continuous' },
+  levelNum: { fontFamily: fonts.serifBold, fontSize: 36, lineHeight: 40 },
+  badges: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -5 },
+  badgeCell: { width: '33.33%', padding: 5 },
+  badge: { alignItems: 'center', gap: 8, minHeight: 124, paddingVertical: 14, paddingHorizontal: 6, borderRadius: 20, borderCurve: 'continuous' },
   badgeCoin: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center' },
   badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12, minHeight: 60 },
   badgeRowIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },

@@ -1,13 +1,13 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
-import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
+import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import Animated, { FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated';
 import { FoodIcon } from '../../../components/FoodIcon';
 import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
 import { RecipePhoto, openRecipe } from '../../../components/RecipeCard';
 import { useToast } from '../../../components/Toast';
-import { Button, Chip, EmptyState, IconButton, Section, Separator } from '../../../components/ui';
+import { Button, Chip, EmptyState, IconButton, ProgressBar, Section, SectionHeader, Separator } from '../../../components/ui';
 import { haptics } from '../../../lib/haptics';
 import { COMMON_ITEMS, PANTRY_CATEGORIES, pantryCategory, smartSuggestions, suggestionsFor, whatCanICook, type PantryMatch } from '../../../lib/pantry';
 import { showPaywall, useProGate } from '../../../lib/pro';
@@ -22,9 +22,6 @@ export default function PantryScreen() {
   const { pantry, addPantry, removePantry, restorePantry, allRecipes, addIngredients } = useStore();
   const { isPro, canAddPantry } = useProGate();
   const [query, setQuery] = useState('');
-  // Two equal columns of chips, so the rows line up neatly.
-  const { width } = useWindowDimensions();
-  const cell = Math.floor((Math.min(width, 700) - 32 - 8) / 2);
 
   const matches = useMemo(() => whatCanICook(allRecipes, pantry), [allRecipes, pantry]);
   const suggestions = useMemo(() => smartSuggestions(matches), [matches]);
@@ -67,7 +64,7 @@ export default function PantryScreen() {
   }, [pantry, q]);
 
   return (
-    <TabScreen title="Pantry" keyboardShouldPersistTaps="handled">
+    <TabScreen title="Pantry" kicker={pantry.length ? `${pantry.length} ${pantry.length === 1 ? 'thing' : 'things'} at home` : 'What’s in your kitchen?'} keyboardShouldPersistTaps="handled">
       {/* Add */}
       <View style={[styles.addRow, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
         <Icon name="plus" size={18} color={t.colors.tint} weight="bold" />
@@ -91,45 +88,39 @@ export default function PantryScreen() {
       {typed.length > 0 && (
         <View style={styles.chips}>
           {typed.map((name) => (
-            <Chip key={name} label={name} leading={<FoodIcon name={name} size={18} bare />} toggle={false} accessibilityLabel={`Add ${name}`} onPress={() => add(name)} />
+            <Chip key={name} label={name} icon="plus" toggle={false} accessibilityLabel={`Add ${name}`} onPress={() => add(name)} />
           ))}
         </View>
       )}
 
       {!query && common.length > 0 && (
         <>
-          <Text style={[t.type.subhead, styles.label, { color: t.colors.secondaryLabel, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>Tap to add</Text>
-          <View style={styles.grid}>
+          <Text style={[t.type.subhead, styles.label, { color: t.colors.secondaryLabel, fontFamily: t.fonts.bold }]}>Tap to add</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={styles.quick}>
             {common.map((name) => (
-              <Chip key={name} label={name} style={{ width: cell }} leading={<FoodIcon name={name} size={18} bare />} toggle={false} accessibilityLabel={`Add ${name}`} onPress={() => add(name)} />
+              <Chip key={name} label={name} icon="plus" toggle={false} accessibilityLabel={`Add ${name}`} onPress={() => add(name)} />
             ))}
-          </View>
+          </ScrollView>
         </>
       )}
 
       {/* Your items */}
-      <View style={styles.headerRow}>
-        <Text style={[t.type.title2, { color: t.colors.label, flex: 1 }]} accessibilityRole="header">
-          In your pantry
-        </Text>
-        {/* The count only matters near the free limit. */}
-        {!isPro && pantry.length >= FREE_LIMITS.pantry - 3 && (
-          <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]} testID="pantry-count">
-            {pantry.length} of {FREE_LIMITS.pantry}
-          </Text>
-        )}
-      </View>
-      {pantry.length === 0 ? (
-        <View style={[styles.empty, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
-          <View style={[styles.emptyIcon, { backgroundColor: t.colors.tintSoft }]}>
-            <Icon name="fridge" size={22} color={t.colors.tint} weight="semibold" />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={[t.type.headline, { color: t.colors.label }]}>Your pantry is empty</Text>
-            <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]} testID="pantry-empty">
-              Add what’s in your kitchen. You’ll see which recipes you can cook and what’s missing.
+      <SectionHeader
+        title="In your pantry"
+        subtitle={pantry.length ? 'Grouped by where it lives in the kitchen' : undefined}
+        right={
+          // The count only matters near the free limit.
+          !isPro && pantry.length >= FREE_LIMITS.pantry - 3 ? (
+            <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, marginBottom: 4 }]} testID="pantry-count">
+              {pantry.length} of {FREE_LIMITS.pantry}
             </Text>
-          </View>
+          ) : undefined
+        }
+      />
+      {pantry.length === 0 ? (
+        <View style={[styles.emptyCard, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
+          <EmptyState icon="fridge" photos={['mushroom-spaghetti', 'chicken-fried-rice', 'masala-dosa']} title="Your pantry is empty" message="Add what’s in your kitchen. You’ll see which recipes you can cook and what’s missing." />
+          <Text style={styles.hidden} testID="pantry-empty">Your pantry is empty</Text>
         </View>
       ) : groups.length === 0 ? (
         <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, marginTop: 8 }]}>Nothing in your pantry matches “{query.trim()}”.</Text>
@@ -169,9 +160,8 @@ export default function PantryScreen() {
       {/* What can I cook */}
       {pantry.length > 0 && (
         <>
-          <Text style={[t.type.title2, { color: t.colors.label, marginTop: 32, marginBottom: 4 }]} accessibilityRole="header">
-            What can I cook?
-          </Text>
+          <View style={[styles.cookBand, { backgroundColor: t.isDark ? t.colors.cell : t.colors.imagePlaceholder }]}>
+          <SectionHeader title="What can I cook?" style={{ marginTop: 0 }} />
           <Text style={[t.type.subhead, { color: ready ? t.colors.successText : t.colors.secondaryLabel, marginBottom: 2, fontFamily: t.fonts.semibold }]} testID="ready-count">
             {ready ? `You can cook ${ready} ${ready === 1 ? 'recipe' : 'recipes'} right now` : 'You’re a few items away from these'}
           </Text>
@@ -203,30 +193,42 @@ export default function PantryScreen() {
           {matches.length === 0 ? (
             <EmptyState icon="pot" title="No matches yet" message="None of your recipes use these items. Add a few more, or import a recipe you love." />
           ) : (
-            matches.map((m) => <MatchCard key={m.recipe.id} match={m} onAddMissing={() => addMissing(m)} />)
+            matches.map((m, i) => (
+              <Animated.View key={m.recipe.id} entering={FadeInDown.duration(300).delay(Math.min(i, 6) * 50)}>
+                <MatchCard match={m} onAddMissing={() => addMissing(m)} />
+              </Animated.View>
+            ))
           )}
+          </View>
         </>
       )}
     </TabScreen>
   );
 }
 
+/** A recipe you could cook: its photo, how much you already have (a meter), and what's missing. */
 function MatchCard({ match, onAddMissing }: { match: PantryMatch; onAddMissing: () => void }) {
   const t = useTheme();
   const { recipe, have, missing, needed } = match;
   const shown = missing.slice(0, 4).map((i) => i.name.toLowerCase());
   const more = missing.length - shown.length;
+  const ready = missing.length === 0;
   return (
     <View style={[styles.card, styles.match, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
       <PressableScale onPress={() => openRecipe(recipe.id)} scaleTo={0.98} accessibilityLabel={`${recipe.title}, you have ${have.length} of ${needed}`} style={styles.matchTop}>
         <View style={[styles.thumb, { backgroundColor: t.colors.imagePlaceholder }]}>
           <RecipePhoto recipe={recipe} iconSize={22} />
         </View>
-        <View style={{ flex: 1, gap: 2 }}>
-          <Text style={[t.type.headline, { color: t.colors.label }]}>{recipe.title}</Text>
-          <Text style={[t.type.footnote, { color: missing.length ? t.colors.secondaryLabel : t.colors.success, fontFamily: t.fonts.semibold }]}>
-            {missing.length ? `You have ${have.length} of ${needed}` : 'You have everything'}
-          </Text>
+        <View style={{ flex: 1, gap: 6, minWidth: 0 }}>
+          <Text style={[t.type.title3, { color: t.colors.label }]}>{recipe.title}</Text>
+          <View style={styles.meterRow}>
+            <View style={{ flex: 1 }}>
+              <ProgressBar value={have.length / Math.max(1, needed)} height={6} color={ready ? t.colors.success : t.colors.reward} label={`You have ${have.length} of ${needed}`} />
+            </View>
+            <Text style={[t.type.footnote, { color: ready ? t.colors.successText : t.colors.secondaryLabel, fontFamily: t.fonts.bold }]}>
+              {ready ? 'Ready' : `${have.length} of ${needed}`}
+            </Text>
+          </View>
           {missing.length > 0 && (
             <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]} testID="missing">
               Missing: {shown.join(', ')}
@@ -236,24 +238,21 @@ function MatchCard({ match, onAddMissing }: { match: PantryMatch; onAddMissing: 
         </View>
       </PressableScale>
       {missing.length > 0 && (
-        <Button
-          label="Add missing to groceries"
-          icon="cartAdd"
-          size="medium"
-          variant="tinted"
-          onPress={onAddMissing}
-          accessibilityLabel={`Add missing for ${recipe.title} to Groceries`}
-          style={{ marginTop: 12, alignSelf: 'stretch' }}
-        />
+        <Button label="Add missing to groceries" icon="cartAdd" size="medium" variant="tinted" onPress={onAddMissing} accessibilityLabel={`Add missing for ${recipe.title} to Groceries`} style={{ marginTop: 12, alignSelf: 'stretch' }} />
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  addRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 16, paddingRight: 4, minHeight: 50, borderRadius: 16, borderCurve: 'continuous' },
+  addRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 18, paddingRight: 4, minHeight: 52, borderRadius: 999, borderCurve: 'continuous' },
+  quick: { gap: 8, paddingHorizontal: 16, paddingVertical: 4 },
+  emptyCard: { borderRadius: 24, marginTop: 4, borderCurve: 'continuous' },
+  hidden: { position: 'absolute', width: 1, height: 1, opacity: 0 },
+  cookBand: { marginTop: 36, marginHorizontal: -16, paddingHorizontal: 16, paddingVertical: 24 },
+  meterRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   addInput: { flex: 1, minHeight: 48, outlineStyle: 'none' } as never,
-  addBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  addBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   label: { marginTop: 16 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
@@ -267,5 +266,5 @@ const styles = StyleSheet.create({
   locked: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 },
   match: { marginBottom: 12 },
   matchTop: { flexDirection: 'row', gap: 12, alignItems: 'center' },
-  thumb: { width: 64, height: 64, borderRadius: 14, overflow: 'hidden' },
+  thumb: { width: 92, height: 92, borderRadius: 16, overflow: 'hidden', borderCurve: 'continuous' },
 });

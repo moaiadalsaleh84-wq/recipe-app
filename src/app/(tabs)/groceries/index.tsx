@@ -2,11 +2,11 @@ import { router } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Share, StyleSheet, Text, TextInput, View } from 'react-native';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
-import Animated, { FadeIn, FadeOut, LinearTransition, useAnimatedStyle, type SharedValue } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeOut, LinearTransition, useAnimatedStyle, type SharedValue } from 'react-native-reanimated';
 import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
 import { useToast } from '../../../components/Toast';
-import { Button, CheckCircle, EmptyState, HeaderButton, IconButton, ProgressBar, Section, Separator } from '../../../components/ui';
+import { CheckCircle, EmptyState, HeaderButton, IconButton, Ring, Section, Separator } from '../../../components/ui';
 import { aisleOrder, type GroceryItem } from '../../../data/mock';
 import { haptics } from '../../../lib/haptics';
 import { plainFractions } from '../../../lib/qty';
@@ -75,11 +75,44 @@ export default function GroceriesScreen() {
   };
 
 
+  const fromRecipes = new Set(groceries.flatMap((g) => g.recipeIds)).size;
+  const own = groceries.filter((g) => g.recipeIds.length === 0).length;
+  const toBuy = total - done;
+
   return (
-    <TabScreen title="Groceries" right={headerRight} keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled">
+    <TabScreen title="Grocery list" kicker={total === 0 ? 'Nothing to buy yet' : toBuy === 0 ? 'All done' : `${toBuy} ${toBuy === 1 ? 'thing' : 'things'} to buy`} right={headerRight} keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled">
+      {/* Where you are: a ring that fills as items go in the basket */}
+      {total > 0 && (
+        <View style={[styles.hero, { backgroundColor: done === total ? t.colors.successSoft : t.colors.cell, borderColor: done === total ? t.colors.successSoft : t.colors.border }, done !== total && t.chunky.card]}>
+          <Ring value={done / total} size={64} stroke={7} label="Shopping progress">
+            {done === total ? (
+              <Icon name="check" size={24} color={t.colors.success} weight="bold" />
+            ) : (
+              <Text style={[t.type.headline, { color: t.colors.label, fontVariant: ['tabular-nums'] }]}>
+                {done}/{total}
+              </Text>
+            )}
+          </Ring>
+          <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
+            <Text style={[t.type.title3, { color: t.colors.label }]} testID="grocery-progress">
+              {done === total ? 'Everything’s in the basket' : `${done} of ${total} in your basket`}
+            </Text>
+            <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
+              {done === total
+                ? 'Nice shopping. Clear the list when you’re ready.'
+                : [fromRecipes ? `From ${fromRecipes} ${fromRecipes === 1 ? 'recipe' : 'recipes'}` : '', own ? `${own} of your own` : ''].filter(Boolean).join(' · ')}
+            </Text>
+            {done > 0 && (
+            <PressableScale onPress={clearDone} hitSlop={6} accessibilityLabel={`Clear ${done} completed ${done === 1 ? 'item' : 'items'}`} style={[styles.clear, { backgroundColor: done === total ? t.colors.success : t.colors.fill }]}>
+              <Text style={[t.type.footnote, { color: done === total ? '#FFFFFF' : t.colors.label, fontFamily: t.fonts.bold }]}>Clear done</Text>
+            </PressableScale>
+            )}
+          </View>
+        </View>
+      )}
 
       {/* Quick add */}
-      <View style={[styles.addRow, { backgroundColor: t.colors.cell, borderRadius: 16, ...t.chunky.card }]}>
+      <View style={[styles.addRow, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
         <Icon name="plus" size={18} color={t.colors.tint} weight="bold" />
         <TextInput
           value={draft}
@@ -95,7 +128,7 @@ export default function GroceriesScreen() {
         {draft.trim().length > 0 && (
           <Animated.View entering={FadeIn.duration(150)} exiting={FadeOut.duration(150)}>
             <PressableScale onPress={add} accessibilityLabel="Add item to list" style={[styles.addButton, { backgroundColor: t.colors.tintFill }]}>
-              <Text style={[t.type.subhead, { color: t.colors.onTint, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>Add</Text>
+              <Text style={[t.type.subhead, { color: t.colors.onTint, fontFamily: t.fonts.bold }]}>Add</Text>
             </PressableScale>
           </Animated.View>
         )}
@@ -104,62 +137,34 @@ export default function GroceriesScreen() {
       {total === 0 ? (
         <EmptyState
           icon="cart"
+          photos={['butter-chicken', 'pepper-feta-penne', 'apple-turnovers']}
           title="Your list is empty"
           message="Add items here, or add a recipe’s ingredients from its page or your weekly plan."
           action={{ label: 'Browse recipes', icon: 'book', onPress: () => router.navigate('/') }}
         />
       ) : (
         <>
-          {done === total ? (
-            // Everything is in the basket: one celebration, then the clear next step.
-            <View style={[styles.done, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
-              <View style={styles.doneTop}>
-                <View style={[styles.doneIcon, { backgroundColor: t.colors.successSoft }]}>
-                  <Icon name="check" size={22} color={t.colors.success} weight="bold" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[t.type.title3, { color: t.colors.label }]}>Everything’s in the basket</Text>
-                  <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]}>Nice shopping. Clear the list when you’re ready.</Text>
-                </View>
+          {/* Each aisle on its own card, with its name and count above it */}
+          {groups.map((g, gi) => (
+            <Animated.View key={g.aisle} layout={LinearTransition.duration(220)} entering={FadeInDown.duration(300).delay(gi * 50)}>
+              <View style={styles.aisleHead}>
+                <Text style={[t.type.headline, { color: t.colors.label }]} accessibilityRole="header">
+                  {g.aisle}
+                </Text>
+                <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
+                  {g.items.filter((i) => !i.checked).length ? `${g.items.filter((i) => !i.checked).length} left` : 'Done'}
+                </Text>
               </View>
-              <Button label="Clear done" icon="check" variant="success" onPress={clearDone} accessibilityLabel={`Clear ${done} completed items`} />
-            </View>
-          ) : (
-            <>
-              <View style={styles.progressWrap}>
-                <View style={styles.progressTop}>
-                  <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, flex: 1 }]} testID="grocery-progress">
-                    {done} of {total} in your basket
-                  </Text>
-                  {done > 0 && (
-                    <PressableScale onPress={clearDone} accessibilityLabel={`Clear ${done} completed items`} style={styles.clear}>
-                      <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>Clear done</Text>
-                    </PressableScale>
-                  )}
-                </View>
-                <ProgressBar value={done / total} height={12} label="Shopping progress" />
-              </View>
-            </>
-          )}
-
-          {/* One continuous list, with a small header for each aisle */}
-          <Section>
-            {groups.map((g, gi) => (
-              <Animated.View key={g.aisle} layout={LinearTransition.duration(220)}>
-                <View style={[styles.aisle, gi > 0 && { borderTopWidth: StyleSheet.hairlineWidth * 2, borderTopColor: t.colors.separator }, { backgroundColor: t.colors.fill }]}>
-                  <Text style={[t.type.subhead, { color: t.colors.label, fontFamily: t.fonts.display, fontWeight: 'normal' }]} accessibilityRole="header">
-                    {g.aisle}
-                  </Text>
-                </View>
+              <Section>
                 {g.items.map((item, i) => (
                   <Animated.View key={item.key} layout={LinearTransition.duration(220)} entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)}>
                     {i > 0 && <Separator inset={60} />}
                     <GroceryRow item={item} onToggle={() => toggle(item)} onDelete={() => remove(item)} />
                   </Animated.View>
                 ))}
-              </Animated.View>
-            ))}
-          </Section>
+              </Section>
+            </Animated.View>
+          ))}
           <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, textAlign: 'center' }]}>Swipe left on an item to delete it.</Text>
         </>
       )}
@@ -246,16 +251,18 @@ function DeleteAction({ progress, label, onPress }: { progress: SharedValue<numb
 }
 
 const styles = StyleSheet.create({
-  addRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 16, paddingRight: 4, minHeight: 50, borderCurve: 'continuous' },
+  hero: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14, borderRadius: 24, borderWidth: 1, marginBottom: 14, borderCurve: 'continuous' },
+  aisleHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 22, marginBottom: 8, paddingHorizontal: 4 },
+  addRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 18, paddingRight: 4, minHeight: 52, borderRadius: 999, borderCurve: 'continuous' },
   addInput: { flex: 1, paddingVertical: 12, outlineStyle: 'none' } as never,
-  addButton: { minHeight: 40, paddingHorizontal: 16, borderRadius: 12, justifyContent: 'center', borderCurve: 'continuous' },
+  addButton: { minHeight: 44, paddingHorizontal: 18, borderRadius: 999, justifyContent: 'center', borderCurve: 'continuous' },
   progressWrap: { gap: 4, marginTop: 16, marginBottom: 16 },
   doneTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   doneIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   done: { marginTop: 16, marginBottom: 24, padding: 16, gap: 16, borderRadius: 20, borderCurve: 'continuous' },
   aisle: { paddingHorizontal: 16, paddingVertical: 8, minHeight: 36, justifyContent: 'center' },
   progressTop: { flexDirection: 'row', alignItems: 'center', minHeight: 44 },
-  clear: { minHeight: 44, justifyContent: 'center', paddingLeft: 12 },
+  clear: { alignSelf: 'flex-start', minHeight: 40, justifyContent: 'center', paddingHorizontal: 14, borderRadius: 999, marginTop: 6 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12, minHeight: 60 },
   struck: { textDecorationLine: 'line-through' },
   delete: { width: 80, height: '100%' },

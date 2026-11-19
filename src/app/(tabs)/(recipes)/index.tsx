@@ -1,8 +1,8 @@
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState } from 'react';
 import { Linking, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
-import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeInRight, LinearTransition } from 'react-native-reanimated';
 import { Chunky } from '../../../components/Chunky';
 import { Icon } from '../../../components/Icon';
 import { Menu } from '../../../components/Menu';
@@ -10,7 +10,7 @@ import { PressableScale } from '../../../components/PressableScale';
 import { FeaturedCard, RecipeCard, RecipePhoto } from '../../../components/RecipeCard';
 import { TabScreen } from '../../../components/TabScreen';
 import { useToast } from '../../../components/Toast';
-import { Chip, EmptyState, HeaderButton, IconButton, SearchField } from '../../../components/ui';
+import { Chip, EmptyState, HeaderButton, IconButton, SearchField, SectionHeader } from '../../../components/ui';
 import { FAVORITES_ID, QUICK_FILTER, categories, filterTags, matchesFilter, type Recipe } from '../../../data/mock';
 import { haptics } from '../../../lib/haptics';
 import { showPaywall, useProGate } from '../../../lib/pro';
@@ -123,15 +123,12 @@ export default function RecipesScreen() {
   return (
     <TabScreen
       maxWidth={900}
-      title="Recipes"
+      title="What’s cooking?"
+      kicker={greeting(firstName)}
       right={<HeaderButton icon="plus" onPress={() => setMenuOpen(true)} accessibilityLabel="Add a recipe" />}
       keyboardDismissMode="on-drag"
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={[t.type.callout, { color: t.colors.secondaryLabel, marginTop: -4, marginBottom: t.spacing.md }]} testID="greeting">
-        {greeting(firstName)}
-      </Text>
-
       {showTrialReminder && (
         <View style={[styles.reminder, { backgroundColor: t.colors.rewardSoft, borderColor: t.colors.reward }]} accessibilityRole="alert">
           <Icon name="crown" size={18} color={t.colors.rewardText} />
@@ -188,29 +185,32 @@ export default function RecipesScreen() {
         {/* 4. Tonight's dinner from the plan, or the recipe of the day */}
         {showExtras && featured && (
           <>
-            <SectionHeader title={tonight ? 'On the menu tonight' : 'Recipe of the day'}>
-              <Chip label="Surprise me" icon="shuffle" toggle={false} accessibilityLabel="Can't decide? Pick a random recipe" onPress={() => router.push('/buddy-pick')} />
-            </SectionHeader>
+            <SectionHeader
+              title={tonight ? 'Tonight' : 'Today’s pick'}
+              subtitle={tonight ? 'Dinner from your meal plan' : 'A new recipe every day'}
+              right={<Chip label="Surprise me" icon="shuffle" toggle={false} accessibilityLabel="Can't decide? Pick a random recipe" onPress={() => router.push('/buddy-pick')} />}
+            />
             <FeaturedCard recipe={featured} label={tonight ? 'On the menu tonight' : 'Recipe of the day'} />
           </>
         )}
 
         {/* 5. Rows that come from what you've done */}
-        {showExtras && cookAgain.length > 0 && <Rail title="Cook again" recipes={cookAgain} width={railWidth} />}
+        {showExtras && cookAgain.length > 0 && <Rail title="Cook again" subtitle="Dishes you’ve made before" recipes={cookAgain} width={railWidth} />}
         {showExtras && recentlySaved.length > 0 && (
           <Rail
             title="Recently saved"
+            subtitle="Your newest favorites"
             recipes={recentlySaved}
             width={railWidth}
             action={{ label: 'See all', onPress: () => router.push({ pathname: '/cookbook/[id]', params: { id: FAVORITES_ID } }) }}
           />
         )}
-        {showExtras && quick.length > 1 && <Rail title="Quick meals" recipes={quick} width={railWidth} action={{ label: 'See all', onPress: () => showOnlyTag(QUICK_FILTER) }} />}
+        {showExtras && quick.length > 1 && <Rail title="Quick meals" subtitle="Ready in 30 minutes or less" recipes={quick} width={railWidth} action={{ label: 'See all', onPress: () => showOnlyTag(QUICK_FILTER) }} />}
 
-        {/* 6. Cookbooks, in a sideways row */}
+        {/* 6. Cookbooks, on their own soft band so the section stands apart */}
         {showExtras && (
-          <>
-            <SectionHeader title="Cookbooks" />
+          <View style={[styles.band, { marginHorizontal: -margin, paddingHorizontal: margin, backgroundColor: t.isDark ? t.colors.cell : t.colors.imagePlaceholder }]}>
+            <SectionHeader title="Cookbooks" subtitle={`${books.length} ${books.length === 1 ? 'collection' : 'collections'}`} style={{ marginTop: 0 }} />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -margin }} contentContainerStyle={[styles.rail, { paddingHorizontal: margin, gap: t.spacing.sm }]}>
               {books.map((b) => (
                 <CookbookTile key={b.id} id={b.id} name={b.name} width={railWidth} recipes={b.recipeIds.map((id) => getRecipe(id)).filter((r): r is Recipe => !!r)} />
@@ -223,18 +223,21 @@ export default function RecipesScreen() {
                 <View style={[styles.newIcon, { backgroundColor: t.colors.tintSoft }]}>
                   <Icon name="plus" size={20} color={t.colors.tint} weight="bold" />
                 </View>
-                <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: 'normal', fontFamily: t.fonts.rounded }]}>New cookbook</Text>
+                <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.bold }]}>New cookbook</Text>
               </PressableScale>
             </ScrollView>
-          </>
+          </View>
         )}
 
         {/* 7. All recipes */}
-        <SectionHeader title={q ? 'Results' : hasFilters ? 'Filtered' : 'All recipes'}>
-          <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]} testID="result-count">
-            {countLabel}
-          </Text>
-        </SectionHeader>
+        <SectionHeader
+          title={q ? 'Results' : hasFilters ? 'Filtered' : 'All recipes'}
+          right={
+            <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, marginBottom: 4 }]} testID="result-count">
+              {countLabel}
+            </Text>
+          }
+        />
         {filtered.length > 1 && (
           <PressableScale onPress={() => setSortOpen(true)} accessibilityLabel={`Sort recipes. Now: ${SORTS.find((s) => s.value === sort)?.label}`} style={styles.sortBtn} scaleTo={0.96}>
             <Icon name="sort" size={15} color={t.colors.tint} weight="semibold" />
@@ -260,8 +263,8 @@ export default function RecipesScreen() {
           />
         ) : (
           <View style={[styles.grid, { gap, rowGap: t.spacing.xl }]}>
-            {sorted.map((r) => (
-              <Animated.View key={r.id} layout={LinearTransition.duration(220)} entering={FadeIn.duration(200)}>
+            {sorted.map((r, i) => (
+              <Animated.View key={r.id} layout={LinearTransition.duration(220)} entering={FadeInDown.duration(320).delay(Math.min(i, 8) * 45)}>
                 <RecipeCard recipe={r} width={cardWidth} />
               </Animated.View>
             ))}
@@ -314,40 +317,27 @@ export default function RecipesScreen() {
   );
 }
 
-function SectionHeader({ title, children }: { title: string; children?: ReactNode }) {
-  const t = useTheme();
-  return (
-    <View style={styles.sectionHeader}>
-      <Text style={[t.type.title2, { color: t.colors.label, flex: 1 }]} accessibilityRole="header">
-        {title}
-      </Text>
-      {children}
-    </View>
-  );
-}
-
-/** A titled row of recipe cards that scrolls sideways. */
-function Rail({ title, recipes, width, action }: { title: string; recipes: Recipe[]; width: number; action?: { label: string; onPress: () => void } }) {
+/** A titled row of recipe cards that scrolls sideways. The cards slide in one after another. */
+function Rail({ title, subtitle, recipes, width, action }: { title: string; subtitle?: string; recipes: Recipe[]; width: number; action?: { label: string; onPress: () => void } }) {
   const t = useTheme();
   return (
     <>
-      <SectionHeader title={title}>
-        {action && (
-          <PressableScale onPress={action.onPress} accessibilityLabel={`${action.label}: ${title}`} style={styles.linkBtn}>
-            <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>{action.label}</Text>
-          </PressableScale>
-        )}
-      </SectionHeader>
+      <SectionHeader title={title} subtitle={subtitle} action={action} />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -t.layout.screen }} contentContainerStyle={[styles.rail, { paddingHorizontal: t.layout.screen, gap: t.spacing.sm }]}>
-        {recipes.map((r) => (
-          <RecipeCard key={r.id} recipe={r} width={width} />
+        {recipes.map((r, i) => (
+          <Animated.View key={r.id} entering={FadeInRight.duration(360).delay(i * 60)}>
+            <RecipeCard recipe={r} width={width} />
+          </Animated.View>
         ))}
       </ScrollView>
     </>
   );
 }
 
-/** Paste a link from TikTok, Instagram, YouTube or a recipe site. Opens the import screen, which reads it. */
+/**
+ * The app's signature card: paste a link from TikTok, Instagram, YouTube or a recipe site.
+ * Opens the import screen, which reads it.
+ */
 function ImportBox({ onImport }: { onImport: (url?: string) => void }) {
   const t = useTheme();
   const toast = useToast();
@@ -365,23 +355,23 @@ function ImportBox({ onImport }: { onImport: (url?: string) => void }) {
     }
   };
   return (
-    <View style={[styles.importBox, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]} testID="import-box">
+    <View style={[styles.importBox, { backgroundColor: t.colors.tintFill, borderRadius: t.radius.xl, ...t.shadow.card }]} testID="import-box">
       <View style={styles.importHead}>
-        <View style={[styles.importIcon, { backgroundColor: t.colors.tintSoft }]}>
-          <Icon name="link" size={18} color={t.colors.tint} weight="semibold" />
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={[t.type.title2, { color: '#FFFFFF' }]}>Save a recipe from a link</Text>
+          <Text style={[t.type.subhead, { color: 'rgba(255,255,255,0.86)' }]}>TikTok, Instagram, YouTube or any recipe site</Text>
         </View>
-        <View style={{ flex: 1 }}>
-          <Text style={[t.type.headline, { color: t.colors.label }]}>Save a recipe from a link</Text>
-          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>TikTok, Instagram, YouTube or a recipe site</Text>
+        <View style={styles.importIcon}>
+          <Icon name="link" size={20} color="#FFFFFF" weight="bold" />
         </View>
       </View>
-      <View style={[styles.importField, { backgroundColor: t.colors.fill, borderRadius: t.radius.md }]}>
+      <View style={styles.importField}>
         <TextInput
           value={link}
           onChangeText={setLink}
           placeholder="Paste a link"
-          placeholderTextColor={t.colors.tertiaryLabel}
-          style={[t.type.body, styles.importInput, { color: t.colors.label }]}
+          placeholderTextColor="rgba(255,255,255,0.75)"
+          style={[t.type.body, styles.importInput, { color: '#FFFFFF' }]}
           autoCapitalize="none"
           autoCorrect={false}
           keyboardType="url"
@@ -391,30 +381,23 @@ function ImportBox({ onImport }: { onImport: (url?: string) => void }) {
         />
         {!value && (
           <PressableScale onPress={paste} accessibilityLabel="Paste link from clipboard" style={styles.pasteBtn}>
-            <Icon name="paste" size={15} color={t.colors.tint} weight="semibold" />
-            <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>Paste</Text>
+            <Icon name="paste" size={15} color="#FFFFFF" weight="semibold" />
+            <Text style={[t.type.subhead, { color: '#FFFFFF', fontFamily: t.fonts.bold }]}>Paste</Text>
           </PressableScale>
         )}
+        <Chunky onPress={() => onImport(value || undefined)} accessibilityLabel={value ? 'Import recipe' : 'Open recipe import'} face={t.colors.reward} faceStyle={styles.importBtn}>
+          <Text style={[t.type.subhead, { color: t.colors.onReward, fontFamily: t.fonts.extrabold }]}>Import</Text>
+          <Icon name="arrowRight" size={14} color={t.colors.onReward} weight="bold" />
+        </Chunky>
       </View>
-      <Chunky
-        onPress={() => onImport(value || undefined)}
-        accessibilityLabel={value ? 'Import recipe' : 'Open recipe import'}
-        face={t.colors.tintFill}
-        lip={t.colors.tintDeep}
-        depth={t.depth.small}
-        radius={t.radius.md}
-        faceStyle={styles.importBtn}
-      >
-        <Icon name="arrowRight" size={17} color={t.colors.onTint} weight="bold" />
-        <Text style={[t.type.button, { color: t.colors.onTint, fontSize: 17 }]}>Import recipe</Text>
-      </Chunky>
     </View>
   );
 }
 
+/** A cookbook cover: up to four food photos as a collage, then its name and size. */
 function CookbookTile({ id, name, recipes, width }: { id: string; name: string; recipes: Recipe[]; width: number }) {
   const t = useTheme();
-  const covers = recipes.slice(0, 2);
+  const covers = recipes.slice(0, 4);
   const empty = covers.length === 0;
   const fav = id === FAVORITES_ID;
   return (
@@ -425,49 +408,57 @@ function CookbookTile({ id, name, recipes, width }: { id: string; name: string; 
     >
       <View style={[styles.covers, { backgroundColor: empty ? t.colors.tintSoft : t.colors.imagePlaceholder }]}>
         {empty ? (
-          <Icon name={fav ? 'heart' : 'book'} size={28} color={t.colors.tint} weight="semibold" />
+          <Icon name={fav ? 'heart' : 'book'} size={30} color={t.colors.tint} weight="semibold" />
         ) : (
-          covers.map((r) => (
-            <View key={r.id} style={styles.cover}>
-              <RecipePhoto recipe={r} iconSize={16} />
-            </View>
-          ))
+          covers.map((r, i) => {
+            // One photo fills the cover; two side by side; three: one wide on top and two below; four as a grid.
+            const w = width - 12;
+            const n = covers.length;
+            const wide = n === 1 || (n === 3 && i === 0);
+            const size = { width: wide ? w : w / 2, height: n <= 2 ? COVER_H : COVER_H / 2 };
+            return (
+              <View key={r.id} style={[size, { overflow: 'hidden' }]}>
+                <RecipePhoto recipe={r} iconSize={16} />
+              </View>
+            );
+          })
         )}
       </View>
       <View style={styles.bookText}>
         {fav && <Icon name="heartFill" size={14} color={t.colors.accent} />}
-        <Text style={[t.type.headline, { color: t.colors.label, fontSize: 16, flexShrink: 1 }]} numberOfLines={1}>
+        <Text style={[t.type.title3, { color: t.colors.label, fontSize: 17, flexShrink: 1 }]} numberOfLines={1}>
           {name}
         </Text>
       </View>
       <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, paddingHorizontal: 12 }]} numberOfLines={1}>
-        {empty ? (fav ? 'Tap ♥ to save' : 'Nothing yet') : `${recipes.length} ${recipes.length === 1 ? 'recipe' : 'recipes'}`}
+        {empty ? (fav ? 'Tap ♥ on a recipe to save it' : 'Nothing yet') : `${recipes.length} ${recipes.length === 1 ? 'recipe' : 'recipes'}`}
       </Text>
     </PressableScale>
   );
 }
 
+/** Height of a cookbook cover collage. */
+const COVER_H = 120;
+
 const styles = StyleSheet.create({
   reminder: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 16, paddingRight: 4, paddingVertical: 8, borderRadius: 20, borderWidth: 1.5, marginBottom: 16, borderCurve: 'continuous' },
   reminderBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 28, marginBottom: 12, minHeight: 44 },
-  linkBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 4 },
-  sortBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', minHeight: 44, marginTop: -12, marginBottom: 8 },
+  band: { marginTop: 36, paddingVertical: 24 },
+  sortBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', minHeight: 44, marginTop: -10, marginBottom: 8 },
   rail: { paddingBottom: 4 },
   book: { borderCurve: 'continuous', paddingBottom: 12, minHeight: 164 },
   newBook: { alignItems: 'center', justifyContent: 'center', gap: 8, paddingTop: 12 },
   newIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  covers: { height: 96, margin: 8, borderRadius: 12, overflow: 'hidden', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
-  cover: { flex: 1, height: '100%' },
-  bookText: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, marginTop: 2 },
+  covers: { height: COVER_H, margin: 6, borderRadius: 16, overflow: 'hidden', flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
+  bookText: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, marginTop: 6 },
   chips: { gap: 8, paddingVertical: 4, alignItems: 'center', minHeight: 52 },
   chipDivider: { width: 2, height: 24, marginHorizontal: 4, borderRadius: 1 },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
-  importBox: { padding: 16, gap: 12, borderCurve: 'continuous' },
-  importHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  importIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  importField: { flexDirection: 'row', alignItems: 'center', minHeight: 48, paddingLeft: 14, paddingRight: 4, borderCurve: 'continuous' },
+  importBox: { padding: 18, gap: 16, borderCurve: 'continuous' },
+  importHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  importIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.16)' },
+  importField: { flexDirection: 'row', alignItems: 'center', minHeight: 52, paddingLeft: 18, paddingRight: 4, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.14)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.22)', borderCurve: 'continuous' },
   importInput: { flex: 1, minWidth: 0, alignSelf: 'stretch', minHeight: 44, paddingVertical: 0, outlineStyle: 'none' } as never,
   pasteBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 10 },
-  importBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 48 },
+  importBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 44, paddingHorizontal: 16 },
 });

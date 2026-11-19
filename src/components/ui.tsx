@@ -16,6 +16,9 @@ import Animated, {
 import type { HapticKind } from '../lib/haptics';
 import { noWidow } from '../lib/text';
 import { useTheme } from '../theme';
+import { Image } from 'expo-image';
+import Svg, { Circle } from 'react-native-svg';
+import { recipes as builtInRecipes, type RecipeImage } from '../data/mock';
 import { Mascot, MASCOT_ON } from './mascot/Mascot';
 import type { Mood } from './mascot/moods';
 import { Icon, type IconName } from './Icon';
@@ -270,6 +273,27 @@ export function ProgressBar({ value, color, track, height = 8, label }: { /** 0 
   );
 }
 
+/* ---------- Progress ring ---------- */
+
+/** A ring that fills clockwise, with anything in the middle (a count, an icon, a level). */
+export function Ring({ value, size = 56, stroke = 6, color, track, children, label }: { /** 0 to 1 */ value: number; size?: number; stroke?: number; color?: string; track?: string; children?: ReactNode; label?: string }) {
+  const t = useTheme();
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const pct = Math.max(0, Math.min(1, value));
+  return (
+    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }} accessibilityRole="progressbar" accessibilityLabel={label} accessibilityValue={{ min: 0, max: 100, now: Math.round(pct * 100) }}>
+      <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
+        <Circle cx={size / 2} cy={size / 2} r={r} stroke={track ?? t.colors.fillStrong} strokeWidth={stroke} fill="none" />
+        {pct > 0 && (
+          <Circle cx={size / 2} cy={size / 2} r={r} stroke={color ?? t.colors.success} strokeWidth={stroke} fill="none" strokeLinecap="round" strokeDasharray={`${c * pct} ${c}`} transform={`rotate(-90 ${size / 2} ${size / 2})`} />
+        )}
+      </Svg>
+      {children}
+    </View>
+  );
+}
+
 /* ---------- Skeleton ---------- */
 
 export function Skeleton({ style }: { style?: StyleProp<ViewStyle> }) {
@@ -283,6 +307,63 @@ export function Skeleton({ style }: { style?: StyleProp<ViewStyle> }) {
   return <Animated.View style={[{ backgroundColor: t.colors.fill, borderRadius: t.radius.sm, borderCurve: 'continuous' }, style, animated]} />;
 }
 
+/* ---------- Photo stack: three real food photos, fanned out (empty states, welcomes) ---------- */
+
+const STACK_DEFAULT = ['pepper-feta-penne', 'masala-dosa', 'chicken-fried-rice'];
+
+/** Three food photos laid like prints on a table: real photography instead of an icon. */
+export function PhotoStack({ ids = STACK_DEFAULT, size = 96 }: { ids?: string[]; size?: number }) {
+  const t = useTheme();
+  const reduceMotion = useReducedMotion();
+  const photos = ids
+    .map((id) => builtInRecipes.find((r) => r.id === id)?.image)
+    .filter((img): img is Exclude<RecipeImage, null> => !!img)
+    .slice(0, 3);
+  // The outer prints settle into place once, with a small spring.
+  const spread = useSharedValue(reduceMotion ? 1 : 0);
+  useEffect(() => {
+    if (!reduceMotion) spread.set(withSpring(1, { damping: 13, stiffness: 140, mass: 0.8 }));
+  }, [reduceMotion, spread]);
+  const left = useAnimatedStyle(() => ({ transform: [{ translateX: -size * 0.55 * spread.get() }, { rotate: `${-10 * spread.get()}deg` }] }));
+  const right = useAnimatedStyle(() => ({ transform: [{ translateX: size * 0.55 * spread.get() }, { rotate: `${10 * spread.get()}deg` }] }));
+  const print = (img: Exclude<RecipeImage, null>) => (
+    <View style={[styles.print, { width: size, height: size * 1.15, backgroundColor: t.colors.cell, borderColor: t.colors.border, ...t.shadow.card }]}>
+      <Image source={img} style={styles.printPhoto} contentFit="cover" accessibilityIgnoresInvertColors />
+    </View>
+  );
+  if (photos.length < 3) return null;
+  return (
+    <View style={{ width: size * 2.3, height: size * 1.3, alignItems: 'center', justifyContent: 'center' }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <Animated.View style={[StyleSheet.absoluteFill, styles.center, left]}>{print(photos[0])}</Animated.View>
+      <Animated.View style={[StyleSheet.absoluteFill, styles.center, right]}>{print(photos[2])}</Animated.View>
+      <View style={[StyleSheet.absoluteFill, styles.center]}>{print(photos[1])}</View>
+    </View>
+  );
+}
+
+/* ---------- Section header: the same hierarchy on every screen ---------- */
+
+export function SectionHeader({ title, subtitle, action, right, style }: { title: string; subtitle?: string; action?: { label: string; onPress: () => void }; right?: ReactNode; style?: StyleProp<ViewStyle> }) {
+  const t = useTheme();
+  return (
+    <View style={[styles.sh, style]}>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={[t.type.title2, { color: t.colors.label }]} accessibilityRole="header">
+          {title}
+        </Text>
+        {subtitle ? <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]}>{subtitle}</Text> : null}
+      </View>
+      {action && (
+        <PressableScale onPress={action.onPress} accessibilityLabel={`${action.label}: ${title}`} style={styles.shAction}>
+          <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.bold }]}>{action.label}</Text>
+          <Icon name="chevronRight" size={12} color={t.colors.tint} weight="bold" />
+        </PressableScale>
+      )}
+      {right}
+    </View>
+  );
+}
+
 /* ---------- Empty state ---------- */
 
 export function EmptyState({
@@ -291,6 +372,7 @@ export function EmptyState({
   message,
   action,
   cat,
+  photos,
 }: {
   icon: IconName;
   title: string;
@@ -298,12 +380,18 @@ export function EmptyState({
   action?: { label: string; onPress: () => void; icon?: IconName };
   /** Show Biscuit acting out the empty state instead of an icon: pass the mood. */
   cat?: Mood;
+  /** Show three food photos (by recipe id) instead of the icon. */
+  photos?: string[] | true;
 }) {
   const t = useTheme();
   return (
     <View style={styles.empty} accessibilityRole="summary">
       {cat && MASCOT_ON ? (
         <Mascot mood={cat} size={132} />
+      ) : photos ? (
+        <View style={{ marginBottom: 12 }}>
+          <PhotoStack ids={photos === true ? undefined : photos} />
+        </View>
       ) : (
         <View style={[styles.emptyIcon, { backgroundColor: t.colors.cell, borderColor: t.colors.border, ...t.chunky.lip }]}>
           <View style={[styles.emptyIconInner, { backgroundColor: t.colors.tintSoft }]}>
@@ -312,12 +400,12 @@ export function EmptyState({
         </View>
       )}
       <Text style={[t.type.title2, { color: t.colors.label, textAlign: 'center' }]}>{title}</Text>
-      <Text style={[t.type.subhead, t.noWidows.style, { color: t.colors.secondaryLabel, textAlign: 'center', maxWidth: 280 }]} {...t.noWidows.props}>
+      <Text style={[t.type.callout, t.noWidows.style, { color: t.colors.secondaryLabel, textAlign: 'center', maxWidth: 290 }]} {...t.noWidows.props}>
         {noWidow(message)}
       </Text>
       {action && (
         // Its own row, so the button's size never depends on the text above it.
-        <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 8 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 10 }}>
           <Button label={action.label} icon={action.icon} onPress={action.onPress} variant="filled" size="medium" style={{ alignSelf: 'auto' }} />
         </View>
       )}
@@ -404,7 +492,12 @@ const styles = StyleSheet.create({
   // Rounded squares: the tick pops in on a basil fill.
   check: { width: 28, height: 28, borderRadius: 9, borderWidth: 2, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
   checkFill: { width: 28, height: 28, borderRadius: 9, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
-  empty: { alignItems: 'center', gap: 10, paddingVertical: 48, paddingHorizontal: 32 },
+  empty: { alignItems: 'center', gap: 8, paddingVertical: 40, paddingHorizontal: 24 },
+  print: { borderRadius: 18, borderWidth: 1, padding: 5, paddingBottom: 14, borderCurve: 'continuous' },
+  printPhoto: { flex: 1, borderRadius: 13 },
+  center: { alignItems: 'center', justifyContent: 'center' },
+  sh: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginTop: 32, marginBottom: 14, minHeight: 44 },
+  shAction: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 44, paddingLeft: 8 },
   emptyIcon: { width: 96, height: 96, borderRadius: 48, borderWidth: 1, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   emptyIconInner: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center' },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, minHeight: 28 },
