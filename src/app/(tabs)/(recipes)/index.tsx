@@ -2,7 +2,7 @@ import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Linking, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
-import Animated, { FadeIn, FadeInDown, FadeInRight, LinearTransition } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeInRight, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { Chunky } from '../../../components/Chunky';
 import { Icon } from '../../../components/Icon';
 import { Menu } from '../../../components/Menu';
@@ -53,6 +53,19 @@ export default function RecipesScreen() {
   const showTrialReminder = !reminderHidden && trialDaysLeft !== null && trialDaysLeft >= 0 && trialDaysLeft <= 2;
 
   const q = query.trim().toLowerCase();
+  // Popular searches, shown while the empty search box is focused. Only words that find recipes.
+  const [searchFocused, setSearchFocused] = useState(false);
+  const popular = useMemo(
+    () =>
+      POPULAR_SEARCHES.map((word) => {
+        const w = word.toLowerCase();
+        const hit = allRecipes.find((r) => r.title.toLowerCase().includes(w) || r.ingredients.some((i) => i.name.toLowerCase().includes(w)));
+        return hit ? { word, recipe: hit } : null;
+      })
+        .filter((x): x is { word: string; recipe: Recipe } => !!x)
+        .slice(0, 6),
+    [allRecipes],
+  );
   const filtered = useMemo(
     () =>
       allRecipes.filter(
@@ -157,8 +170,34 @@ export default function RecipesScreen() {
 
       {/* 2. Search */}
       <Reveal index={1}>
-        <SearchField value={query} onChangeText={setQuery} placeholder="Search recipes or ingredients" style={{ marginTop: showExtras ? t.spacing.md : 0 }} />
+        <SearchField
+          value={query}
+          onChangeText={setQuery}
+          placeholder="What would you like to cook?"
+          accessibilityLabel="Search recipes or ingredients"
+          onFocus={() => setSearchFocused(true)}
+          // A short delay, so tapping a popular search still lands before the row hides.
+          onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
+          style={{ marginTop: showExtras ? t.spacing.md : 0 }}
+        />
       </Reveal>
+      {searchFocused && !q && popular.length > 0 && (
+        <Animated.View entering={FadeIn.duration(180)} exiting={FadeOut.duration(120)} style={styles.popular} testID="popular-searches">
+          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, fontFamily: t.fonts.semibold }]}>Popular searches</Text>
+          <View style={styles.popularRow}>
+            {popular.map(({ word }) => (
+              <Chip
+                key={word}
+                label={word}
+                toggle={false}
+                accessibilityLabel={`Search for ${word.toLowerCase()}`}
+                icon="search"
+                onPress={() => setQuery(word)}
+              />
+            ))}
+          </View>
+        </Animated.View>
+      )}
 
       {/* 3. Filters: one category at a time, any number of tags. The row scrolls sideways. */}
       <ScrollView
@@ -458,6 +497,9 @@ function CookbookTile({ id, name, recipes, width }: { id: string; name: string; 
   );
 }
 
+/** Searches offered under the search box. Words that find no recipe are left out. */
+const POPULAR_SEARCHES = ['Chicken', 'Pasta', 'Rice', 'Cheese', 'Potato', 'Mushroom', 'Egg', 'Tomato'];
+
 /** Height of a cookbook cover collage. */
 const COVER_H = 120;
 
@@ -471,6 +513,8 @@ const styles = StyleSheet.create({
   newIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   covers: { height: COVER_H, margin: 6, borderRadius: 16, overflow: 'hidden', flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
   bookText: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, marginTop: 6 },
+  popular: { gap: 8, marginTop: 12 },
+  popularRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chips: { gap: 8, paddingVertical: 4, alignItems: 'center', minHeight: 52 },
   chipDivider: { width: 2, height: 24, marginHorizontal: 4, borderRadius: 1 },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },

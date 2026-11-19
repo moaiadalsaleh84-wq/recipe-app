@@ -15,6 +15,7 @@ import { TabScreen } from '../../../components/TabScreen';
 import { totalsFor, useStore } from '../../../state/store';
 import { cook, useTheme } from '../../../theme';
 import { weekDays } from '../../../lib/week';
+import { fillDinners } from '../../../lib/planFill';
 
 
 export default function PlanScreen() {
@@ -77,6 +78,19 @@ export default function PlanScreen() {
 
   // Adding and changing a meal both open the recipe picker for that slot.
   const addMeal = (meal: Meal) => router.push({ pathname: '/plan-picker', params: { day: String(day), meal } });
+
+  // "Plan my dinners": one tap fills every empty dinner from today to Sunday (undo puts it back).
+  const todayIndex = weekDays.find((d) => d.isToday)?.index ?? 0;
+  const dinnerPicks = useMemo(() => fillDinners(plan, allRecipes, todayIndex), [plan, allRecipes, todayIndex]);
+  const planDinners = () => {
+    dinnerPicks.forEach((p) => setMeal(p.day, p.meal, p.recipeId));
+    haptics.success();
+    toast({
+      message: `Planned ${dinnerPicks.length} dinners`,
+      icon: 'calendar',
+      action: { label: 'Undo', onPress: () => dinnerPicks.forEach((p) => setMeal(p.day, p.meal, null)) },
+    });
+  };
 
   const plannedWeek = weekDays.filter((d) => meals.some((m) => plan[d.index]?.[m])).length;
 
@@ -154,6 +168,30 @@ export default function PlanScreen() {
         <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 10 }]}>
           {dayTotals.protein >= goals.protein ? 'Protein goal covered.' : `${Math.round((dayTotals.protein / goals.protein) * 100)}% of your ${goals.protein} g protein goal.`}
         </Text>
+      )}
+
+      {/* Fill the week's empty dinners in one tap. Only shown when there are at least two to fill. */}
+      {dinnerPicks.length >= 2 && (
+        <Reveal index={3}>
+          <PressableScale
+            onPress={planDinners}
+            scaleTo={0.98}
+            accessibilityLabel={`Plan my dinners: fills ${dinnerPicks.length} empty dinners this week. You can undo.`}
+            testID="plan-dinners"
+            style={[styles.fillCard, { backgroundColor: t.colors.cell, ...t.chunky.card }]}
+          >
+            <View style={[styles.fillIcon, { backgroundColor: t.colors.reward }]}>
+              <Icon name="sparkles" size={22} color={t.colors.onReward} weight="bold" />
+            </View>
+            <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
+              <Text style={[t.type.title3, { color: t.colors.label }]}>Plan my dinners</Text>
+              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
+                Fill {dinnerPicks.length} empty {dinnerPicks.length === 1 ? 'night' : 'nights'} with one tap. Your own picks stay.
+              </Text>
+            </View>
+            <Icon name="chevronRight" size={16} color={t.colors.tertiaryLabel} weight="bold" />
+          </PressableScale>
+        </Reveal>
       )}
 
       {/* The week's shopping, in one tap: a basil banner. */}
@@ -257,6 +295,8 @@ const styles = StyleSheet.create({
   mealPhoto: { width: 96, height: 96, borderRadius: 16, overflow: 'hidden', borderCurve: 'continuous' },
   mealTag: { alignSelf: 'flex-start', paddingHorizontal: 9, paddingVertical: 2, borderRadius: 999 },
   mealActions: { alignItems: 'center' },
+  fillCard: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, marginTop: 24, borderRadius: 24, borderCurve: 'continuous' },
+  fillIcon: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
   weekCard: { padding: 18, gap: 16, marginTop: 24, borderRadius: 28, borderCurve: 'continuous' },
   weekTop: { flexDirection: 'row', gap: 12 },
   weekIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.16)' },
