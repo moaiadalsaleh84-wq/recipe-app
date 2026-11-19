@@ -363,7 +363,8 @@ const NOTE_KEY = 'pantry-pop-timer-note-seen';
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8, gap: 8 },
   segments: { flexDirection: 'row', gap: 4, paddingHorizontal: 16, marginBottom: 4 },
-  segmentTap: { flex: 1, height: 24, justifyContent: 'center' },
+  // A full 44pt tap area that only takes 24pt of room on screen.
+  segmentTap: { flex: 1, height: 44, marginVertical: -10, justifyContent: 'center' },
   segment: { height: 8, borderRadius: 4 },
   timers: { paddingHorizontal: 16, gap: 8, marginBottom: 8 },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 16, paddingRight: 4, borderRadius: 26, borderCurve: 'continuous', minHeight: 52 },

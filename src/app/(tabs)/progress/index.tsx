@@ -74,7 +74,7 @@ export default function ProgressScreen() {
             <View key={s.label} style={[styles.stat, { backgroundColor: t.colors.cell, ...t.chunky.card }]} accessible accessibilityLabel={`${s.n} ${s.label}`}>
               <Icon name={s.icon} size={16} color={t.colors.tint} weight="semibold" />
               <Text style={[t.type.title2, { color: t.colors.label, fontVariant: ['tabular-nums'] }]}>{s.n}</Text>
-              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]} numberOfLines={1}>
+              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
                 {s.label}
               </Text>
             </View>
