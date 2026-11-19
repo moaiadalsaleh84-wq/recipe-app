@@ -1,7 +1,7 @@
 import type { BottomTabBarProps } from 'expo-router/tabs';
-import { useEffect } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import Animated, { LinearTransition, useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme';
 import { Icon, type IconName } from './Icon';
@@ -43,8 +43,7 @@ export function TabBar({ state, emitter, navigateToTab, badges = {} }: BottomTab
           const selected = state.index === i;
           const badge = badges[route.name] ?? 0;
           return (
-            // The selected capsule takes the width its label needs; the other tabs share the rest.
-            <Animated.View key={route.key} layout={LinearTransition.duration(220)} style={selected ? styles.activeSlot : styles.slot}>
+            <TabSlot key={route.key} selected={selected}>
               <PressableScale
                 haptic="select"
                 scaleTo={0.92}
@@ -61,7 +60,13 @@ export function TabBar({ state, emitter, navigateToTab, badges = {} }: BottomTab
                 {selected ? (
                   <View style={[styles.active, { backgroundColor: t.colors.tintFill }]}>
                     <TabIcon icon={tab.icon} selected badge={0} />
-                    <Text style={[styles.activeLabel, { color: t.colors.onTint, fontFamily: t.fonts.bold }]} maxFontSizeMultiplier={1.15}>
+                    <Text
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.8}
+                      maxFontSizeMultiplier={1.15}
+                      style={[styles.activeLabel, { color: t.colors.onTint, fontFamily: t.fonts.bold }]}
+                    >
                       {tab.label}
                     </Text>
                     {/* On the selected tab the count sits after the label, so it never covers it. */}
@@ -74,18 +79,36 @@ export function TabBar({ state, emitter, navigateToTab, badges = {} }: BottomTab
                 ) : (
                   <>
                     <TabIcon icon={tab.icon} selected={false} badge={badge} />
-                    <Text numberOfLines={1} maxFontSizeMultiplier={1.15} style={[styles.label, { color: t.colors.secondaryLabel, fontFamily: t.fonts.semibold }]}>
+                    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} maxFontSizeMultiplier={1.15} style={[styles.label, { color: t.colors.secondaryLabel, fontFamily: t.fonts.semibold }]}>
                       {tab.label}
                     </Text>
                   </>
                 )}
               </PressableScale>
-            </Animated.View>
+            </TabSlot>
           );
         })}
       </View>
     </View>
   );
+}
+
+/** Share of the bar the selected tab gets, compared with 1 for each other tab. */
+const ACTIVE_GROW = 2.2;
+
+/**
+ * One tab's slot. Every slot has a fixed share of the bar (the selected one a bigger share), so the
+ * five tabs always fit, whatever the screen width or text size. The share slides when you switch.
+ */
+function TabSlot({ selected, children }: { selected: boolean; children: ReactNode }) {
+  const reduceMotion = useReducedMotion();
+  const grow = useSharedValue(selected ? ACTIVE_GROW : 1);
+  useEffect(() => {
+    const to = selected ? ACTIVE_GROW : 1;
+    grow.set(reduceMotion ? to : withTiming(to, { duration: 220 }));
+  }, [selected, reduceMotion, grow]);
+  const style = useAnimatedStyle(() => ({ flexGrow: grow.get() }));
+  return <Animated.View style={[styles.slot, style]}>{children}</Animated.View>;
 }
 
 function TabIcon({ icon, selected, badge }: { icon: IconName; selected: boolean; badge: number }) {
@@ -113,11 +136,10 @@ const styles = StyleSheet.create({
   // Floats over the screen; the screens leave room for it (useTabBarSpace).
   wrap: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 12, alignItems: 'center' },
   bar: { flexDirection: 'row', alignItems: 'center', height: BAR_HEIGHT, width: '100%', maxWidth: 520, borderRadius: BAR_HEIGHT / 2, borderWidth: 1, paddingHorizontal: 6, borderCurve: 'continuous' },
-  slot: { flex: 1, minWidth: 0 },
-  activeSlot: { flexShrink: 0, paddingHorizontal: 2 },
+  slot: { flexBasis: 0, flexShrink: 1, minWidth: 0, paddingHorizontal: 2 },
   item: { alignItems: 'center', justifyContent: 'center', gap: 2, minHeight: 52 },
-  active: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 48, paddingHorizontal: 14, borderRadius: 24, borderCurve: 'continuous' },
-  activeLabel: { fontSize: 14, lineHeight: 18 },
+  active: { alignSelf: 'stretch', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, height: 48, paddingHorizontal: 10, borderRadius: 24, borderCurve: 'continuous' },
+  activeLabel: { flexShrink: 1, fontSize: 14, lineHeight: 18 },
   label: { fontSize: 11, lineHeight: 14, letterSpacing: 0.1 },
   inlineBadge: { minWidth: 20, height: 20, borderRadius: 10, paddingHorizontal: 5, alignItems: 'center', justifyContent: 'center' },
   badge: { position: 'absolute', top: -7, right: -12, minWidth: 20, height: 20, borderRadius: 10, borderWidth: 2, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center' },
