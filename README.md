@@ -1,33 +1,29 @@
 # Pantry Pop
 
-A cozy recipe manager and meal planner for iPhone, where a cat helps you cook.
+A cozy recipe manager and meal planner for iPhone.
 Paste a link from TikTok, YouTube, Instagram or any recipe site and Pantry Pop turns it into a recipe
 you can scale, shop for and cook from. Built with Expo (SDK 58), React Native and TypeScript.
+
+The journey the app is built around: **find a recipe → save it → plan it → buy the ingredients → cook it.**
 
 Your data is saved on the phone. Recipe import uses a small server (a Supabase Edge Function in
 [`supabase/`](supabase/)) that keeps the AI key off the phone. **To switch on import and real
 payments, follow [SETUP.md](SETUP.md).**
 
 <p>
-  <img src="screenshots/01-onboarding.png" width="190" alt="Pick your kitchen buddy" />
-  <img src="screenshots/02-recipes.png" width="190" alt="Recipes with your buddy" />
-  <img src="screenshots/03-recipe.png" width="190" alt="Recipe with nutrition" />
-  <img src="screenshots/04-cook-mode.png" width="190" alt="Cook mode" />
+  <img src="screenshots/redesign-01-recipes.jpg" width="190" alt="Recipes: import a link, search, filters, recipe of the day" />
+  <img src="screenshots/redesign-02-recipe.jpg" width="190" alt="Recipe page" />
+  <img src="screenshots/redesign-08-get-ready.jpg" width="190" alt="Ingredient checklist before cooking" />
+  <img src="screenshots/redesign-03-cook-mode.jpg" width="190" alt="Cook Mode" />
 </p>
 
-## Your kitchen buddy
+## The mascot
 
-Pick one of two cats when you first open the app. You can switch anytime from the Buddy tab.
-
-| | Personality | Helps with |
-| --- | --- | --- |
-| **Coach Tank** | Tough but kind. Short sentences, counts everything in reps, never shames food, respects rest days. Secretly soft: gets flustered when you pet him and has a weakness for cookies. | Getting in shape: protein on every card, macros, daily protein and calorie goals, protein tips |
-| **Chef Biscuit** | Funny, sweet and clumsy. Drops things, "taste tests" half the ingredients, makes terrible puns, naps in sunny spots. | Making cooking cozy: kitchen tips, encouragement, jokes |
-
-The cats are original vector drawings, rigged like puppets: arms bend at the shoulder and elbow, the tail swishes,
-eyes blink and the mouth moves while they talk. Every line they say is tagged with a mood, so the animation matches the words.
-For example, Tank flexes when a recipe is high in protein, Biscuit gets a sweat drop when a step says "hot pan", and both stir a bowl during a stirring step.
-Tap a cat to pet it.
+The app's mascot, Biscuit the chef cat, is **switched off for now** while the final character is being designed.
+Every screen shows the mascot only through `<Mascot>` and `<MascotSays>`
+([`src/components/mascot/`](src/components/mascot/)), and one switch turns them on or off:
+`MASCOT_ON` in [`src/components/mascot/config.ts`](src/components/mascot/config.ts). Turning it back on brings the
+mascot back everywhere without redesigning any screen. Mood names are fixed so a Rive file can replace the art later.
 
 ## Import recipes from links
 
@@ -49,7 +45,7 @@ Tap **+** on the Recipes tab, choose **Import from link**, paste a link (or the 
 
 ## Pantry: what can I cook?
 
-<p><img src="screenshots/19-pantry.png" width="160" alt="Pantry and what can I cook" /></p>
+<p><img src="screenshots/redesign-05-pantry.jpg" width="160" alt="Pantry and what can I cook" /> <img src="screenshots/redesign-04-plan.jpg" width="160" alt="Meal plan" /> <img src="screenshots/redesign-06-groceries.jpg" width="160" alt="Groceries" /> <img src="screenshots/redesign-07-progress.jpg" width="160" alt="Progress" /></p>
 
 Add what you have (common items are one tap, or type to search). **What can I cook?** ranks recipes by how much you already
 have, shows "Missing: …" on each, and adds the missing items to Groceries in one tap. Salt, pepper and water are assumed.
@@ -57,33 +53,27 @@ Free: up to 10 items. Pro: unlimited, plus **Buy one thing, cook more**, which s
 
 ## Features
 
-- **Recipes:** search, category and diet filters, photo grid, featured "on the menu tonight" (or a recipe of the day)
+- **Recipes (home):** a paste-a-link import box, search by name or ingredient, category and diet filters, "on the menu tonight" (or a recipe of the day), rows for Cook again, Recently saved and Quick meals (shown only when there's data), and all recipes sorted your way (suggested, recently cooked, quickest, A to Z)
 - **Cookbooks:** Favorites plus your own collections; save any recipe to several cookbooks
 - **Write your own recipe:** photo, link to the original, ingredients one per line (amounts are understood), steps, tags
-- **Recipe page:** servings scaling, metric/US units (including oven temperatures), estimated nutrition per serving, personal notes, share, buddy comments
-- **Cook Mode:** step by step with the screen kept on, timers picked up from the steps ("bake for 25 minutes"), several at once, and your buddy acting out each step. Log the meal at the end.
-- **Timers that keep going:** they survive leaving Cook Mode and closing the app. With a development build they ring as a time-sensitive notification when the phone is locked, and show on the Lock Screen and in the Dynamic Island with a live countdown and the cat's face (see [TIMERS.md](TIMERS.md); Expo Go rings only while the app is open).
-- **Meal plan:** a week view with breakfast, lunch and dinner, a daily nutrition summary, and one tap to add the whole week to your list
-- **Groceries:** grouped by aisle, combined across recipes, tick off, swipe to delete, add your own items, share the list
-- **Buddy tab:** tricks, switch buddy, cooking streak and stats, chef level and badges, daily goals, units
-<p>
-  <img src="screenshots/14-buddy-pick.png" width="160" alt="Let Tank pick" />
-  <img src="screenshots/15-badges.png" width="160" alt="Chef level and badges" />
-  <img src="screenshots/16-confetti.png" width="160" alt="Confetti when you finish" />
-</p>
-
-- **Just for fun:** "Can't decide?" lets your buddy shuffle through recipes and pick dinner (it respects your diet and filters). You earn XP for cooking, adding recipes, finishing lists and petting your buddy, level up from Kitchen Kitten to Legendary Chef, unlock 9 badges, and get confetti when you finish a meal.
+- **Recipe page:** servings scaling, metric/US units (including oven temperatures), estimated nutrition per serving (folds away), "Have it" tags for what's in your pantry, add all or only the missing ingredients to groceries, personal notes, share
+- **Cook Mode:** an ingredient checklist first, then one large step at a time with the screen kept on, the ingredients each step uses, timers picked up from the steps ("bake for 25 minutes"), several at once, a tappable step bar and the full ingredient list one tap away. Going back never loses progress. Log the meal at the end.
+- **Timers that keep going:** they survive leaving Cook Mode and closing the app. With a development build they ring as a time-sensitive notification when the phone is locked, and show on the Lock Screen and in the Dynamic Island with a live countdown (see [TIMERS.md](TIMERS.md); Expo Go rings only while the app is open).
+- **Meal plan:** a week view with breakfast, lunch and dinner, change a meal in one tap, estimated calories per day, and one tap to add the whole week to your list. That button is safe to press again: each planned meal is added once per week, and your own items and edits are never overwritten.
+- **Groceries:** grouped by aisle, the same ingredient from different recipes added up ("2 onions" + "3 onions" = 5; units are never converted), tick off (ticked items move down), swipe to delete, add your own items, share the list
+- **Pantry:** your items grouped into kitchen categories, and "What can I cook?" ranked by what you already have
+- **Progress:** milestones (meals cooked, recipes tried, saved), a gentle cooking streak, chef level and badges, daily goals (Pro), and your cooking history. Settings (units, light or dark) are behind the gear.
+- **Just for fun:** "Surprise me" shuffles through recipes and picks one (it respects your diet and filters). You earn XP for cooking, adding recipes and finishing lists, level up from Kitchen Kitten to Legendary Chef, unlock badges, and get confetti when you finish a meal.
 
 ## Onboarding and Pro
 
 <p>
   <img src="screenshots/08-onboarding-welcome.png" width="160" alt="Welcome and name" />
   <img src="screenshots/09-onboarding-goals.png" width="160" alt="Main goal" />
-  <img src="screenshots/10-onboarding-buddy.png" width="160" alt="Pick your buddy" />
   <img src="screenshots/12-paywall.png" width="160" alt="Paywall" />
 </p>
 
-Five quick screens: name, main goal, diet, how many you cook for, and your buddy. Then you **import your
+Four quick questions: name, main goal, diet, and how many you cook for. Then you **import your
 first recipe** (skippable), so you see the app work on something of yours **before** any price. Then the paywall,
 which you can close or skip with "Continue with the free version".
 
@@ -120,38 +110,39 @@ npx expo start
 Scan the QR code with the Camera app to open it in Expo Go on your iPhone, or press `i` for the iOS Simulator (macOS only).
 Without `EXPO_PUBLIC_IMPORT_URL` set, import shows a clear "not connected yet" message; see [SETUP.md](SETUP.md).
 
-Tests: `node --test scripts/import.test.ts` (import backend, offline), `node scripts/test-import.ts` (10 real links).
+Tests: `node --test scripts/groceries.test.ts scripts/qty.test.ts scripts/timers.test.ts scripts/foodKind.test.ts` (app logic),
+`node --test scripts/import.test.ts` (import backend, offline), `node scripts/test-import.ts` (10 real links).
 
 ## Project layout
 
 ```
 src/
   app/                   Screens (Expo Router: every file is a route)
-    (tabs)/              Recipes, Plan, Pantry, Groceries and Buddy
-    onboarding.tsx       Five quick questions      import.tsx   Import from a link
+    (tabs)/              Recipes, Plan, Pantry, Groceries and Progress
+    onboarding.tsx       Four quick questions      import.tsx   Import from a link
     paywall.tsx          Pro                       privacy.tsx  Privacy policy (placeholder)
     recipe/[id].tsx      Recipe page          recipe/new.tsx   Add your own recipe
     cook/[id].tsx        Cook Mode            cookbook/[id].tsx  A cookbook
     plan-picker.tsx, save-to-cookbook.tsx, cookbook-edit.tsx   Sheets
   components/
-    cats/                The buddies: art, animation rig, moods, dialogue, speech bubble
+    mascot/              The mascot (switched off for now): art, rig, moods, lines, MASCOT_ON switch
+    cats/                The old two-cat buddies, no longer used by any screen
   data/mock.ts           Mock recipes, grocery list, plan and cookbooks
   state/store.tsx        App state, saved on the device
-  lib/                   Import client, pantry matching, purchases (mock | RevenueCat), units, timers
+  lib/                   Import client, pantry matching and categories, grocery list math, purchases (mock | RevenueCat), units, timers
   config.ts              EXPO_PUBLIC_* settings (no secrets)
 supabase/
   functions/import-recipe/   The import server (fetching, JSON-LD, Claude, limits)
   migrations/            Rate-limit and cache tables
-scripts/                 Import tests, dev server, 10-link test
-  theme/index.ts         All colours, type, spacing, radius and motion
+scripts/                 Tests, import dev server, 10-link test
+src/theme/index.ts       All colours, type, spacing, radius and motion
 ```
 
 ## Changing the look
 
 Everything visual lives in [`src/theme/index.ts`](src/theme/index.ts): the cozy light and dark palettes,
-Apple's text styles (headings use SF Pro Rounded), spacing, corner radius, the chunky card and button styles, and animation springs.
-The cats' colours live with their artwork in [`src/components/cats/art.tsx`](src/components/cats/art.tsx),
-and what they say lives in [`src/components/cats/dialogue.ts`](src/components/cats/dialogue.ts).
+the type scale (Fredoka for titles and buttons, the system font for reading), spacing, corner radius, the chunky card and
+button styles, and animation springs. [DESIGN.md](DESIGN.md) describes the design and what not to change.
 
 ## Platform notes
 

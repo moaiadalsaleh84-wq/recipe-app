@@ -1,18 +1,21 @@
 # Pantry Pop design
 
-How the app looks and sounds, as of commit `f9e6b04` (restored on 18 Nov 2026).
+How the app looks and sounds: commit `f9e6b04` (restored on 18 Nov 2026), refined by the redesign of
+19 Nov 2026 (same identity, calmer chunky style, mascot switched off, clearer screens).
 **Read this before changing anything visual.** If a change isn't asked for, don't make it.
 
 All values live in code. This file describes them; the code is the source of truth:
 - colors, type, spacing, radius, motion: [`src/theme/index.ts`](src/theme/index.ts)
+- the mascot switch: [`src/components/mascot/config.ts`](src/components/mascot/config.ts) (`MASCOT_ON`)
 - Biscuit's drawing and colors: [`src/components/mascot/art.tsx`](src/components/mascot/art.tsx)
 - Biscuit's moods: [`src/components/mascot/moods.ts`](src/components/mascot/moods.ts)
 - what Biscuit says: [`src/components/mascot/lines.ts`](src/components/mascot/lines.ts)
 
 ## The look in one line
 
-A bright, playful kitchen: a warm cream page, white cards, dark brown text, chunky rounded
-buttons that sit on a darker "lip" and press down when tapped, and Biscuit the chef cat.
+A bright, playful kitchen: a warm cream page, white cards, dark brown text, and chunky rounded
+buttons that sit on a darker "lip" and press down when tapped. Warm and playful, but calm: big food
+photos, generous spacing, one main action per screen.
 
 ## Colors
 
@@ -53,7 +56,7 @@ Each color has one job. Only ONE filled tomato button per screen.
 | `cell` / `elevated` | `#FFFFFF` | cards |
 | `fill` / `fillStrong` | `#F8ECDB` / `#F1E2CC` | inputs, progress tracks |
 | `separator` | `#F4E7D5` | lines between rows |
-| `border` | `#F1E2CC` | the soft 2pt edge of cards |
+| `border` | `#F1E2CC` | the soft 1.5pt edge of cards |
 | `lip` | `#EAD7BC` | the 3D edge under cards and white buttons |
 
 ### Dark mode
@@ -125,23 +128,54 @@ Use `borderCurve: 'continuous'` for Apple-style corners.
 ## Buttons and cards (the chunky style)
 
 - **Buttons** (`<Button>` in `src/components/ui.tsx`, built on `<Chunky>`): a colored face on a
-  darker **lip** (5pt for large buttons, 4pt for small). The face sinks onto the lip while pressed
+  darker **lip** (4pt for large buttons, 3pt for small). The face sinks onto the lip while pressed
   and springs back. Large: min height 52, radius 16. Medium: min height 44.
   - `filled`: the ONE main action (tomato face `#D9381A`, lip `#A5280C`, white text)
   - `success`: finishing something (green)
   - `reward`: claiming a reward (yellow)
   - `tinted`: every other action (white face, soft edge, tomato text)
   - `plain`: text only
-- **Cards** (`t.chunky.card`): white, radius 20, a 2pt `border` edge and a 4pt `lip` underneath.
-- **Chips**: pill shape, Fredoka label, 4pt lip. Selected chips turn **green with a check**, so
+- **Cards** (`t.chunky.card`): white, radius 20, a 1.5pt `border` edge and a 3pt `lip` underneath.
+- **Chips**: pill shape, Fredoka label, 3pt lip. Selected chips turn **green with a check**, so
   tomato stays reserved for the main action.
 - **Header buttons**: round, white, 44pt, tomato icon, small lip.
 - **Tab bar**: white with a top border, big icons in a soft tomato pill on the selected tab,
   short labels (11pt Fredoka).
 - **Photos**: radius 20. The recipe page opens with a full-width photo and a white sheet over it.
+- **Menus**: small floating menus (the + menu, sort) use `<Menu>` in `src/components/Menu.tsx`.
+- **Lists with groups** (grocery aisles, pantry categories): one card, a soft `fill` header per group.
 - **Motion**: springs from `motion` in the theme (press, release, pop, settle). Respect Reduce Motion.
+  Small rewards only where something was done: the heart pops, a ticked item pops green, the
+  ingredient checklist turns green when everything is set out, confetti when a meal is finished.
+
+## Screens
+
+- **Recipes (home)**, top to bottom: greeting, the "Save a recipe from a link" box (its Import button is the
+  screen's one tomato button; the header + is a white round button), search, filter chips (one row that
+  scrolls sideways), tonight's dinner or the recipe of the day, then Cook again / Recently saved / Quick meals
+  rows (each shown only when there's real data, and a recipe appears in one row only), cookbooks, and all
+  recipes with a sort menu. Searching or filtering hides everything except the results.
+- **Plan**: the week strip, the day's three meals (change or remove each), estimated calories for the day,
+  a "This week" card to add the week to groceries (safe to press again), ideas for empty meals.
+  Empty days never scold.
+- **Pantry**: add or find an item, quick-add chips, items grouped by kitchen category (worked out from the
+  name), then "What can I cook?".
+- **Groceries**: quick add, progress, aisles; ticked items move to the bottom of their aisle.
+- **Progress**: milestones (once there's something to count), streak, next badge, chef level, badges,
+  goals, cooking history. Encouraging, never guilt or loss warnings.
+- **Recipe page**: photo, category pills, title, description, source link, stats (total time, serves,
+  difficulty), tags, nutrition (a summary that opens; always "estimated"), ingredients with servings and
+  units, "Have it" tags, add all / only missing to groceries, method, notes, sticky "Cook now".
+- **Cook Mode**: ingredient checklist first; then one large step at a time (26pt), the ingredients the step
+  uses, start-timer buttons, a tappable step bar, and the full ingredient list one tap away. Progress is
+  never reset when going back.
 
 ## Biscuit, the character
+
+**Status: switched off** (`MASCOT_ON = false` in `src/components/mascot/config.ts`) while the final
+character is designed. Screens are designed to look complete without him; while off, his lines and the
+"pet Biscuit" badge are hidden too, and visible text doesn't mention him. Turning the switch on brings him
+back everywhere. The rules below apply when he's on.
 
 Biscuit is an orange **chef cat**, the app's one mascot, drawn as layered vector art
 (`src/components/mascot/art.tsx`) and animated by `BiscuitRig.tsx`. The app shows him only
@@ -186,8 +220,8 @@ Unless the owner explicitly asks for it:
 1. The color palette above (cream page, tomato main action, green success, yellow rewards).
 2. The fonts: Fredoka for titles and buttons, the system font for reading.
 3. The chunky style: buttons and cards with a lip, pressing down when tapped.
-4. Biscuit's design: the orange outlined chef cat, his hat, scarf, proportions and colors.
-5. Biscuit's mood names and the places he appears.
+4. Biscuit's design: the orange outlined chef cat, his hat, scarf, proportions and colors (when switched on).
+5. Biscuit's mood names and the places he appears (when switched on).
 6. The layout of the five tabs: Recipes, Plan, Pantry, Groceries, Progress.
 7. The tab bar style and the collapsing large titles.
 8. Corner radii, spacing and the 44pt minimum tap size.
