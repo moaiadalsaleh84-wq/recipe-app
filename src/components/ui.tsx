@@ -23,8 +23,10 @@ import { recipes as builtInRecipes, type RecipeImage } from '../data/mock';
 import { Mascot, MASCOT_ON } from './mascot/Mascot';
 import type { Mood } from './mascot/moods';
 import { Icon, type IconName } from './Icon';
-import { Chunky } from './Chunky';
 import { PressableScale } from './PressableScale';
+import { PopButton } from './pop/PopButton';
+import { PopChip } from './pop/PopChip';
+import { PopIconButton } from './pop/PopIconButton';
 
 /* ---------- Chip: the one pill used everywhere (filters, tags, quick-add, removable items) ---------- */
 
@@ -38,69 +40,45 @@ export function Chip({
   accessibilityLabel,
   toggle = true,
   style,
+  color,
 }: {
   /** Layout of the whole chip (e.g. a fixed width in a grid). */
   style?: StyleProp<ViewStyle>;
   label: string;
-  /** Selected chips turn green with a check. */
+  /** Selected chips turn sunshine with a check. */
   selected?: boolean;
   onPress: () => void;
   /** A small icon before the label. */
   icon?: IconName;
   /** A small picture before the label instead of an icon (e.g. a <FoodIcon bare>). */
   leading?: ReactNode;
-  /** A small icon after the label: "close" for removable items, "chevronRight" for links, "plus" to add. */
+  /** A small icon after the label: "close" for removable items, "plus" to add. */
   trailing?: IconName;
   accessibilityLabel?: string;
   /** False for chips that do something instead of switching on and off. */
   toggle?: boolean;
+  /** Background when not selected (white by default; tints for categories). */
+  color?: string;
 }) {
-  const t = useTheme();
-  const reduceMotion = useReducedMotion();
-  // A small bounce whenever the chip is switched on.
-  const pop = useSharedValue(1);
-  const first = useRef(true);
-  useEffect(() => {
-    if (first.current) {
-      first.current = false;
-      return;
-    }
-    if (selected && !reduceMotion) pop.set(withSequence(withTiming(1.12, { duration: 110 }), withSpring(1, t.motion.pop)));
-  }, [selected, reduceMotion, pop, t.motion.pop]);
-  const popStyle = useAnimatedStyle(() => ({ transform: [{ scale: pop.get() }] }));
-  // Selected chips turn dark pine ("this is on"), so basil stays reserved for the screen's main action.
-  const fg = selected ? t.pop.white : t.colors.label;
   return (
-    <Animated.View style={[popStyle, style]}>
-    <Chunky
+    <PopChip
+      label={label}
+      selected={selected}
       onPress={onPress}
-      haptic="select"
-      accessibilityRole={toggle ? 'togglebutton' : 'button'}
-      aria-selected={toggle ? selected : undefined}
+      icon={icon}
+      leading={leading}
+      trailing={trailing}
+      toggle={toggle}
+      color={color}
       accessibilityLabel={accessibilityLabel ?? (toggle ? `${label} filter` : label)}
-      hitSlop={{ top: 2, bottom: 2 }}
-      radius={t.radius.pill}
-      face={selected ? t.colors.label : t.colors.cell}
-      border={selected ? t.colors.label : t.colors.border}
       style={style}
-      faceStyle={[styles.chip, !selected && styles.chipBordered, style ? styles.chipFill : null]}
-    >
-      {selected ? <Icon name="check" size={14} color={fg} weight="bold" /> : leading ? leading : icon ? <Icon name={icon} size={15} color={t.colors.tint} weight="bold" /> : null}
-      <Text style={[t.type.subhead, { color: fg, fontFamily: t.fonts.bold }]}>{label}</Text>
-      {trailing && <Icon name={trailing} size={12} color={selected ? fg : t.colors.secondaryLabel} weight="bold" />}
-    </Chunky>
-    </Animated.View>
+    />
   );
 }
 
 /** A round white button for the top right of a screen (share, settings…). */
 export function HeaderButton({ icon, onPress, accessibilityLabel, disabled }: { icon: IconName; onPress: () => void; accessibilityLabel: string; disabled?: boolean }) {
-  const t = useTheme();
-  return (
-    <Chunky onPress={onPress} disabled={disabled} accessibilityLabel={accessibilityLabel} radius={22} face={t.colors.cell} border={t.colors.border} faceStyle={styles.headerButton}>
-      <Icon name={icon} size={19} color={t.colors.label} weight="semibold" />
-    </Chunky>
-  );
+  return <PopIconButton icon={icon} onPress={onPress} disabled={disabled} accessibilityLabel={accessibilityLabel} iconSize={19} />;
 }
 
 /* ---------- Button ---------- */
@@ -110,8 +88,8 @@ type ButtonProps = {
   onPress: () => void;
   icon?: IconName;
   /**
-   * filled: the ONE main action on a screen (tomato). success: finishing something (green).
-   * reward: claiming a reward (yellow). tinted: every other action (white). plain: text only.
+   * filled: the ONE main action on a screen (sunshine). success: finishing something (leaf).
+   * reward: claiming a reward (sunshine). tinted: every other action (white). plain: text only.
    */
   variant?: 'filled' | 'success' | 'reward' | 'tinted' | 'plain';
   size?: 'large' | 'medium';
@@ -123,30 +101,27 @@ type ButtonProps = {
 export function Button({ label, onPress, icon, variant = 'filled', size = 'large', disabled, style, accessibilityLabel }: ButtonProps) {
   const t = useTheme();
   const large = size === 'large';
-  const text = [large ? t.type.button : t.type.subhead, large ? null : { fontFamily: t.fonts.bold }];
   if (variant === 'plain') {
     return (
       <PressableScale onPress={onPress} disabled={disabled} accessibilityLabel={accessibilityLabel ?? label} style={[styles.button, large ? styles.buttonLarge : styles.buttonMedium, !large && { alignSelf: 'center' }, style]}>
-        {icon && <Icon name={icon} size={large ? 20 : 17} color={t.colors.tint} weight="bold" />}
-        <Text style={[text, { color: t.colors.tint }]}>{label}</Text>
+        {icon && <Icon name={icon} size={large ? 20 : 17} color={t.colors.label} weight="bold" />}
+        <Text style={[large ? t.type.button : t.type.subhead, { color: t.colors.label, fontFamily: t.fonts.black, textDecorationLine: 'underline' }]}>{label}</Text>
       </PressableScale>
     );
   }
   const kind = t.buttons[variant === 'filled' ? 'primary' : variant === 'tinted' ? 'secondary' : variant];
   return (
-    <Chunky
+    <PopButton
+      label={label}
+      icon={icon}
       onPress={onPress}
       disabled={disabled}
       accessibilityLabel={accessibilityLabel ?? label}
-      face={kind.face}
-      border={kind.border}
-      radius={t.radius.pill}
+      color={kind.face}
+      textColor={kind.label}
+      size={large ? 'large' : 'small'}
       style={[!large && { alignSelf: 'center' }, style]}
-      faceStyle={[styles.button, large ? styles.buttonLarge : styles.buttonMedium]}
-    >
-      {icon && <Icon name={icon} size={large ? 20 : 17} color={kind.label} weight="bold" />}
-      <Text style={[text, { color: kind.label }]}>{label}</Text>
-    </Chunky>
+    />
   );
 }
 
@@ -256,7 +231,7 @@ export function CheckCircle({ checked, color, checkColor = pop.ink }: { checked:
   const ringStyle = useAnimatedStyle(() => ({ transform: [{ scale: ring.get() }] }));
 
   return (
-    <Animated.View style={[styles.check, { borderColor: checked ? color : t.colors.fillStrong, backgroundColor: t.colors.cell }, ringStyle]}>
+    <Animated.View style={[styles.check, { borderColor: t.pop.ink, backgroundColor: t.colors.cell }, ringStyle]}>
       <Animated.View style={[styles.checkFill, { backgroundColor: color }, fillStyle]}>
         <Icon name="check" size={14} color={checkColor} weight="bold" />
       </Animated.View>
@@ -278,7 +253,7 @@ export function ProgressBar({ value, color, track, height = 8, label }: { /** 0 
   const fill = useAnimatedStyle(() => ({ width: `${Math.max(3, Math.min(100, shown.get() * 100))}%` }));
   return (
     <View
-      style={{ height, borderRadius: height / 2, backgroundColor: track ?? t.colors.fillStrong, overflow: 'hidden' }}
+      style={{ height: height + 4, borderRadius: (height + 4) / 2, backgroundColor: track ?? t.colors.cell, borderWidth: 2, borderColor: t.pop.ink, overflow: 'hidden' }}
       accessibilityRole="progressbar"
       accessibilityLabel={label}
       accessibilityValue={{ min: 0, max: 100, now: Math.round(pct * 100) }}
@@ -496,7 +471,7 @@ export function Separator({ inset = 16 }: { inset?: number }) {
 export function SearchField({ value, onChangeText, placeholder, style, ...rest }: TextInputProps & { value: string; onChangeText: (s: string) => void }) {
   const t = useTheme();
   return (
-    <View style={[styles.search, { backgroundColor: t.colors.cell, ...t.chunky.card, borderRadius: t.radius.pill }, style]}>
+    <View style={[styles.search, { backgroundColor: t.colors.cell, ...t.chunky.card, borderRadius: t.radius.md }, style]}>
       <Icon name="search" size={18} color={t.colors.label} weight="semibold" />
       <TextInput
         value={value}
@@ -542,7 +517,7 @@ const styles = StyleSheet.create({
   stepperDivider: { width: StyleSheet.hairlineWidth, height: 18 },
   stepperValue: { minWidth: 36, textAlign: 'center', fontVariant: ['tabular-nums'] },
   // Rounded squares: the tick pops in on a basil fill.
-  check: { width: 28, height: 28, borderRadius: 9, borderWidth: 2, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
+  check: { width: 28, height: 28, borderRadius: 9, borderWidth: 2.5, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
   checkFill: { width: 28, height: 28, borderRadius: 9, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
   empty: { alignItems: 'center', gap: 8, paddingVertical: 40, paddingHorizontal: 24 },
   print: { borderRadius: 18, borderWidth: 1, padding: 5, paddingBottom: 14, borderCurve: 'continuous' },
@@ -555,7 +530,7 @@ const styles = StyleSheet.create({
   sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, minHeight: 28 },
   sectionBody: { borderCurve: 'continuous' },
   sectionFooter: { paddingHorizontal: 16, marginTop: 8 },
-  search: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 999, borderCurve: 'continuous', paddingLeft: 18, minHeight: 52 },
+  search: { flexDirection: 'row', alignItems: 'center', gap: 10, borderCurve: 'continuous', paddingLeft: 16, minHeight: 54 },
   searchInput: { flex: 1, alignSelf: 'stretch', minHeight: 44, paddingVertical: 0, outlineStyle: 'none' } as never,
 });
 
@@ -574,7 +549,7 @@ export function Segmented<T extends string>({
 }) {
   const t = useTheme();
   return (
-    <View style={[segStyles.wrap, { backgroundColor: t.colors.fillStrong }]} accessibilityRole="radiogroup" accessibilityLabel={label}>
+    <View style={[segStyles.wrap, { backgroundColor: t.colors.cell, borderColor: t.pop.ink }]} accessibilityRole="radiogroup" accessibilityLabel={label}>
       {options.map((o) => {
         const selected = o.value === value;
         return (
@@ -587,9 +562,9 @@ export function Segmented<T extends string>({
             aria-checked={selected}
             accessibilityLabel={o.label}
             hitSlop={{ top: 4, bottom: 4 }}
-            style={[segStyles.item, selected && { backgroundColor: t.colors.cell, ...t.chunky.lip }]}
+            style={[segStyles.item, selected && { backgroundColor: t.pop.sunshine, borderColor: t.pop.ink, borderWidth: t.stroke.thin }]}
           >
-            <Text style={[t.type.footnote, { color: selected ? t.colors.label : t.colors.secondaryLabel, fontFamily: t.fonts.bold, fontSize: 14 }]}>{o.label}</Text>
+            <Text style={[t.type.footnote, { color: selected ? t.colors.label : t.colors.secondaryLabel, fontFamily: selected ? t.fonts.black : t.fonts.bold, fontSize: 14 }]}>{o.label}</Text>
           </PressableScale>
         );
       })}
@@ -598,6 +573,6 @@ export function Segmented<T extends string>({
 }
 
 const segStyles = StyleSheet.create({
-  wrap: { flexDirection: 'row', borderRadius: 999, padding: 4, borderCurve: 'continuous' },
-  item: { minHeight: 40, minWidth: 64, paddingHorizontal: 14, borderRadius: 999, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
+  wrap: { flexDirection: 'row', borderRadius: 999, padding: 3, borderWidth: 2, borderCurve: 'continuous' },
+  item: { minHeight: 38, minWidth: 60, paddingHorizontal: 14, borderRadius: 999, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
 });
