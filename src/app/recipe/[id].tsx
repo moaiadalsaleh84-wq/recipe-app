@@ -416,6 +416,7 @@ const TAG_LOOK: Partial<Record<DietTag, { label: string; color: string }>> = {
   'One pan': { label: 'One pan', color: pop.sunshineTint },
   'High protein': { label: 'High protein', color: pop.tomatoTint },
   'Gluten free': { label: 'Gluten free', color: pop.skyTint },
+  'Comfort food': { label: 'Cozy', color: pop.lilacTint },
 };
 
 /** One colored stat tile: an icon (or chef hats), a big value and a small label. */

@@ -11,7 +11,8 @@ export type Ingredient = {
 export const categories = ['Breakfast', 'Lunch', 'Dinner', 'Snacks', 'Dessert'] as const;
 export type Category = (typeof categories)[number];
 
-export const dietTags = ['Vegetarian', 'Vegan', 'One pan', 'High protein', 'Gluten free', 'Kid friendly'] as const;
+/** Recipe tags. 'Comfort food' marks the warm, hearty dishes shown by Home's "Cozy" tile. */
+export const dietTags = ['Vegetarian', 'Vegan', 'One pan', 'High protein', 'Gluten free', 'Kid friendly', 'Comfort food'] as const;
 export type DietTag = (typeof dietTags)[number];
 
 /** Filters shown on the Recipes screen. "Under 30 min" is computed from cook time. */
@@ -147,7 +148,7 @@ export const recipes: Recipe[] = [
     calories: 520,
     nutrition: { protein: 40, carbs: 10, fat: 36 },
     difficulty: 'Medium',
-    tags: ['High protein', 'Gluten free'],
+    tags: ['High protein', 'Gluten free', 'Comfort food'],
     ingredients: [
       { id: 'chicken-thigh', name: 'Chicken thighs', quantity: 700, unit: 'g', aisle: 'Meat & Fish' },
       { id: 'yogurt', name: 'Greek yogurt', quantity: 150, unit: 'g', aisle: 'Dairy & Eggs' },
@@ -227,7 +228,7 @@ export const recipes: Recipe[] = [
     calories: 740,
     nutrition: { protein: 25, carbs: 75, fat: 38 },
     difficulty: 'Easy',
-    tags: ['Vegetarian'],
+    tags: ['Vegetarian', 'Comfort food'],
     ingredients: [
       { id: 'spaghetti', name: 'Spaghetti', quantity: 200, unit: 'g', aisle: 'Pantry' },
       { id: 'mushrooms', name: 'Chestnut mushrooms', quantity: 250, unit: 'g', aisle: 'Produce' },
@@ -254,7 +255,7 @@ export const recipes: Recipe[] = [
     calories: 910,
     nutrition: { protein: 39, carbs: 105, fat: 37 },
     difficulty: 'Medium',
-    tags: ['Vegetarian', 'Kid friendly'],
+    tags: ['Vegetarian', 'Kid friendly', 'Comfort food'],
     ingredients: [
       { id: 'pizza-dough', name: 'Pizza dough (200 g balls)', quantity: 2, unit: 'balls', aisle: 'Bakery' },
       { id: 'passata', name: 'Passata', quantity: 200, unit: 'g', aisle: 'Pantry' },
@@ -307,7 +308,7 @@ export const recipes: Recipe[] = [
     calories: 570,
     nutrition: { protein: 36, carbs: 67, fat: 17 },
     difficulty: 'Hard',
-    tags: ['One pan', 'High protein', 'Gluten free'],
+    tags: ['One pan', 'High protein', 'Gluten free', 'Comfort food'],
     ingredients: [
       { id: 'basmati', name: 'Basmati rice', quantity: 450, unit: 'g', aisle: 'Pantry' },
       { id: 'chicken-thigh', name: 'Chicken thighs', quantity: 800, unit: 'g', aisle: 'Meat & Fish' },

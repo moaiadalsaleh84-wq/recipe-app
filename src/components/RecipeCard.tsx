@@ -13,6 +13,7 @@ import { Icon } from './Icon';
 import { PressableScale } from './PressableScale';
 import { PopButton } from './pop/PopButton';
 import { PopCard } from './pop/PopCard';
+import { PopChip } from './pop/PopChip';
 import { Sticker } from './pop/Sticker';
 import { useToast } from './Toast';
 import { IconButton, Skeleton } from './ui';
@@ -103,34 +104,40 @@ function Spark({ dx, dy, burst }: { dx: number; dy: number; burst: ReturnType<ty
 
 const useMeta = () => (r: Recipe) => `${r.minutes} min · ${r.calories} kcal`;
 
-/** Grid and row card: a PopCard with the food photo on top (ink line under it), the name and time. */
+/** Difficulty chip colors on cards. */
+const DIFFICULTY_TINT = { Easy: pop.leafTint, Medium: pop.sunshineTint, Hard: pop.tomatoTint } as const;
+
+/**
+ * Grid and row card: a PopCard with the food photo on top (ink line under it), the full name (it
+ * wraps, never "…"), the time, and the difficulty as a small chip. Cards in a row share the
+ * tallest card's height.
+ */
 export function RecipeCard({ recipe, width, color }: { recipe: Recipe; width: number; /** Card color (white by default). */ color?: string }) {
   const t = useTheme();
   return (
     // The heart sits on top of the card, beside its button (a button inside a button confuses
     // screen readers and the web).
-    <View style={{ width }}>
+    <View style={{ width, flexGrow: 1 }}>
       <PopCard
         onPress={() => openRecipe(recipe.id)}
-        accessibilityLabel={`${recipe.title}, ${recipe.minutes} minutes, ${recipe.calories} calories`}
+        accessibilityLabel={`${recipe.title}, ${recipe.minutes} minutes, ${recipe.difficulty}`}
         accessibilityHint="Opens the recipe"
         color={color}
         radius={22}
-        depth={4}
+        style={{ flexGrow: 1 }}
+        contentStyle={{ flexGrow: 1 }}
       >
         <View style={[styles.imageWrap, { backgroundColor: t.colors.imagePlaceholder }]}>
           <RecipePhoto recipe={recipe} />
         </View>
-        {/* Room for two lines of title on every card, so a row of cards lines up. */}
         <View style={styles.cardBody}>
-          <Text style={[t.type.title3, styles.cardTitle, { color: t.colors.label }]} numberOfLines={2}>
-            {recipe.title}
-          </Text>
-          <View style={styles.meta}>
-            <Icon name="clock" size={13} color={t.colors.secondaryLabel} weight="bold" />
-            <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]}>
-              {recipe.minutes} min · {recipe.difficulty}
-            </Text>
+          <Text style={[t.type.title3, styles.cardTitle, { color: t.colors.label }]}>{recipe.title}</Text>
+          <View style={styles.cardMeta}>
+            <View style={styles.meta}>
+              <Icon name="clock" size={14} color={t.colors.label} weight="bold" />
+              <Text style={[t.type.caption1, { color: t.colors.label }]}>{recipe.minutes} min</Text>
+            </View>
+            <PopChip label={recipe.difficulty} color={DIFFICULTY_TINT[recipe.difficulty]} small />
           </View>
         </View>
       </PopCard>
@@ -167,7 +174,7 @@ export function TonightCard({ recipe, label, have, needed, onCook }: { recipe: R
             <RecipePhoto recipe={recipe} iconSize={48} />
           </View>
           <View style={styles.tonightText}>
-            <Text style={[t.type.title1, { color: t.colors.label, fontSize: 24, lineHeight: 29 }]} numberOfLines={2}>
+            <Text style={[t.type.title1, { color: t.colors.label, fontSize: 24, lineHeight: 29 }]}>
               {recipe.title}
             </Text>
             <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]} testID="tonight-meta">
@@ -222,8 +229,10 @@ export function RecipeRow({
 const styles = StyleSheet.create({
   // Photos (4:3) with a thick ink line underneath.
   imageWrap: { width: '100%', aspectRatio: 4 / 3, overflow: 'hidden', borderBottomWidth: 2.5, borderBottomColor: pop.ink },
-  cardBody: { paddingHorizontal: 12, paddingTop: 10, paddingBottom: 12, gap: 6 },
+  // 14pt inside on every side; the meta sits at the bottom so cards in a row line up.
+  cardBody: { flexGrow: 1, padding: 14, gap: 10, justifyContent: 'space-between' },
   cardTitle: { fontSize: 18, lineHeight: 22, minHeight: 44 },
+  cardMeta: { gap: 8, alignItems: 'flex-start' },
   meta: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   noPhoto: { alignItems: 'center', justifyContent: 'center' },
   favOnPhoto: { position: 'absolute', top: 2, right: 2 },

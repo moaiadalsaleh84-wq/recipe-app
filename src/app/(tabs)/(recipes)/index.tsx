@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Linking, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Text } from '../../../components/Text';
 import Animated, { FadeIn, FadeInDown, FadeInRight, FadeOut, LinearTransition } from 'react-native-reanimated';
@@ -33,12 +33,18 @@ const SORTS: { value: Sort; label: string }[] = [
   { value: 'az', label: 'A to Z' },
 ];
 
+/** One recipe at random, not `avoid` (so "Surprise me" never shows the same one twice in a row). Runs on tap only. */
+function randomRecipe(list: Recipe[], avoid: string | null): Recipe | undefined {
+  const pool = list.filter((r) => r.id !== avoid);
+  return pool[Math.floor(Math.random() * pool.length)] ?? list[0];
+}
+
 /** The four mood tiles. "Surprise me" opens a random pick instead of filtering. */
 const MOODS: { id: Mood | 'surprise'; label: string; hint: string; icon: IconName; color: string }[] = [
-  { id: 'quick', label: 'Super quick', hint: 'Under 20 minutes', icon: 'timer', color: pop.sunshine },
-  { id: 'pantry', label: 'Use my pantry', hint: 'What you can make now', icon: 'fridge', color: pop.leaf },
-  { id: 'cozy', label: 'Cozy comfort', hint: 'Warm and filling', icon: 'pot', color: pop.sky },
-  { id: 'surprise', label: 'Surprise me', hint: 'A random recipe', icon: 'shuffle', color: pop.lilac },
+  { id: 'quick', label: 'Quick', hint: '30 minutes or less', icon: 'timer', color: pop.sunshine },
+  { id: 'pantry', label: 'My pantry', hint: 'Uses what you have', icon: 'fridge', color: pop.leaf },
+  { id: 'cozy', label: 'Cozy', hint: 'Comfort food', icon: 'pot', color: pop.sky },
+  { id: 'surprise', label: 'Surprise me', hint: 'Opens a random recipe', icon: 'shuffle', color: pop.lilac },
 ];
 
 export default function RecipesScreen() {
@@ -52,6 +58,7 @@ export default function RecipesScreen() {
   const [sortOpen, setSortOpen] = useState(false);
   const [sort, setSort] = useState<Sort>('suggested');
   const [mood, setMood] = useState<Mood | null>(null);
+  const lastSurprise = useRef<string | null>(null);
   const { canAddRecipe, canAddCookbook, canImport, trialDaysLeft } = useProGate();
   const [reminderHidden, setReminderHidden] = useState(false);
   // Keeps the paywall's promise: a reminder in the app before the trial ends.
@@ -143,7 +150,12 @@ export default function RecipesScreen() {
 
   const pickMood = (id: Mood | 'surprise') => {
     if (id === 'surprise') {
-      router.push('/buddy-pick');
+      // Not a filter: opens one random recipe (never the same one twice in a row).
+      const pick = randomRecipe(allRecipes, lastSurprise.current);
+      if (pick) {
+        lastSurprise.current = pick.id;
+        router.push({ pathname: '/recipe/[id]', params: { id: pick.id } });
+      }
       return;
     }
     setMood(mood === id ? null : id);
@@ -156,7 +168,7 @@ export default function RecipesScreen() {
         <View style={[styles.avatar, { backgroundColor: t.pop.berry }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
           <Text style={[t.type.title3, { color: t.pop.ink }]}>{(firstName[0] ?? '?').toUpperCase()}</Text>
         </View>
-        <Text style={[t.type.headline, { color: t.colors.secondaryLabel, flex: 1 }]} numberOfLines={1} testID="screen-kicker">
+        <Text style={[t.type.headline, { color: t.colors.secondaryLabel, flex: 1 }]} testID="screen-kicker">
           {firstName ? `Hey ${firstName}!` : 'Hey there!'}
         </Text>
         <PressableScale
@@ -171,7 +183,7 @@ export default function RecipesScreen() {
         <PopIconButton icon="plus" onPress={() => setMenuOpen(true)} accessibilityLabel="Add a recipe" accessibilityHint="Save one from a link, or write your own" />
       </View>
       <Text style={[t.type.hero, { color: t.colors.label, marginTop: 18 }]} accessibilityRole="header">
-        {'Hungry?\nLet’s make something.'}
+        {'Hungry?\nLet’s cook!'}
       </Text>
     </View>
   );
@@ -205,19 +217,22 @@ export default function RecipesScreen() {
                 key={m.id}
                 color={m.color}
                 radius={20}
-                depth={on ? 2 : 5}
+                pressed={on}
                 onPress={() => pickMood(m.id)}
-                accessibilityLabel={`${m.label}. ${m.hint}${on ? '. Showing these recipes, tap to show all' : ''}`}
+                accessibilityLabel={`${m.label}. ${m.hint}${on ? '. Selected, tap to show all recipes' : ''}`}
                 style={styles.moodTile}
                 contentStyle={styles.moodFace}
                 testID={`mood-${m.id}`}
               >
                 <View style={[styles.moodIcon, { backgroundColor: t.pop.white, borderColor: t.pop.ink }]}>
-                  <Icon name={on ? 'check' : m.icon} size={18} color={t.pop.ink} weight="bold" />
+                  <Icon name={m.icon} size={20} color={t.pop.ink} weight="bold" />
                 </View>
-                <Text style={[t.type.title3, styles.moodLabel, { color: t.pop.ink }]} numberOfLines={2} maxFontSizeMultiplier={1.3}>
-                  {m.label}
-                </Text>
+                <Text style={[t.type.title3, styles.moodLabel, { color: t.pop.ink }]}>{m.label}</Text>
+                {on && (
+                  <View style={[styles.moodCheck, { backgroundColor: t.pop.ink }]} accessibilityElementsHidden>
+                    <Icon name="check" size={13} color={t.pop.white} weight="bold" />
+                  </View>
+                )}
               </PopCard>
             );
           })}
@@ -230,14 +245,14 @@ export default function RecipesScreen() {
           <SectionHeader
             title={moodInfo.label}
             subtitle={`${moodRecipes.length} ${moodRecipes.length === 1 ? 'recipe' : 'recipes'} · ${moodInfo.hint.toLowerCase()}`}
-            right={<PopChip label="Show all" icon="close" onPress={() => setMood(null)} accessibilityLabel={`Stop showing ${moodInfo.label.toLowerCase()} recipes`} />}
+            right={<PopChip label="Clear" small onPress={() => setMood(null)} accessibilityLabel={`Clear the ${moodInfo.label} filter`} />}
             style={{ marginTop: 20 }}
           />
           {moodRecipes.length === 0 ? (
             <EmptyState
               icon={moodInfo.icon}
-              title={mood === 'quick' ? 'Nothing that quick yet' : 'Nothing here yet'}
-              message={mood === 'quick' ? 'Every recipe takes 20 minutes or more. Try the "Under 30 min" filter.' : 'Add a few more recipes and they’ll show up here.'}
+              title={mood === 'pantry' ? 'Nothing from your pantry yet' : 'Nothing here yet'}
+              message={mood === 'pantry' ? 'Add what you have on the Pantry tab and matching recipes show up here.' : 'Add a few more recipes and they’ll show up here.'}
             />
           ) : (
             <View style={[styles.grid, { gap, rowGap: t.spacing.md }]}>
@@ -523,9 +538,11 @@ const styles = StyleSheet.create({
   reminderBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
   moods: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 },
   moodTile: { width: '48.4%' },
-  moodFace: { height: 74, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12 },
-  moodIcon: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  moodLabel: { flex: 1, fontSize: 17, lineHeight: 20 },
+  // Icon in a circle at the top left, the label underneath on one line.
+  moodFace: { height: 96, padding: 12, justifyContent: 'space-between' },
+  moodIcon: { width: 40, height: 40, borderRadius: 20, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
+  moodLabel: { fontSize: 19, lineHeight: 23 },
+  moodCheck: { position: 'absolute', top: 10, right: 10, width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   sortBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', minHeight: 44, marginBottom: 4 },
   rail: { paddingBottom: 4 },
   book: { paddingBottom: 12, minHeight: 168 },

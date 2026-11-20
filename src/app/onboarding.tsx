@@ -120,7 +120,7 @@ export default function Onboarding() {
             <Question title="Anything we should keep in mind?" subtitle="Suggestions will only include recipes that fit.">
               <OptionCard label="No preference" selected={profile.diets.length === 0} onPress={() => setProfile({ diets: [] })} multi />
               {dietTags
-                .filter((d) => d !== 'One pan')
+                .filter((d) => d !== 'One pan' && d !== 'Comfort food')
                 .map((d) => (
                   <OptionCard key={d} label={d} multi selected={profile.diets.includes(d)} onPress={() => setProfile({ diets: toggle(profile.diets, d) as DietTag[] })} />
                 ))}

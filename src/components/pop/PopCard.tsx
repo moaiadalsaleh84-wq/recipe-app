@@ -24,16 +24,20 @@ type Props = {
   testID?: string;
   /** Clip children to the rounded corners (default). Turn off for badges that sit on the edge. */
   clip?: boolean;
+  /** Stays pressed in (a selected tile): no shadow, moved down onto where the shadow was. */
+  pressed?: boolean;
 };
 
 /**
  * A card: white or tinted, a thick ink outline and a solid ink shadow (a real View). With
  * `onPress` the whole card is a button and presses down onto its shadow.
  */
-export function PopCard({ children, color = pop.white, radius = 24, depth = DEPTH.card, style, contentStyle, onPress, accessibilityLabel, accessibilityHint, haptic = 'tap', testID, clip = true }: Props) {
+export function PopCard({ children, color = pop.white, radius = 24, depth = DEPTH.card, style, contentStyle, onPress, accessibilityLabel, accessibilityHint, haptic = 'tap', testID, clip = true, pressed = false }: Props) {
   const reduceMotion = useReducedMotion();
   const down = useSharedValue(0);
-  const move = useAnimatedStyle(() => ({ transform: [{ translateY: down.get() * depth }] }));
+  const held = pressed ? 1 : 0;
+  // Numbers only in here: this runs on the UI thread.
+  const move = useAnimatedStyle(() => ({ transform: [{ translateY: Math.max(held, down.get()) * depth }] }));
   const press = (to: number) => down.set(reduceMotion ? to : withTiming(to, { duration: to ? 60 : 110 }));
   const face = [styles.face, { backgroundColor: color, borderRadius: radius, overflow: clip ? ('hidden' as const) : ('visible' as const) }, contentStyle];
 
@@ -59,7 +63,7 @@ export function PopCard({ children, color = pop.white, radius = 24, depth = DEPT
       }}
       style={[{ paddingBottom: depth }, style]}
     >
-      <View style={[styles.shadow, { top: depth, borderRadius: radius }]} />
+      {!pressed && <View style={[styles.shadow, { top: depth, borderRadius: radius }]} />}
       <Animated.View style={[face, move]}>{children}</Animated.View>
     </Pressable>
   );
