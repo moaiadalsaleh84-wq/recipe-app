@@ -3,7 +3,8 @@
  * All tappable pieces are at least 44pt and give press + haptic feedback.
  */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { StyleSheet, Text, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from 'react-native';
+import { StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from 'react-native';
+import { Text } from './Text';
 import Animated, {
   useAnimatedProps,
   useAnimatedStyle,
@@ -17,9 +18,7 @@ import Animated, {
 import type { HapticKind } from '../lib/haptics';
 import { noWidow } from '../lib/text';
 import { useTheme, pop } from '../theme';
-import { Image } from 'expo-image';
 import Svg, { Circle } from 'react-native-svg';
-import { recipes as builtInRecipes, type RecipeImage } from '../data/mock';
 import { Mascot, MASCOT_ON } from './mascot/Mascot';
 import type { Mood } from './mascot/moods';
 import { Icon, type IconName } from './Icon';
@@ -27,6 +26,7 @@ import { PressableScale } from './PressableScale';
 import { PopButton } from './pop/PopButton';
 import { PopChip } from './pop/PopChip';
 import { PopIconButton } from './pop/PopIconButton';
+import { Lift } from './pop/Lift';
 
 /* ---------- Chip: the one pill used everywhere (filters, tags, quick-add, removable items) ---------- */
 
@@ -189,6 +189,7 @@ export function Stepper({
 }) {
   const t = useTheme();
   return (
+    // Outline only, like a text input: it is a control you adjust, not a button to press.
     <View
       style={[styles.stepper, { backgroundColor: t.colors.cell, ...t.chunky.card, borderRadius: t.radius.pill }]}
       accessible
@@ -334,39 +335,6 @@ export function Skeleton({ style }: { style?: StyleProp<ViewStyle> }) {
   return <Animated.View style={[{ backgroundColor: t.colors.fill, borderRadius: t.radius.sm, borderCurve: 'continuous' }, style, animated]} />;
 }
 
-/* ---------- Photo stack: three real food photos, fanned out (empty states, welcomes) ---------- */
-
-const STACK_DEFAULT = ['pepper-feta-penne', 'masala-dosa', 'chicken-fried-rice'];
-
-/** Three food photos laid like prints on a table: real photography instead of an icon. */
-export function PhotoStack({ ids = STACK_DEFAULT, size = 96 }: { ids?: string[]; size?: number }) {
-  const t = useTheme();
-  const reduceMotion = useReducedMotion();
-  const photos = ids
-    .map((id) => builtInRecipes.find((r) => r.id === id)?.image)
-    .filter((img): img is Exclude<RecipeImage, null> => !!img)
-    .slice(0, 3);
-  // The outer prints settle into place once, with a small spring.
-  const spread = useSharedValue(reduceMotion ? 1 : 0);
-  useEffect(() => {
-    if (!reduceMotion) spread.set(withSpring(1, { damping: 13, stiffness: 140, mass: 0.8 }));
-  }, [reduceMotion, spread]);
-  const left = useAnimatedStyle(() => ({ transform: [{ translateX: -size * 0.55 * spread.get() }, { rotate: `${-10 * spread.get()}deg` }] }));
-  const right = useAnimatedStyle(() => ({ transform: [{ translateX: size * 0.55 * spread.get() }, { rotate: `${10 * spread.get()}deg` }] }));
-  const print = (img: Exclude<RecipeImage, null>) => (
-    <View style={[styles.print, { width: size, height: size * 1.15, backgroundColor: t.colors.cell, borderColor: t.colors.border, ...t.shadow.card }]}>
-      <Image source={img} style={styles.printPhoto} contentFit="cover" accessibilityIgnoresInvertColors />
-    </View>
-  );
-  if (photos.length < 3) return null;
-  return (
-    <View style={{ width: size * 2.3, height: size * 1.3, alignItems: 'center', justifyContent: 'center' }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      <Animated.View style={[StyleSheet.absoluteFill, styles.center, left]}>{print(photos[0])}</Animated.View>
-      <Animated.View style={[StyleSheet.absoluteFill, styles.center, right]}>{print(photos[2])}</Animated.View>
-      <View style={[StyleSheet.absoluteFill, styles.center]}>{print(photos[1])}</View>
-    </View>
-  );
-}
 
 /* ---------- Section header: the same hierarchy on every screen ---------- */
 
@@ -399,7 +367,6 @@ export function EmptyState({
   message,
   action,
   cat,
-  photos,
 }: {
   icon: IconName;
   title: string;
@@ -407,24 +374,20 @@ export function EmptyState({
   action?: { label: string; onPress: () => void; icon?: IconName };
   /** Show Biscuit acting out the empty state instead of an icon: pass the mood. */
   cat?: Mood;
-  /** Show three food photos (by recipe id) instead of the icon. */
-  photos?: string[] | true;
 }) {
   const t = useTheme();
   return (
     <View style={styles.empty} accessibilityRole="summary">
       {cat && MASCOT_ON ? (
         <Mascot mood={cat} size={132} />
-      ) : photos ? (
-        <View style={{ marginBottom: 12 }}>
-          <PhotoStack ids={photos === true ? undefined : photos} />
-        </View>
       ) : (
-        <View style={[styles.emptyIcon, { backgroundColor: t.colors.cell, borderColor: t.colors.border, ...t.chunky.lip }]}>
-          <View style={[styles.emptyIconInner, { backgroundColor: t.colors.tintSoft }]}>
-            <Icon name={icon} size={30} color={t.colors.tint} weight="semibold" />
+        <Lift radius={48} style={{ marginBottom: 8 }}>
+          <View style={[styles.emptyIcon, { backgroundColor: t.colors.cell, borderColor: t.colors.border }]}>
+            <View style={[styles.emptyIconInner, { backgroundColor: t.colors.tintSoft }]}>
+              <Icon name={icon} size={30} color={t.colors.tint} weight="semibold" />
+            </View>
           </View>
-        </View>
+        </Lift>
       )}
       <Text style={[t.type.title2, { color: t.colors.label, textAlign: 'center' }]}>{title}</Text>
       <Text style={[t.type.callout, t.noWidows.style, { color: t.colors.secondaryLabel, textAlign: 'center', maxWidth: 290 }]} {...t.noWidows.props}>
@@ -452,10 +415,12 @@ export function Section({ title, footer, children, right }: { title?: string; fo
           {right}
         </View>
       )}
-      {/* Outer view draws the outline + lip; inner view clips rows to the rounded corners. */}
-      <View style={[styles.sectionBody, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]}>
-        <View style={{ borderRadius: t.layout.cardRadius - 1, overflow: 'hidden', borderCurve: 'continuous' }}>{children}</View>
-      </View>
+      {/* The outline sits on the one shared shadow; the inner view clips rows to the rounded corners. */}
+      <Lift radius={t.layout.cardRadius}>
+        <View style={[styles.sectionBody, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]}>
+          <View style={{ borderRadius: t.layout.cardRadius - 2.5, overflow: 'hidden', borderCurve: 'continuous' }}>{children}</View>
+        </View>
+      </Lift>
       {footer && <Text style={[t.type.footnote, styles.sectionFooter, { color: t.colors.secondaryLabel }]}>{footer}</Text>}
     </View>
   );
@@ -473,7 +438,7 @@ export function SearchField({ value, onChangeText, placeholder, style, ...rest }
   return (
     <View style={[styles.search, { backgroundColor: t.colors.cell, ...t.chunky.card, borderRadius: t.radius.md }, style]}>
       <Icon name="search" size={18} color={t.colors.label} weight="semibold" />
-      <TextInput
+      <TextInput maxFontSizeMultiplier={1.3}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}

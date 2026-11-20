@@ -285,21 +285,8 @@ export const motion = {
   toastDuration: 2600,
 } as const;
 
-/** How far the solid ink shadow sits below cards and buttons. */
-export const depth = { button: 4, small: 3, card: 5 } as const;
-
-/**
- * A solid ink shadow (no blur) offset straight down. On iOS and the web this draws the "sticker"
- * shadow under a shape. PopButton and PopCard draw theirs with a real View instead, so it also
- * works on Android and can move when pressed.
- */
-export const hardShadow = (offset: number = depth.card): ViewStyle => ({
-  shadowColor: pop.ink,
-  shadowOpacity: 1,
-  shadowRadius: 0,
-  shadowOffset: { width: 0, height: offset },
-  elevation: 0,
-});
+/** How far the solid ink shadow sits below: 4 for cards and big buttons, 3 for small buttons, chips and pills. */
+export const depth = { button: 4, small: 3, card: 4 } as const;
 
 function makeTheme() {
   const c = colors;
@@ -328,16 +315,19 @@ function makeTheme() {
     layout,
     noWidows,
     buttons,
-    /** Card and control surfaces: an ink outline and a solid ink shadow. */
+    /**
+     * Outlines. Shadows are never a style: wrap the element in <Lift> (components/pop/Lift), or use
+     * PopCard / PopButton, which draw the one solid ink shadow as a real View.
+     */
     chunky: {
-      lip: hardShadow(depth.small),
-      card: { borderWidth: stroke.thick, borderColor: pop.ink, ...hardShadow(depth.button) } as ViewStyle,
-      button: (_color?: string): ViewStyle => hardShadow(depth.button),
+      /** Older name: nothing now (a shadow comes from <Lift>). */
+      lip: {} as ViewStyle,
+      /** The ink outline of cards, inputs and controls. */
+      card: { borderWidth: stroke.thick, borderColor: pop.ink } as ViewStyle,
+      button: (_color?: string): ViewStyle => ({}),
     },
-    shadow: {
-      card: hardShadow(depth.button),
-      floating: hardShadow(depth.button),
-    },
+    /** Older names: nothing now. */
+    shadow: { card: {} as ViewStyle, floating: {} as ViewStyle },
   };
 }
 

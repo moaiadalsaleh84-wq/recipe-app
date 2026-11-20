@@ -2,7 +2,8 @@ import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Text } from '../components/Text';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { MascotSays } from '../components/mascot/MascotSays';
 import type { Line } from '../components/mascot/lines';
@@ -29,6 +30,7 @@ import { showPaywall, useProGate } from '../lib/pro';
 import { isIOS } from '../navigation/screenOptions';
 import { FREE_LIMITS, useStore } from '../state/store';
 import { useTheme } from '../theme';
+import { Lift } from '../components/pop/Lift';
 
 type Phase = { name: 'input' } | { name: 'loading' } | { name: 'failed'; failure: ImportFailure } | { name: 'review'; result: ImportSuccess };
 
@@ -172,7 +174,7 @@ export default function ImportScreen() {
               </View>
             )}
             <View style={[styles.inputWrap, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
-              <TextInput
+              <TextInput maxFontSizeMultiplier={1.3}
                 value={input}
                 onChangeText={setInput}
                 placeholder="Paste a link, or the recipe text itself"
@@ -231,12 +233,18 @@ export default function ImportScreen() {
 
         {phase.name === 'failed' && (
           <Animated.View entering={FadeIn.duration(200)} testID="import-failed">
-            <View style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
-              <Text style={[t.type.headline, { color: t.colors.label }]}>{failureTitle(phase.failure)}</Text>
-              <Text style={[t.type.body, { color: t.colors.secondaryLabel, marginTop: 4 }]} testID="import-error">
-                {phase.failure.message}
-              </Text>
-            </View>
+            <Lift radius={18}>
+              <Lift radius={18}>
+                <Lift radius={18}>
+                  <View style={[styles.card, styles.lifted, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
+                    <Text style={[t.type.headline, { color: t.colors.label }]}>{failureTitle(phase.failure)}</Text>
+                    <Text style={[t.type.body, { color: t.colors.secondaryLabel, marginTop: 4 }]} testID="import-error">
+                      {phase.failure.message}
+                    </Text>
+                  </View>
+                </Lift>
+              </Lift>
+            </Lift>
             <View style={{ gap: 10, marginTop: 16 }}>
               {phase.failure.code === 'rate_limited' || phase.failure.code === 'daily_cap' ? null : (
                 <Button label="Try again" icon="restart" onPress={run} />
@@ -291,17 +299,19 @@ function Review({ result, onSave, onEdit, onDiscard }: { result: ImportSuccess; 
   const [photoFailed, setPhotoFailed] = useState(false);
   return (
     <Animated.View entering={FadeIn.duration(220)} testID="import-review">
-      <View style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card, padding: 0, overflow: 'hidden' }]}>
-        {r.imageUrl && !photoFailed ? <Image source={{ uri: r.imageUrl }} style={styles.photo} contentFit="cover" onError={() => setPhotoFailed(true)} accessibilityIgnoresInvertColors /> : null}
-        <View style={{ padding: 16, gap: 4 }}>
-          <Text style={[t.type.title2, { color: t.colors.label }]} testID="review-title">
-            {r.title}
-          </Text>
-          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
-            {[r.servings && `Serves ${r.servings}`, r.minutes && `${r.minutes} min`, `From ${result.source.host ?? sourceLabel[result.source.kind]}`].filter(Boolean).join(' · ')}
-          </Text>
+      <Lift radius={18}>
+        <View style={[styles.card, styles.lifted, { backgroundColor: t.colors.cell, ...t.chunky.card, padding: 0, overflow: 'hidden' }]}>
+          {r.imageUrl && !photoFailed ? <Image source={{ uri: r.imageUrl }} style={styles.photo} contentFit="cover" onError={() => setPhotoFailed(true)} accessibilityIgnoresInvertColors /> : null}
+          <View style={{ padding: 16, gap: 4 }}>
+            <Text style={[t.type.title2, { color: t.colors.label }]} testID="review-title">
+              {r.title}
+            </Text>
+            <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
+              {[r.servings && `Serves ${r.servings}`, r.minutes && `${r.minutes} min`, `From ${result.source.host ?? sourceLabel[result.source.kind]}`].filter(Boolean).join(' · ')}
+            </Text>
+          </View>
         </View>
-      </View>
+      </Lift>
 
       {result.warnings.length > 0 && (
         <View style={[styles.notice, { backgroundColor: t.colors.cell, borderColor: t.colors.warning, marginTop: 12 }]} testID="review-warnings">
@@ -311,7 +321,7 @@ function Review({ result, onSave, onEdit, onDiscard }: { result: ImportSuccess; 
       )}
 
       <Text style={[t.type.title3, styles.h, { color: t.colors.label }]}>Ingredients · {r.ingredients.length}</Text>
-      <View style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
+      <View style={[styles.card, styles.lifted, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
         {r.ingredients.map((i, k) => (
           <Text key={k} style={[t.type.body, { color: t.colors.label, paddingVertical: 4 }]}>
             • {ingredientLine(i)}
@@ -320,17 +330,19 @@ function Review({ result, onSave, onEdit, onDiscard }: { result: ImportSuccess; 
       </View>
 
       <Text style={[t.type.title3, styles.h, { color: t.colors.label }]}>Steps · {r.steps.length}</Text>
-      <View style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card, gap: 10 }]}>
-        {r.steps.map((s, k) => (
-          <Text key={k} style={[t.type.body, { color: t.colors.label }]}>
-            <Text style={{ fontFamily: t.fonts.bold, color: t.colors.tint }}>{k + 1}. </Text>
-            {s}
-          </Text>
-        ))}
-      </View>
+      <Lift radius={18}>
+        <View style={[styles.card, styles.lifted, { backgroundColor: t.colors.cell, ...t.chunky.card, gap: 10 }]}>
+          {r.steps.map((s, k) => (
+            <Text key={k} style={[t.type.body, { color: t.colors.label }]}>
+              <Text style={{ fontFamily: t.fonts.bold, color: t.colors.tint }}>{k + 1}. </Text>
+              {s}
+            </Text>
+          ))}
+        </View>
+      </Lift>
 
       <Text style={[t.type.title3, styles.h, { color: t.colors.label }]}>Nutrition</Text>
-      <View style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card }]} testID="review-nutrition">
+      <View style={[styles.card, styles.lifted, { backgroundColor: t.colors.cell, ...t.chunky.card }]} testID="review-nutrition">
         {n ? (
           <>
             <Text style={[t.type.body, { color: t.colors.label }]}>
@@ -368,6 +380,7 @@ const styles = StyleSheet.create({
   link: { alignSelf: 'center', minHeight: 44, justifyContent: 'center', paddingHorizontal: 8, marginTop: 4 },
   center: { alignItems: 'center', gap: 6, paddingTop: 8 },
   card: { borderRadius: 18, padding: 16, borderCurve: 'continuous' },
+  lifted: {},
   photo: { height: 200, width: '100%' },
   h: { marginTop: 22, marginBottom: 8 },
 });

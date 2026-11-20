@@ -5,9 +5,9 @@
  *
  *   <TabScreen title="Pantry" kicker="8 things at home" right={<HeaderButton … />}>…</TabScreen>
  */
-import { BlurView } from 'expo-blur';
 import type { ReactNode } from 'react';
-import { StyleSheet, Text, View, type ScrollViewProps } from 'react-native';
+import { StyleSheet, View, type ScrollViewProps } from 'react-native';
+import { Text } from './Text';
 import Animated, { Extrapolation, interpolate, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme';
@@ -71,11 +71,11 @@ export function TabScreen({ title, kicker, right, children, maxWidth = 700, head
         <View style={styles.titleRow}>
           <Animated.View style={[{ flex: 1, transformOrigin: 'left bottom' }, titleStyle]}>
             {kicker ? (
-              <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, fontFamily: t.fonts.semibold }]} numberOfLines={1} testID="screen-kicker">
+              <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, fontFamily: t.fonts.semibold }]} testID="screen-kicker">
                 {kicker}
               </Text>
             ) : null}
-            <Text style={[t.type.largeTitle, { color: t.colors.label }]} accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+            <Text style={[t.type.largeTitle, { color: t.colors.label }]} accessibilityRole="header">
               {title}
             </Text>
           </Animated.View>
@@ -87,12 +87,9 @@ export function TabScreen({ title, kicker, right, children, maxWidth = 700, head
 
       {/* Behind the clock: always solid. */}
       <View style={[styles.status, { height: insets.top, backgroundColor: t.colors.background }]} testID="screen-status" />
-      {/* The small bar: blurred cream, a hairline and the small title once the large one is gone. */}
-      <Animated.View pointerEvents="none" style={[styles.bar, { top: insets.top, height: BAR }, barStyle]} testID="screen-bar" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-        <BlurView tint="light" intensity={40} style={StyleSheet.absoluteFill} />
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: t.colors.bar }]} />
-        <View style={[styles.hairline, { backgroundColor: t.colors.separator }]} />
-        <Text style={[t.type.title3, { color: t.colors.label }]} numberOfLines={1}>
+      {/* The small bar, once the big title has scrolled away: white, a 2pt ink line, the title on one line. */}
+      <Animated.View pointerEvents="none" style={[styles.bar, { top: insets.top, height: BAR, backgroundColor: t.colors.background, borderBottomColor: t.pop.ink }, barStyle]} testID="screen-bar" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        <Text style={[t.type.title3, styles.barTitle, { color: t.colors.label }]} numberOfLines={1}>
           {title}
         </Text>
       </Animated.View>
@@ -104,6 +101,6 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: 'row', alignItems: 'flex-end', minHeight: TITLE, marginBottom: 16, gap: 12 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   status: { position: 'absolute', top: 0, left: 0, right: 0 },
-  bar: { position: 'absolute', left: 0, right: 0, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  hairline: { position: 'absolute', left: 0, right: 0, bottom: 0, height: StyleSheet.hairlineWidth * 2 },
+  bar: { position: 'absolute', left: 0, right: 0, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 64, borderBottomWidth: 2 },
+  barTitle: { fontSize: 18, lineHeight: 22 },
 });

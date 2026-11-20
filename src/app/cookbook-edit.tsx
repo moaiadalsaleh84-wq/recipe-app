@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, View } from 'react-native';
+import { Text } from '../components/Text';
 import { PageHeader } from '../components/PageHeader';
 import { useToast } from '../components/Toast';
 import { Button } from '../components/ui';
@@ -45,7 +46,7 @@ export default function CookbookEdit() {
       <PageHeader title={existing ? 'Rename cookbook' : 'New cookbook'} mode="cancel" inSheet />
       <View style={styles.body}>
         <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginBottom: 8, fontFamily: t.fonts.display, fontWeight: 'normal', fontSize: 15 }]}>Name</Text>
-        <TextInput
+        <TextInput maxFontSizeMultiplier={1.3}
           value={name}
           onChangeText={setName}
           placeholder="e.g. Meal prep, Date night"

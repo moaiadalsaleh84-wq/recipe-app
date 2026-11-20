@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '../components/Text';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MascotSays } from '../components/mascot/MascotSays';
@@ -13,6 +14,7 @@ import { haptics } from '../lib/haptics';
 import { isIOS } from '../navigation/screenOptions';
 import { useStore } from '../state/store';
 import { useTheme } from '../theme';
+import { Lift } from '../components/pop/Lift';
 
 /** "Can't decide?" Biscuit shuffles through recipes and lands on one. */
 export default function BuddyPick() {
@@ -62,19 +64,21 @@ export default function BuddyPick() {
     <View style={{ flex: 1, backgroundColor: t.colors.groupedBackground }}>
       <PageHeader title="Pick for me" mode="cancel" inSheet={isIOS} />
       <View style={[styles.body, { paddingBottom: insets.bottom + 16 }]}>
-        <View style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card }]} accessibilityLiveRegion="polite" accessibilityLabel={rolling ? 'Shuffling recipes' : `Picked: ${recipe.title}`}>
-          <Animated.View key={`${round}-${index}-${rolling}`} entering={FadeIn.duration(rolling ? 60 : 220)} style={styles.photo}>
-            <RecipePhoto recipe={recipe} iconSize={48} />
-          </Animated.View>
-          <View style={{ padding: 14, gap: 2 }}>
-            <Text style={[t.type.title3, { color: t.colors.label }]} numberOfLines={1} testID="pick-title">
-              {recipe.title}
-            </Text>
-            <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
-              {recipe.minutes} min · {recipe.calories} kcal
-            </Text>
+        <Lift radius={24}>
+          <View style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card }]} accessibilityLiveRegion="polite" accessibilityLabel={rolling ? 'Shuffling recipes' : `Picked: ${recipe.title}`}>
+            <Animated.View key={`${round}-${index}-${rolling}`} entering={FadeIn.duration(rolling ? 60 : 220)} style={styles.photo}>
+              <RecipePhoto recipe={recipe} iconSize={48} />
+            </Animated.View>
+            <View style={{ padding: 14, gap: 2 }}>
+              <Text style={[t.type.title3, { color: t.colors.label }]} numberOfLines={1} testID="pick-title">
+                {recipe.title}
+              </Text>
+              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
+                {recipe.minutes} min · {recipe.calories} kcal
+              </Text>
+            </View>
           </View>
-        </View>
+        </Lift>
 
         <MascotSays line={line} size={110} style={{ marginTop: 18 }} />
 

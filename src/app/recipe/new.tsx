@@ -1,7 +1,8 @@
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
+import { Text } from '../../components/Text';
 import { MascotSays } from '../../components/mascot/MascotSays';
 import { say } from '../../components/mascot/lines';
 import { Icon } from '../../components/Icon';
@@ -16,6 +17,7 @@ import { downloadPhoto, photoUri, pickPhoto as pickLibraryPhoto } from '../../li
 import { showPaywall, useProGate } from '../../lib/pro';
 import { useStore } from '../../state/store';
 import { useTheme } from '../../theme';
+import { Lift } from '../../components/pop/Lift';
 
 /** Write down your own recipe, or keep one you found online with a link to the original. */
 export default function NewRecipe() {
@@ -118,20 +120,22 @@ export default function NewRecipe() {
           <MascotSays line={say('newRecipe')} size={86} style={{ marginBottom: 16 }} />
         )}
 
-        <PressableScale
-          onPress={pickPhoto}
-          accessibilityLabel={photo ? 'Change photo' : 'Add a photo'}
-          style={[styles.photo, { backgroundColor: t.colors.cell, ...t.chunky.card }]}
-        >
-          {photo ? (
-            <Image source={{ uri: photoUri(photo) }} style={StyleSheet.absoluteFill} contentFit="cover" onError={() => setPhoto(null)} />
-          ) : (
-            <>
-              <Icon name="camera" size={28} color={t.colors.tint} />
-              <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: 'normal', fontFamily: t.fonts.rounded }]}>Add a photo</Text>
-            </>
-          )}
-        </PressableScale>
+        <Lift radius={20}>
+          <PressableScale
+            onPress={pickPhoto}
+            accessibilityLabel={photo ? 'Change photo' : 'Add a photo'}
+            style={[styles.photo, { backgroundColor: t.colors.cell, ...t.chunky.card }]}
+          >
+            {photo ? (
+              <Image source={{ uri: photoUri(photo) }} style={StyleSheet.absoluteFill} contentFit="cover" onError={() => setPhoto(null)} />
+            ) : (
+              <>
+                <Icon name="camera" size={28} color={t.colors.tint} />
+                <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: 'normal', fontFamily: t.fonts.rounded }]}>Add a photo</Text>
+              </>
+            )}
+          </PressableScale>
+        </Lift>
 
         <Field label="Title" value={title} onChangeText={setTitle} placeholder="Grandma’s lemon cake" returnKeyType="next" />
         <Field
@@ -151,14 +155,18 @@ export default function NewRecipe() {
           ))}
         </ScrollView>
 
-        <View style={[styles.row, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
-          <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>Minutes</Text>
-          <Stepper value={minutes} onChange={setMinutes} min={5} max={600} label="minutes" />
-        </View>
-        <View style={[styles.row, { backgroundColor: t.colors.cell, ...t.chunky.card, marginTop: 10 }]}>
-          <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>Servings</Text>
-          <Stepper value={servings} onChange={setServings} label="servings" />
-        </View>
+        <Lift radius={16} style={{ marginTop: 18 }}>
+          <View style={[styles.row, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
+            <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>Minutes</Text>
+            <Stepper value={minutes} onChange={setMinutes} min={5} max={600} label="minutes" />
+          </View>
+        </Lift>
+        <Lift radius={16} style={{ marginTop: 10 }}>
+          <View style={[styles.row, styles.rowNext, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
+            <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>Servings</Text>
+            <Stepper value={servings} onChange={setServings} label="servings" />
+          </View>
+        </Lift>
 
         {/* Bottom-aligned, so the two boxes stay level even if a label wraps with large text. */}
         <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-end' }}>
@@ -212,7 +220,7 @@ function Field({ label, hint, multiline, ...props }: TextInputProps & { label: s
   return (
     <View>
       <Label text={label} />
-      <TextInput
+      <TextInput maxFontSizeMultiplier={1.3}
         {...props}
         multiline={multiline}
         placeholderTextColor={t.colors.tertiaryLabel}
@@ -231,7 +239,8 @@ const styles = StyleSheet.create({
   input: { minHeight: 50, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, borderCurve: 'continuous', outlineStyle: 'none' } as never,
   multiline: { minHeight: 130, textAlignVertical: 'top' },
   chips: { gap: 8, paddingVertical: 6, minHeight: 48, alignItems: 'center' },
-  row: { flexDirection: 'row', alignItems: 'center', paddingLeft: 16, paddingRight: 6, minHeight: 56, borderRadius: 16, marginTop: 18, borderCurve: 'continuous' },
+  row: { flexDirection: 'row', alignItems: 'center', paddingLeft: 16, paddingRight: 6, minHeight: 56, borderRadius: 16, borderCurve: 'continuous' },
+  rowNext: {},
   tagWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   notice: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', padding: 14, borderRadius: 16, borderWidth: 1.5, marginBottom: 16 },
 });

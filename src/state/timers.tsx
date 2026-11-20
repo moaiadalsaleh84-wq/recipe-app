@@ -9,7 +9,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, usePathname } from 'expo-router';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { AppState, Modal, StyleSheet, Text, View } from 'react-native';
+import { AppState, Modal, StyleSheet, View } from 'react-native';
+import { Text } from '../components/Text';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MASCOT_NAME } from '../components/mascot/Mascot';
@@ -23,6 +24,7 @@ import { haptics } from '../lib/haptics';
 import { applyAlerts, backgroundSupport, listen, notificationPermission, reconnect, requestNotificationPermission, type BackgroundSupport, type TimerControl } from '../lib/timerAlerts';
 import { planAlerts } from '../lib/timerPlan';
 import { pop, useTheme } from '../theme';
+import { Lift } from '../components/pop/Lift';
 
 const STORAGE_KEY = 'pantry-pop-timers-v1';
 const ASKED_KEY = 'pantry-pop-notifications-asked';
@@ -188,19 +190,23 @@ function RingingBanner({ timers, onStop }: { timers: engine.CookTimer[]; onStop:
   const first = timers[0];
   if (!first || path.startsWith('/cook/')) return null;
   return (
-    <Animated.View entering={FadeInUp.duration(220)} exiting={FadeOutUp.duration(180)} style={[styles.banner, { top: insets.top + 8, backgroundColor: t.pop.tomato, borderWidth: t.stroke.thick, borderColor: t.pop.ink, ...t.chunky.lip }]} accessibilityRole="alert" testID="global-timer-done">
-      <PressableScale onPress={() => router.push({ pathname: '/cook/[id]', params: { id: first.recipeId } })} style={styles.bannerMain} accessibilityLabel={`Time’s up: ${first.label}, ${first.recipeTitle}. Open Cook Mode`}>
-        <Icon name="timer" size={20} color={t.pop.ink} weight="bold" />
-        <View style={{ flex: 1 }}>
-          <Text style={[t.type.headline, { color: t.pop.ink }]}>Time’s up: {first.label}</Text>
-          <Text style={[t.type.footnote, { color: t.pop.ink }]} numberOfLines={1}>
-            {first.recipeTitle} · Step {first.step}
-          </Text>
-        </View>
-      </PressableScale>
-      <PressableScale onPress={() => onStop(first.id)} accessibilityLabel="Stop alarm" style={styles.stopBtn}>
-        <Text style={[t.type.headline, { color: t.pop.ink }]}>Stop</Text>
-      </PressableScale>
+    <Animated.View entering={FadeInUp.duration(220)} exiting={FadeOutUp.duration(180)} style={[styles.bannerPos, { top: insets.top + 8 }]} accessibilityRole="alert" testID="global-timer-done">
+      <Lift radius={18}>
+      <View style={[styles.banner, { backgroundColor: t.pop.tomato, borderColor: t.pop.ink }]}>
+        <PressableScale onPress={() => router.push({ pathname: '/cook/[id]', params: { id: first.recipeId } })} style={styles.bannerMain} accessibilityLabel={`Time’s up: ${first.label}, ${first.recipeTitle}. Open Cook Mode`}>
+          <Icon name="timer" size={20} color={t.pop.ink} weight="bold" />
+          <View style={{ flex: 1 }}>
+            <Text style={[t.type.headline, { color: t.pop.ink }]}>Time’s up: {first.label}</Text>
+            <Text style={[t.type.footnote, { color: t.pop.ink }]} numberOfLines={1}>
+              {first.recipeTitle} · Step {first.step}
+            </Text>
+          </View>
+        </PressableScale>
+        <PressableScale onPress={() => onStop(first.id)} accessibilityLabel="Stop alarm" style={styles.stopBtn}>
+          <Text style={[t.type.headline, { color: t.pop.ink }]}>Stop</Text>
+        </PressableScale>
+      </View>
+      </Lift>
     </Animated.View>
   );
 }
@@ -212,21 +218,25 @@ export function AskNotifications({ open, onAnswer }: { open: boolean; onAnswer: 
   return (
     <Modal visible={open} transparent animationType="fade" onRequestClose={() => onAnswer(false)}>
       <View style={[styles.scrim, { backgroundColor: t.colors.scrim }]}>
-        <View style={[styles.sheet, { backgroundColor: t.colors.background, ...t.chunky.card }]} testID="ask-notifications">
-          <MascotSays line={line} size={100} layout="column" />
-          <Button label="Allow notifications" icon="timer" onPress={() => { haptics.select(); onAnswer(true); }} style={{ marginTop: 16 }} />
-          <Button label="Not now" variant="plain" onPress={() => onAnswer(false)} accessibilityLabel="Not now, keep the timer in the app" />
-          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, textAlign: 'center' }]}>You can change this anytime in Settings → Notifications.</Text>
-        </View>
+        <Lift radius={26} style={styles.sheetLift}>
+          <View style={[styles.sheet, { backgroundColor: t.colors.background, ...t.chunky.card }]} testID="ask-notifications">
+            <MascotSays line={line} size={100} layout="column" />
+            <Button label="Allow notifications" icon="timer" onPress={() => { haptics.select(); onAnswer(true); }} style={{ marginTop: 16 }} />
+            <Button label="Not now" variant="plain" onPress={() => onAnswer(false)} accessibilityLabel="Not now, keep the timer in the app" />
+            <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, textAlign: 'center' }]}>You can change this anytime in Settings → Notifications.</Text>
+          </View>
+        </Lift>
       </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  banner: { position: 'absolute', left: 12, right: 12, flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 18, paddingLeft: 14, paddingRight: 8, minHeight: 60, borderCurve: 'continuous', zIndex: 1000 },
+  bannerPos: { position: 'absolute', left: 12, right: 12, zIndex: 1000 },
+  banner: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 18, borderWidth: 2.5, paddingLeft: 14, paddingRight: 8, minHeight: 60, borderCurve: 'continuous' },
   bannerMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 56 },
   stopBtn: { minHeight: 44, minWidth: 76, paddingHorizontal: 16, borderRadius: 999, backgroundColor: pop.white, borderWidth: 2, borderColor: pop.ink, alignItems: 'center', justifyContent: 'center' },
   scrim: { flex: 1, justifyContent: 'center', padding: 20 },
-  sheet: { borderRadius: 26, padding: 20, gap: 8, width: '100%', maxWidth: 440, alignSelf: 'center', borderCurve: 'continuous' },
+  sheetLift: { width: '100%', maxWidth: 440, alignSelf: 'center' },
+  sheet: { borderRadius: 26, padding: 20, gap: 8, borderCurve: 'continuous' },
 });

@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Share, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Share, StyleSheet, TextInput, View } from 'react-native';
+import { Text } from '../../../components/Text';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Animated, { FadeIn, FadeInDown, FadeOut, LinearTransition, useAnimatedStyle, type SharedValue } from 'react-native-reanimated';
 import { Icon } from '../../../components/Icon';
@@ -118,7 +119,7 @@ export default function GroceriesScreen() {
       {/* Quick add */}
       <View style={[styles.addRow, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
         <Icon name="plus" size={18} color={t.colors.tint} weight="bold" />
-        <TextInput
+        <TextInput maxFontSizeMultiplier={1.3}
           value={draft}
           onChangeText={setDraft}
           onSubmitEditing={add}
@@ -141,7 +142,6 @@ export default function GroceriesScreen() {
       {total === 0 ? (
         <EmptyState
           icon="cart"
-          photos={['butter-chicken', 'pepper-feta-penne', 'apple-turnovers']}
           title="Your list is empty"
           message="Add items here, or add a recipe’s ingredients from its page or your weekly plan."
           action={{ label: 'Browse recipes', icon: 'book', onPress: () => router.navigate('/') }}

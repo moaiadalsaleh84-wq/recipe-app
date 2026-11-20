@@ -5,3 +5,4 @@ export { PopChip } from './PopChip';
 export { PopIconButton } from './PopIconButton';
 export { Sticker } from './Sticker';
 export { MascotSlot, SHOW_MASCOT_PLACEHOLDER } from './MascotSlot';
+export { Lift } from './Lift';

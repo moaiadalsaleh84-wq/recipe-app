@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Text } from '../Text';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { fonts, pop, stroke } from '../../theme';
 

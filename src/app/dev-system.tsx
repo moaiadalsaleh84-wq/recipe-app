@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
+import { Text } from '../components/Text';
 import { Button, CheckCircle, Chip, Segmented, Stepper } from '../components/ui';
 import { useTheme } from '../theme';
 

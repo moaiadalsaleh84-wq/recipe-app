@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Linking, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Linking, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Text } from '../../../components/Text';
 import Animated, { FadeIn, FadeInDown, FadeInRight, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { Icon, type IconName } from '../../../components/Icon';
 import { Menu } from '../../../components/Menu';
@@ -530,7 +531,7 @@ const styles = StyleSheet.create({
   book: { paddingBottom: 12, minHeight: 168 },
   newBook: { alignItems: 'center', justifyContent: 'center', gap: 10, paddingTop: 12 },
   newIcon: { width: 48, height: 48, borderRadius: 24, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
-  covers: { height: COVER_H, margin: 6, borderRadius: 16, borderWidth: 2, overflow: 'hidden', flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
+  covers: { height: COVER_H, margin: 6, borderRadius: 16, borderWidth: 2.5, overflow: 'hidden', flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
   bookText: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, marginTop: 6 },
   popular: { gap: 8, marginTop: 12 },
   popularRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

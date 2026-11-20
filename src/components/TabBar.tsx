@@ -1,6 +1,7 @@
 import type { BottomTabBarProps } from 'expo-router/tabs';
 import { useEffect } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from './Text';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { haptics } from '../lib/haptics';
@@ -63,7 +64,7 @@ export function TabBar({ state, emitter, navigateToTab, badges = {} }: BottomTab
             style={styles.tab}
           >
             <TabIcon icon={tab.icon} selected={selected} badge={badge} />
-            <Text style={[styles.label, selected ? styles.labelOn : styles.labelOff]} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+            <Text style={[styles.label, selected ? styles.labelOn : styles.labelOff]}>
               {tab.label}
             </Text>
           </Pressable>

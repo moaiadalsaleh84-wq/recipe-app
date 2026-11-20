@@ -12,7 +12,8 @@
  */
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../components/Text';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Mascot } from '../components/mascot/Mascot';
@@ -41,6 +42,7 @@ import {
 } from '../lib/purchases';
 import { FREE_LIMITS, useStore } from '../state/store';
 import { useTheme } from '../theme';
+import { Lift } from '../components/pop/Lift';
 
 type Source = PaywallSource;
 
@@ -126,19 +128,21 @@ export default function Paywall() {
         <Text style={[t.type.body, { color: t.colors.secondaryLabel, marginTop: 6 }]}>{copy.subtitle}</Text>
 
         {/* Benefits, most relevant first */}
-        <View style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
-          {benefits.map((b, k) => (
-            <Animated.View key={b.title} entering={FadeInDown.delay(80 * k).duration(300)} style={styles.benefit}>
-              <View style={[styles.benefitIcon, { backgroundColor: t.colors.tintSoft }]}>
-                <Icon name={b.icon} size={18} color={t.colors.tint} weight="bold" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[t.type.headline, { color: t.colors.label }]}>{b.title}</Text>
-                <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 1 }]}>{b.detail}</Text>
-              </View>
-            </Animated.View>
-          ))}
-        </View>
+        <Lift radius={22} style={styles.cardLift}>
+          <View style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
+            {benefits.map((b, k) => (
+              <Animated.View key={b.title} entering={FadeInDown.delay(80 * k).duration(300)} style={styles.benefit}>
+                <View style={[styles.benefitIcon, { backgroundColor: t.colors.tintSoft }]}>
+                  <Icon name={b.icon} size={18} color={t.colors.tint} weight="bold" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[t.type.headline, { color: t.colors.label }]}>{b.title}</Text>
+                  <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 1 }]}>{b.detail}</Text>
+                </View>
+              </Animated.View>
+            ))}
+          </View>
+        </Lift>
 
         {/* Two clear choices */}
         <View style={{ gap: 10, marginTop: 18 }} accessibilityRole="radiogroup" accessibilityLabel="Choose a plan">
@@ -156,12 +160,14 @@ export default function Paywall() {
 
         {/* Transparent trial timeline: knowing exactly what happens builds trust */}
         {trial > 0 && (
-          <Animated.View entering={FadeIn.duration(250)} style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
-            <Text style={[t.type.headline, { color: t.colors.label, marginBottom: 10 }]}>How your free trial works</Text>
-            <TimelineRow icon="crown" title="Today" detail="Everything unlocked. Cook, plan and track with no limits." first />
-            <TimelineRow icon="notes" title={`Day ${Math.max(1, trial - 2)}`} detail="We’ll remind you in the app that your trial is ending." />
-            <TimelineRow icon="calendar" title={`Day ${trial}`} detail={`Your subscription starts at ${money(selected.price)} per ${selected.period}. Cancel before then and you pay nothing.`} last />
-          </Animated.View>
+          <Lift radius={22} style={styles.cardLift}>
+            <Animated.View entering={FadeIn.duration(250)} style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
+              <Text style={[t.type.headline, { color: t.colors.label, marginBottom: 10 }]}>How your free trial works</Text>
+              <TimelineRow icon="crown" title="Today" detail="Everything unlocked. Cook, plan and track with no limits." first />
+              <TimelineRow icon="notes" title={`Day ${Math.max(1, trial - 2)}`} detail="We’ll remind you in the app that your trial is ending." />
+              <TimelineRow icon="calendar" title={`Day ${trial}`} detail={`Your subscription starts at ${money(selected.price)} per ${selected.period}. Cancel before then and you pay nothing.`} last />
+            </Animated.View>
+          </Lift>
         )}
 
         <View style={styles.links}>
@@ -235,32 +241,34 @@ function mascotLine(source: Source): Line {
 function PlanCard({ id, selected, onPress, title, price, note, badge }: { id: PlanId; selected: boolean; onPress: () => void; title: string; price: string; note: string; badge?: string }) {
   const t = useTheme();
   return (
-    <PressableScale
-      onPress={onPress}
-      haptic="select"
-      scaleTo={0.98}
-      accessibilityRole="radio"
-      aria-checked={selected}
-      accessibilityLabel={`${title} plan, ${price}. ${note}`}
-      testID={`plan-${id}`}
-      style={[styles.plan, { backgroundColor: selected ? t.colors.tintSoft : t.colors.cell, borderColor: selected ? t.colors.tintFill : t.colors.border }, selected ? t.chunky.button() : t.chunky.lip]}
-    >
-      <View style={[styles.radio, { borderColor: selected ? t.colors.tintFill : t.colors.tertiaryLabel }]}>
-        {selected && <View style={[styles.radioDot, { backgroundColor: t.colors.tintFill }]} />}
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={[t.type.headline, { color: t.colors.label }]}>{title}</Text>
-        <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 1 }, t.noWidows.style]} {...t.noWidows.props}>
-          {note}
-        </Text>
-      </View>
-      <Text style={[t.type.headline, { color: t.colors.label }]}>{price}</Text>
-      {badge && (
-        <View style={[styles.planBadge, { backgroundColor: t.colors.success }]}>
-          <Text style={[t.type.caption2, { color: t.pop.ink, fontWeight: 'normal', fontFamily: t.fonts.rounded }]}>{badge}</Text>
+    <Lift radius={20} pressed={selected}>
+      <PressableScale
+        onPress={onPress}
+        haptic="select"
+        scaleTo={0.98}
+        accessibilityRole="radio"
+        aria-checked={selected}
+        accessibilityLabel={`${title} plan, ${price}. ${note}`}
+        testID={`plan-${id}`}
+        style={[styles.plan, { backgroundColor: selected ? t.colors.tintSoft : t.colors.cell, borderColor: t.pop.ink }, selected && { transform: [{ translateY: t.depth.card }] }]}
+      >
+        <View style={[styles.radio, { borderColor: selected ? t.colors.tintFill : t.colors.tertiaryLabel }]}>
+          {selected && <View style={[styles.radioDot, { backgroundColor: t.colors.tintFill }]} />}
         </View>
-      )}
-    </PressableScale>
+        <View style={{ flex: 1 }}>
+          <Text style={[t.type.headline, { color: t.colors.label }]}>{title}</Text>
+          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 1 }, t.noWidows.style]} {...t.noWidows.props}>
+            {note}
+          </Text>
+        </View>
+        <Text style={[t.type.headline, { color: t.colors.label }]}>{price}</Text>
+        {badge && (
+          <View style={[styles.planBadge, { backgroundColor: t.colors.success }]}>
+            <Text style={[t.type.caption2, { color: t.pop.ink, fontWeight: 'normal', fontFamily: t.fonts.rounded }]}>{badge}</Text>
+          </View>
+        )}
+      </PressableScale>
+    </Lift>
   );
 }
 
@@ -308,7 +316,8 @@ const styles = StyleSheet.create({
   top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 12 },
   restore: { minHeight: 44, minWidth: 64, justifyContent: 'center', alignItems: 'flex-end', paddingHorizontal: 8 },
   content: { paddingHorizontal: 16, width: '100%', maxWidth: 560, alignSelf: 'center' },
-  card: { borderRadius: 22, padding: 16, gap: 12, marginTop: 18, borderCurve: 'continuous' },
+  card: { borderRadius: 22, padding: 16, gap: 12, borderCurve: 'continuous' },
+  cardLift: { marginTop: 18 },
   benefit: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   benefitIcon: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
   plan: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, minHeight: 72, borderRadius: 20, borderWidth: 2.5, borderCurve: 'continuous' },

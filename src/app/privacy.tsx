@@ -1,4 +1,5 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../components/Text';
 import { PageHeader } from '../components/PageHeader';
 import { isIOS } from '../navigation/screenOptions';
 import { useTheme } from '../theme';

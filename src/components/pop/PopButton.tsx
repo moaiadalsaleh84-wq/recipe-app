@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, View, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
+import { Text } from '../Text';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { haptics, type HapticKind } from '../../lib/haptics';
 import { depth as DEPTH, pop, radius, stroke, type as typeScale } from '../../theme';
@@ -20,7 +21,7 @@ type Props = Omit<PressableProps, 'style' | 'children'> & {
   size?: 'large' | 'small';
   /** Corner radius (default 18). */
   radius?: number;
-  /** How far the solid shadow sits below (default 4). */
+  /** How far the solid shadow sits below (default: 4 for large, 3 for small). */
   depth?: number;
   /** Layout of the whole button (margins, flex, width). */
   style?: StyleProp<ViewStyle>;
@@ -44,7 +45,7 @@ export function PopButton({
   textColor = pop.ink,
   size = 'large',
   radius: r = radius.md,
-  depth = DEPTH.button,
+  depth: depthProp,
   style,
   faceStyle,
   haptic = 'tap',
@@ -56,6 +57,8 @@ export function PopButton({
   ...rest
 }: Props) {
   const reduceMotion = useReducedMotion();
+  // 4pt under big buttons, 3pt under small ones.
+  const depth = depthProp ?? (size === 'small' ? DEPTH.small : DEPTH.button);
   const down = useSharedValue(0);
   // Only plain numbers in here: this runs on the UI thread.
   const faceMove = useAnimatedStyle(() => ({ transform: [{ translateY: down.get() * depth }] }));
@@ -96,7 +99,7 @@ export function PopButton({
           <>
             {icon && <Icon name={icon} size={large ? 20 : 17} color={textColor} weight="bold" />}
             {label ? (
-              <Text style={[large ? typeScale.buttonLarge : typeScale.button, { color: textColor }]} numberOfLines={1} maxFontSizeMultiplier={1.4}>
+              <Text style={[large ? typeScale.buttonLarge : typeScale.button, { color: textColor, textAlign: 'center', flexShrink: 1 }]}>
                 {label}
               </Text>
             ) : null}

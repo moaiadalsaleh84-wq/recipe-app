@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Text } from '../../../components/Text';
 import Animated, { FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated';
 import { FoodIcon } from '../../../components/FoodIcon';
 import { Icon } from '../../../components/Icon';
@@ -9,7 +10,7 @@ import { Reveal } from '../../../components/Reveal';
 import { RecipePhoto, openRecipe } from '../../../components/RecipeCard';
 import { useToast } from '../../../components/Toast';
 import { Button, Chip, EmptyState, IconButton, ProgressBar, Section, SectionHeader, Separator } from '../../../components/ui';
-import { MascotSlot, PopCard } from '../../../components/pop';
+import { Lift, MascotSlot, PopCard } from '../../../components/pop';
 import { haptics } from '../../../lib/haptics';
 import { COMMON_ITEMS, PANTRY_CATEGORIES, pantryCategory, smartSuggestions, suggestionsFor, whatCanICook, type PantryMatch } from '../../../lib/pantry';
 import { showPaywall, useProGate } from '../../../lib/pro';
@@ -71,7 +72,7 @@ export default function PantryScreen() {
       <Reveal index={0}>
       <View style={[styles.addRow, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
         <Icon name="plus" size={18} color={t.colors.tint} weight="bold" />
-        <TextInput
+        <TextInput maxFontSizeMultiplier={1.3}
           value={query}
           onChangeText={setQuery}
           onSubmitEditing={() => add(query)}
@@ -180,24 +181,28 @@ export default function PantryScreen() {
           {/* Smart suggestions */}
           {suggestions.length > 0 &&
             (isPro ? (
-              <View style={[styles.card, { backgroundColor: t.colors.cell, borderRadius: 20, ...t.chunky.card, marginBottom: 16 }]} testID="smart-suggestions">
-                <Text style={[t.type.headline, { color: t.colors.label, marginBottom: 6 }]}>Buy one thing, cook more</Text>
-                {suggestions.map((s) => (
-                  <Text key={s.name} style={[t.type.subhead, { color: t.colors.secondaryLabel, paddingVertical: 3 }]}>
-                    <Text style={{ color: t.colors.label, fontFamily: t.fonts.bold }}>{s.name}</Text> → {s.completes.map((r) => r.title).join(', ')}
-                  </Text>
-                ))}
-              </View>
-            ) : (
-              <PressableScale onPress={() => showPaywall('pantry')} accessibilityLabel="Smart suggestions, Pro" style={[styles.card, styles.locked, { backgroundColor: t.colors.cell, borderRadius: 20, ...t.chunky.card }]}>
-                <Icon name="lock" size={18} color={t.colors.tint} />
-                <View style={{ flex: 1 }}>
-                  <Text style={[t.type.headline, { color: t.colors.label }]}>Buy one thing, cook more</Text>
-                  <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
-                    With Pro, see which single item would let you cook {suggestions[0].completes.length === 1 ? 'another recipe' : `${suggestions[0].completes.length} more recipes`}.
-                  </Text>
+              <Lift radius={20} style={{ marginBottom: 16 }}>
+                <View style={[styles.card, { backgroundColor: t.colors.cell, borderRadius: 20, ...t.chunky.card }]} testID="smart-suggestions">
+                  <Text style={[t.type.headline, { color: t.colors.label, marginBottom: 6 }]}>Buy one thing, cook more</Text>
+                  {suggestions.map((s) => (
+                    <Text key={s.name} style={[t.type.subhead, { color: t.colors.secondaryLabel, paddingVertical: 3 }]}>
+                      <Text style={{ color: t.colors.label, fontFamily: t.fonts.bold }}>{s.name}</Text> → {s.completes.map((r) => r.title).join(', ')}
+                    </Text>
+                  ))}
                 </View>
-              </PressableScale>
+              </Lift>
+            ) : (
+              <Lift radius={20} style={{ marginBottom: 14 }}>
+                <PressableScale onPress={() => showPaywall('pantry')} accessibilityLabel="Smart suggestions, Pro" style={[styles.card, styles.locked, { backgroundColor: t.colors.cell, borderRadius: 20, ...t.chunky.card }]}>
+                  <Icon name="lock" size={18} color={t.colors.tint} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[t.type.headline, { color: t.colors.label }]}>Buy one thing, cook more</Text>
+                    <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
+                      With Pro, see which single item would let you cook {suggestions[0].completes.length === 1 ? 'another recipe' : `${suggestions[0].completes.length} more recipes`}.
+                    </Text>
+                  </View>
+                </PressableScale>
+              </Lift>
             ))}
 
           {matches.length === 0 ? (
@@ -227,7 +232,7 @@ function MatchCard({ match, onAddMissing }: { match: PantryMatch; onAddMissing: 
     <PopCard style={styles.match} contentStyle={styles.card}>
       <PressableScale onPress={() => openRecipe(recipe.id)} scaleTo={0.98} accessibilityLabel={`${recipe.title}, you have ${have.length} of ${needed}`} style={styles.matchTop}>
         <View style={[styles.thumb, { backgroundColor: t.colors.imagePlaceholder, borderColor: t.pop.ink }]}>
-          <RecipePhoto recipe={recipe} iconSize={22} />
+          <RecipePhoto recipe={recipe} iconSize={22} radius={13.5} />
         </View>
         <View style={{ flex: 1, gap: 6, minWidth: 0 }}>
           <Text style={[t.type.title3, { color: t.colors.label }]}>{recipe.title}</Text>
@@ -268,8 +273,8 @@ const styles = StyleSheet.create({
   itemRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingLeft: 16, paddingRight: 4, minHeight: 52 },
   limit: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderRadius: 16, borderWidth: 2, marginTop: 12 },
   card: { padding: 14 },
-  locked: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 },
+  locked: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   match: { marginBottom: 12 },
   matchTop: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
-  thumb: { width: 84, height: 84, borderRadius: 16, borderWidth: 2, overflow: 'hidden', borderCurve: 'continuous' },
+  thumb: { width: 84, height: 84, borderRadius: 16, borderWidth: 2.5, overflow: 'hidden', borderCurve: 'continuous' },
 });

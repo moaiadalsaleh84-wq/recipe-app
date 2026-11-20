@@ -1,5 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+import { Text } from '../components/Text';
 import { Mascot } from '../components/mascot/Mascot';
 import { EXPRESSIONS, MOODS, type Mood } from '../components/mascot/moods';
 import { AskNotifications } from '../state/timers';

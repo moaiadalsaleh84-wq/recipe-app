@@ -2,7 +2,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import { Reveal } from '../../components/Reveal';
-import { Linking, Modal, Pressable, Share, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { Linking, Modal, Pressable, Share, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
+import { Text } from '../../components/Text';
 import Svg, { Path } from 'react-native-svg';
 import Animated, {
   Extrapolation,
@@ -330,7 +331,7 @@ export default function RecipeScreen() {
           <Text style={[t.type.title2, styles.h2, { color: t.colors.label }]} accessibilityRole="header">
             My notes
           </Text>
-          <TextInput
+          <TextInput maxFontSizeMultiplier={1.3}
             value={noteDraft}
             onChangeText={setNoteDraft}
             onBlur={() => {
@@ -359,15 +360,9 @@ export default function RecipeScreen() {
         </View>
       </Animated.ScrollView>
 
-      {/* Compact bar that fades in once the title scrolls away. It catches touches, so nothing
-          under it can be tapped by accident. */}
-      <Animated.View style={[styles.topBar, { height: insets.top + 60, backgroundColor: t.colors.background, borderBottomColor: t.pop.ink }, barStyle]} testID="detail-bar" pointerEvents={barVisible ? 'auto' : 'none'}>
-        <View style={[styles.topTitle, { top: insets.top, height: 60 }]}>
-          <Text style={[recipe.title.length > 22 ? styles.topTitleSmall : t.type.title3, { color: t.colors.label, textAlign: 'center', fontFamily: t.fonts.heading }]} numberOfLines={2}>
-            {recipe.title}
-          </Text>
-        </View>
-      </Animated.View>
+      {/* Compact bar that fades in once the title scrolls away: white with a 2pt ink line, buttons only
+          (the title is already big on the page). It catches touches, so nothing under it is tapped by accident. */}
+      <Animated.View style={[styles.topBar, { height: insets.top + 62, backgroundColor: t.colors.background, borderBottomColor: t.pop.ink }, barStyle]} testID="detail-bar" pointerEvents={barVisible ? 'auto' : 'none'} />
 
       {/* Back, heart and more */}
       <View style={[styles.controls, { top: insets.top + 8 }]} pointerEvents="box-none">
@@ -632,9 +627,7 @@ const styles = StyleSheet.create({
   step: { flexDirection: 'row', gap: 12, marginBottom: 16 },
   stepNum: { width: 34, height: 34, borderRadius: 17, borderWidth: 2, alignItems: 'center', justifyContent: 'center', marginTop: -4 },
   notes: { minHeight: 96, borderRadius: 20, padding: 16, textAlignVertical: 'top', borderCurve: 'continuous', outlineStyle: 'none' } as never,
-  topBar: { position: 'absolute', top: 0, left: 0, right: 0, borderBottomWidth: 2.5 },
-  topTitle: { position: 'absolute', left: 72, right: 120, justifyContent: 'center', alignItems: 'center' },
-  topTitleSmall: { fontSize: 15, lineHeight: 18 },
+  topBar: { position: 'absolute', top: 0, left: 0, right: 0, borderBottomWidth: 2 },
   resetServings: { minHeight: 44, justifyContent: 'center' },
   controls: { position: 'absolute', left: 16, right: 16, flexDirection: 'row', justifyContent: 'space-between' },
   controlsRight: { flexDirection: 'row', gap: 10 },

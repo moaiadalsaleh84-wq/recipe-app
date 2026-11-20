@@ -1,6 +1,7 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from './Text';
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import { useState } from 'react';
 import type { Recipe, RecipeImage } from '../data/mock';
@@ -19,17 +20,17 @@ import { IconButton, Skeleton } from './ui';
 export const openRecipe = (id: string) => router.push({ pathname: '/recipe/[id]', params: { id } });
 
 /** The recipe's photo, or a cozy placeholder for recipes added without one. */
-export function RecipePhoto({ recipe, iconSize = 36 }: { recipe: Recipe; iconSize?: number }) {
+export function RecipePhoto({ recipe, iconSize = 36, radius = 0 }: { recipe: Recipe; iconSize?: number; /** Corner radius of the photo itself: the frame's radius minus its border (2.5). */ radius?: number }) {
   const t = useTheme();
   // Remembers which image failed (an expired link), so a new photo gets a fresh try.
   const [failed, setFailed] = useState<RecipeImage>(null);
   const image = recipe.image;
   if (image && image !== failed) {
     const source = typeof image === 'number' ? image : { uri: photoUri(image.uri) };
-    return <Image source={source} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} onError={() => setFailed(image)} accessibilityIgnoresInvertColors />;
+    return <Image source={source} style={[StyleSheet.absoluteFill, { borderRadius: radius }]} contentFit="cover" transition={250} onError={() => setFailed(image)} accessibilityIgnoresInvertColors />;
   }
   return (
-    <View style={[StyleSheet.absoluteFill, styles.noPhoto, { backgroundColor: t.colors.imagePlaceholder }]}>
+    <View style={[StyleSheet.absoluteFill, styles.noPhoto, { backgroundColor: t.colors.imagePlaceholder, borderRadius: radius }]}>
       <Icon name="pot" size={iconSize} color={t.colors.tertiaryLabel} />
     </View>
   );
@@ -205,7 +206,7 @@ export function RecipeRow({
     <View style={styles.row}>
       <PressableScale onPress={onPress ?? (() => openRecipe(recipe.id))} scaleTo={0.98} accessibilityLabel={`${recipe.title}, ${subtitle ?? meta(recipe)}`} accessibilityHint={accessibilityHint} style={styles.rowMain}>
         <View style={[styles.thumb, { backgroundColor: t.colors.imagePlaceholder, borderColor: t.pop.ink }]}>
-          <RecipePhoto recipe={recipe} iconSize={24} />
+          <RecipePhoto recipe={recipe} iconSize={24} radius={13.5} />
         </View>
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={[t.type.title3, { color: t.colors.label, fontSize: 18, lineHeight: 22 }]}>{recipe.title}</Text>
@@ -246,5 +247,5 @@ const styles = StyleSheet.create({
   featuredFav: { position: 'absolute', top: 4, right: 4 },
   row: { flexDirection: 'row', alignItems: 'center', paddingRight: 8 },
   rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 10, paddingLeft: 12, paddingRight: 8, minHeight: 84 },
-  thumb: { width: 64, height: 64, borderRadius: 16, overflow: 'hidden', borderWidth: 2, borderCurve: 'continuous' },
+  thumb: { width: 64, height: 64, borderRadius: 16, overflow: 'hidden', borderWidth: 2.5, borderCurve: 'continuous' },
 });

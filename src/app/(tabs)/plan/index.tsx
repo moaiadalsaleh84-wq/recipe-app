@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '../../../components/Text';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
@@ -258,7 +259,7 @@ function MealCard({ meal, recipe, onChange, onRemove }: { meal: string; recipe: 
     <PopCard radius={22} depth={4} contentStyle={styles.meal}>
       <PressableScale onPress={() => openRecipe(recipe.id)} scaleTo={0.98} accessibilityLabel={`${meal}: ${recipe.title}, ${recipe.minutes} min, ${recipe.calories} kcal`} accessibilityHint="Opens the recipe" style={styles.mealMain}>
         <View style={[styles.mealPhoto, { backgroundColor: t.colors.imagePlaceholder, borderColor: t.pop.ink }]}>
-          <RecipePhoto recipe={recipe} iconSize={24} />
+          <RecipePhoto recipe={recipe} iconSize={24} radius={13.5} />
         </View>
         <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
           <PopChip label={meal} color={MEAL_TINT[meal] ?? t.pop.sunshineTint} small />
@@ -289,7 +290,7 @@ const styles = StyleSheet.create({
   slotIcon: { width: 52, height: 52, borderRadius: 16, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
   meal: { flexDirection: 'row', alignItems: 'center', padding: 8, paddingRight: 0 },
   mealMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14 },
-  mealPhoto: { width: 92, height: 92, borderRadius: 16, borderWidth: 2, overflow: 'hidden', borderCurve: 'continuous' },
+  mealPhoto: { width: 92, height: 92, borderRadius: 16, borderWidth: 2.5, overflow: 'hidden', borderCurve: 'continuous' },
   mealActions: { alignItems: 'center' },
   fillCard: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, marginTop: 24, borderRadius: 24, borderCurve: 'continuous' },
   fillIcon: { width: 48, height: 48, borderRadius: 16, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },

@@ -7,7 +7,8 @@
  */
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Text } from '../components/Text';
 import Animated, { FadeIn, FadeInDown, FadeInRight, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Mascot } from '../components/mascot/Mascot';
@@ -22,6 +23,7 @@ import { displayName, goalOptions, householdOptions, type Profile } from '../dat
 import { haptics } from '../lib/haptics';
 import { useStore } from '../state/store';
 import { fonts, useTheme } from '../theme';
+import { Lift } from '../components/pop/Lift';
 
 const STEPS = ['name', 'goal', 'diet', 'household'] as const;
 type Step = (typeof STEPS)[number];
@@ -87,7 +89,7 @@ export default function Onboarding() {
                 Import recipes from TikTok, YouTube, Instagram and any website. Plan your week, shop by aisle, and cook step by step.
               </Text>
               <Text style={[t.type.headline, { color: t.colors.label, marginBottom: 8 }]}>What should we call you?</Text>
-              <TextInput
+              <TextInput maxFontSizeMultiplier={1.3}
                 value={profile.name}
                 onChangeText={(v) => setProfile({ name: v })}
                 placeholder="Your first name"
@@ -184,23 +186,25 @@ function Question({ title, subtitle, children }: { title: string; subtitle: stri
 function OptionCard({ label, icon, selected, onPress, multi }: { label: string; icon?: IconName; selected: boolean; onPress: () => void; multi?: boolean }) {
   const t = useTheme();
   return (
-    <PressableScale
-      onPress={onPress}
-      haptic="select"
-      scaleTo={0.98}
-      accessibilityRole={multi ? 'checkbox' : 'radio'}
-      aria-checked={selected}
-      accessibilityLabel={label}
-      style={[styles.option, { backgroundColor: selected ? t.colors.tintSoft : t.colors.cell, borderColor: selected ? t.colors.tintFill : t.colors.border }, selected ? t.chunky.button() : t.chunky.lip]}
-    >
-      {icon && (
-        <View style={[styles.optionIcon, { backgroundColor: selected ? t.colors.tintFill : t.colors.fill }]}>
-          <Icon name={icon} size={18} color={selected ? t.colors.onTint : t.colors.tint} weight="bold" />
-        </View>
-      )}
-      <Text style={[t.type.headline, { color: t.colors.label, flex: 1 }]}>{label}</Text>
-      <CheckCircle checked={selected} color={t.colors.tintFill} />
-    </PressableScale>
+    <Lift radius={18} offset={t.depth.small} pressed={selected}>
+      <PressableScale
+        onPress={onPress}
+        haptic="select"
+        scaleTo={0.98}
+        accessibilityRole={multi ? 'checkbox' : 'radio'}
+        aria-checked={selected}
+        accessibilityLabel={label}
+        style={[styles.option, { backgroundColor: selected ? t.colors.tintSoft : t.colors.cell, borderColor: t.pop.ink }, selected && { transform: [{ translateY: t.depth.small }] }]}
+      >
+        {icon && (
+          <View style={[styles.optionIcon, { backgroundColor: selected ? t.colors.tintFill : t.colors.fill }]}>
+            <Icon name={icon} size={18} color={selected ? t.colors.onTint : t.colors.tint} weight="bold" />
+          </View>
+        )}
+        <Text style={[t.type.headline, { color: t.colors.label, flex: 1 }]}>{label}</Text>
+        <CheckCircle checked={selected} color={t.colors.tintFill} />
+      </PressableScale>
+    </Lift>
   );
 }
 

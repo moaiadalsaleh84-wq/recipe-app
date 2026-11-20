@@ -6,7 +6,8 @@
  */
 import { pop } from '../theme';
 import { useState, type ReactNode } from 'react';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
+import { Text } from './Text';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
 const INSETS = { top: 59, bottom: 34, left: 0, right: 0 };
