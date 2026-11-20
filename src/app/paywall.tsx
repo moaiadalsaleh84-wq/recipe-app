@@ -148,7 +148,7 @@ export default function Paywall() {
             onPress={() => setPlan('yearly')}
             title="Yearly"
             price={`${money(yearly.price)} / year`}
-            note={`${money(perWeek('yearly'))} a week${yearly.trialDays ? ` · ${yearly.trialDays} days free` : ''}`}
+            note={`${money(perWeek('yearly'))}/week${yearly.trialDays ? ` · ${yearly.trialDays} days free` : ''}`}
             badge={`Best value · Save ${yearlySavingsPct()}%`}
           />
           <PlanCard id="monthly" selected={plan === 'monthly'} onPress={() => setPlan('monthly')} title="Monthly" price={`${money(monthly.price)} / month`} note="Flexible, cancel anytime" />

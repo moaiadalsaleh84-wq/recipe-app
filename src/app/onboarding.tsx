@@ -99,7 +99,7 @@ export default function Onboarding() {
                 maxLength={24}
                 onSubmitEditing={next}
                 accessibilityLabel="Your first name"
-                style={[styles.nameInput, { color: t.colors.label, backgroundColor: t.colors.cell, borderColor: name ? t.colors.tintFill : t.colors.border }]}
+                style={[styles.nameInput, { color: t.colors.label, backgroundColor: t.colors.cell, borderColor: t.pop.ink, ...t.chunky.lip }]}
               />
             </View>
           )}
