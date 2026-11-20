@@ -38,6 +38,8 @@ type TimersApi = {
   pause: (id: string) => void;
   resume: (id: string) => void;
   restart: (id: string) => void;
+  /** Back to the full length, not running. */
+  reset: (id: string) => void;
   /** Stops a ringing timer or cancels a running one. */
   stop: (id: string) => void;
 };
@@ -91,10 +93,18 @@ export function TimersProvider({ children }: { children: ReactNode }) {
     latest.current = timers;
   }, [timers]);
 
-  /** Moves the timers to the current time; rings for any that just finished. */
+  /**
+   * Moves the timers to the current time; rings for any that just finished. Runs every 250ms but
+   * only re-renders when a shown second changes. Always worked out from each timer's end time.
+   */
+  const shown = useRef('');
   const check = useCallback(() => {
     const t = Date.now();
-    setNow(t);
+    const key = latest.current.map((tm) => `${tm.id}:${tm.status}:${engine.secondsLeft(tm, t)}`).join('|');
+    if (key !== shown.current) {
+      shown.current = key;
+      setNow(t);
+    }
     const { list, finished } = engine.tick(latest.current, t);
     if (!finished.length) return;
     latest.current = list;
@@ -128,7 +138,12 @@ export function TimersProvider({ children }: { children: ReactNode }) {
   const start = useCallback(
     (input: engine.StartInput) => {
       alarm.stop();
-      setTimers((l) => engine.start(l, input, Date.now()));
+      // The end time is set right away, before anything that waits (notifications are scheduled
+      // afterwards). The clock moves to now as well, so the screen never draws the new timer
+      // against an old time (that was the "20:03" bug).
+      const at = Date.now();
+      setNow(at);
+      setTimers((l) => engine.start(l, input, at));
       if (!support.notifications) return;
       // First timer ever: the cat asks before iOS does.
       AsyncStorage.getItem(ASKED_KEY)
@@ -140,8 +155,24 @@ export function TimersProvider({ children }: { children: ReactNode }) {
     },
     [alarm, support.notifications],
   );
-  const pause = useCallback((id: string) => setTimers((l) => engine.pause(l, id, Date.now())), []);
-  const resume = useCallback((id: string) => setTimers((l) => engine.resume(l, id, Date.now())), []);
+  const pause = useCallback((id: string) => {
+    const at = Date.now();
+    setNow(at);
+    setTimers((l) => engine.pause(l, id, at));
+  }, []);
+  const resume = useCallback((id: string) => {
+    const at = Date.now();
+    setNow(at);
+    setTimers((l) => engine.resume(l, id, at));
+  }, []);
+  /** Back to the full length, not running. */
+  const reset = useCallback(
+    (id: string) => {
+      alarm.stop();
+      setTimers((l) => engine.reset(l, id));
+    },
+    [alarm],
+  );
   const restart = useCallback(
     (id: string) => {
       alarm.stop();
@@ -171,7 +202,7 @@ export function TimersProvider({ children }: { children: ReactNode }) {
     if (allow) await requestNotificationPermission();
   };
 
-  const value = useMemo<TimersApi>(() => ({ timers, now, support, start, pause, resume, restart, stop }), [timers, now, support, start, pause, resume, restart, stop]);
+  const value = useMemo<TimersApi>(() => ({ timers, now, support, start, pause, resume, restart, reset, stop }), [timers, now, support, start, pause, resume, restart, reset, stop]);
 
   return (
     <TimersContext.Provider value={value}>

@@ -19,6 +19,8 @@ export type CookTimer = {
   endsAt: number | null;
   /** Seconds left, kept while paused. */
   remaining: number;
+  /** Exact time left (ms), kept while paused, so resuming loses nothing. Older saves don't have it. */
+  remainingMs?: number;
   /** When it reached 0:00 (ms). Set once ringing/done. */
   finishedAt: number | null;
   recipeId: string;
@@ -33,8 +35,19 @@ export const MAX_TIMERS = 4;
 /** Ring in the app only if it finished less than this long ago (otherwise it already rang as a notification). */
 export const RING_IF_LATE_UNDER_MS = 60_000;
 
+/**
+ * Seconds left, always worked out from the end time (never by counting down), and never more than
+ * the timer's length: a 20-minute timer shows 20:00, then 19:59, never 20:03.
+ */
 export const secondsLeft = (t: CookTimer, now: number) =>
-  t.status === 'running' && t.endsAt != null ? Math.max(0, Math.ceil((t.endsAt - now) / 1000)) : t.status === 'paused' ? t.remaining : 0;
+  t.status === 'running' && t.endsAt != null
+    ? Math.min(t.total, Math.max(0, Math.ceil((t.endsAt - now) / 1000)))
+    : t.status === 'paused'
+      ? Math.min(t.total, t.remaining)
+      : 0;
+
+/** True for a timer that was reset: back to its full length and waiting for Play. */
+export const isReady = (t: CookTimer) => t.status === 'paused' && (t.remainingMs ?? t.remaining * 1000) >= t.total * 1000;
 
 /** "4:05", "1:02:03". */
 export function clock(seconds: number) {
@@ -54,6 +67,7 @@ const newId = () => `t-${Date.now().toString(36)}-${Math.random().toString(36).s
  * At MAX_TIMERS, the oldest finished one is replaced, else the oldest overall.
  */
 export function start(list: CookTimer[], input: StartInput, now: number, id: string = newId()): CookTimer[] {
+  // The end time is fixed right here, from the moment Play was pressed.
   const fresh: CookTimer = { ...input, id, status: 'running', endsAt: now + input.total * 1000, remaining: input.total, finishedAt: null };
   const same = list.find((t) => t.recipeId === input.recipeId && t.step === input.step && t.label === input.label);
   if (same) return list.map((t) => (t === same ? { ...fresh, id: same.id } : t));
@@ -68,13 +82,24 @@ export function start(list: CookTimer[], input: StartInput, now: number, id: str
 const update = (list: CookTimer[], id: string, fn: (t: CookTimer) => CookTimer) => list.map((t) => (t.id === id ? fn(t) : t));
 
 export const pause = (list: CookTimer[], id: string, now: number) =>
-  update(list, id, (t) => (t.status === 'running' ? { ...t, status: 'paused', remaining: secondsLeft(t, now), endsAt: null } : t));
+  update(list, id, (t) => {
+    if (t.status !== 'running' || t.endsAt == null) return t;
+    const remainingMs = Math.min(t.total * 1000, Math.max(0, t.endsAt - now));
+    return { ...t, status: 'paused', remaining: Math.ceil(remainingMs / 1000), remainingMs, endsAt: null };
+  });
 
 export const resume = (list: CookTimer[], id: string, now: number) =>
-  update(list, id, (t) => (t.status === 'paused' && t.remaining > 0 ? { ...t, status: 'running', endsAt: now + t.remaining * 1000 } : t));
+  update(list, id, (t) => {
+    const ms = t.remainingMs ?? t.remaining * 1000;
+    return t.status === 'paused' && ms > 0 ? { ...t, status: 'running', endsAt: now + ms } : t;
+  });
+
+/** Back to the full length, not running (Play starts it again). */
+export const reset = (list: CookTimer[], id: string) =>
+  update(list, id, (t) => ({ ...t, status: 'paused', endsAt: null, remaining: t.total, remainingMs: t.total * 1000, finishedAt: null }));
 
 export const restart = (list: CookTimer[], id: string, now: number) =>
-  update(list, id, (t) => ({ ...t, status: 'running', endsAt: now + t.total * 1000, remaining: t.total, finishedAt: null }));
+  update(list, id, (t) => ({ ...t, status: 'running', endsAt: now + t.total * 1000, remaining: t.total, remainingMs: undefined, finishedAt: null }));
 
 /** Stop a ringing timer, or cancel a running/paused one. Either way it's removed. */
 export const stop = (list: CookTimer[], id: string) => list.filter((t) => t.id !== id);

@@ -30,7 +30,7 @@ import { useToast } from '../../components/Toast';
 import { MascotSlot, PopButton, PopCard, PopChip, PopIconButton } from '../../components/pop';
 import { CheckCircle, EmptyState } from '../../components/ui';
 import type { Ingredient, Rating } from '../../data/mock';
-import { clock, secondsLeft, type CookTimer } from '../../lib/cookTimers';
+import { clock, isReady, secondsLeft, type CookTimer } from '../../lib/cookTimers';
 import { haptics } from '../../lib/haptics';
 import { photoUri, takePhoto } from '../../lib/photos';
 import { levelFor, streakOf, xpFor } from '../../lib/progress';
@@ -63,7 +63,7 @@ export default function CookMode() {
   // The cooking-history entry made when you finish, and your XP and level just before it.
   const [entry, setEntry] = useState<{ date: string; xpBefore: number; levelBefore: number } | null>(null);
   // Timers live app-wide (src/state/timers.tsx): they keep going outside Cook Mode and ring when the app is closed.
-  const { timers, now, support, start, pause, resume, restart, stop } = useTimers();
+  const { timers, now, support, start, pause, resume, reset, stop } = useTimers();
 
   const steps = recipe?.steps ?? [];
   const last = steps.length + 1;
@@ -236,7 +236,7 @@ export default function CookMode() {
                   <View style={[styles.stepBadge, { backgroundColor: color.fill }]} accessibilityElementsHidden>
                     <Text style={[t.type.title2, { color: pop.ink }]}>{page}</Text>
                   </View>
-                  <Text style={[styles.stepText, t.noWidows.style, { color: pop.ink }]} {...t.noWidows.props} testID="cook-step" accessibilityRole="header">
+                  <Text style={[styles.stepText, main.length > 120 && styles.stepTextLong, t.noWidows.style, { color: pop.ink }]} {...t.noWidows.props} testID="cook-step" accessibilityRole="header">
                     {main}
                   </Text>
                   {inStep.length > 0 && (
@@ -269,7 +269,7 @@ export default function CookMode() {
                       onStart={() => startTimer(st.label, st.seconds)}
                       onPause={() => tm && pause(tm.id)}
                       onResume={() => tm && resume(tm.id)}
-                      onReset={() => tm && restart(tm.id)}
+                      onReset={() => tm && reset(tm.id)}
                       onStop={() => {
                         if (!tm) return;
                         stop(tm.id);
@@ -382,7 +382,7 @@ function GatherTile({ label, checked, onPress }: { label: string; checked: boole
         ) : (
           <View style={styles.tileEmpty} />
         )}
-        <Text style={[styles.tileText]} numberOfLines={2} maxFontSizeMultiplier={1.3}>
+        <Text style={styles.tileText}>
           {label}
         </Text>
       </Animated.View>
@@ -395,64 +395,49 @@ function GatherTile({ label, checked, onPress }: { label: string; checked: boole
 /* ------------------------------------------------------------------ */
 
 /**
- * The step's timer: a tomato card. It never starts on its own: the big "10:00" waits for the
- * round play button. Running: counts down with pause and reset. Done: "Time's up!" and Stop.
+ * The step's timer: a tomato card. Row 1: the big time and its status (Ready, Running, Paused,
+ * Done!), always in full. Row 2: the controls, 48pt each: Play or Pause, Reset, and Stop as a word
+ * (not an ✕, which looks like closing the screen). It never starts on its own.
  */
 function TimerCard({ seconds, timer: tm, now, first, onStart, onPause, onResume, onReset, onStop }: { seconds: number; timer?: CookTimer; now: number; first: boolean; onStart: () => void; onPause: () => void; onResume: () => void; onReset: () => void; onStop: () => void }) {
   const t = useTheme();
   const length = durationLabel(seconds);
-  if (tm?.status === 'ringing') {
-    return (
-      <Animated.View entering={FadeIn} layout={LinearTransition}>
-        <PopCard color={pop.tomato} contentStyle={styles.timerFace}>
-          <View style={styles.timerText} accessibilityRole="alert">
-            <Text style={[styles.timerClock, { color: pop.ink }]} testID={first ? 'timer-done' : undefined}>
-              Time’s up!
-            </Text>
-            <Text style={[t.type.footnote, { color: pop.ink }]}>{length} timer</Text>
-          </View>
-          <PopButton label="Stop" size="small" color={pop.white} onPress={onStop} accessibilityLabel="Stop alarm" haptic={null} />
-        </PopCard>
-      </Animated.View>
-    );
-  }
-  if (tm?.status === 'done') {
-    // Ended while the app was closed: the notification already rang.
-    return (
-      <Animated.View entering={FadeIn} layout={LinearTransition}>
-        <PopCard color={pop.tomatoTint} contentStyle={styles.timerFace} testID="timer-finished-away">
-          <Icon name="checkCircle" size={22} color={pop.ink} weight="bold" />
-          <Text style={[t.type.subhead, { color: pop.ink, flex: 1, minWidth: 0 }]} numberOfLines={2}>
-            {length} timer finished while you were away
-          </Text>
-          <PopIconButton icon="close" accessibilityLabel="Dismiss finished timer" onPress={onStop} haptic={null} />
-        </PopCard>
-      </Animated.View>
-    );
-  }
+  const done = tm?.status === 'ringing' || tm?.status === 'done';
+  const ready = !tm || isReady(tm);
   const running = tm?.status === 'running';
   const left = tm ? secondsLeft(tm, now) : seconds;
+  const status = done ? 'Done!' : ready ? 'Ready' : running ? 'Running' : 'Paused';
   return (
     <Animated.View entering={FadeIn} layout={LinearTransition}>
-      <PopCard color={pop.tomato} contentStyle={styles.timerFace}>
-        {/* The text column may shrink, but each line stays whole: no letter-by-letter wrapping. */}
-        <View style={styles.timerText}>
-          <Text style={[styles.timerClock, { color: pop.ink }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} testID={first ? 'timer-display' : undefined}>
-            {clock(left)}
+      <PopCard color={tm?.status === 'done' ? pop.tomatoTint : pop.tomato} contentStyle={styles.timerFace} testID={tm?.status === 'done' ? 'timer-finished-away' : undefined}>
+        <View accessible accessibilityRole={tm?.status === 'ringing' ? 'alert' : undefined} accessibilityLabel={`${length} timer. ${status}${done ? '' : `, ${clock(left)} left`}`}>
+          <Text style={[styles.timerClock, { color: pop.ink }]} testID={first ? (done ? 'timer-done' : 'timer-display') : undefined}>
+            {done ? '0:00' : clock(left)}
           </Text>
-          <Text style={[t.type.footnote, { color: pop.ink }]} numberOfLines={1} testID={first ? 'timer-label' : undefined}>
-            {!tm ? `${length} timer` : running ? `${length} · running` : `Paused · ${length}`}
+          <Text style={[t.type.headline, { color: pop.ink }]} testID={first ? 'timer-label' : undefined}>
+            {status} · {length}
           </Text>
         </View>
-        {!tm ? (
-          <PopIconButton icon="play" size={56} iconSize={24} accessibilityLabel={`Start a ${length} timer`} onPress={onStart} haptic={null} />
-        ) : (
-          <View style={styles.timerBtns}>
-            <PopIconButton icon={running ? 'pause' : 'play'} accessibilityLabel={running ? 'Pause timer' : 'Resume timer'} onPress={running ? onPause : onResume} haptic="select" />
-            <PopIconButton icon="restart" accessibilityLabel="Reset timer" onPress={onReset} haptic="select" />
-            <PopIconButton icon="close" accessibilityLabel="Stop timer" onPress={onStop} haptic="select" />
-          </View>
-        )}
+        <View style={styles.timerBtns}>
+          {!done &&
+            (ready ? (
+              <PopIconButton icon="play" size={48} accessibilityLabel={`Start a ${length} timer`} onPress={tm ? onResume : onStart} haptic={null} />
+            ) : (
+              <PopIconButton icon={running ? 'pause' : 'play'} size={48} accessibilityLabel={running ? 'Pause timer' : 'Resume timer'} onPress={running ? onPause : onResume} haptic="select" />
+            ))}
+          {tm && !done && !ready && <PopIconButton icon="restart" size={48} accessibilityLabel="Reset timer" onPress={onReset} haptic="select" />}
+          {tm && (
+            <PopButton
+              label="Stop"
+              size="small"
+              color={pop.white}
+              onPress={onStop}
+              accessibilityLabel={tm.status === 'ringing' ? 'Stop alarm' : 'Stop timer'}
+              haptic="select"
+              faceStyle={styles.stopFace}
+            />
+          )}
+        </View>
       </PopCard>
     </Animated.View>
   );
@@ -468,7 +453,7 @@ function TimerPill({ timer: tm, now, here, onPress, onStop }: { timer: CookTimer
     <Animated.View entering={FadeInUp.duration(200)} layout={LinearTransition} style={[styles.pill, { backgroundColor: ringing ? pop.tomato : pop.white }]}>
       <PressableScale onPress={onPress} disabled={!here} accessibilityLabel={`${text}${here ? '. Go to that step' : ''}`} style={styles.pillMain} testID="timer-pill">
         <Icon name="timer" size={15} color={pop.ink} weight="bold" />
-        <Text style={[t.type.footnote, { color: pop.ink, fontFamily: fonts.black, fontVariant: ['tabular-nums'] }]} numberOfLines={1}>
+        <Text style={[t.type.footnote, { color: pop.ink, fontFamily: fonts.black, fontVariant: ['tabular-nums'], flexShrink: 1 }]}>
           {text}
         </Text>
       </PressableScale>
@@ -581,10 +566,10 @@ function Finish({
           </PopCard>
           <PopCard style={{ flex: 1 }} color={leveledUp ? pop.lilac : pop.white} contentStyle={styles.reward}>
             <Icon name={leveledUp ? 'crown' : 'sparkles'} size={26} color={pop.ink} weight="bold" />
-            <Text style={[t.type.title2, { color: pop.ink }]} numberOfLines={1} adjustsFontSizeToFit testID="finish-xp">
+            <Text style={[t.type.title2, { color: pop.ink, textAlign: 'center' }]} testID="finish-xp">
               {leveledUp ? `LEVEL ${lvl.level}` : `+${gained} XP`}
             </Text>
-            <Text style={[t.type.caption1, { color: leveledUp ? pop.ink : pop.inkMuted }]} numberOfLines={1}>
+            <Text style={[t.type.caption1, { color: leveledUp ? pop.ink : pop.inkMuted, textAlign: 'center' }]}>
               {leveledUp ? lvl.title : `Level ${lvl.level} · ${lvl.title}`}
             </Text>
           </PopCard>
@@ -689,19 +674,22 @@ const styles = StyleSheet.create({
   content: { padding: 20, paddingTop: 16, paddingBottom: 140, width: '100%', maxWidth: 640, alignSelf: 'center' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 },
   tileShadow: { position: 'absolute', left: 0, right: 0, top: 5, bottom: 0, borderRadius: 20, backgroundColor: pop.ink },
-  tile: { height: 92, borderRadius: 20, borderWidth: 2.5, borderColor: pop.ink, padding: 12, justifyContent: 'space-between', borderCurve: 'continuous' },
+  // At least 92 tall; a long name makes the tile (and its row partner) taller instead of being cut.
+  tile: { flex: 1, minHeight: 92, borderRadius: 20, borderWidth: 2.5, borderColor: pop.ink, padding: 12, justifyContent: 'space-between', gap: 8, borderCurve: 'continuous' },
   tileEmpty: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderStyle: 'dashed', borderColor: pop.ink },
   tileCheck: { width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: pop.ink, backgroundColor: pop.white, alignItems: 'center', justifyContent: 'center' },
   tileText: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 19, color: pop.ink },
   stepCard: { paddingHorizontal: 20, paddingTop: 36, paddingBottom: 20, gap: 16 },
   stepBadge: { position: 'absolute', top: -26, left: 18, width: 50, height: 50, borderRadius: 25, borderWidth: 2.5, borderColor: pop.ink, alignItems: 'center', justifyContent: 'center' },
   stepText: { fontFamily: fonts.headingSemi, fontSize: 30, lineHeight: 38 },
+  // Long steps (over 120 characters) a little smaller; the step area scrolls if it still doesn't fit.
+  stepTextLong: { fontSize: 26, lineHeight: 33 },
   stepChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tip: { borderWidth: 2, borderStyle: 'dashed', borderColor: pop.ink, borderRadius: 18, padding: 14 },
-  timerFace: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14 },
-  timerText: { flex: 1, minWidth: 0 },
+  timerFace: { gap: 12, paddingHorizontal: 16, paddingVertical: 14 },
   timerClock: { fontFamily: fonts.heading, fontSize: 40, lineHeight: 46, fontVariant: ['tabular-nums'] },
-  timerBtns: { flexDirection: 'row', gap: 8 },
+  timerBtns: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  stopFace: { minHeight: 48, paddingHorizontal: 18 },
   sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 20, paddingTop: 16, backgroundColor: pop.white, borderWidth: 2.5, borderBottomWidth: 0, borderColor: pop.ink },
   sheetHead: { flexDirection: 'row', alignItems: 'center' },
   sheetRow: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 56 },
