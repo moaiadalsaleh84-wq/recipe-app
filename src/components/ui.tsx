@@ -542,6 +542,7 @@ export function Segmented<T extends string>({
 
 const segStyles = StyleSheet.create({
   wrap: { flexDirection: 'row', borderRadius: 999, padding: 3, borderWidth: 2, borderCurve: 'continuous' },
-  itemSmall: { minHeight: 30, minWidth: 48, paddingHorizontal: 10 },
+  // 34 + 2 × 3 padding + 2 × 2 border = 44 tall.
+  itemSmall: { minHeight: 34, minWidth: 48, paddingHorizontal: 10 },
   item: { minHeight: 38, minWidth: 60, paddingHorizontal: 14, borderRadius: 999, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
 });

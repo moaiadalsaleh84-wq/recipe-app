@@ -24,14 +24,15 @@ import { PressableScale } from '../../components/PressableScale';
 import { RecipePhoto } from '../../components/RecipeCard';
 import { useToast } from '../../components/Toast';
 import { Button, EmptyState, IconButton, Segmented } from '../../components/ui';
-import { PopButton, PopCard, PopChip, PopIconButton } from '../../components/pop';
+import { Lift, PopButton, PopCard, PopChip, PopIconButton } from '../../components/pop';
 import { type DietTag, type Recipe, type Units } from '../../data/mock';
 import { haptics } from '../../lib/haptics';
 import { pickPhoto } from '../../lib/photos';
 import { convertQty, convertStepText } from '../../lib/units';
 import { formatQty, roundQty, useStore } from '../../state/store';
 import { ingredientText } from '../../lib/qty';
-import { pop, popCycle, useTheme } from '../../theme';
+import { macroPercents } from '../../lib/percent';
+import { fonts, pop, popCycle, useTheme } from '../../theme';
 
 export default function RecipeScreen() {
   const t = useTheme();
@@ -81,11 +82,6 @@ export default function RecipeScreen() {
     [barThreshold],
   );
 
-  // The photo card sits tilted; it grows a little when you pull down. Numbers only in here.
-  const heroStyle = useAnimatedStyle(() => {
-    const y = scrollY.get();
-    return { transform: [{ rotate: '-2deg' }, { scale: y < 0 ? 1 + -y / 700 : 1 }] };
-  });
   const barStyle = useAnimatedStyle(() => ({
     opacity: interpolate(scrollY.get(), [barThreshold - 40, barThreshold], [0, 1], Extrapolation.CLAMP),
   }));
@@ -152,7 +148,8 @@ export default function RecipeScreen() {
   };
 
   const level = recipe.difficulty === 'Easy' ? 1 : recipe.difficulty === 'Medium' ? 2 : 3;
-  const photoWidth = Math.min(width - 56, 460);
+  // Full content width (20pt margins), 4:3.
+  const photoWidth = Math.min(width - 40, 560);
 
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.background }}>
@@ -166,12 +163,13 @@ export default function RecipeScreen() {
         contentContainerStyle={{ paddingBottom: insets.bottom + 120 }}
       >
         {/* Header: a tomato-tint band with the photo as a tilted card */}
-        <View style={[styles.header, { backgroundColor: t.pop.tomatoTint, paddingTop: insets.top + 64, borderBottomColor: t.pop.ink }]} testID="hero" onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}>
-          <Animated.View style={[styles.photoCard, { width: photoWidth, height: Math.round(photoWidth * 0.75), backgroundColor: t.colors.imagePlaceholder }, heroStyle]}>
-            <View style={styles.photoClip}>
-              <RecipePhoto recipe={recipe} iconSize={64} />
+        {/* Header: the buttons sit above the photo (12pt gap); the photo is straight, framed in ink. */}
+        <View style={[styles.header, { backgroundColor: t.pop.tomatoTint, paddingTop: insets.top + CONTROLS + 12, borderBottomColor: t.pop.ink }]} testID="hero" onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}>
+          <Lift radius={24}>
+            <View style={[styles.photoFrame, { width: photoWidth, height: Math.round(photoWidth * 0.75), backgroundColor: t.colors.imagePlaceholder }]}>
+              <RecipePhoto recipe={recipe} iconSize={64} radius={21.5} />
             </View>
-          </Animated.View>
+          </Lift>
           {recipe.custom && (
             <PopButton
               label={recipe.image ? 'Change photo' : 'Add a photo'}
@@ -232,7 +230,7 @@ export default function RecipeScreen() {
             <View style={styles.stats}>
               <StatTile color={t.pop.sunshine} icon="clock" value={`${recipe.minutes} min`} label="Total time" />
               <StatTile color={t.pop.leaf} hats={level} value={recipe.difficulty} label={`${recipe.steps.length} ${recipe.steps.length === 1 ? 'step' : 'steps'}`} a11y={`${recipe.difficulty}, ${recipe.steps.length} steps`} />
-              <StatTile color={t.pop.sky} icon="flame" value={`${recipe.calories}`} label="kcal / serving" a11y={`${recipe.calories} calories per serving`} />
+              <StatTile color={t.pop.sky} icon="flame" value={`${recipe.calories}`} label="kcal each" a11y={`${recipe.calories} calories per serving`} />
             </View>
           </Reveal>
 
@@ -251,13 +249,14 @@ export default function RecipeScreen() {
           </Reveal>
 
           {/* You'll need: servings in an outlined pill, units as a small switch */}
-          <View style={styles.needHead}>
-            <Text style={[t.type.title2, { color: t.colors.label, flex: 1 }]} accessibilityRole="header">
-              You’ll need
-            </Text>
+          <Text style={[t.type.title2, styles.h2, { color: t.colors.label }]} accessibilityRole="header">
+            You’ll need
+          </Text>
+          {/* One row: servings on the left, units on the right. Both 44 tall. */}
+          <View style={styles.needRow}>
+            <PeopleStepper value={servings} onChange={setServings} />
             <Segmented small label="Units" value={units} onChange={(u: Units) => setUnits(u)} options={[{ label: 'Metric', value: 'metric' }, { label: 'US', value: 'us' }]} />
           </View>
-          <PeopleStepper value={servings} onChange={setServings} />
           {/* Say why the number differs from the recipe, and offer the way back. */}
           {servings !== recipe.servings && (
             <PressableScale onPress={() => setServings(recipe.servings)} style={styles.resetServings} accessibilityLabel={`Use the recipe's ${recipe.servings} servings`} testID="servings-reset">
@@ -365,7 +364,7 @@ export default function RecipeScreen() {
       <Animated.View style={[styles.topBar, { height: insets.top + 62, backgroundColor: t.colors.background, borderBottomColor: t.pop.ink }, barStyle]} testID="detail-bar" pointerEvents={barVisible ? 'auto' : 'none'} />
 
       {/* Back, heart and more */}
-      <View style={[styles.controls, { top: insets.top + 8 }]} pointerEvents="box-none">
+      <View style={[styles.controls, { top: insets.top + 8 }]} pointerEvents="box-none" testID="detail-controls">
         <PopIconButton icon="back" accessibilityLabel="Back" onPress={goBack} />
         <View style={styles.controlsRight}>
           <PopIconButton icon={fav ? 'heartFill' : 'heart'} accessibilityLabel={fav ? 'Remove from Favorites' : 'Add to Favorites'} onPress={onFavorite} iconColor={fav ? t.pop.tomato : t.pop.ink} haptic={null} />
@@ -409,6 +408,9 @@ export default function RecipeScreen() {
 }
 
 /** How each diet tag looks on the recipe page. */
+/** Height of the back / heart / more row (44 + its 3pt shadow), plus its 8pt top margin. */
+const CONTROLS = 8 + 47;
+
 const TAG_LOOK: Partial<Record<DietTag, { label: string; color: string }>> = {
   Vegetarian: { label: 'Veggie', color: pop.leafTint },
   Vegan: { label: 'Vegan', color: pop.leafTint },
@@ -419,19 +421,17 @@ const TAG_LOOK: Partial<Record<DietTag, { label: string; color: string }>> = {
   'Comfort food': { label: 'Cozy', color: pop.lilacTint },
 };
 
-/** One colored stat tile: an icon (or chef hats), a big value and a small label. */
+/** One colored stat tile: an icon (or chef hats), the value and a label. All three are the same height and size. */
 function StatTile({ color, icon, hats, value, label, a11y }: { color: string; icon?: IconName; hats?: number; value: string; label: string; a11y?: string }) {
   const t = useTheme();
   return (
-    <View style={[styles.stat, { backgroundColor: color, ...t.chunky.card }]} accessible accessibilityLabel={a11y ?? `${label}: ${value}`}>
-      {hats ? <ChefHats level={hats} color={t.pop.ink} empty={t.pop.ink} /> : icon ? <Icon name={icon} size={18} color={t.pop.ink} weight="bold" /> : null}
-      <Text style={[t.type.title3, { color: t.pop.ink }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
-        {value}
-      </Text>
-      <Text style={[t.type.caption1, { color: t.pop.ink }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
-        {label}
-      </Text>
-    </View>
+    <Lift radius={20} style={styles.statLift}>
+      <View style={[styles.stat, { backgroundColor: color, ...t.chunky.card }]} accessible accessibilityLabel={a11y ?? `${label}: ${value}`}>
+        <View style={styles.statIcon}>{hats ? <ChefHats level={hats} color={t.pop.ink} empty={t.pop.ink} /> : icon ? <Icon name={icon} size={18} color={t.pop.ink} weight="bold" /> : null}</View>
+        <Text style={[t.type.title3, { color: t.pop.ink }]}>{value}</Text>
+        <Text style={[styles.statLabel, { color: t.pop.ink }]}>{label}</Text>
+      </View>
+    </Lift>
   );
 }
 
@@ -451,11 +451,11 @@ function PeopleStepper({ value, onChange, min = 1, max = 24 }: { value: number; 
         if (e.nativeEvent.actionName === 'decrement' && value > min) onChange(value - 1);
       }}
     >
-      <IconButton icon="minus" haptic="select" accessibilityLabel="Fewer people" disabled={value <= min} onPress={() => onChange(Math.max(min, value - 1))} color={t.pop.ink} />
+      <IconButton icon="minus" haptic="select" accessibilityLabel="Fewer people" disabled={value <= min} onPress={() => onChange(Math.max(min, value - 1))} color={t.pop.ink} size={39} />
       <Text style={[t.type.headline, styles.peopleText, { color: t.pop.ink }]} testID="servings-label">
         <Text testID="stepper-value">{value}</Text> {value === 1 ? 'person' : 'people'}
       </Text>
-      <IconButton icon="plus" haptic="select" accessibilityLabel="More people" disabled={value >= max} onPress={() => onChange(Math.min(max, value + 1))} color={t.pop.ink} />
+      <IconButton icon="plus" haptic="select" accessibilityLabel="More people" disabled={value >= max} onPress={() => onChange(Math.min(max, value + 1))} color={t.pop.ink} size={39} />
     </View>
   );
 }
@@ -485,56 +485,59 @@ function Nutrition({ recipe, proteinGoal }: { recipe: Recipe; proteinGoal?: numb
     });
   };
   const { protein, carbs, fat } = recipe.nutrition;
-  const kcalFrom = { protein: protein * 4, carbs: carbs * 4, fat: fat * 9 };
-  const total = kcalFrom.protein + kcalFrom.carbs + kcalFrom.fat;
+  // Share of calories from each (4, 4 and 9 kcal per gram), rounded so they add up to exactly 100.
+  const [pP, pC, pF] = macroPercents(protein, carbs, fat);
+  const pct = { protein: pP, carbs: pC, fat: pF };
+  const total = pP + pC + pF;
   const rows = [
     { key: 'protein', label: 'Protein', grams: protein, color: t.colors.protein },
     { key: 'carbs', label: 'Carbs', grams: carbs, color: t.colors.carbs },
     { key: 'fat', label: 'Fat', grams: fat, color: t.colors.fat },
   ] as const;
   return (
-    <View style={[styles.card, styles.nutrition, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]}>
-      <PressableScale
-        onPress={toggle}
-        haptic="select"
-        scaleTo={0.99}
-        accessibilityRole="button"
-        aria-expanded={open}
-        accessibilityLabel={`Nutrition: ${recipe.calories} calories per serving, estimated. ${open ? 'Hide details' : 'Show details'}`}
-        style={styles.kcal}
-      >
-        <Text style={[t.type.title2, { color: t.colors.label }]}>{recipe.calories}</Text>
-        <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, flex: 1 }]}>kcal per serving, estimated</Text>
-        <Icon name={open ? 'chevronDown' : 'chevronRight'} size={14} color={t.colors.tertiaryLabel} weight="semibold" />
-      </PressableScale>
-      {open && total > 0 && (
-        <Animated.View entering={FadeIn.duration(200)} style={{ gap: 16 }} accessible accessibilityLabel={`${protein} grams protein, ${carbs} grams carbs, ${fat} grams fat per serving`}>
-          <View style={styles.split}>
-            {rows.map((r) => (
-              <View key={r.key} style={{ flex: Math.max(kcalFrom[r.key], total * 0.03), backgroundColor: r.color, borderRadius: 6 }} />
-            ))}
-          </View>
-          <View style={styles.macros}>
-            {rows.map((r) => (
-              <View key={r.key} style={styles.macro}>
-                <View style={styles.macroLabel}>
-                  <View style={[styles.dot, { backgroundColor: r.color }]} />
-                  <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{r.label}</Text>
+    <Lift radius={t.layout.cardRadius} style={{ marginTop: 18 }}>
+      <View style={[styles.card, styles.nutrition, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]}>
+        <PressableScale
+          onPress={toggle}
+          haptic="select"
+          scaleTo={0.99}
+          accessibilityRole="button"
+          aria-expanded={open}
+          accessibilityLabel={`Nutrition: ${recipe.calories} calories per serving, estimated. ${open ? 'Hide details' : 'Show details'}`}
+          style={styles.kcal}
+        >
+          <Text style={[t.type.title2, { color: t.colors.label }]}>{recipe.calories}</Text>
+          <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, flex: 1 }]}>kcal per serving, estimated</Text>
+          <Icon name={open ? 'chevronDown' : 'chevronRight'} size={14} color={t.colors.tertiaryLabel} weight="semibold" />
+        </PressableScale>
+        {open && total > 0 && (
+          <Animated.View entering={FadeIn.duration(200)} style={{ gap: 16 }} accessible accessibilityLabel={`${protein} grams protein, ${carbs} grams carbs, ${fat} grams fat per serving`}>
+            <View style={styles.split}>
+              {/* The bar uses the same rounded numbers as the labels. */}
+              {rows.map((r) => (pct[r.key] > 0 ? <View key={r.key} style={{ flex: pct[r.key], backgroundColor: r.color, borderRadius: 6, borderWidth: 2, borderColor: t.pop.ink }} /> : null))}
+            </View>
+            <View style={styles.macros}>
+              {rows.map((r) => (
+                <View key={r.key} style={styles.macro}>
+                  <View style={styles.macroLabel}>
+                    <View style={[styles.dot, { backgroundColor: r.color }]} />
+                    <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{r.label}</Text>
+                  </View>
+                  <Text style={[t.type.headline, { color: t.colors.label }]}>{r.grams} g</Text>
+                  <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]}>{pct[r.key]}% of kcal</Text>
                 </View>
-                <Text style={[t.type.headline, { color: t.colors.label }]}>{r.grams} g</Text>
-                <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]}>{Math.round((kcalFrom[r.key] / total) * 100)}% of kcal</Text>
-              </View>
-            ))}
-          </View>
-          {proteinGoal ? (
-            <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
-              {Math.round((protein / proteinGoal) * 100)}% of your {proteinGoal} g daily protein goal
-            </Text>
-          ) : null}
-          <Text style={[t.type.caption1, { color: t.colors.tertiaryLabel }]}>Estimated from the ingredients. Not medical advice.</Text>
-        </Animated.View>
-      )}
-    </View>
+              ))}
+            </View>
+            {proteinGoal ? (
+              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
+                {Math.round((protein / proteinGoal) * 100)}% of your {proteinGoal} g daily protein goal
+              </Text>
+            ) : null}
+            <Text style={[t.type.caption1, { color: t.colors.tertiaryLabel }]}>{'Estimated from the ingredients. Not medical\u00A0advice.'}</Text>
+          </Animated.View>
+        )}
+      </View>
+    </Lift>
   );
 }
 
@@ -564,24 +567,26 @@ function MoreMenu({ visible, onClose, top, rows }: { visible: boolean; onClose: 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: t.colors.scrim }]} onPress={onClose} accessibilityLabel="Close menu" />
-      <View style={[styles.menu, { top, backgroundColor: t.colors.elevated, ...t.chunky.card }]} accessibilityRole="menu">
-        {rows.map((r, i) => (
-          <PressableScale
-            key={r.label}
-            onPress={() => {
-              onClose();
-              r.onPress();
-            }}
-            accessibilityLabel={r.label}
-            accessibilityRole="menuitem"
-            scaleTo={0.98}
-            style={[styles.menuRow, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.colors.separator }]}
-          >
-            <Icon name={r.icon} size={18} color={t.colors.tint} />
-            <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>{r.label}</Text>
-          </PressableScale>
-        ))}
-      </View>
+      <Lift radius={20} style={[styles.menu, { top }]}>
+        <View style={[styles.menuFace, { backgroundColor: t.colors.elevated, ...t.chunky.card }]} accessibilityRole="menu">
+          {rows.map((r, i) => (
+            <PressableScale
+              key={r.label}
+              onPress={() => {
+                onClose();
+                r.onPress();
+              }}
+              accessibilityLabel={r.label}
+              accessibilityRole="menuitem"
+              scaleTo={0.98}
+              style={[styles.menuRow, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.colors.separator }]}
+            >
+              <Icon name={r.icon} size={18} color={t.colors.tint} />
+              <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>{r.label}</Text>
+            </PressableScale>
+          ))}
+        </View>
+      </Lift>
     </Modal>
   );
 }
@@ -602,22 +607,26 @@ function shareText(r: Recipe, servings: number, units: Units) {
 }
 
 const styles = StyleSheet.create({
-  header: { alignItems: 'center', paddingBottom: 28, borderBottomWidth: 2.5 },
-  photoCard: { borderRadius: 24, borderWidth: 2.5, borderColor: pop.ink, shadowColor: pop.ink, shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 0, height: 5 }, borderCurve: 'continuous' },
-  photoClip: { flex: 1, borderRadius: 21, overflow: 'hidden' },
+  header: { alignItems: 'center', paddingBottom: 24, borderBottomWidth: 2.5 },
+  // The frame carries the ink border and clips; the photo inside has corners 2.5 smaller.
+  photoFrame: { borderRadius: 24, borderWidth: 2.5, borderColor: pop.ink, overflow: 'hidden', borderCurve: 'continuous' },
   body: { paddingHorizontal: 20, paddingTop: 20 },
   source: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, alignSelf: 'flex-start' },
   stats: { flexDirection: 'row', marginTop: 18, gap: 10 },
+  statLift: { flex: 1 },
   stat: { flex: 1, alignItems: 'flex-start', gap: 3, paddingHorizontal: 12, paddingVertical: 12, borderRadius: 20, borderCurve: 'continuous' },
+  statIcon: { height: 20, justifyContent: 'center' },
+  statLabel: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 18 },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 18 },
   kicker: { flexDirection: 'row', gap: 8 },
   gotCheck: { width: 32, height: 32, borderRadius: 16, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   h2: { marginTop: 32, marginBottom: 14 },
-  needHead: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 32, marginBottom: 12 },
-  people: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', borderWidth: 2.5, borderRadius: 999, paddingHorizontal: 4 },
-  peopleText: { minWidth: 92, textAlign: 'center', fontVariant: ['tabular-nums'] },
+  // 39 + 2 × 2.5 border = 44 tall; only as wide as its content.
+  people: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', borderWidth: 2.5, borderRadius: 999, paddingHorizontal: 2 },
+  needRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  peopleText: { minWidth: 84, textAlign: 'center', fontVariant: ['tabular-nums'] },
   card: { overflow: 'hidden', borderCurve: 'continuous' },
-  nutrition: { gap: 16, padding: 16, overflow: 'visible', marginTop: 18 },
+  nutrition: { gap: 16, padding: 16, overflow: 'visible' },
   kcal: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, marginVertical: -4 },
   split: { flexDirection: 'row', gap: 3, height: 16 },
   macros: { flexDirection: 'row' },
@@ -633,6 +642,7 @@ const styles = StyleSheet.create({
   controls: { position: 'absolute', left: 16, right: 16, flexDirection: 'row', justifyContent: 'space-between' },
   controlsRight: { flexDirection: 'row', gap: 10 },
   bottom: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingTop: 12, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'flex-start', gap: 12, borderTopWidth: 2.5 },
-  menu: { position: 'absolute', right: 16, width: 260, maxWidth: '90%', borderRadius: 20, overflow: 'hidden', borderCurve: 'continuous' },
+  menu: { position: 'absolute', right: 16, width: 260, maxWidth: '90%' },
+  menuFace: { borderRadius: 20, overflow: 'hidden', borderCurve: 'continuous' },
   menuRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, minHeight: 56 },
 });
