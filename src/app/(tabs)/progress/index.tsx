@@ -67,7 +67,7 @@ export default function ProgressScreen() {
       {/* Your chef level: the hero of this screen. A saffron ring fills toward the next level. */}
       <Reveal index={0}>
       <View
-        style={[styles.hero, { backgroundColor: t.isDark ? '#1E3A2B' : cook.background, ...t.shadow.card }]}
+        style={[styles.hero, { backgroundColor: cook.background, ...t.shadow.card }]}
         accessible
         accessibilityLabel={`Chef level ${lvl.level}, ${lvl.title}. ${xp} XP${lvl.next ? `, ${lvl.toNext} to the next level` : ''}`}
       >
@@ -93,7 +93,7 @@ export default function ProgressScreen() {
           accessible
           accessibilityLabel={streak > 0 ? `${streak} day cooking streak` : 'No streak yet. Cook a meal today to start one.'}
         >
-          <View style={[styles.tileIcon, { backgroundColor: 'rgba(20,32,25,0.1)' }]}>
+          <View style={[styles.tileIcon, { backgroundColor: t.inkAlpha(0.1) }]}>
             <Icon name="flameFill" size={22} color={brand.ink} weight="bold" />
           </View>
           <View>
@@ -109,15 +109,15 @@ export default function ProgressScreen() {
                 <Text style={[t.type.title2, { color: brand.ink }]} testID="streak-count">
                   Start a streak
                 </Text>
-                <Text style={[t.type.subhead, { color: 'rgba(20,32,25,0.75)' }]}>Cook a meal today</Text>
+                <Text style={[t.type.subhead, { color: t.pop.inkMuted }]}>Cook a meal today</Text>
               </>
             )}
           </View>
         </View>
         <View style={styles.col}>
           <View style={[styles.tile, { backgroundColor: t.colors.tintFill }]} accessible accessibilityLabel={`${cooked.length} meals cooked`}>
-            <AnimatedNumber value={cooked.length} style={[styles.mid, { color: '#FFFFFF' }]} />
-            <Text style={[t.type.footnote, { color: 'rgba(255,255,255,0.88)', fontFamily: t.fonts.bold }]}>{cooked.length === 1 ? 'meal cooked' : 'meals cooked'}</Text>
+            <AnimatedNumber value={cooked.length} style={[styles.mid, { color: t.colors.onTint }]} />
+            <Text style={[t.type.footnote, { color: t.colors.onTint, fontFamily: t.fonts.bold }]}>{cooked.length === 1 ? 'meal cooked' : 'meals cooked'}</Text>
           </View>
           <View style={[styles.tile, { backgroundColor: t.colors.cell, ...t.chunky.card }]} accessible accessibilityLabel={`${tried} recipes tried, ${saved} saved`}>
             <AnimatedNumber value={tried} style={[styles.mid, { color: t.colors.label }]} />

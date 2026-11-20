@@ -1,9 +1,9 @@
 import { useEffect, useMemo } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
-import { brand } from '../theme';
+import { pop } from '../theme';
 
-const COLORS = [brand.basil, brand.saffron, brand.chili, '#6CC293', '#F7D27A', '#2E7D55'];
+const COLORS = [pop.tomato, pop.sky, pop.berry, pop.leaf, pop.lilac, pop.sunshine];
 
 /** Cheap hash-based pseudo-random in [0, 1). */
 function rand(n: number) {

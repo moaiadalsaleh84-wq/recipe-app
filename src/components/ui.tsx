@@ -16,7 +16,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import type { HapticKind } from '../lib/haptics';
 import { noWidow } from '../lib/text';
-import { useTheme } from '../theme';
+import { useTheme, pop } from '../theme';
 import { Image } from 'expo-image';
 import Svg, { Circle } from 'react-native-svg';
 import { recipes as builtInRecipes, type RecipeImage } from '../data/mock';
@@ -69,7 +69,7 @@ export function Chip({
   }, [selected, reduceMotion, pop, t.motion.pop]);
   const popStyle = useAnimatedStyle(() => ({ transform: [{ scale: pop.get() }] }));
   // Selected chips turn dark pine ("this is on"), so basil stays reserved for the screen's main action.
-  const fg = selected ? (t.isDark ? t.colors.background : '#FFFFFF') : t.colors.label;
+  const fg = selected ? t.pop.white : t.colors.label;
   return (
     <Animated.View style={[popStyle, style]}>
     <Chunky
@@ -237,7 +237,7 @@ export function Stepper({
 
 /* ---------- Animated checkmark circle ---------- */
 
-export function CheckCircle({ checked, color, checkColor = '#FFFFFF' }: { checked: boolean; color: string; /** The tick itself (white by default). */ checkColor?: string }) {
+export function CheckCircle({ checked, color, checkColor = pop.ink }: { checked: boolean; color: string; /** The tick itself (ink by default: text and marks on color are ink). */ checkColor?: string }) {
   const t = useTheme();
   const reduceMotion = useReducedMotion();
   const scale = useSharedValue(checked ? 1 : 0);

@@ -419,7 +419,7 @@ function ImportBox({ onImport }: { onImport: (url?: string) => void }) {
           <Text style={[t.type.footnote, { color: cook.secondaryLabel }]}>From TikTok, Instagram, YouTube or any recipe site</Text>
         </View>
         <View style={[styles.importIcon, { backgroundColor: t.colors.success }]}>
-          <Icon name="link" size={18} color="#FFFFFF" weight="bold" />
+          <Icon name="link" size={18} color={t.pop.ink} weight="bold" />
         </View>
       </View>
       <View style={styles.importField}>
@@ -427,10 +427,10 @@ function ImportBox({ onImport }: { onImport: (url?: string) => void }) {
           value={link}
           onChangeText={setLink}
           placeholder="Paste a link"
-          placeholderTextColor="rgba(255,255,255,0.75)"
+          placeholderTextColor={cook.secondaryLabel}
           // Capped so very large text still fits the hint; the box grows taller instead of cutting it.
           maxFontSizeMultiplier={1.3}
-          style={[t.type.input, styles.importInput, { color: '#FFFFFF' }]}
+          style={[t.type.input, styles.importInput, { color: cook.label }]}
           autoCapitalize="none"
           autoCorrect={false}
           keyboardType="url"
@@ -441,7 +441,7 @@ function ImportBox({ onImport }: { onImport: (url?: string) => void }) {
         {!value && (
           // Just an icon: a second "Paste" word next to the hint looked like a glitch on narrow phones.
           <PressableScale onPress={paste} accessibilityLabel="Paste link from clipboard" style={styles.pasteBtn}>
-            <Icon name="paste" size={18} color="#FFFFFF" weight="semibold" />
+            <Icon name="paste" size={18} color={cook.label} weight="semibold" />
           </PressableScale>
         )}
         {/* A round arrow, like a send button, so the link field keeps almost the whole row. */}
@@ -522,7 +522,7 @@ const styles = StyleSheet.create({
   surprise: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingLeft: 8 },
   importHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   importIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  importField: { flexDirection: 'row', alignItems: 'center', minHeight: 52, paddingLeft: 18, paddingRight: 4, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.14)', borderCurve: 'continuous' },
+  importField: { flexDirection: 'row', alignItems: 'center', minHeight: 52, paddingLeft: 18, paddingRight: 4, borderRadius: 999, backgroundColor: cook.card, borderWidth: 1, borderColor: cook.track, borderCurve: 'continuous' },
   importInput: { flex: 1, minWidth: 0, alignSelf: 'stretch', minHeight: 44, paddingVertical: 0, paddingRight: 4, outlineStyle: 'none' } as never,
   pasteBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   importBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },

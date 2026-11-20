@@ -257,7 +257,7 @@ function DeleteAction({ progress, label, onPress }: { progress: SharedValue<numb
   const style = useAnimatedStyle(() => ({ opacity: progress.get() > 0.01 ? 1 : 0 }));
   return (
     <Animated.View style={[styles.delete, { backgroundColor: t.colors.destructive }, style]}>
-      <IconButton icon="trash" accessibilityLabel={label} color="#FFFFFF" haptic={null} onPress={onPress} style={{ width: '100%', height: '100%', borderRadius: 0 }} />
+      <IconButton icon="trash" accessibilityLabel={label} color={t.pop.ink} haptic={null} onPress={onPress} style={{ width: '100%', height: '100%', borderRadius: 0 }} />
     </Animated.View>
   );
 }

@@ -22,7 +22,7 @@ import * as engine from '../lib/cookTimers';
 import { haptics } from '../lib/haptics';
 import { applyAlerts, backgroundSupport, listen, notificationPermission, reconnect, requestNotificationPermission, type BackgroundSupport, type TimerControl } from '../lib/timerAlerts';
 import { planAlerts } from '../lib/timerPlan';
-import { useTheme } from '../theme';
+import { pop, useTheme } from '../theme';
 
 const STORAGE_KEY = 'pantry-pop-timers-v1';
 const ASKED_KEY = 'pantry-pop-notifications-asked';
@@ -188,18 +188,18 @@ function RingingBanner({ timers, onStop }: { timers: engine.CookTimer[]; onStop:
   const first = timers[0];
   if (!first || path.startsWith('/cook/')) return null;
   return (
-    <Animated.View entering={FadeInUp.duration(220)} exiting={FadeOutUp.duration(180)} style={[styles.banner, { top: insets.top + 8, backgroundColor: t.colors.destructive }]} accessibilityRole="alert" testID="global-timer-done">
+    <Animated.View entering={FadeInUp.duration(220)} exiting={FadeOutUp.duration(180)} style={[styles.banner, { top: insets.top + 8, backgroundColor: t.pop.tomato, borderWidth: t.stroke.thick, borderColor: t.pop.ink, ...t.chunky.lip }]} accessibilityRole="alert" testID="global-timer-done">
       <PressableScale onPress={() => router.push({ pathname: '/cook/[id]', params: { id: first.recipeId } })} style={styles.bannerMain} accessibilityLabel={`Time’s up: ${first.label}, ${first.recipeTitle}. Open Cook Mode`}>
-        <Icon name="timer" size={20} color="#FFFFFF" weight="bold" />
+        <Icon name="timer" size={20} color={t.pop.ink} weight="bold" />
         <View style={{ flex: 1 }}>
-          <Text style={[t.type.headline, { color: '#FFFFFF' }]}>Time’s up: {first.label}</Text>
-          <Text style={[t.type.footnote, { color: 'rgba(255,255,255,0.9)' }]} numberOfLines={1}>
+          <Text style={[t.type.headline, { color: t.pop.ink }]}>Time’s up: {first.label}</Text>
+          <Text style={[t.type.footnote, { color: t.pop.ink }]} numberOfLines={1}>
             {first.recipeTitle} · Step {first.step}
           </Text>
         </View>
       </PressableScale>
       <PressableScale onPress={() => onStop(first.id)} accessibilityLabel="Stop alarm" style={styles.stopBtn}>
-        <Text style={[t.type.headline, { color: t.colors.destructive }]}>Stop</Text>
+        <Text style={[t.type.headline, { color: t.pop.ink }]}>Stop</Text>
       </PressableScale>
     </Animated.View>
   );
@@ -226,7 +226,7 @@ export function AskNotifications({ open, onAnswer }: { open: boolean; onAnswer: 
 const styles = StyleSheet.create({
   banner: { position: 'absolute', left: 12, right: 12, flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 18, paddingLeft: 14, paddingRight: 8, minHeight: 60, borderCurve: 'continuous', zIndex: 1000 },
   bannerMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 56 },
-  stopBtn: { minHeight: 44, minWidth: 76, paddingHorizontal: 16, borderRadius: 999, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
+  stopBtn: { minHeight: 44, minWidth: 76, paddingHorizontal: 16, borderRadius: 999, backgroundColor: pop.white, borderWidth: 2, borderColor: pop.ink, alignItems: 'center', justifyContent: 'center' },
   scrim: { flex: 1, justifyContent: 'center', padding: 20 },
   sheet: { borderRadius: 26, padding: 20, gap: 8, width: '100%', maxWidth: 440, alignSelf: 'center', borderCurve: 'continuous' },
 });

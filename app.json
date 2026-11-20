@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.moaiadalsaleh.pantrypop",
@@ -34,8 +34,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Pick a photo for the recipes you add.",
-          "cameraPermission": false,
+          "photosPermission": "Pick a photo for your recipes and the dishes you cook.",
+          "cameraPermission": "Take a photo of the dish you just cooked.",
           "microphonePermission": false
         }
       ],
@@ -56,6 +56,14 @@
           "groupIdentifier": "group.com.moaiadalsaleh.pantrypop",
           "enablePushNotifications": false,
           "widgets": []
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FFC83D",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 180
         }
       ]
     ],

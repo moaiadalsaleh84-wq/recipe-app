@@ -257,7 +257,7 @@ function PlanCard({ id, selected, onPress, title, price, note, badge }: { id: Pl
       <Text style={[t.type.headline, { color: t.colors.label }]}>{price}</Text>
       {badge && (
         <View style={[styles.planBadge, { backgroundColor: t.colors.success }]}>
-          <Text style={[t.type.caption2, { color: '#fff', fontWeight: 'normal', fontFamily: t.fonts.rounded }]}>{badge}</Text>
+          <Text style={[t.type.caption2, { color: t.pop.ink, fontWeight: 'normal', fontFamily: t.fonts.rounded }]}>{badge}</Text>
         </View>
       )}
     </PressableScale>

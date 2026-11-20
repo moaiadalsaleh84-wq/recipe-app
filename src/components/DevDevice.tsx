@@ -4,6 +4,7 @@
  *   localStorage['pantry-pop-dev-device'] = '1'
  * and only in builds made with EXPO_PUBLIC_DEV_ROUTES=1. It does nothing in the real app.
  */
+import { pop } from '../theme';
 import { useState, type ReactNode } from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
@@ -39,7 +40,7 @@ export function DevDevice({ children }: { children: ReactNode }) {
 
 const styles = StyleSheet.create({
   status: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 9999, justifyContent: 'center', paddingLeft: 32 },
-  clock: { fontSize: 17, fontWeight: '600', color: '#000000', opacity: 0.85 },
+  clock: { fontSize: 17, fontWeight: '600', color: pop.ink, opacity: 0.85 },
   home: { position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 9999, alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 8 },
-  bar: { width: 134, height: 5, borderRadius: 3, backgroundColor: '#000000', opacity: 0.85 },
+  bar: { width: 134, height: 5, borderRadius: 3, backgroundColor: pop.ink, opacity: 0.85 },
 });

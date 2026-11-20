@@ -1,7 +1,8 @@
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Fraunces_500Medium, Fraunces_600SemiBold, Fraunces_700Bold } from '@expo-google-fonts/fraunces';
-import { Manrope_400Regular, Manrope_500Medium, Manrope_600SemiBold, Manrope_700Bold, Manrope_800ExtraBold, useFonts } from '@expo-google-fonts/manrope';
+import { Fredoka_600SemiBold, Fredoka_700Bold } from '@expo-google-fonts/fredoka';
+import { Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraBold, Nunito_900Black, useFonts } from '@expo-google-fonts/nunito';
+import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useMemo, type ReactNode } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { EntitlementSync } from '../components/EntitlementSync';
@@ -13,6 +14,9 @@ import { DevDevice } from '../components/DevDevice';
 import { LookProvider } from '../components/mascot/look';
 import { loadAppearance, useTheme } from '../theme';
 
+// Keep the splash screen up until the fonts are loaded, so text never flashes in the wrong font.
+SplashScreen.preventAutoHideAsync().catch(() => {});
+
 /** Waits for saved data to load so screens never flash default content. */
 function Hydrated({ children }: { children: ReactNode }) {
   const { hydrated } = useStore();
@@ -21,18 +25,20 @@ function Hydrated({ children }: { children: ReactNode }) {
 
 export default function RootLayout() {
   const t = useTheme();
-  // Titles use Fraunces, everything else Manrope. If they fail to load, the system font takes over.
+  // Titles use Fredoka, everything else Nunito. If they fail to load, the system font takes over.
   const [fontsLoaded, fontError] = useFonts({
-    Fraunces_500Medium,
-    Fraunces_600SemiBold,
-    Fraunces_700Bold,
-    Manrope_400Regular,
-    Manrope_500Medium,
-    Manrope_600SemiBold,
-    Manrope_700Bold,
-    Manrope_800ExtraBold,
+    Fredoka_600SemiBold,
+    Fredoka_700Bold,
+    Nunito_600SemiBold,
+    Nunito_700Bold,
+    Nunito_800ExtraBold,
+    Nunito_900Black,
   });
   useEffect(loadAppearance, []);
+  const ready = fontsLoaded || !!fontError;
+  useEffect(() => {
+    if (ready) SplashScreen.hideAsync().catch(() => {});
+  }, [ready]);
 
   const navTheme = useMemo(() => {
     const base = t.isDark ? DarkTheme : DefaultTheme;
@@ -58,7 +64,7 @@ export default function RootLayout() {
     contentStyle: { backgroundColor: t.colors.groupedBackground },
   };
 
-  if (!fontsLoaded && !fontError) return null;
+  if (!ready) return null;
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: t.colors.background }}>

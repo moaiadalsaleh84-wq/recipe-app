@@ -31,7 +31,7 @@ import { pickPhoto } from '../../lib/photos';
 import { convertQty, convertStepText } from '../../lib/units';
 import { formatQty, roundQty, useStore } from '../../state/store';
 import { ingredientText } from '../../lib/qty';
-import { brand, cook, useTheme } from '../../theme';
+import { cook, useTheme, pop } from '../../theme';
 
 export default function RecipeScreen() {
   const t = useTheme();
@@ -177,7 +177,7 @@ export default function RecipeScreen() {
         {/* Hero */}
         <Animated.View testID="hero" style={[{ height: heroHeight, backgroundColor: t.colors.imagePlaceholder }, heroStyle]}>
           <RecipePhoto recipe={recipe} iconSize={72} />
-          <LinearGradient colors={['rgba(0,0,0,0.35)', 'rgba(0,0,0,0)']} style={[styles.heroShade, { height: insets.top + 90 }]} pointerEvents="none" />
+          <LinearGradient colors={[t.inkAlpha(0.35), t.inkAlpha(0)]} style={[styles.heroShade, { height: insets.top + 90 }]} pointerEvents="none" />
           {recipe.custom && (
             <PressableScale
               onPress={async () => {
@@ -195,8 +195,8 @@ export default function RecipeScreen() {
               accessibilityLabel={recipe.image ? 'Change photo' : 'Add a photo'}
               style={[styles.photoBtn, { bottom: t.radius.xl + 12, backgroundColor: t.colors.scrim }]}
             >
-              <Icon name="camera" size={16} color="#FFFFFF" />
-              <Text style={[t.type.subhead, { color: '#FFFFFF', fontFamily: t.fonts.bold }]}>{recipe.image ? 'Change photo' : 'Add photo'}</Text>
+              <Icon name="camera" size={16} color={t.pop.white} />
+              <Text style={[t.type.subhead, { color: t.pop.white, fontFamily: t.fonts.bold }]}>{recipe.image ? 'Change photo' : 'Add photo'}</Text>
             </PressableScale>
           )}
         </Animated.View>
@@ -244,8 +244,8 @@ export default function RecipeScreen() {
           <View style={styles.stats}>
             {stats.map((s, i) => {
               const tile = [
-                { bg: t.colors.reward, fg: brand.ink, sub: 'rgba(20,32,25,0.72)' },
-                { bg: t.colors.tintFill, fg: '#FFFFFF', sub: 'rgba(255,255,255,0.85)' },
+                { bg: t.pop.sunshine, fg: t.pop.ink, sub: t.pop.inkMuted },
+                { bg: t.pop.leaf, fg: t.pop.ink, sub: t.pop.ink },
                 { bg: t.isDark ? t.colors.elevated : cook.background, fg: cook.label, sub: cook.secondaryLabel },
               ][i];
               return (
@@ -626,7 +626,7 @@ const styles = StyleSheet.create({
   resetServings: { minHeight: 44, justifyContent: 'center', marginTop: -4 },
   controls: { position: 'absolute', left: 16, right: 16, flexDirection: 'row', justifyContent: 'space-between' },
   controlsRight: { flexDirection: 'row', gap: 8 },
-  glass: { width: 44, height: 44, borderRadius: 22, shadowColor: '#3D2314', shadowOpacity: 0.16, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
+  glass: { width: 44, height: 44, borderRadius: 22, shadowColor: pop.ink, shadowOpacity: 0.16, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
   bottom: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingTop: 12, paddingHorizontal: 16, overflow: 'hidden' },
   bottomRow: { flexDirection: 'row', gap: 12 },
   menu: { position: 'absolute', right: 16, width: 260, maxWidth: '90%', borderRadius: 20, overflow: 'hidden', borderCurve: 'continuous' },

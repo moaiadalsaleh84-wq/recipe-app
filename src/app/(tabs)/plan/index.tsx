@@ -13,7 +13,7 @@ import { meals, type Meal, type Recipe } from '../../../data/mock';
 import { haptics } from '../../../lib/haptics';
 import { TabScreen } from '../../../components/TabScreen';
 import { totalsFor, useStore } from '../../../state/store';
-import { cook, useTheme } from '../../../theme';
+import { cook, inkAlpha, useTheme } from '../../../theme';
 import { weekDays } from '../../../lib/week';
 import { fillDinners } from '../../../lib/planFill';
 
@@ -113,8 +113,8 @@ export default function PlanScreen() {
               accessibilityLabel={`${d.long}${d.isToday ? ', today' : ''}, ${count} meals planned`}
               style={[styles.day, { backgroundColor: selected ? (t.isDark ? t.colors.tintFill : cook.background) : t.colors.cell, borderColor: selected ? (t.isDark ? t.colors.tintFill : cook.background) : t.colors.border }, !selected && t.chunky.lip]}
             >
-              <Text style={[t.type.caption1, { color: selected ? 'rgba(255,255,255,0.85)' : t.colors.secondaryLabel }]}>{d.short}</Text>
-              <Text style={[t.type.title3, { color: selected ? t.colors.onTint : t.colors.label, fontVariant: ['tabular-nums'] }]}>{d.date}</Text>
+              <Text style={[t.type.caption1, { color: selected ? cook.secondaryLabel : t.colors.secondaryLabel }]}>{d.short}</Text>
+              <Text style={[t.type.title3, { color: selected ? cook.label : t.colors.label, fontVariant: ['tabular-nums'] }]}>{d.date}</Text>
               {/* Dots: one per planned meal; today's are saffron. */}
               <View style={styles.dots}>
                 {[0, 1, 2].map((n) => (
@@ -200,13 +200,13 @@ export default function PlanScreen() {
         <View style={[styles.weekCard, { backgroundColor: t.colors.tintFill, ...t.shadow.card }]} testID="week-groceries">
           <View style={styles.weekTop}>
             <View style={{ flex: 1, gap: 2 }}>
-              <Text style={[t.type.title2, { color: '#FFFFFF' }]}>This week</Text>
-              <Text style={[t.type.subhead, { color: 'rgba(255,255,255,0.88)' }]}>
+              <Text style={[t.type.title2, { color: t.colors.onTint }]}>This week</Text>
+              <Text style={[t.type.subhead, { color: t.colors.onTint }]}>
                 {weekRecipes.length} {weekRecipes.length === 1 ? 'meal' : 'meals'} across {plannedWeek} {plannedWeek === 1 ? 'day' : 'days'}. Same ingredients are added up, and nothing is added twice.
               </Text>
             </View>
             <View style={styles.weekIcon}>
-              <Icon name="cart" size={22} color="#FFFFFF" weight="bold" />
+              <Icon name="cart" size={22} color={t.colors.onTint} weight="bold" />
             </View>
           </View>
           <Chunky onPress={addWeek} face={t.colors.reward} accessibilityLabel="Add this week to groceries" faceStyle={styles.weekBtn}>
@@ -299,6 +299,6 @@ const styles = StyleSheet.create({
   fillIcon: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
   weekCard: { padding: 18, gap: 16, marginTop: 24, borderRadius: 28, borderCurve: 'continuous' },
   weekTop: { flexDirection: 'row', gap: 12 },
-  weekIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.16)' },
+  weekIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: inkAlpha(0.08) },
   weekBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 52, paddingHorizontal: 18 },
 });

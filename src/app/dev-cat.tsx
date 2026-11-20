@@ -18,7 +18,7 @@ export default function DevCat() {
   if (process.env.EXPO_PUBLIC_DEV_ROUTES !== '1') return null;
   // The notification permission prompt, to check its design (it can't open on the web).
   if (view === 'ask') return <AskNotifications open onAnswer={() => {}} />;
-  const background = bg === 'white' ? '#FFFFFF' : t.colors.background;
+  const background = bg === 'white' ? t.pop.white : t.colors.background;
   if (view === 'grid' || view === 'sheet') {
     const s = Number(size) || 112;
     const list = view === 'sheet' ? EXPRESSIONS : MOODS;

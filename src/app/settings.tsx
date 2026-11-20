@@ -4,18 +4,17 @@ import { Icon } from '../components/Icon';
 import { PageHeader } from '../components/PageHeader';
 import { PressableScale } from '../components/PressableScale';
 import { useToast } from '../components/Toast';
-import { Section, Segmented, Separator } from '../components/ui';
+import { Section, Segmented } from '../components/ui';
 import type { Units } from '../data/mock';
 import { showPaywall, useProGate } from '../lib/pro';
 import { MANAGE_SUBSCRIPTIONS_URL } from '../lib/purchases';
 import { useStore } from '../state/store';
-import { setAppearance, useAppearance, useTheme } from '../theme';
+import { useTheme } from '../theme';
 
-/** Settings: Pro, units, light or dark, privacy. Opened from the gear on the Progress tab. */
+/** Settings: Pro, units, privacy. Opened from the gear on the Progress tab. */
 export default function Settings() {
   const t = useTheme();
   const toast = useToast();
-  const appearance = useAppearance();
   const { units, setUnits, pro } = useStore();
   const { isPro, trialDaysLeft } = useProGate();
   return (
@@ -48,15 +47,10 @@ export default function Settings() {
           )}
         </Section>
         <Section>
-          {/* Units and Look share one layout: the name on the left, the choices on the right. */}
+          {/* The name on the left, the choices on the right. (The app is light only, so no Look row.) */}
           <View style={styles.row}>
             <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>Units</Text>
             <Segmented label="Units" value={units} onChange={(u: Units) => setUnits(u)} options={[{ label: 'Metric', value: 'metric' }, { label: 'US', value: 'us' }]} />
-          </View>
-          <Separator />
-          <View style={styles.row}>
-            <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>Look</Text>
-            <Segmented label="Look" value={appearance} onChange={setAppearance} options={[{ label: 'Light', value: 'light' }, { label: 'Dark', value: 'dark' }, { label: 'Auto', value: 'system' }]} />
           </View>
         </Section>
         <Section>

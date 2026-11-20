@@ -88,12 +88,12 @@ function ToastView({ toast, onDone }: { toast: ToastState; onDone: () => void })
         accessibilityRole="alert"
         style={[
           styles.toast,
-          { backgroundColor: t.isDark ? t.colors.elevated : t.colors.label, borderColor: t.isDark ? t.colors.border : t.colors.label, ...t.shadow.floating },
+          { backgroundColor: t.pop.ink, borderColor: t.pop.ink, ...t.shadow.floating },
         ]}
       >
         <PressableScale onPress={onDone} haptic={null} style={styles.main} accessibilityLabel={`${toast.message}. Dismiss`}>
           <Icon name={icon} size={22} color={toneColor} weight="semibold" />
-          <Text style={[t.type.subhead, styles.message, { color: t.isDark ? t.colors.label : '#FFFFFF' }]} numberOfLines={2}>
+          <Text style={[t.type.subhead, styles.message, { color: t.pop.white }]} numberOfLines={2}>
             {toast.message}
           </Text>
         </PressableScale>

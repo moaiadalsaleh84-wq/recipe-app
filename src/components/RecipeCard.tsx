@@ -8,7 +8,7 @@ import type { Recipe, RecipeImage } from '../data/mock';
 import { photoUri } from '../lib/photos';
 import { useStore } from '../state/store';
 import { haptics } from '../lib/haptics';
-import { brand, useTheme } from '../theme';
+import { brand, useTheme, pop } from '../theme';
 import { Icon } from './Icon';
 import { PressableScale } from './PressableScale';
 import { useToast } from './Toast';
@@ -177,16 +177,16 @@ export function FeaturedCard({ recipe, label }: { recipe: Recipe; /** For screen
       >
         <View style={[StyleSheet.absoluteFill, { borderRadius: t.radius.xl, overflow: 'hidden' }]}>
           <DriftingPhoto recipe={recipe} />
-          <LinearGradient colors={['rgba(10,18,13,0)', 'rgba(10,18,13,0.12)', 'rgba(10,18,13,0.86)']} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFill} pointerEvents="none" />
+          <LinearGradient colors={[t.inkAlpha(0), t.inkAlpha(0.12), t.inkAlpha(0.88)]} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFill} pointerEvents="none" />
         </View>
         <View style={styles.featuredText}>
           <View style={[styles.tag, { backgroundColor: t.colors.reward }]}>
             <Text style={[t.type.caption1, { color: t.colors.onReward, fontFamily: t.fonts.extrabold }]}>{tag}</Text>
           </View>
-          <Text style={[t.type.title1, { color: '#FFFFFF' }]} numberOfLines={2}>
+          <Text style={[t.type.title1, { color: t.pop.white }]} numberOfLines={2}>
             {recipe.title}
           </Text>
-          <Text style={[t.type.subhead, { color: 'rgba(255,255,255,0.92)', fontFamily: t.fonts.semibold }]}>{`${recipe.minutes} min · ${recipe.difficulty} · ${recipe.calories} kcal`}</Text>
+          <Text style={[t.type.subhead, { color: t.pop.white, fontFamily: t.fonts.semibold }]}>{`${recipe.minutes} min · ${recipe.difficulty} · ${recipe.calories} kcal`}</Text>
         </View>
       </PressableScale>
       <View style={styles.featuredFav}>
@@ -244,10 +244,10 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: pop.white,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#142019',
+    shadowColor: pop.ink,
     shadowOpacity: 0.2,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
