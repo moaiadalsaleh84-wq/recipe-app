@@ -266,7 +266,7 @@ function MealCard({ meal, recipe, onChange, onRemove }: { meal: string; recipe: 
         </View>
         <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
           <PopChip label={meal} color={MEAL_TINT[meal] ?? t.pop.sunshineTint} small />
-          <Text style={[t.type.title3, { color: t.colors.label }]} numberOfLines={2}>
+          <Text style={[t.type.title3, { color: t.colors.label }]}>
             {recipe.title}
           </Text>
           <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>

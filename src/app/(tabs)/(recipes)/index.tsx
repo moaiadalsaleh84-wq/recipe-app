@@ -512,11 +512,11 @@ function CookbookTile({ id, name, recipes, width }: { id: string; name: string; 
       </View>
       <View style={styles.bookText}>
         {fav && <Icon name="heartFill" size={14} color={t.pop.tomato} />}
-        <Text style={[t.type.title3, { color: t.colors.label, fontSize: 18, flexShrink: 1 }]} numberOfLines={1}>
+        <Text style={[t.type.title3, { color: t.colors.label, fontSize: 18, flexShrink: 1 }]}>
           {name}
         </Text>
       </View>
-      <Text style={[t.type.caption1, { color: t.colors.secondaryLabel, paddingHorizontal: 12 }]} numberOfLines={1}>
+      <Text style={[t.type.caption1, { color: t.colors.secondaryLabel, paddingHorizontal: 12 }]}>
         {empty ? 'Nothing yet' : `${recipes.length} ${recipes.length === 1 ? 'recipe' : 'recipes'}`}
       </Text>
     </PopCard>

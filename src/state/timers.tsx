@@ -228,7 +228,7 @@ function RingingBanner({ timers, onStop }: { timers: engine.CookTimer[]; onStop:
           <Icon name="timer" size={20} color={t.pop.ink} weight="bold" />
           <View style={{ flex: 1 }}>
             <Text style={[t.type.headline, { color: t.pop.ink }]}>Time’s up: {first.label}</Text>
-            <Text style={[t.type.footnote, { color: t.pop.ink }]} numberOfLines={1}>
+            <Text style={[t.type.footnote, { color: t.pop.ink }]}>
               {first.recipeTitle} · Step {first.step}
             </Text>
           </View>

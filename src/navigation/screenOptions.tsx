@@ -28,7 +28,7 @@ export function ScreenTitle({ title, right }: { title: string; right?: ReactNode
   const top = isIOS ? t.spacing.xs : insets.top + t.spacing.xs;
   return (
     <View style={[styles.row, { marginTop: top }]}>
-      <Text style={[t.type.largeTitle, { color: t.colors.label, flex: 1 }]} accessibilityRole="header" numberOfLines={1}>
+      <Text style={[t.type.largeTitle, { color: t.colors.label, flex: 1 }]} accessibilityRole="header">
         {title}
       </Text>
       {right ? <View style={styles.actions}>{right}</View> : null}

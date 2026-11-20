@@ -346,7 +346,7 @@ export function SectionHeader({ title, subtitle, action, right, style }: { title
         <Text style={[t.type.title2, { color: t.colors.label }]} accessibilityRole="header">
           {title}
         </Text>
-        {subtitle ? <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]}>{subtitle}</Text> : null}
+        {subtitle ? <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]}>{noWidow(subtitle)}</Text> : null}
       </View>
       {action && (
         <PressableScale onPress={action.onPress} accessibilityLabel={`${action.label}: ${title}`} style={styles.shAction}>

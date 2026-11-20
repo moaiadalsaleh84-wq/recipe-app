@@ -1,6 +1,7 @@
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Text } from '../Text';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import { noWidow } from '../../lib/text';
 import { fonts, pop, stroke } from '../../theme';
 
 /**
@@ -38,9 +39,7 @@ export function MascotSlot({ message, size = 64, layout = 'row', style }: Props)
         // Keyed by the message, so each new line fades in.
         <Animated.View key={message} entering={FadeIn.duration(220)} style={[styles.bubble, row ? styles.bubbleRow : styles.bubbleColumn]} accessibilityLiveRegion="polite">
           {SHOW_MASCOT_PLACEHOLDER && <View style={[styles.tail, row ? styles.tailLeft : styles.tailTop]} />}
-          <Text style={styles.text} maxFontSizeMultiplier={1.4}>
-            {message}
-          </Text>
+          <Text style={styles.text}>{noWidow(message)}</Text>
         </Animated.View>
       ) : null}
     </View>

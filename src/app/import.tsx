@@ -31,6 +31,7 @@ import { isIOS } from '../navigation/screenOptions';
 import { FREE_LIMITS, useStore } from '../state/store';
 import { useTheme } from '../theme';
 import { Lift } from '../components/pop/Lift';
+import { noWidow } from '../lib/text';
 
 type Phase = { name: 'input' } | { name: 'loading' } | { name: 'failed'; failure: ImportFailure } | { name: 'review'; result: ImportSuccess };
 
@@ -199,7 +200,7 @@ export default function ImportScreen() {
             </View>
             {/* One line of help; the details open on tap. */}
             <View style={styles.helpRow}>
-              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, flex: 1 }]}>Websites, TikTok, YouTube and Instagram.</Text>
+              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, flex: 1 }]}>{noWidow('Websites, TikTok, YouTube and Instagram.')}</Text>
               <PressableScale onPress={() => setHelpOpen((v) => !v)} accessibilityLabel="What works?" aria-expanded={helpOpen} style={styles.helpLink}>
                 <Text style={[t.type.footnote, { color: t.colors.tint, fontFamily: t.fonts.bold }]}>What works?</Text>
               </PressableScale>

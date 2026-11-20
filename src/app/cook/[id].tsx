@@ -27,7 +27,7 @@ import { Icon } from '../../components/Icon';
 import { PressableScale } from '../../components/PressableScale';
 import { RecipePhoto } from '../../components/RecipeCard';
 import { useToast } from '../../components/Toast';
-import { MascotSlot, PopButton, PopCard, PopChip, PopIconButton } from '../../components/pop';
+import { Lift, MascotSlot, PopButton, PopCard, PopChip, PopIconButton } from '../../components/pop';
 import { CheckCircle, EmptyState } from '../../components/ui';
 import type { Ingredient, Rating } from '../../data/mock';
 import { clock, isReady, secondsLeft, type CookTimer } from '../../lib/cookTimers';
@@ -538,11 +538,12 @@ function Finish({
       <Confetti />
       <ScrollView contentContainerStyle={[styles.finish, { paddingTop: Math.max(insets.top, 16) + 28, paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
         <Animated.View entering={FadeIn.duration(300)} style={styles.finishTop}>
-          <View style={styles.finishPhoto}>
-            <View style={styles.finishPhotoClip}>
-              {photo ? <Image source={{ uri: photoUri(photo) }} style={StyleSheet.absoluteFill} contentFit="cover" accessibilityLabel="Your photo of the dish" /> : <RecipePhoto recipe={recipe} iconSize={48} />}
+          {/* The dish in a circle: the frame carries the border and clips; the photo is 3pt smaller all round. */}
+          <Lift radius={75}>
+            <View style={styles.finishPhoto}>
+              {photo ? <Image source={{ uri: photoUri(photo) }} style={[StyleSheet.absoluteFill, { borderRadius: 72 }]} contentFit="cover" accessibilityLabel="Your photo of the dish" /> : <RecipePhoto recipe={recipe} iconSize={48} radius={72} />}
             </View>
-          </View>
+          </Lift>
           <MascotSlot message="Chef’s kiss!" layout="column" size={56} style={{ flexShrink: 1 }} />
         </Animated.View>
 
@@ -696,8 +697,7 @@ const styles = StyleSheet.create({
   footer: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingHorizontal: 20, paddingTop: 12 },
   finish: { paddingHorizontal: 20, gap: 22, alignItems: 'center', width: '100%', maxWidth: 560, alignSelf: 'center' },
   finishTop: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  finishPhoto: { width: 150, height: 150, borderRadius: 75, borderWidth: 3, borderColor: pop.ink, backgroundColor: pop.white, shadowColor: pop.ink, shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 0, height: 5 } },
-  finishPhotoClip: { flex: 1, borderRadius: 75, overflow: 'hidden' },
+  finishPhoto: { width: 150, height: 150, borderRadius: 75, borderWidth: 3, borderColor: pop.ink, backgroundColor: pop.white, overflow: 'hidden' },
   finishTitle: { fontFamily: fonts.heading, fontSize: 42, lineHeight: 48, textAlign: 'center' },
   rewards: { flexDirection: 'row', gap: 12, alignSelf: 'stretch' },
   reward: { alignItems: 'center', gap: 2, paddingVertical: 14, paddingHorizontal: 10 },

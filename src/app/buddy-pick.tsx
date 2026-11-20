@@ -70,7 +70,7 @@ export default function BuddyPick() {
               <RecipePhoto recipe={recipe} iconSize={48} />
             </Animated.View>
             <View style={{ padding: 14, gap: 2 }}>
-              <Text style={[t.type.title3, { color: t.colors.label }]} numberOfLines={1} testID="pick-title">
+              <Text style={[t.type.title3, { color: t.colors.label }]} testID="pick-title">
                 {recipe.title}
               </Text>
               <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>

@@ -219,7 +219,7 @@ export default function RecipeScreen() {
               style={styles.source}
             >
               <Icon name="link" size={15} color={t.colors.tint} weight="bold" />
-              <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.black, textDecorationLine: 'underline' }]} numberOfLines={1}>
+              <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.black, textDecorationLine: 'underline' }]}>
                 Original at {hostOf(recipe.sourceUrl)}
               </Text>
             </PressableScale>

@@ -136,8 +136,8 @@ export default function Paywall() {
                   <Icon name={b.icon} size={18} color={t.colors.tint} weight="bold" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[t.type.headline, { color: t.colors.label }]}>{b.title}</Text>
-                  <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 1 }]}>{b.detail}</Text>
+                  <Text style={[t.type.headline, { color: t.colors.label }]}>{noWidow(b.title)}</Text>
+                  <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 1 }]}>{noWidow(b.detail)}</Text>
                 </View>
               </Animated.View>
             ))}
@@ -258,7 +258,7 @@ function PlanCard({ id, selected, onPress, title, price, note, badge }: { id: Pl
         <View style={{ flex: 1 }}>
           <Text style={[t.type.headline, { color: t.colors.label }]}>{title}</Text>
           <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 1 }, t.noWidows.style]} {...t.noWidows.props}>
-            {note}
+            {noWidow(note)}
           </Text>
         </View>
         <Text style={[t.type.headline, { color: t.colors.label }]}>{price}</Text>

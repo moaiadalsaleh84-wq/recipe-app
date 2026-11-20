@@ -17,6 +17,7 @@ import { showPaywall, useProGate } from '../../../lib/pro';
 import { TabScreen } from '../../../components/TabScreen';
 import { FREE_LIMITS, useStore } from '../../../state/store';
 import { popCycle, useTheme } from '../../../theme';
+import { noWidow } from '../../../lib/text';
 
 /** What's in your kitchen, and what you can cook with it. */
 export default function PantryScreen() {
@@ -245,8 +246,7 @@ function MatchCard({ match, onAddMissing }: { match: PantryMatch; onAddMissing: 
           </View>
           {missing.length > 0 && (
             <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]} testID="missing">
-              Missing: {shown.join(', ')}
-              {more > 0 ? ` +${more} more` : ''}
+              {noWidow(`Missing: ${shown.join(', ')}${more > 0 ? ` +${more} more` : ''}`)}
             </Text>
           )}
         </View>

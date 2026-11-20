@@ -18,6 +18,7 @@ import { showPaywall, useProGate } from '../../lib/pro';
 import { useStore } from '../../state/store';
 import { useTheme } from '../../theme';
 import { Lift } from '../../components/pop/Lift';
+import { noWidow } from '../../lib/text';
 
 /** Write down your own recipe, or keep one you found online with a link to the original. */
 export default function NewRecipe() {
@@ -227,7 +228,7 @@ function Field({ label, hint, multiline, ...props }: TextInputProps & { label: s
         accessibilityLabel={label}
         style={[multiline ? t.type.body : t.type.input, styles.input, multiline && styles.multiline, { color: t.colors.label, backgroundColor: t.colors.cell, ...t.chunky.card }]}
       />
-      {hint && <Text style={[t.type.caption1, { color: t.colors.secondaryLabel, marginTop: 6, marginLeft: 4 }]}>{hint}</Text>}
+      {hint && <Text style={[t.type.caption1, { color: t.colors.secondaryLabel, marginTop: 6, marginLeft: 4 }]}>{noWidow(hint)}</Text>}
     </View>
   );
 }
