@@ -1,7 +1,7 @@
 /**
  * The frame of every tab: an optional friendly line (a greeting, today's date) above a large
- * serif title that collapses into a small centered title on a blurred bar as you scroll. A solid
- * strip always sits behind the clock and battery, and the bottom leaves room for the floating tab bar.
+ * Fredoka title that collapses into a small centered title on a blurred bar as you scroll. A solid
+ * strip always sits behind the clock and battery, and the bottom leaves room for the tab bar (its height + 24).
  *
  *   <TabScreen title="Pantry" kicker="8 things at home" right={<HeaderButton … />}>…</TabScreen>
  */
@@ -59,7 +59,7 @@ export function TabScreen({ title, kicker, right, children, maxWidth = 700, cont
         automaticallyAdjustContentInsets={false}
         style={{ flex: 1, backgroundColor: t.colors.background }}
         contentContainerStyle={[
-          { paddingTop: insets.top + 12, paddingHorizontal: t.layout.screen, paddingBottom: t.layout.bottom + tabSpace, width: '100%', maxWidth, alignSelf: 'center' },
+          { paddingTop: insets.top + 12, paddingHorizontal: t.layout.screen, paddingBottom: tabSpace, width: '100%', maxWidth, alignSelf: 'center' },
           contentContainerStyle,
         ]}
       >
@@ -83,7 +83,7 @@ export function TabScreen({ title, kicker, right, children, maxWidth = 700, cont
       <View style={[styles.status, { height: insets.top, backgroundColor: t.colors.background }]} testID="screen-status" />
       {/* The small bar: blurred cream, a hairline and the small title once the large one is gone. */}
       <Animated.View pointerEvents="none" style={[styles.bar, { top: insets.top, height: BAR }, barStyle]} testID="screen-bar" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-        <BlurView tint={t.isDark ? 'dark' : 'light'} intensity={40} style={StyleSheet.absoluteFill} />
+        <BlurView tint="light" intensity={40} style={StyleSheet.absoluteFill} />
         <View style={[StyleSheet.absoluteFill, { backgroundColor: t.colors.bar }]} />
         <View style={[styles.hairline, { backgroundColor: t.colors.separator }]} />
         <Text style={[t.type.title3, { color: t.colors.label }]} numberOfLines={1}>
