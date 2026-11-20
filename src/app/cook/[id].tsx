@@ -27,14 +27,15 @@ import { Icon } from '../../components/Icon';
 import { PressableScale } from '../../components/PressableScale';
 import { RecipePhoto } from '../../components/RecipeCard';
 import { useToast } from '../../components/Toast';
-import { Lift, MascotSlot, PopButton, PopCard, PopChip, PopIconButton } from '../../components/pop';
-import { CheckCircle, EmptyState } from '../../components/ui';
+import { Lift, MascotSlot, PopButton, PopCard, PopChip, PopIconButton, SHOW_MASCOT_PLACEHOLDER } from '../../components/pop';
+import { CheckCircle, EmptyState, ProgressBar } from '../../components/ui';
 import type { Ingredient, Rating } from '../../data/mock';
 import { clock, isReady, secondsLeft, type CookTimer } from '../../lib/cookTimers';
 import { haptics } from '../../lib/haptics';
 import { photoUri, takePhoto } from '../../lib/photos';
 import { levelFor, streakOf, xpFor } from '../../lib/progress';
 import { playSuccess } from '../../lib/sounds';
+import { nb } from '../../lib/text';
 import { ingredientsInStep, splitTip, warnStepProblems } from '../../lib/steps';
 import { durationLabel, findTimers } from '../../lib/timers';
 import { convertQty, convertStepText } from '../../lib/units';
@@ -529,8 +530,8 @@ function Finish({
 
   const RATINGS: { value: Rating; label: string }[] = [
     { value: 'meh', label: 'Meh' },
-    { value: 'yum', label: 'Yum' },
-    { value: 'amazing', label: 'Amazing!' },
+    { value: 'yum', label: 'Good' },
+    { value: 'amazing', label: 'Loved it' },
   ];
 
   return (
@@ -538,13 +539,14 @@ function Finish({
       <Confetti />
       <ScrollView contentContainerStyle={[styles.finish, { paddingTop: Math.max(insets.top, 16) + 28, paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
         <Animated.View entering={FadeIn.duration(300)} style={styles.finishTop}>
-          {/* The dish in a circle: the frame carries the border and clips; the photo is 3pt smaller all round. */}
-          <Lift radius={75}>
+          {/* The dish in a 200pt circle, centered: the frame carries the border and clips; the photo is
+              3pt smaller all round. With the character on, it says "Chef's kiss!" beside it. */}
+          <Lift radius={100}>
             <View style={styles.finishPhoto}>
-              {photo ? <Image source={{ uri: photoUri(photo) }} style={[StyleSheet.absoluteFill, { borderRadius: 72 }]} contentFit="cover" accessibilityLabel="Your photo of the dish" /> : <RecipePhoto recipe={recipe} iconSize={48} radius={72} />}
+              {photo ? <Image source={{ uri: photoUri(photo) }} style={[StyleSheet.absoluteFill, { borderRadius: 97 }]} contentFit="cover" accessibilityLabel="Your photo of the dish" /> : <RecipePhoto recipe={recipe} iconSize={56} radius={97} />}
             </View>
           </Lift>
-          <MascotSlot message="Chef’s kiss!" layout="column" size={56} style={{ flexShrink: 1 }} />
+          {SHOW_MASCOT_PLACEHOLDER && <MascotSlot message="Chef’s kiss!" size={56} />}
         </Animated.View>
 
         <Animated.View entering={FadeInUp.duration(380).delay(120)} style={{ alignItems: 'center', gap: 6 }}>
@@ -558,21 +560,28 @@ function Finish({
 
         {/* Rewards: your streak and XP, from the app's real progress */}
         <Animated.View entering={FadeInUp.duration(380).delay(220)} style={styles.rewards}>
-          <PopCard style={{ flex: 1 }} contentStyle={styles.reward}>
+          <PopCard style={{ flex: 1 }} contentStyle={[styles.reward, { flexGrow: 1 }]}>
             <Icon name="flameFill" size={26} color={pop.tomato} />
             <Text style={[t.type.title2, { color: pop.ink }]} testID="finish-streak">
-              {streak} {streak === 1 ? 'day' : 'days'}
+              {nb(streak, streak === 1 ? 'day' : 'days')}
             </Text>
             <Text style={[t.type.caption1, { color: pop.inkMuted }]}>cooking streak</Text>
           </PopCard>
-          <PopCard style={{ flex: 1 }} color={leveledUp ? pop.lilac : pop.white} contentStyle={styles.reward}>
+          {/* What actually happened this cook: XP earned, and how close the next level is. Only a
+              level-up from this cook turns the card into "unlocked!". */}
+          <PopCard style={{ flex: 1 }} color={leveledUp ? pop.lilac : pop.white} contentStyle={[styles.reward, { flexGrow: 1 }]}>
             <Icon name={leveledUp ? 'crown' : 'sparkles'} size={26} color={pop.ink} weight="bold" />
             <Text style={[t.type.title2, { color: pop.ink, textAlign: 'center' }]} testID="finish-xp">
-              {leveledUp ? `LEVEL ${lvl.level}` : `+${gained} XP`}
+              {leveledUp ? `LEVEL\u00A0${lvl.level}` : `+${nb(gained, 'XP')}`}
             </Text>
-            <Text style={[t.type.caption1, { color: leveledUp ? pop.ink : pop.inkMuted, textAlign: 'center' }]}>
-              {leveledUp ? lvl.title : `Level ${lvl.level} · ${lvl.title}`}
-            </Text>
+            {leveledUp ? (
+              <Text style={[t.type.caption1, { color: pop.ink, textAlign: 'center' }]}>{`${lvl.title}\u00A0—\u00A0unlocked!`}</Text>
+            ) : (
+              <View style={{ alignSelf: 'stretch', gap: 4 }}>
+                <ProgressBar value={lvl.progress} color={pop.lilac} height={8} label="Progress to the next level" />
+                <Text style={[t.type.caption1, { color: pop.inkMuted, textAlign: 'center' }]}>{lvl.next ? `${nb(lvl.toNext, 'XP')} to ${lvl.next.title}` : 'Top level'}</Text>
+              </View>
+            )}
           </PopCard>
         </Animated.View>
 
@@ -581,22 +590,14 @@ function Finish({
           <Text style={[t.type.title3, { color: pop.ink, textAlign: 'center' }]}>How’d it taste?</Text>
           <View style={styles.ratings} accessibilityRole="radiogroup" accessibilityLabel="How it tasted">
             {RATINGS.map((r) => (
-              <PopButton
+              <RatingButton
                 key={r.value}
                 label={r.label}
-                size="small"
-                color={rating === r.value ? pop.leaf : pop.white}
-                icon={rating === r.value ? 'check' : undefined}
-                accessibilityRole="radio"
-                aria-checked={rating === r.value}
-                accessibilityLabel={r.label}
-                haptic="select"
+                selected={rating === r.value}
                 onPress={() => {
                   setRating(r.value);
                   onRate(r.value);
                 }}
-                style={{ flex: 1 }}
-                faceStyle={{ paddingHorizontal: 8 }}
               />
             ))}
           </View>
@@ -613,19 +614,42 @@ function Finish({
   );
 }
 
+/** One of three equal rating buttons. Selected: berry, pressed in (no shadow). */
+function RatingButton({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
+  return (
+    <Lift radius={16} offset={3} pressed={selected} style={{ flex: 1 }}>
+      <Pressable
+        onPress={() => {
+          haptics.select();
+          onPress();
+        }}
+        accessibilityRole="radio"
+        aria-checked={selected}
+        accessibilityLabel={label}
+        style={[styles.rating, { backgroundColor: selected ? pop.berry : pop.white }, selected && { transform: [{ translateY: 3 }] }]}
+      >
+        <Text style={styles.ratingText}>{label}</Text>
+      </Pressable>
+    </Lift>
+  );
+}
+
 /** Six little shapes in the app's colors, each with an ink outline. They drop in once; still with Reduce Motion. */
+// Only at the left and right edges, beside the 200pt photo and above the title, so they never
+// cover either.
 const CONFETTI = [
-  { left: '8%', top: 70, size: 18, round: false, rotate: '-18deg', color: pop.tomato },
-  { left: '82%', top: 56, size: 16, round: true, rotate: '0deg', color: pop.sky },
-  { left: '24%', top: 22, size: 14, round: true, rotate: '0deg', color: pop.berry },
-  { left: '66%', top: 120, size: 20, round: false, rotate: '24deg', color: pop.leaf },
+  { left: '4%', top: 30, size: 18, round: false, rotate: '-18deg', color: pop.tomato },
+  { left: '88%', top: 22, size: 16, round: true, rotate: '0deg', color: pop.sky },
+  { left: '9%', top: 120, size: 14, round: true, rotate: '0deg', color: pop.berry },
+  { left: '85%', top: 110, size: 20, round: false, rotate: '24deg', color: pop.leaf },
   { left: '90%', top: 190, size: 14, round: false, rotate: '40deg', color: pop.lilac },
-  { left: '4%', top: 210, size: 16, round: true, rotate: '0deg', color: pop.sky },
+  { left: '3%', top: 200, size: 16, round: true, rotate: '0deg', color: pop.sky },
 ] as const;
 
 function Confetti() {
+  const insets = useSafeAreaInsets();
   return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+    <View pointerEvents="none" style={[StyleSheet.absoluteFill, { top: Math.max(insets.top, 16) }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       {CONFETTI.map((c, i) => (
         <ConfettiBit key={i} index={i} {...c} />
       ))}
@@ -696,12 +720,14 @@ const styles = StyleSheet.create({
   sheetRow: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 56 },
   footer: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingHorizontal: 20, paddingTop: 12 },
   finish: { paddingHorizontal: 20, gap: 22, alignItems: 'center', width: '100%', maxWidth: 560, alignSelf: 'center' },
-  finishTop: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  finishPhoto: { width: 150, height: 150, borderRadius: 75, borderWidth: 3, borderColor: pop.ink, backgroundColor: pop.white, overflow: 'hidden' },
+  finishTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, alignSelf: 'stretch' },
+  finishPhoto: { width: 200, height: 200, borderRadius: 100, borderWidth: 3, borderColor: pop.ink, backgroundColor: pop.white, overflow: 'hidden' },
   finishTitle: { fontFamily: fonts.heading, fontSize: 42, lineHeight: 48, textAlign: 'center' },
   rewards: { flexDirection: 'row', gap: 12, alignSelf: 'stretch' },
   reward: { alignItems: 'center', gap: 2, paddingVertical: 14, paddingHorizontal: 10 },
   ratings: { flexDirection: 'row', gap: 10 },
+  rating: { minHeight: 48, paddingHorizontal: 8, borderRadius: 16, borderWidth: 2.5, borderColor: pop.ink, alignItems: 'center', justifyContent: 'center' },
+  ratingText: { fontFamily: fonts.black, fontSize: 16, lineHeight: 21, color: pop.ink, textAlign: 'center' },
   later: { minHeight: 48, alignItems: 'center', justifyContent: 'center' },
   bit: { position: 'absolute', borderWidth: 2, borderColor: pop.ink },
 });

@@ -1,4 +1,5 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import { pop } from '../theme';
@@ -11,10 +12,22 @@ function rand(n: number) {
   return x - Math.floor(x);
 }
 
-/** A one-shot confetti shower over the whole screen. Ignores touches. */
+/** Longest the shower lasts; then it's removed. */
+const MAX_MS = 1800;
+
+/**
+ * A one-shot confetti shower: it starts below the status bar, ignores touches, lasts at most
+ * 1.8 seconds and then unmounts. Nothing with Reduce Motion on.
+ */
 export function ConfettiBurst({ count = 36 }: { count?: number }) {
   const { width, height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const reduceMotion = useReducedMotion();
+  const [over, setOver] = useState(false);
+  useEffect(() => {
+    const id = setTimeout(() => setOver(true), MAX_MS);
+    return () => clearTimeout(id);
+  }, []);
   // Scattered but deterministic layout (render must stay pure).
   const pieces = useMemo(
     () =>
@@ -23,21 +36,22 @@ export function ConfettiBurst({ count = 36 }: { count?: number }) {
         return {
           x: r(1) * width,
           drift: (r(2) - 0.5) * 120,
-          delay: r(3) * 450,
+          delay: r(3) * 250,
           spin: (r(4) > 0.5 ? 1 : -1) * (360 + r(5) * 540),
           w: 7 + r(6) * 5,
           h: 10 + r(7) * 8,
           color: COLORS[i % COLORS.length],
-          duration: 1800 + r(8) * 900,
+          // delay + duration stays under 1.8 seconds.
+          duration: 1100 + r(8) * 400,
         };
       }),
     [count, width],
   );
-  if (reduceMotion) return null;
+  if (reduceMotion || over) return null;
   return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+    <View pointerEvents="none" style={[StyleSheet.absoluteFill, { top: insets.top, overflow: 'hidden' }]}>
       {pieces.map((p, i) => (
-        <Piece key={i} {...p} fall={height + 60} />
+        <Piece key={i} {...p} fall={height - insets.top + 30} />
       ))}
     </View>
   );

@@ -202,24 +202,35 @@ export function RecipeRow({
   subtitle,
   trailing,
   accessibilityHint = 'Opens the recipe',
+  metaLines,
 }: {
   recipe: Recipe;
   onPress?: () => void;
   subtitle?: string;
   trailing?: React.ReactNode;
   accessibilityHint?: string;
+  /** Meta on its own lines instead of `subtitle` (Nunito 700, 15, muted), e.g. ["Breakfast", "40 min · 410 kcal"]. */
+  metaLines?: string[];
 }) {
   const t = useTheme();
   const meta = useMeta();
   return (
     <View style={styles.row}>
-      <PressableScale onPress={onPress ?? (() => openRecipe(recipe.id))} scaleTo={0.98} accessibilityLabel={`${recipe.title}, ${subtitle ?? meta(recipe)}`} accessibilityHint={accessibilityHint} style={styles.rowMain}>
+      <PressableScale onPress={onPress ?? (() => openRecipe(recipe.id))} scaleTo={0.98} accessibilityLabel={`${recipe.title}, ${metaLines ? metaLines.join(', ') : (subtitle ?? meta(recipe))}`} accessibilityHint={accessibilityHint} style={styles.rowMain}>
         <View style={[styles.thumb, { backgroundColor: t.colors.imagePlaceholder, borderColor: t.pop.ink }]}>
           <RecipePhoto recipe={recipe} iconSize={24} radius={13.5} />
         </View>
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={[t.type.title3, { color: t.colors.label, fontSize: 18, lineHeight: 22 }]}>{recipe.title}</Text>
-          <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]}>{subtitle ?? meta(recipe)}</Text>
+          {metaLines ? (
+            metaLines.map((line) => (
+              <Text key={line} style={[styles.metaLine, { color: t.colors.secondaryLabel }]}>
+                {line}
+              </Text>
+            ))
+          ) : (
+            <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]}>{subtitle ?? meta(recipe)}</Text>
+          )}
         </View>
         {!trailing && <Icon name="chevronRight" size={14} color={t.colors.tertiaryLabel} weight="semibold" />}
       </PressableScale>
@@ -259,6 +270,7 @@ const styles = StyleSheet.create({
   tonightSticker: { position: 'absolute', top: 134, left: 14 },
   featuredFav: { position: 'absolute', top: 4, right: 4 },
   row: { flexDirection: 'row', alignItems: 'center', paddingRight: 8 },
+  metaLine: { fontFamily: fonts.medium, fontSize: 15, lineHeight: 20 },
   rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 10, paddingLeft: 12, paddingRight: 8, minHeight: 84 },
   thumb: { width: 64, height: 64, borderRadius: 16, overflow: 'hidden', borderWidth: 2.5, borderCurve: 'continuous' },
 });

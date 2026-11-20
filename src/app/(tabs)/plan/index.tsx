@@ -17,6 +17,7 @@ import { totalsFor, useStore } from '../../../state/store';
 import { fonts, pop, popCycle, useTheme } from '../../../theme';
 import { weekDays } from '../../../lib/week';
 import { fillDinners } from '../../../lib/planFill';
+import { nb } from '../../../lib/text';
 
 
 export default function PlanScreen() {
@@ -100,8 +101,9 @@ export default function PlanScreen() {
 
   return (
     <TabScreen title="Meal plan" kicker={weekDays[day].isToday ? weekDays[day].full : `Today is ${weekDays.find((d) => d.isToday)?.long ?? ''}`}>
-      {/* The week as 7 equal date pills. Today is sunshine; the chosen day is pressed in; past days are
-          quiet (no shadow). A centered dot means the day has meals. */}
+      {/* The week as 7 equal date pills. Today: sunshine on a 3pt shadow. Days to come: white on a 3pt
+          shadow. Past days: muted, no shadow. The chosen day (if not today) is lilac. A centered dot
+          means the day has meals. */}
       <Reveal index={0} style={styles.week}>
       <View style={styles.weekInner} accessibilityRole="tablist">
         {weekDays.map((d) => {
@@ -109,7 +111,7 @@ export default function PlanScreen() {
           const count = meals.filter((m) => plan[d.index]?.[m]).length;
           const past = d.index < todayIndex;
           return (
-            <Lift key={d.index} radius={14} offset={t.depth.small} pressed={selected || past} style={{ flex: 1 }}>
+            <Lift key={d.index} radius={14} offset={t.depth.small} pressed={past} style={{ flex: 1 }}>
               <PressableScale
                 haptic="select"
                 scaleTo={0.94}
@@ -120,11 +122,10 @@ export default function PlanScreen() {
                 style={[
                   styles.day,
                   { backgroundColor: d.isToday ? t.pop.sunshine : selected ? t.pop.lilacTint : t.colors.cell, borderColor: t.pop.ink },
-                  selected && !past && { transform: [{ translateY: t.depth.small }] },
                 ]}
               >
-                <Text style={[styles.dayName, { color: past && !selected ? t.pop.inkMuted : t.pop.ink }]}>{narrowDays ? d.short.slice(0, 2) : d.short}</Text>
-                <Text style={[styles.dayNum, { color: past && !selected ? t.pop.inkMuted : t.pop.ink }]}>{d.date}</Text>
+                <Text style={[styles.dayName, { color: past ? t.pop.inkMuted : t.pop.ink }]}>{narrowDays ? d.short.slice(0, 2) : d.short}</Text>
+                <Text style={[styles.dayNum, { color: past ? t.pop.inkMuted : t.pop.ink }]}>{d.date}</Text>
                 <View style={[styles.dot, count > 0 && { backgroundColor: t.pop.leaf, borderColor: t.pop.ink, borderWidth: 1.5 }]} />
               </PressableScale>
             </Lift>
@@ -135,7 +136,7 @@ export default function PlanScreen() {
 
       <SectionHeader
         title={weekDays[day].isToday ? 'Today' : weekDays[day].long}
-        subtitle={plannedToday > 0 ? `${plannedToday} of 3 planned · about ${dayTotals.calories} kcal` : 'Nothing planned yet.'}
+        subtitle={plannedToday > 0 ? `${plannedToday} of 3 planned · about ${nb(dayTotals.calories, 'kcal')}` : 'Nothing planned yet.'}
         style={{ marginTop: 24 }}
       />
       <Text style={styles.hidden} testID="plan-count">
@@ -228,7 +229,7 @@ export default function PlanScreen() {
                 {i > 0 && <Separator inset={88} />}
                 <RecipeRow
                   recipe={recipe}
-                  subtitle={`${meal} · ${recipe.minutes} min · ${recipe.calories} kcal`}
+                  metaLines={[meal, `${nb(recipe.minutes, 'min')} · ${nb(recipe.calories, 'kcal')}`]}
                   trailing={
                     <PopIconButton
                       icon="plus"
@@ -270,7 +271,7 @@ function MealCard({ meal, recipe, onChange, onRemove }: { meal: string; recipe: 
             {recipe.title}
           </Text>
           <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
-            {recipe.minutes} min · {recipe.calories} kcal
+            {nb(recipe.minutes, 'min')} · {nb(recipe.calories, 'kcal')}
           </Text>
         </View>
       </PressableScale>

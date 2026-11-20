@@ -17,7 +17,7 @@ import { plainFractions } from '../../../lib/qty';
 import { noWidow } from '../../../lib/text';
 import { TabScreen } from '../../../components/TabScreen';
 import { formatQty, useStore } from '../../../state/store';
-import { useTheme } from '../../../theme';
+import { fonts, useTheme } from '../../../theme';
 
 /** How an aisle is named on screen. "Pantry" is shown as "Cupboard", so it doesn't clash with the Pantry tab (saved data keeps its name). */
 const aisleName = (aisle: string) => (aisle === 'Pantry' ? 'Cupboard' : aisle);
@@ -99,9 +99,9 @@ export default function GroceriesScreen() {
             <View style={styles.heroTop}>
               <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
                 <Text style={[t.type.title2, { color: t.colors.label }]} testID="grocery-progress">
-                  {done === total ? 'Everything’s in the basket!' : `${done} of ${total} in your basket`}
+                  {done === total ? 'Everything’s in the\u00A0basket!' : `${done} of ${total} in your basket`}
                 </Text>
-                {done === total && <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>Nice shopping. Clear the list when you’re ready.</Text>}
+                {done === total && <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{noWidow('Nice shopping. Clear the list when you’re ready.')}</Text>}
               </View>
             </View>
             <View style={styles.heroBar}>
@@ -211,6 +211,11 @@ function GroceryRow({ item, onToggle, onDelete }: { item: GroceryItem; onToggle:
   const names = item.recipeIds.map((id) => getRecipe(id)?.title).filter((n): n is string => !!n);
   // One recipe: its name. Several: "For 2 recipes", which opens the list of names.
   const [showSources, setShowSources] = useState(false);
+  const tick = () => {
+    if (swiping.current) return;
+    haptics.select();
+    onToggle();
+  };
   // A swipe must never also count as a tap that ticks the item.
   const swiping = useRef(false);
   const startSwipe = () => {
@@ -233,50 +238,54 @@ function GroceryRow({ item, onToggle, onDelete }: { item: GroceryItem; onToggle:
       // No close() before deleting: the row unmounts, and closing a gesture mid-unmount errors.
       renderRightActions={(progress) => <DeleteAction progress={progress} label={`Delete ${item.name}`} onPress={onDelete} />}
     >
-      <View style={{ backgroundColor: t.colors.cell }}>
+      {/* The checkbox only ticks. The rest of the row ticks too, unless the item is for several
+          recipes: then it opens the list of recipe names. */}
+      <View style={[styles.row, { backgroundColor: t.colors.cell }]}>
         <PressableScale
-          onPress={() => {
-            if (swiping.current) return;
-            haptics.select();
-            onToggle();
-          }}
+          onPress={tick}
           haptic={null}
-          scaleTo={0.99}
+          scaleTo={0.9}
           accessibilityRole="checkbox"
           aria-checked={item.checked}
           accessibilityLabel={`${item.name}, ${formatQty(item.quantity, item.unit)}`}
           accessibilityActions={[{ name: 'delete', label: 'Delete' }]}
           onAccessibilityAction={(e) => e.nativeEvent.actionName === 'delete' && onDelete()}
-          style={[styles.row, names.length > 1 && styles.rowTight]}
+          style={styles.checkTap}
         >
           <CheckCircle checked={item.checked} color={t.pop.leaf} />
+        </PressableScale>
+        <PressableScale
+          onPress={() => {
+            if (swiping.current) return;
+            if (names.length > 1) {
+              haptics.select();
+              setShowSources((v) => !v);
+            } else tick();
+          }}
+          haptic={null}
+          scaleTo={0.99}
+          accessibilityRole="button"
+          aria-expanded={names.length > 1 ? showSources : undefined}
+          accessibilityLabel={names.length > 1 ? `For ${names.length} recipes. ${showSources ? 'Hide' : 'Show'} which` : `${item.checked ? 'Untick' : 'Tick'} ${item.name}`}
+          style={styles.rowMain}
+        >
           <View style={{ flex: 1 }}>
             {/* A name you typed can be long: it gets two lines, then "…". */}
             <Text style={[t.type.body, { color: item.checked ? t.colors.secondaryLabel : t.colors.label }, item.checked && styles.struck]} numberOfLines={2}>
               {item.name}
             </Text>
-            {names.length === 1 && <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 1 }]}>{noWidow(names[0])}</Text>}
+            {names.length === 1 && <Text style={[styles.sub, { color: t.colors.secondaryLabel }]}>{noWidow(names[0])}</Text>}
+            {names.length > 1 && (
+              <Text style={[styles.sub, { color: t.colors.secondaryLabel }]}>
+                {showSources ? noWidow(names.join(', ')) : `For\u00A0${names.length}\u00A0recipes\u00A0›`}
+              </Text>
+            )}
           </View>
-          {/* the amount fades and is crossed out together with the name */}
+          {/* The amount fades and is crossed out together with the name. */}
           <Text style={[t.type.subhead, { color: item.checked ? t.colors.secondaryLabel : t.colors.label, fontVariant: ['tabular-nums'] }, item.checked && styles.struck]}>
             {plainFractions(formatQty(item.quantity, item.unit))}
           </Text>
         </PressableScale>
-        {names.length > 1 && (
-          <PressableScale
-            onPress={() => setShowSources((v) => !v)}
-            haptic="select"
-            scaleTo={0.98}
-            aria-expanded={showSources}
-            accessibilityLabel={`For ${names.length} recipes. ${showSources ? 'Hide' : 'Show'} which`}
-            style={styles.sources}
-          >
-            <Text style={[t.type.footnote, { color: t.colors.label, flexShrink: 1 }]}>
-              For {names.length} recipes{showSources ? `: ${names.join(', ')}` : ''}
-            </Text>
-            <Icon name={showSources ? 'chevronDown' : 'chevronRight'} size={11} color={t.colors.label} weight="bold" />
-          </PressableScale>
-        )}
       </View>
     </ReanimatedSwipeable>
   );
@@ -303,9 +312,11 @@ const styles = StyleSheet.create({
   addInput: { flex: 1, paddingVertical: 12, outlineStyle: 'none' } as never,
   addButton: { minHeight: 42, paddingHorizontal: 18, borderRadius: 14, borderWidth: 2, justifyContent: 'center', borderCurve: 'continuous' },
   basketHead: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 56, paddingHorizontal: 16, borderRadius: 18, borderWidth: 2.5, marginTop: 24 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12, minHeight: 60 },
-  rowTight: { paddingBottom: 0, minHeight: 48 },
-  sources: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 44, paddingLeft: 56, paddingRight: 16 },
+  row: { flexDirection: 'row', alignItems: 'center', paddingLeft: 8, paddingRight: 16, minHeight: 60 },
+  checkTap: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, paddingLeft: 4, paddingVertical: 10, minHeight: 60 },
+  // Under the name: the same style for one recipe or "For 2 recipes ›".
+  sub: { fontFamily: fonts.medium, fontSize: 15, lineHeight: 20, marginTop: 1 },
   struck: { textDecorationLine: 'line-through' },
   delete: { width: 80, height: '100%' },
 });

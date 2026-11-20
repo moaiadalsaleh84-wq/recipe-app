@@ -282,7 +282,8 @@ export const motion = {
   /** Bouncy confirmation, e.g. checkmarks. */
   pop: { damping: 12, stiffness: 320, mass: 0.7 },
   settle: { damping: 16, stiffness: 180, mass: 0.9 },
-  toastDuration: 2600,
+  /** Toasts hide on their own after 3 seconds (or a tap). */
+  toastDuration: 3000,
 } as const;
 
 /** How far the solid ink shadow sits below: 4 for cards and big buttons, 3 for small buttons, chips and pills. */
