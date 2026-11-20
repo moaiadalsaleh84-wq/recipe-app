@@ -541,11 +541,14 @@ export function Segmented<T extends string>({
   value,
   onChange,
   label,
+  small,
 }: {
   options: { label: string; value: T }[];
   value: T;
   onChange: (v: T) => void;
   label: string;
+  /** A compact version (the tap area stays 44 tall). */
+  small?: boolean;
 }) {
   const t = useTheme();
   return (
@@ -561,10 +564,10 @@ export function Segmented<T extends string>({
             accessibilityRole="radio"
             aria-checked={selected}
             accessibilityLabel={o.label}
-            hitSlop={{ top: 4, bottom: 4 }}
-            style={[segStyles.item, selected && { backgroundColor: t.pop.sunshine, borderColor: t.pop.ink, borderWidth: t.stroke.thin }]}
+            hitSlop={small ? { top: 8, bottom: 8 } : { top: 4, bottom: 4 }}
+            style={[segStyles.item, small && segStyles.itemSmall, selected && { backgroundColor: t.pop.sunshine, borderColor: t.pop.ink, borderWidth: t.stroke.thin }]}
           >
-            <Text style={[t.type.footnote, { color: selected ? t.colors.label : t.colors.secondaryLabel, fontFamily: selected ? t.fonts.black : t.fonts.bold, fontSize: 14 }]}>{o.label}</Text>
+            <Text style={[t.type.footnote, { color: selected ? t.colors.label : t.colors.secondaryLabel, fontFamily: selected ? t.fonts.black : t.fonts.bold, fontSize: small ? 13 : 14 }]}>{o.label}</Text>
           </PressableScale>
         );
       })}
@@ -574,5 +577,6 @@ export function Segmented<T extends string>({
 
 const segStyles = StyleSheet.create({
   wrap: { flexDirection: 'row', borderRadius: 999, padding: 3, borderWidth: 2, borderCurve: 'continuous' },
+  itemSmall: { minHeight: 30, minWidth: 48, paddingHorizontal: 10 },
   item: { minHeight: 38, minWidth: 60, paddingHorizontal: 14, borderRadius: 999, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
 });

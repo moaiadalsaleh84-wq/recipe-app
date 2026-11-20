@@ -1,5 +1,3 @@
-import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
@@ -24,14 +22,15 @@ import { Icon, type IconName } from '../../components/Icon';
 import { PressableScale } from '../../components/PressableScale';
 import { RecipePhoto } from '../../components/RecipeCard';
 import { useToast } from '../../components/Toast';
-import { Button, Chip, EmptyState, IconButton, Segmented, Separator, Stepper } from '../../components/ui';
+import { Button, EmptyState, IconButton, Segmented } from '../../components/ui';
+import { PopButton, PopCard, PopChip, PopIconButton } from '../../components/pop';
 import { type DietTag, type Recipe, type Units } from '../../data/mock';
 import { haptics } from '../../lib/haptics';
 import { pickPhoto } from '../../lib/photos';
 import { convertQty, convertStepText } from '../../lib/units';
 import { formatQty, roundQty, useStore } from '../../state/store';
 import { ingredientText } from '../../lib/qty';
-import { cook, useTheme, pop } from '../../theme';
+import { pop, popCycle, useTheme } from '../../theme';
 
 export default function RecipeScreen() {
   const t = useTheme();
@@ -40,7 +39,7 @@ export default function RecipeScreen() {
   const toast = useToast();
   const { id } = useLocalSearchParams<{ id: string }>();
   const {
-    getRecipe, isFavorite, toggleFavorite, addIngredients, showOnlyTag, units, setUnits, notes, setNote,
+    getRecipe, isFavorite, toggleFavorite, addIngredients, units, setUnits, notes, setNote,
     cookbooks, favorites, deleteRecipe, setRecipeImage, goals, profile, isPro, pantry,
   } = useStore();
   const recipe = getRecipe(id);
@@ -64,14 +63,15 @@ export default function RecipeScreen() {
     [],
   );
 
-  const heroHeight = Math.min(Math.round(width * 0.92), 520);
+  // Height of the tomato header band (measured), so the small bar knows when the title has gone.
+  const [headerHeight, setHeaderHeight] = useState(0);
   const scrollY = useSharedValue(0);
   const onScroll = useAnimatedScrollHandler((e) => {
     scrollY.set(e.contentOffset.y);
   });
 
   // The compact bar (and its small title) appears once the big title has scrolled under it.
-  const barThreshold = Math.max(heroHeight - insets.top - 70, titleBottom - insets.top - 56);
+  const barThreshold = Math.max(120, titleBottom - insets.top - 60);
   useAnimatedReaction(
     () => scrollY.get() > barThreshold,
     (visible, prev) => {
@@ -80,10 +80,10 @@ export default function RecipeScreen() {
     [barThreshold],
   );
 
-  // Stretch on pull-down, gentle parallax on scroll.
+  // The photo card sits tilted; it grows a little when you pull down. Numbers only in here.
   const heroStyle = useAnimatedStyle(() => {
     const y = scrollY.get();
-    return { transform: [{ translateY: y < 0 ? y / 2 : y * 0.35 }, { scale: y < 0 ? 1 + -y / heroHeight : 1 }] };
+    return { transform: [{ rotate: '-2deg' }, { scale: y < 0 ? 1 + -y / 700 : 1 }] };
   });
   const barStyle = useAnimatedStyle(() => ({
     opacity: interpolate(scrollY.get(), [barThreshold - 40, barThreshold], [0, 1], Extrapolation.CLAMP),
@@ -130,12 +130,6 @@ export default function RecipeScreen() {
     });
   };
 
-  const onTag = (tag: DietTag) => {
-    showOnlyTag(tag);
-    router.dismissTo('/');
-    toast({ message: `Showing ${tag.toLowerCase()} recipes`, tone: 'info', icon: 'search' });
-  };
-
   const onShare = async () => {
     try {
       await Share.share({ title: recipe.title, message: shareText(recipe, servings, units) });
@@ -157,29 +151,32 @@ export default function RecipeScreen() {
   };
 
   const level = recipe.difficulty === 'Easy' ? 1 : recipe.difficulty === 'Medium' ? 2 : 3;
-  const stats: { icon: IconName | 'hats'; value: string; label: string }[] = [
-    { icon: 'clock', value: `${recipe.minutes} min`, label: 'Total time' },
-    { icon: 'people', value: `${recipe.servings}`, label: 'Serves' },
-    { icon: 'hats', value: recipe.difficulty, label: 'Difficulty' },
-  ];
+  const photoWidth = Math.min(width - 56, 460);
 
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.background }}>
-      <StatusBar style={barVisible ? (t.isDark ? 'light' : 'dark') : 'light'} animated />
+      <StatusBar style="dark" animated />
       <Animated.ScrollView
         onScroll={onScroll}
         scrollEventThrottle={16}
         contentInsetAdjustmentBehavior="never"
         keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ paddingBottom: insets.bottom + 110 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 120 }}
       >
-        {/* Hero */}
-        <Animated.View testID="hero" style={[{ height: heroHeight, backgroundColor: t.colors.imagePlaceholder }, heroStyle]}>
-          <RecipePhoto recipe={recipe} iconSize={72} />
-          <LinearGradient colors={[t.inkAlpha(0.35), t.inkAlpha(0)]} style={[styles.heroShade, { height: insets.top + 90 }]} pointerEvents="none" />
+        {/* Header: a tomato-tint band with the photo as a tilted card */}
+        <View style={[styles.header, { backgroundColor: t.pop.tomatoTint, paddingTop: insets.top + 64, borderBottomColor: t.pop.ink }]} testID="hero" onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}>
+          <Animated.View style={[styles.photoCard, { width: photoWidth, height: Math.round(photoWidth * 0.75), backgroundColor: t.colors.imagePlaceholder }, heroStyle]}>
+            <View style={styles.photoClip}>
+              <RecipePhoto recipe={recipe} iconSize={64} />
+            </View>
+          </Animated.View>
           {recipe.custom && (
-            <PressableScale
+            <PopButton
+              label={recipe.image ? 'Change photo' : 'Add a photo'}
+              icon="camera"
+              size="small"
+              color={t.pop.white}
               onPress={async () => {
                 try {
                   const uri = await pickPhoto();
@@ -192,36 +189,26 @@ export default function RecipeScreen() {
                   toast({ message: 'Couldn’t open your photos', tone: 'warning' });
                 }
               }}
-              accessibilityLabel={recipe.image ? 'Change photo' : 'Add a photo'}
-              style={[styles.photoBtn, { bottom: t.radius.xl + 12, backgroundColor: t.colors.scrim }]}
-            >
-              <Icon name="camera" size={16} color={t.pop.white} />
-              <Text style={[t.type.subhead, { color: t.pop.white, fontFamily: t.fonts.bold }]}>{recipe.image ? 'Change photo' : 'Add photo'}</Text>
-            </PressableScale>
+              style={{ alignSelf: 'center', marginTop: 14 }}
+            />
           )}
-        </Animated.View>
+        </View>
 
-        <View style={[styles.body, { backgroundColor: t.colors.background, borderRadius: t.radius.xl, marginTop: -t.radius.xl }]}>
+        <View style={styles.body}>
           <View style={styles.kicker}>
-            <View style={[styles.pill, { backgroundColor: t.colors.tintSoft }]}>
-              <Text style={[t.type.footnote, { color: t.colors.tint, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>{recipe.category}</Text>
-            </View>
-            {recipe.custom && (
-              <View style={[styles.pill, { backgroundColor: t.colors.fill }]}>
-                <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>{recipe.origin === 'import' ? 'Imported' : 'My recipe'}</Text>
-              </View>
-            )}
+            <PopChip label={recipe.category} color={t.pop.sunshineTint} small />
+            {recipe.custom && <PopChip label={recipe.origin === 'import' ? 'Imported' : 'My recipe'} color={t.pop.lilacTint} small />}
           </View>
           <Text
-            style={[t.type.largeTitle, t.noWidows.style, { color: t.colors.label, marginTop: 4 }]}
+            style={[t.type.largeTitle, t.noWidows.style, { color: t.colors.label, marginTop: 10 }]}
             {...t.noWidows.props}
             accessibilityRole="header"
-            onLayout={(e) => setTitleBottom(heroHeight - t.radius.xl + 24 + e.nativeEvent.layout.y + e.nativeEvent.layout.height)}
+            onLayout={(e) => setTitleBottom(e.nativeEvent.layout.y + e.nativeEvent.layout.height + headerHeight)}
           >
             {recipe.title}
           </Text>
           {!!recipe.description && (
-            <Text style={[t.type.body, t.noWidows.style, { color: t.colors.secondaryLabel, marginTop: 8 }]} {...t.noWidows.props}>
+            <Text style={[t.type.body, t.noWidows.style, { color: t.colors.secondaryLabel, marginTop: 6 }]} {...t.noWidows.props}>
               {recipe.description}
             </Text>
           )}
@@ -232,37 +219,27 @@ export default function RecipeScreen() {
               accessibilityLabel={`Open original recipe at ${hostOf(recipe.sourceUrl)}`}
               style={styles.source}
             >
-              <Icon name="link" size={15} color={t.colors.tint} />
-              <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.semibold }]} numberOfLines={1}>
+              <Icon name="link" size={15} color={t.colors.tint} weight="bold" />
+              <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.black, textDecorationLine: 'underline' }]} numberOfLines={1}>
                 Original at {hostOf(recipe.sourceUrl)}
               </Text>
             </PressableScale>
           )}
 
+          {/* Three colored stat tiles: time, difficulty + steps, kcal */}
           <Reveal index={1}>
-          {/* Three facts as a small bento row: saffron, basil and dark, like the You tab. */}
-          <View style={styles.stats}>
-            {stats.map((s, i) => {
-              const tile = [
-                { bg: t.pop.sunshine, fg: t.pop.ink, sub: t.pop.inkMuted },
-                { bg: t.pop.leaf, fg: t.pop.ink, sub: t.pop.ink },
-                { bg: t.isDark ? t.colors.elevated : cook.background, fg: cook.label, sub: cook.secondaryLabel },
-              ][i];
-              return (
-                <View key={s.label} style={[styles.stat, { backgroundColor: tile.bg }]} accessible accessibilityLabel={`${s.label}: ${s.value}`}>
-                  {s.icon === 'hats' ? <ChefHats level={level} color={cook.accent} empty={cook.secondaryLabel} /> : <Icon name={s.icon} size={18} color={tile.fg} weight="semibold" />}
-                  <Text style={[t.type.headline, { color: tile.fg }]}>{s.value}</Text>
-                  <Text style={[t.type.caption1, { color: tile.sub }]}>{s.label}</Text>
-                </View>
-              );
-            })}
-          </View>
+            <View style={styles.stats}>
+              <StatTile color={t.pop.sunshine} icon="clock" value={`${recipe.minutes} min`} label="Total time" />
+              <StatTile color={t.pop.leaf} hats={level} value={recipe.difficulty} label={`${recipe.steps.length} ${recipe.steps.length === 1 ? 'step' : 'steps'}`} a11y={`${recipe.difficulty}, ${recipe.steps.length} steps`} />
+              <StatTile color={t.pop.sky} icon="flame" value={`${recipe.calories}`} label="kcal / serving" a11y={`${recipe.calories} calories per serving`} />
+            </View>
           </Reveal>
 
+          {/* Tags: plain labels, colored by kind */}
           {recipe.tags.length > 0 && (
             <View style={styles.tags}>
               {recipe.tags.map((tag) => (
-                <Chip key={tag} label={tag} trailing="chevronRight" toggle={false} accessibilityLabel={`${tag}. Show all ${tag.toLowerCase()} recipes`} onPress={() => onTag(tag)} />
+                <PopChip key={tag} label={TAG_LOOK[tag]?.label ?? tag} color={TAG_LOOK[tag]?.color ?? t.pop.sunshineTint} small />
               ))}
             </View>
           )}
@@ -272,87 +249,78 @@ export default function RecipeScreen() {
             <Nutrition recipe={recipe} proteinGoal={isPro ? goals.protein : undefined} />
           </Reveal>
 
-          {/* Ingredients */}
-          <Text style={[t.type.title2, styles.h2, { color: t.colors.label }]} accessibilityRole="header">
-            Ingredients
-          </Text>
-          {/* Servings on their own row; units as a small switch underneath */}
-          <View style={styles.servings}>
-            <Stepper value={servings} onChange={setServings} label="servings" />
-            <Text style={[t.type.headline, { color: t.colors.label }]} testID="servings-label">
-              {servings} {servings === 1 ? 'serving' : 'servings'}
+          {/* You'll need: servings in an outlined pill, units as a small switch */}
+          <View style={styles.needHead}>
+            <Text style={[t.type.title2, { color: t.colors.label, flex: 1 }]} accessibilityRole="header">
+              You’ll need
             </Text>
+            <Segmented small label="Units" value={units} onChange={(u: Units) => setUnits(u)} options={[{ label: 'Metric', value: 'metric' }, { label: 'US', value: 'us' }]} />
           </View>
+          <PeopleStepper value={servings} onChange={setServings} />
           {/* Say why the number differs from the recipe, and offer the way back. */}
           {servings !== recipe.servings && (
             <PressableScale onPress={() => setServings(recipe.servings)} style={styles.resetServings} accessibilityLabel={`Use the recipe's ${recipe.servings} servings`} testID="servings-reset">
               <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]}>
                 {servings === profile.household ? 'Sized for your household. ' : ''}The recipe makes {recipe.servings}.{' '}
-                <Text style={{ color: t.colors.tint, fontFamily: t.fonts.display }}>{`Use\u00A0${recipe.servings}`}</Text>
+                <Text style={{ color: t.colors.tint, fontFamily: t.fonts.black, textDecorationLine: 'underline' }}>{`Use\u00A0${recipe.servings}`}</Text>
               </Text>
             </PressableScale>
           )}
-          <View style={styles.units}>
-            <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]}>Units</Text>
-            <Segmented label="Units" value={units} onChange={(u: Units) => setUnits(u)} options={[{ label: 'Metric', value: 'metric' }, { label: 'US', value: 'us' }]} />
-          </View>
-          <View style={[styles.card, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]}>
+          <PopCard style={{ marginTop: 12 }} radius={22} depth={4}>
             {recipe.ingredients.map((ing, i) => {
               const c = convertQty(roundQty(ing.quantity * scale), ing.unit, units);
               const { amount, text } = ingredientText(c.quantity, c.unit, ing.name);
+              const got = have.has(ing.id);
               return (
                 <Animated.View key={`${ing.id}-${i}`} entering={FadeIn.duration(260).delay(120 + Math.min(i, 12) * 40)}>
-                  {i > 0 && <Separator inset={16} />}
-                  <View style={styles.ingredient} accessible accessibilityLabel={`${amount} ${text}${have.has(ing.id) ? ', in your pantry' : ''}`.trim()}>
-                    <FoodIcon name={ing.name} aisle={ing.aisle} />
-                    {/* "3/4 red pepper": the amount in bold, then what it is */}
-                    <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>
-                      {amount ? (
-                        <Text style={{ fontFamily: t.fonts.display, fontVariant: ['tabular-nums'] }} testID={`qty-${ing.id}`}>
-                          {amount}{' '}
-                        </Text>
-                      ) : null}
-                      {text}
-                    </Text>
-                    {have.has(ing.id) && (
-                      <View style={[styles.have, { backgroundColor: t.colors.successSoft }]}>
-                        <Icon name="check" size={11} color={t.colors.successText} weight="bold" />
-                        <Text style={[t.type.caption1, { color: t.colors.successText }]}>Have it</Text>
+                  <View
+                    style={[styles.ingredient, i > 0 && { borderTopWidth: 1.5, borderTopColor: t.colors.separator }, got && { backgroundColor: t.pop.leafTint }]}
+                    accessible
+                    accessibilityLabel={`${amount} ${text}${got ? ', already in pantry' : ''}`.trim()}
+                  >
+                    {got ? (
+                      <View style={[styles.gotCheck, { backgroundColor: t.pop.leaf, borderColor: t.pop.ink }]}>
+                        <Icon name="check" size={13} color={t.pop.ink} weight="bold" />
                       </View>
+                    ) : (
+                      <FoodIcon name={ing.name} aisle={ing.aisle} />
                     )}
+                    {/* "3/4 red pepper": the amount in bold, then what it is */}
+                    <View style={{ flex: 1 }}>
+                      <Text style={[t.type.body, { color: t.colors.label }]}>
+                        {amount ? (
+                          <Text style={{ fontFamily: t.fonts.black, fontVariant: ['tabular-nums'] }} testID={`qty-${ing.id}`}>
+                            {amount}{' '}
+                          </Text>
+                        ) : null}
+                        {text}
+                      </Text>
+                      {got && <Text style={[t.type.caption1, { color: t.colors.label }]}>already in pantry</Text>}
+                    </View>
                   </View>
                 </Animated.View>
               );
             })}
-          </View>
+          </PopCard>
           {/* Right under the list, where you decide what to buy */}
           <Button
             label={justAdded === 'all' ? 'Added' : have.size ? 'Add all to groceries' : 'Add to groceries'}
             icon={justAdded === 'all' ? 'check' : 'cartAdd'}
             variant={justAdded === 'all' ? 'success' : 'tinted'}
+            size="medium"
             onPress={() => onAdd('all')}
-            style={{ marginTop: 16 }}
+            style={{ marginTop: 16, alignSelf: 'stretch' }}
             accessibilityLabel={justAdded === 'all' ? 'Added to the grocery list' : `Add ingredients for ${servings} servings to the grocery list`}
           />
-          {have.size > 0 && missing.length > 0 && (
-            <Button
-              label={justAdded === 'missing' ? 'Added' : `Add only what’s missing (${missing.length})`}
-              icon={justAdded === 'missing' ? 'check' : 'cartAdd'}
-              variant={justAdded === 'missing' ? 'success' : 'tinted'}
-              onPress={() => onAdd('missing')}
-              style={{ marginTop: 12 }}
-              accessibilityLabel={`Add the ${missing.length} ingredients you don't have to the grocery list`}
-            />
-          )}
 
           {/* Method */}
           <Text style={[t.type.title2, styles.h2, { color: t.colors.label }]} accessibilityRole="header">
-            Method
+            How to make it
           </Text>
           {recipe.steps.map((step, i) => (
             <View key={i} style={styles.step} accessible accessibilityLabel={`Step ${i + 1}. ${convertStepText(step, units)}`}>
-              <View style={[styles.stepNum, { backgroundColor: t.colors.tintSoft }]}>
-                <Text style={[t.type.subhead, { color: t.colors.tint, fontWeight: 'normal', fontFamily: t.fonts.rounded }]}>{i + 1}</Text>
+              <View style={[styles.stepNum, { backgroundColor: popCycle[i % popCycle.length].fill, borderColor: t.pop.ink }]}>
+                <Text style={[t.type.headline, { color: t.pop.ink, fontFamily: t.fonts.heading }]}>{i + 1}</Text>
               </View>
               <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>{convertStepText(step, units)}</Text>
             </View>
@@ -375,7 +343,7 @@ export default function RecipeScreen() {
             placeholderTextColor={t.colors.tertiaryLabel}
             multiline
             accessibilityLabel="My notes for this recipe"
-            style={[t.type.body, styles.notes, { color: t.colors.label, backgroundColor: t.colors.cell, ...t.chunky.card }]}
+            style={[t.type.body, styles.notes, { color: t.colors.label, backgroundColor: t.pop.sunshineTint, ...t.chunky.card }]}
           />
 
           {recipe.custom && (
@@ -391,53 +359,107 @@ export default function RecipeScreen() {
         </View>
       </Animated.ScrollView>
 
-      {/* Compact bar that fades in once the photo scrolls away */}
-      {/* It is solid behind the clock, and catches touches so nothing under it can be tapped by accident. */}
-      <Animated.View style={[styles.topBar, { height: insets.top + 56 }, barStyle]} testID="detail-bar">
-        <BlurView tint={t.isDark ? 'dark' : 'light'} intensity={40} style={StyleSheet.absoluteFill} />
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: t.colors.bar }]} />
-        <View style={[StyleSheet.absoluteFill, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: t.colors.separator }]} />
-        <View style={[styles.topTitle, { top: insets.top, height: 56 }]}>
-          {/* Long titles take two smaller lines instead of being cut off. */}
-          <Text style={[recipe.title.length > 22 ? styles.topTitleSmall : t.type.headline, { color: t.colors.label, textAlign: 'center', fontFamily: t.fonts.display }]}>
+      {/* Compact bar that fades in once the title scrolls away. It catches touches, so nothing
+          under it can be tapped by accident. */}
+      <Animated.View style={[styles.topBar, { height: insets.top + 60, backgroundColor: t.colors.background, borderBottomColor: t.pop.ink }, barStyle]} testID="detail-bar" pointerEvents={barVisible ? 'auto' : 'none'}>
+        <View style={[styles.topTitle, { top: insets.top, height: 60 }]}>
+          <Text style={[recipe.title.length > 22 ? styles.topTitleSmall : t.type.title3, { color: t.colors.label, textAlign: 'center', fontFamily: t.fonts.heading }]} numberOfLines={2}>
             {recipe.title}
           </Text>
         </View>
       </Animated.View>
 
-      {/* Floating controls */}
-      <View style={[styles.controls, { top: insets.top + 6 }]} pointerEvents="box-none">
-        <GlassButton icon="back" label="Back" onPress={goBack} />
+      {/* Back, heart and more */}
+      <View style={[styles.controls, { top: insets.top + 8 }]} pointerEvents="box-none">
+        <PopIconButton icon="back" accessibilityLabel="Back" onPress={goBack} />
         <View style={styles.controlsRight}>
-          <GlassButton icon={fav ? 'heartFill' : 'heart'} label={fav ? 'Remove from Favorites' : 'Add to Favorites'} onPress={onFavorite} color={fav ? t.colors.accent : undefined} />
-          <GlassButton icon="more" label="More: share or save to a cookbook" onPress={() => setMenuOpen(true)} />
+          <PopIconButton icon={fav ? 'heartFill' : 'heart'} accessibilityLabel={fav ? 'Remove from Favorites' : 'Add to Favorites'} onPress={onFavorite} iconColor={fav ? t.pop.tomato : t.pop.ink} haptic={null} />
+          <PopIconButton icon="more" accessibilityLabel="More: share or save to a cookbook" onPress={() => setMenuOpen(true)} />
         </View>
       </View>
 
       <MoreMenu
         visible={menuOpen}
         onClose={() => setMenuOpen(false)}
-        top={insets.top + 56}
+        top={insets.top + 60}
         rows={[
           { label: 'Share recipe', icon: 'share', onPress: onShare },
           { label: inCookbooks > 0 ? 'Saved to a cookbook' : 'Save to a cookbook', icon: inCookbooks > 0 ? 'bookmarkFill' : 'bookmark', onPress: () => router.push({ pathname: '/save-to-cookbook', params: { id: recipe.id } }) },
         ]}
       />
 
-      {/* Sticky actions */}
-      <View style={[styles.bottom, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-        <BlurView tint={t.isDark ? 'dark' : 'light'} intensity={40} style={StyleSheet.absoluteFill} />
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: t.colors.bar }]} />
-        <View style={[StyleSheet.absoluteFill, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.colors.separator }]} />
-        <View style={styles.bottomRow}>
-          <Button
-            label="Cook now"
-            icon="pot"
-            onPress={() => router.push({ pathname: '/cook/[id]', params: { id: recipe.id, servings: String(servings) } })}
-            style={{ flex: 1 }}
-          />
-        </View>
+      {/* Sticky actions: a basket for what's missing, and the big "Let's cook!" */}
+      <View style={[styles.bottom, { paddingBottom: Math.max(insets.bottom, 14), backgroundColor: t.colors.background, borderTopColor: t.pop.ink }]}>
+        <PopIconButton
+          icon={justAdded === 'missing' ? 'check' : 'cartAdd'}
+          size={56}
+          iconSize={24}
+          color={justAdded === 'missing' ? t.pop.leaf : t.pop.white}
+          accessibilityLabel={missing.length && have.size ? `Add the ${missing.length} missing ingredients to the list` : 'Add the ingredients to the list'}
+          onPress={() => (have.size ? onAdd('missing') : onAdd('all'))}
+          testID="add-missing"
+          haptic={null}
+        />
+        <PopButton
+          label="Let’s cook!"
+          icon="pot"
+          onPress={() => router.push({ pathname: '/cook/[id]', params: { id: recipe.id, servings: String(servings) } })}
+          accessibilityLabel={`Let’s cook ${recipe.title}`}
+          style={{ flex: 1 }}
+          testID="cook-now"
+        />
       </View>
+    </View>
+  );
+}
+
+/** How each diet tag looks on the recipe page. */
+const TAG_LOOK: Partial<Record<DietTag, { label: string; color: string }>> = {
+  Vegetarian: { label: 'Veggie', color: pop.leafTint },
+  Vegan: { label: 'Vegan', color: pop.leafTint },
+  'Kid friendly': { label: 'Kids love it', color: pop.berryTint },
+  'One pan': { label: 'One pan', color: pop.sunshineTint },
+  'High protein': { label: 'High protein', color: pop.tomatoTint },
+  'Gluten free': { label: 'Gluten free', color: pop.skyTint },
+};
+
+/** One colored stat tile: an icon (or chef hats), a big value and a small label. */
+function StatTile({ color, icon, hats, value, label, a11y }: { color: string; icon?: IconName; hats?: number; value: string; label: string; a11y?: string }) {
+  const t = useTheme();
+  return (
+    <View style={[styles.stat, { backgroundColor: color, ...t.chunky.card }]} accessible accessibilityLabel={a11y ?? `${label}: ${value}`}>
+      {hats ? <ChefHats level={hats} color={t.pop.ink} empty={t.pop.ink} /> : icon ? <Icon name={icon} size={18} color={t.pop.ink} weight="bold" /> : null}
+      <Text style={[t.type.title3, { color: t.pop.ink }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+        {value}
+      </Text>
+      <Text style={[t.type.caption1, { color: t.pop.ink }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+/** "− 4 people +" in an outlined pill. */
+function PeopleStepper({ value, onChange, min = 1, max = 24 }: { value: number; onChange: (n: number) => void; min?: number; max?: number }) {
+  const t = useTheme();
+  return (
+    <View
+      style={[styles.people, { borderColor: t.pop.ink, backgroundColor: t.colors.cell }]}
+      accessible
+      accessibilityRole="adjustable"
+      accessibilityLabel="Servings"
+      accessibilityValue={{ min, max, now: value, text: `${value} ${value === 1 ? 'person' : 'people'}` }}
+      accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+      onAccessibilityAction={(e) => {
+        if (e.nativeEvent.actionName === 'increment' && value < max) onChange(value + 1);
+        if (e.nativeEvent.actionName === 'decrement' && value > min) onChange(value - 1);
+      }}
+    >
+      <IconButton icon="minus" haptic="select" accessibilityLabel="Fewer people" disabled={value <= min} onPress={() => onChange(Math.max(min, value - 1))} color={t.pop.ink} />
+      <Text style={[t.type.headline, styles.peopleText, { color: t.pop.ink }]} testID="servings-label">
+        <Text testID="stepper-value">{value}</Text> {value === 1 ? 'person' : 'people'}
+      </Text>
+      <IconButton icon="plus" haptic="select" accessibilityLabel="More people" disabled={value >= max} onPress={() => onChange(Math.min(max, value + 1))} color={t.pop.ink} />
     </View>
   );
 }
@@ -568,16 +590,6 @@ function MoreMenu({ visible, onClose, top, rows }: { visible: boolean; onClose: 
   );
 }
 
-/** A round white button that reads clearly over any photo. */
-function GlassButton({ icon, label, onPress, color }: { icon: IconName; label: string; onPress: () => void; color?: string }) {
-  const t = useTheme();
-  return (
-    <View style={[styles.glass, { backgroundColor: t.colors.cell }]}>
-      <IconButton icon={icon} accessibilityLabel={label} onPress={onPress} color={color ?? t.colors.label} iconSize={18} />
-    </View>
-  );
-}
-
 const hostOf = (url: string) => {
   const m = url.match(/^https?:\/\/(?:www\.)?([^/]+)/i);
   return m ? m[1] : url;
@@ -594,42 +606,39 @@ function shareText(r: Recipe, servings: number, units: Units) {
 }
 
 const styles = StyleSheet.create({
-  heroShade: { position: 'absolute', top: 0, left: 0, right: 0 },
-  photoBtn: { position: 'absolute', right: 16, flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 14, borderRadius: 22 },
-  body: { paddingHorizontal: 16, paddingTop: 24, borderBottomLeftRadius: 0, borderBottomRightRadius: 0, borderCurve: 'continuous' },
+  header: { alignItems: 'center', paddingBottom: 28, borderBottomWidth: 2.5 },
+  photoCard: { borderRadius: 24, borderWidth: 2.5, borderColor: pop.ink, shadowColor: pop.ink, shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 0, height: 5 }, borderCurve: 'continuous' },
+  photoClip: { flex: 1, borderRadius: 21, overflow: 'hidden' },
+  body: { paddingHorizontal: 20, paddingTop: 20 },
   source: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, alignSelf: 'flex-start' },
-  stats: { flexDirection: 'row', marginTop: 16, gap: 8 },
-  stat: { flex: 1, alignItems: 'flex-start', gap: 4, padding: 12, borderRadius: 18, borderCurve: 'continuous' },
-  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },
-  kicker: { flexDirection: 'row', gap: 6 },
-  pill: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999 },
-  have: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
-  h2: { marginTop: 32, marginBottom: 12 },
-  servings: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
-  units: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 16 },
+  stats: { flexDirection: 'row', marginTop: 18, gap: 10 },
+  stat: { flex: 1, alignItems: 'flex-start', gap: 3, paddingHorizontal: 12, paddingVertical: 12, borderRadius: 20, borderCurve: 'continuous' },
+  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 18 },
+  kicker: { flexDirection: 'row', gap: 8 },
+  gotCheck: { width: 32, height: 32, borderRadius: 16, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  h2: { marginTop: 32, marginBottom: 14 },
+  needHead: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 32, marginBottom: 12 },
+  people: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', borderWidth: 2.5, borderRadius: 999, paddingHorizontal: 4 },
+  peopleText: { minWidth: 92, textAlign: 'center', fontVariant: ['tabular-nums'] },
   card: { overflow: 'hidden', borderCurve: 'continuous' },
-  nutrition: { gap: 16, padding: 16, overflow: 'visible', marginTop: 16 },
+  nutrition: { gap: 16, padding: 16, overflow: 'visible', marginTop: 18 },
   kcal: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, marginVertical: -4 },
   split: { flexDirection: 'row', gap: 3, height: 16 },
   macros: { flexDirection: 'row' },
   macro: { flex: 1, gap: 2 },
   macroLabel: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  dot: { width: 10, height: 10, borderRadius: 5 },
-  ingredient: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, minHeight: 56, gap: 12 },
+  dot: { width: 10, height: 10, borderRadius: 5, borderWidth: 1.5, borderColor: pop.ink },
+  ingredient: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, minHeight: 56, gap: 12 },
   step: { flexDirection: 'row', gap: 12, marginBottom: 16 },
-  stepNum: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginTop: -4 },
+  stepNum: { width: 34, height: 34, borderRadius: 17, borderWidth: 2, alignItems: 'center', justifyContent: 'center', marginTop: -4 },
   notes: { minHeight: 96, borderRadius: 20, padding: 16, textAlignVertical: 'top', borderCurve: 'continuous', outlineStyle: 'none' } as never,
-  topBar: { position: 'absolute', top: 0, left: 0, right: 0, overflow: 'hidden' },
-  // Left-aligned between Back and the three buttons on the right; long titles end in "…".
-  topTitle: { position: 'absolute', left: 64, right: 116, justifyContent: 'center', alignItems: 'center' },
+  topBar: { position: 'absolute', top: 0, left: 0, right: 0, borderBottomWidth: 2.5 },
+  topTitle: { position: 'absolute', left: 72, right: 120, justifyContent: 'center', alignItems: 'center' },
   topTitleSmall: { fontSize: 15, lineHeight: 18 },
-  resetServings: { minHeight: 44, justifyContent: 'center', marginTop: -4 },
+  resetServings: { minHeight: 44, justifyContent: 'center' },
   controls: { position: 'absolute', left: 16, right: 16, flexDirection: 'row', justifyContent: 'space-between' },
-  controlsRight: { flexDirection: 'row', gap: 8 },
-  glass: { width: 44, height: 44, borderRadius: 22, shadowColor: pop.ink, shadowOpacity: 0.16, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
-  bottom: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingTop: 12, paddingHorizontal: 16, overflow: 'hidden' },
-  bottomRow: { flexDirection: 'row', gap: 12 },
+  controlsRight: { flexDirection: 'row', gap: 10 },
+  bottom: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingTop: 12, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'flex-start', gap: 12, borderTopWidth: 2.5 },
   menu: { position: 'absolute', right: 16, width: 260, maxWidth: '90%', borderRadius: 20, overflow: 'hidden', borderCurve: 'continuous' },
   menuRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, minHeight: 56 },
 });
-

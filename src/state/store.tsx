@@ -14,6 +14,7 @@ import {
   type Category,
   type Cookbook,
   type CookedEntry,
+  type Rating,
   type FilterTag,
   type Goals,
   type GroceryItem,
@@ -120,7 +121,12 @@ type Store = Saved & {
   setNote: (id: string, text: string) => void;
   setUnits: (u: Units) => void;
   setGoals: (g: Goals) => void;
-  logCooked: (recipeId: string, servings: number) => void;
+  /** Logs a cooked meal and returns its id (its date), for the rating and photo. */
+  logCooked: (recipeId: string, servings: number) => string;
+  /** "How'd it taste?" on the Finish screen. */
+  rateCooked: (date: string, rating: Rating) => void;
+  /** "Snap your plate": a photo of what you cooked. */
+  setCookedPhoto: (date: string, photo: string) => void;
 
   // Filters (shared so recipe tags can apply a filter on the Recipes tab)
   category: Category | null;
@@ -286,7 +292,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
   const setLastLevel = useCallback((n: number) => update((s) => ({ fun: { ...s.fun, lastLevel: n } })), [update]);
   const logCooked = useCallback(
-    (recipeId: string, servings: number) => update((s) => ({ cooked: [{ recipeId, servings, date: new Date().toISOString() }, ...s.cooked] })),
+    (recipeId: string, servings: number) => {
+      const date = new Date().toISOString();
+      update((s) => ({ cooked: [{ recipeId, servings, date }, ...s.cooked] }));
+      return date;
+    },
+    [update],
+  );
+  const rateCooked = useCallback(
+    (date: string, rating: Rating) => update((s) => ({ cooked: s.cooked.map((c) => (c.date === date ? { ...c, rating } : c)) })),
+    [update],
+  );
+  const setCookedPhoto = useCallback(
+    (date: string, photo: string) => update((s) => ({ cooked: s.cooked.map((c) => (c.date === date ? { ...c, photo } : c)) })),
     [update],
   );
 
@@ -443,6 +461,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setUnits,
       setGoals,
       logCooked,
+      rateCooked,
+      setCookedPhoto,
       category,
       tags,
       setCategory,
@@ -466,7 +486,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       undoGroceries,
     }),
     [
-      saved, hydrated, setBuddy, setProfile, completeOnboarding, setPro, addPet, addListDone, unlockBadges, setLastLevel, countImport, draft, addPantry, removePantry, restorePantry, allRecipes, getRecipe, addRecipe, manualRecipeCount, deleteRecipe, setRecipeImage, setNote, setUnits, setGoals, logCooked,
+      saved, hydrated, setBuddy, setProfile, completeOnboarding, setPro, addPet, addListDone, unlockBadges, setLastLevel, countImport, draft, addPantry, removePantry, restorePantry, allRecipes, getRecipe, addRecipe, manualRecipeCount, deleteRecipe, setRecipeImage, setNote, setUnits, setGoals, logCooked, rateCooked, setCookedPhoto,
       category, tags, toggleTag, showOnlyTag, clearFilters, isFavorite, toggleFavorite, addCookbook, renameCookbook,
       deleteCookbook, restoreCookbook, toggleInCookbook, setMeal, toggleGrocery, addIngredients, addWeekToGroceries, addCustomItem,
       removeGrocery, clearCompleted, undoGroceries,

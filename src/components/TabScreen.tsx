@@ -27,9 +27,11 @@ type Props = Omit<ScrollViewProps, 'children'> & {
   children: ReactNode;
   /** Widest the content gets on big screens. */
   maxWidth?: number;
+  /** A custom header in place of the kicker + title row (the title still shows in the small bar). */
+  header?: ReactNode;
 };
 
-export function TabScreen({ title, kicker, right, children, maxWidth = 700, contentContainerStyle, ...rest }: Props) {
+export function TabScreen({ title, kicker, right, children, maxWidth = 700, header, contentContainerStyle, ...rest }: Props) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const tabSpace = useTabBarSpace();
@@ -38,7 +40,7 @@ export function TabScreen({ title, kicker, right, children, maxWidth = 700, cont
     y.set(e.contentOffset.y);
   });
   // The small bar fades in as the large title slides under it.
-  const fadeAt = kicker ? TITLE + 20 : TITLE;
+  const fadeAt = header ? 150 : kicker ? TITLE + 20 : TITLE;
   // The big title stretches a little when you pull down, and shrinks and fades as you scroll up.
   const titleStyle = useAnimatedStyle(() => {
     const v = y.get();
@@ -63,6 +65,9 @@ export function TabScreen({ title, kicker, right, children, maxWidth = 700, cont
           contentContainerStyle,
         ]}
       >
+        {header ? (
+          <Animated.View style={[{ transformOrigin: 'left top' }, titleStyle]}>{header}</Animated.View>
+        ) : (
         <View style={styles.titleRow}>
           <Animated.View style={[{ flex: 1, transformOrigin: 'left bottom' }, titleStyle]}>
             {kicker ? (
@@ -76,6 +81,7 @@ export function TabScreen({ title, kicker, right, children, maxWidth = 700, cont
           </Animated.View>
           {right ? <View style={styles.actions}>{right}</View> : null}
         </View>
+        )}
         {children}
       </Animated.ScrollView>
 

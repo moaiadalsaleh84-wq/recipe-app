@@ -1,16 +1,18 @@
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
-import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
-import { useEffect, useState } from 'react';
+import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import { useState } from 'react';
 import type { Recipe, RecipeImage } from '../data/mock';
 import { photoUri } from '../lib/photos';
 import { useStore } from '../state/store';
 import { haptics } from '../lib/haptics';
-import { brand, useTheme, pop } from '../theme';
+import { useTheme, pop } from '../theme';
 import { Icon } from './Icon';
 import { PressableScale } from './PressableScale';
+import { PopButton } from './pop/PopButton';
+import { PopCard } from './pop/PopCard';
+import { Sticker } from './pop/Sticker';
 import { useToast } from './Toast';
 import { IconButton, Skeleton } from './ui';
 
@@ -40,8 +42,8 @@ export function FavoriteButton({ recipe, onPhoto }: { recipe: Recipe; onPhoto?: 
   const toast = useToast();
   const reduceMotion = useReducedMotion();
   const fav = isFavorite(recipe.id);
-  const pop = useSharedValue(1);
-  const popStyle = useAnimatedStyle(() => ({ transform: [{ scale: pop.get() }] }));
+  const bounce = useSharedValue(1);
+  const popStyle = useAnimatedStyle(() => ({ transform: [{ scale: bounce.get() }] }));
   // The burst when you save: a ring and six little hearts flying out.
   const burst = useSharedValue(0);
   const ringStyle = useAnimatedStyle(() => ({ opacity: burst.get() > 0 && burst.get() < 1 ? 1 - burst.get() : 0, transform: [{ scale: 0.6 + burst.get() * 1.2 }] }));
@@ -50,7 +52,7 @@ export function FavoriteButton({ recipe, onPhoto }: { recipe: Recipe; onPhoto?: 
     if (now) haptics.success();
     else haptics.select();
     if (now && !reduceMotion) {
-      pop.set(withSequence(withTiming(0.6, { duration: 80 }), withSpring(1.15, { damping: 6, stiffness: 300 }), withSpring(1, t.motion.pop)));
+      bounce.set(withSequence(withTiming(0.6, { duration: 80 }), withSpring(1.15, { damping: 6, stiffness: 300 }), withSpring(1, t.motion.pop)));
       burst.set(0);
       burst.set(withTiming(1, { duration: 520, easing: Easing.out(Easing.cubic) }));
     }
@@ -66,12 +68,12 @@ export function FavoriteButton({ recipe, onPhoto }: { recipe: Recipe; onPhoto?: 
     // On photos: a small solid white circle (32pt) inside a full 44pt tap area.
     return (
       <PressableScale onPress={onPress} haptic={null} scaleTo={0.9} accessibilityLabel={label} style={styles.favTap}>
-        <Animated.View pointerEvents="none" style={[styles.burstRing, { borderColor: brand.chili }, ringStyle]} />
+        <Animated.View pointerEvents="none" style={[styles.burstRing, { borderColor: pop.tomato }, ringStyle]} />
         {SPARKS.map((sp, i) => (
           <Spark key={i} dx={sp[0]} dy={sp[1]} burst={burst} />
         ))}
         <Animated.View style={[styles.favDot, popStyle]}>
-          <Icon name={fav ? 'heartFill' : 'heart'} size={17} color={fav ? brand.chili : brand.ink} weight="bold" />
+          <Icon name={fav ? 'heartFill' : 'heart'} size={17} color={fav ? pop.tomato : pop.ink} weight="bold" />
         </Animated.View>
       </PressableScale>
     );
@@ -95,54 +97,42 @@ function Spark({ dx, dy, burst }: { dx: number; dy: number; burst: ReturnType<ty
     const b = burst.get();
     return { opacity: b > 0 && b < 1 ? 1 - b : 0, transform: [{ translateX: dx * b }, { translateY: dy * b }, { scale: 1 - b * 0.4 }] };
   });
-  return <Animated.View pointerEvents="none" style={[styles.spark, { backgroundColor: brand.chili }, style]} />;
-}
-
-/** A photo that drifts in very slowly (a gentle zoom), so the featured card feels alive. Still with Reduce Motion. */
-function DriftingPhoto({ recipe }: { recipe: Recipe }) {
-  const reduceMotion = useReducedMotion();
-  const zoom = useSharedValue(1);
-  useEffect(() => {
-    if (reduceMotion) return;
-    zoom.set(withRepeat(withTiming(1.08, { duration: 9000, easing: Easing.inOut(Easing.quad) }), -1, true));
-  }, [reduceMotion, zoom]);
-  const style = useAnimatedStyle(() => ({ transform: [{ scale: zoom.get() }] }));
-  return (
-    <Animated.View style={[StyleSheet.absoluteFill, style]}>
-      <RecipePhoto recipe={recipe} iconSize={56} />
-    </Animated.View>
-  );
+  return <Animated.View pointerEvents="none" style={[styles.spark, { backgroundColor: pop.tomato }, style]} />;
 }
 
 const useMeta = () => (r: Recipe) => `${r.minutes} min · ${r.calories} kcal`;
 
-/** Grid card: a tall food photo in a white card, then the name in serif and time · difficulty. */
-export function RecipeCard({ recipe, width }: { recipe: Recipe; width: number }) {
+/** Grid and row card: a PopCard with the food photo on top (ink line under it), the name and time. */
+export function RecipeCard({ recipe, width, color }: { recipe: Recipe; width: number; /** Card color (white by default). */ color?: string }) {
   const t = useTheme();
   return (
     // The heart sits on top of the card, beside its button (a button inside a button confuses
     // screen readers and the web).
     <View style={{ width }}>
-      <PressableScale
+      <PopCard
         onPress={() => openRecipe(recipe.id)}
         accessibilityLabel={`${recipe.title}, ${recipe.minutes} minutes, ${recipe.calories} calories`}
         accessibilityHint="Opens the recipe"
-        style={[styles.card, { backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]}
+        color={color}
+        radius={22}
+        depth={4}
       >
-        <View style={[styles.imageWrap, { borderRadius: t.layout.cardRadius - 6, backgroundColor: t.colors.imagePlaceholder }]}>
+        <View style={[styles.imageWrap, { backgroundColor: t.colors.imagePlaceholder }]}>
           <RecipePhoto recipe={recipe} />
         </View>
-        {/* Room for two lines of title on every card, so a row of cards lines up; longer titles wrap instead of being cut. */}
-        <View style={styles.cardTitle}>
-          <Text style={[t.type.title3, { color: t.colors.label, fontSize: 17, lineHeight: 21 }]}>{recipe.title}</Text>
-        </View>
-        <View style={styles.meta}>
-          <Icon name="clock" size={13} color={t.colors.secondaryLabel} weight="semibold" />
-          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, fontFamily: t.fonts.semibold }]}>
-            {recipe.minutes} min · {recipe.difficulty}
+        {/* Room for two lines of title on every card, so a row of cards lines up. */}
+        <View style={styles.cardBody}>
+          <Text style={[t.type.title3, styles.cardTitle, { color: t.colors.label }]} numberOfLines={2}>
+            {recipe.title}
           </Text>
+          <View style={styles.meta}>
+            <Icon name="clock" size={13} color={t.colors.secondaryLabel} weight="bold" />
+            <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]}>
+              {recipe.minutes} min · {recipe.difficulty}
+            </Text>
+          </View>
         </View>
-      </PressableScale>
+      </PopCard>
       <View style={styles.favOnPhoto}>
         <FavoriteButton recipe={recipe} onPhoto />
       </View>
@@ -161,34 +151,33 @@ export function RecipeCardSkeleton({ width }: { width: number }) {
   );
 }
 
-/** Large featured card: a big photo, a saffron tag, and the name in serif over a dark fade. */
-export function FeaturedCard({ recipe, label }: { recipe: Recipe; /** For screen readers, and the tag: why it's featured. */ label: string }) {
+/**
+ * "Tonight's pick": a PopCard with the photo (ink line under it), a tilted tomato sticker, the
+ * name, "25 min · you have 3 of 6", and a big "Cook it!" button that opens Get ready.
+ */
+export function TonightCard({ recipe, label, have, needed, onCook }: { recipe: Recipe; /** For screen readers: why it's featured. */ label: string; have: number; needed: number; onCook: () => void }) {
   const t = useTheme();
-  // The section title above already says why it's featured, so the tag names the meal instead.
-  const tag = recipe.category;
   return (
     <View>
-      <PressableScale
-        onPress={() => openRecipe(recipe.id)}
-        scaleTo={0.98}
-        accessibilityLabel={`${label}: ${recipe.title}`}
-        accessibilityHint="Opens the recipe"
-        style={[styles.featured, { borderRadius: t.radius.xl, backgroundColor: t.colors.imagePlaceholder, ...t.shadow.card }]}
-      >
-        <View style={[StyleSheet.absoluteFill, { borderRadius: t.radius.xl, overflow: 'hidden' }]}>
-          <DriftingPhoto recipe={recipe} />
-          <LinearGradient colors={[t.inkAlpha(0), t.inkAlpha(0.12), t.inkAlpha(0.88)]} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFill} pointerEvents="none" />
-        </View>
-        <View style={styles.featuredText}>
-          <View style={[styles.tag, { backgroundColor: t.colors.reward }]}>
-            <Text style={[t.type.caption1, { color: t.colors.onReward, fontFamily: t.fonts.extrabold }]}>{tag}</Text>
+      <PopCard clip={false} contentStyle={{ overflow: 'hidden' }}>
+        {/* The photo and name open the recipe; the button below is its own tap (no button inside a button). */}
+        <PressableScale onPress={() => openRecipe(recipe.id)} scaleTo={0.99} accessibilityLabel={`${label}: ${recipe.title}, ${recipe.minutes} minutes`} accessibilityHint="Opens the recipe">
+          <View style={[styles.tonightPhoto, { backgroundColor: t.colors.imagePlaceholder }]}>
+            <RecipePhoto recipe={recipe} iconSize={48} />
           </View>
-          <Text style={[t.type.title1, { color: t.pop.white }]} numberOfLines={2}>
-            {recipe.title}
-          </Text>
-          <Text style={[t.type.subhead, { color: t.pop.white, fontFamily: t.fonts.semibold }]}>{`${recipe.minutes} min · ${recipe.difficulty} · ${recipe.calories} kcal`}</Text>
-        </View>
-      </PressableScale>
+          <View style={styles.tonightText}>
+            <Text style={[t.type.title1, { color: t.colors.label, fontSize: 24, lineHeight: 29 }]} numberOfLines={2}>
+              {recipe.title}
+            </Text>
+            <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]} testID="tonight-meta">
+              {recipe.minutes} min · {needed > 0 ? `you have ${have} of ${needed}` : recipe.difficulty}
+            </Text>
+          </View>
+        </PressableScale>
+        <PopButton label="Cook it!" iconRight="arrowRight" onPress={onCook} accessibilityLabel={`Cook ${recipe.title}`} style={styles.tonightBtn} />
+      </PopCard>
+      {/* Slapped on where the photo meets the card. */}
+      <Sticker label="Tonight's pick" style={styles.tonightSticker} />
       <View style={styles.featuredFav}>
         <FavoriteButton recipe={recipe} onPhoto />
       </View>
@@ -215,12 +204,12 @@ export function RecipeRow({
   return (
     <View style={styles.row}>
       <PressableScale onPress={onPress ?? (() => openRecipe(recipe.id))} scaleTo={0.98} accessibilityLabel={`${recipe.title}, ${subtitle ?? meta(recipe)}`} accessibilityHint={accessibilityHint} style={styles.rowMain}>
-        <View style={[styles.thumb, { backgroundColor: t.colors.imagePlaceholder }]}>
+        <View style={[styles.thumb, { backgroundColor: t.colors.imagePlaceholder, borderColor: t.pop.ink }]}>
           <RecipePhoto recipe={recipe} iconSize={24} />
         </View>
         <View style={{ flex: 1, gap: 2 }}>
-          <Text style={[t.type.title3, { color: t.colors.label, fontSize: 17, lineHeight: 21 }]}>{recipe.title}</Text>
-          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{subtitle ?? meta(recipe)}</Text>
+          <Text style={[t.type.title3, { color: t.colors.label, fontSize: 18, lineHeight: 22 }]}>{recipe.title}</Text>
+          <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]}>{subtitle ?? meta(recipe)}</Text>
         </View>
         {!trailing && <Icon name="chevronRight" size={14} color={t.colors.tertiaryLabel} weight="semibold" />}
       </PressableScale>
@@ -230,13 +219,13 @@ export function RecipeRow({
 }
 
 const styles = StyleSheet.create({
-  card: { padding: 6, paddingBottom: 12, borderCurve: 'continuous' },
-  // Tall photos (4:5): food is the star.
-  imageWrap: { width: '100%', aspectRatio: 4 / 5, overflow: 'hidden', borderCurve: 'continuous' },
-  cardTitle: { minHeight: 44, marginTop: 10, marginBottom: 4, paddingHorizontal: 6 },
-  meta: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 6 },
+  // Photos (4:3) with a thick ink line underneath.
+  imageWrap: { width: '100%', aspectRatio: 4 / 3, overflow: 'hidden', borderBottomWidth: 2.5, borderBottomColor: pop.ink },
+  cardBody: { paddingHorizontal: 12, paddingTop: 10, paddingBottom: 12, gap: 6 },
+  cardTitle: { fontSize: 18, lineHeight: 22, minHeight: 44 },
+  meta: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   noPhoto: { alignItems: 'center', justifyContent: 'center' },
-  favOnPhoto: { position: 'absolute', top: 8, right: 8 },
+  favOnPhoto: { position: 'absolute', top: 2, right: 2 },
   favTap: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   burstRing: { position: 'absolute', width: 34, height: 34, borderRadius: 17, borderWidth: 2 },
   spark: { position: 'absolute', width: 6, height: 6, borderRadius: 3 },
@@ -245,18 +234,17 @@ const styles = StyleSheet.create({
     height: 34,
     borderRadius: 17,
     backgroundColor: pop.white,
+    borderWidth: 2,
+    borderColor: pop.ink,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: pop.ink,
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
   },
-  featured: { height: 300, justifyContent: 'flex-end', borderCurve: 'continuous' },
-  featuredFav: { position: 'absolute', top: 8, right: 8 },
-  featuredText: { padding: 18, gap: 6 },
-  tag: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999 },
+  tonightPhoto: { height: 150, overflow: 'hidden', borderBottomWidth: 2.5, borderBottomColor: pop.ink },
+  tonightText: { paddingHorizontal: 16, paddingTop: 22, gap: 4 },
+  tonightBtn: { marginHorizontal: 16, marginTop: 12, marginBottom: 16 },
+  tonightSticker: { position: 'absolute', top: 134, left: 14 },
+  featuredFav: { position: 'absolute', top: 4, right: 4 },
   row: { flexDirection: 'row', alignItems: 'center', paddingRight: 8 },
   rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 10, paddingLeft: 12, paddingRight: 8, minHeight: 84 },
-  thumb: { width: 64, height: 64, borderRadius: 16, overflow: 'hidden', borderCurve: 'continuous' },
+  thumb: { width: 64, height: 64, borderRadius: 16, overflow: 'hidden', borderWidth: 2, borderCurve: 'continuous' },
 });

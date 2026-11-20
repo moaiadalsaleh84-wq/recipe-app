@@ -1,23 +1,24 @@
-import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Linking, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { Linking, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeIn, FadeInDown, FadeInRight, FadeOut, LinearTransition } from 'react-native-reanimated';
-import { Chunky } from '../../../components/Chunky';
-import { Icon } from '../../../components/Icon';
+import { Icon, type IconName } from '../../../components/Icon';
 import { Menu } from '../../../components/Menu';
+import { PopCard, PopChip, PopIconButton } from '../../../components/pop';
 import { PressableScale } from '../../../components/PressableScale';
 import { Reveal } from '../../../components/Reveal';
-import { FeaturedCard, RecipeCard, RecipePhoto } from '../../../components/RecipeCard';
+import { RecipeCard, RecipePhoto, TonightCard } from '../../../components/RecipeCard';
 import { TabScreen } from '../../../components/TabScreen';
 import { useToast } from '../../../components/Toast';
-import { Chip, EmptyState, HeaderButton, IconButton, SearchField, SectionHeader } from '../../../components/ui';
+import { Chip, EmptyState, IconButton, SearchField, SectionHeader } from '../../../components/ui';
 import { FAVORITES_ID, QUICK_FILTER, categories, filterTags, matchesFilter, type Recipe } from '../../../data/mock';
 import { haptics } from '../../../lib/haptics';
+import { pantryMatch, recipesForMood, type Mood } from '../../../lib/moods';
 import { showPaywall, useProGate } from '../../../lib/pro';
+import { streakOf } from '../../../lib/progress';
 import { MANAGE_SUBSCRIPTIONS_URL } from '../../../lib/purchases';
 import { useStore } from '../../../state/store';
-import { cook, useTheme } from '../../../theme';
+import { pop, useTheme } from '../../../theme';
 
 const todayIndex = (new Date().getDay() + 6) % 7; // Monday = 0
 /** Days since 1970, so the recipe of the day really changes daily. */
@@ -31,22 +32,25 @@ const SORTS: { value: Sort; label: string }[] = [
   { value: 'az', label: 'A to Z' },
 ];
 
-function greeting(name: string) {
-  const h = new Date().getHours();
-  const part = h < 5 ? 'Hi' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
-  return name ? `${part}, ${name}` : part;
-}
+/** The four mood tiles. "Surprise me" opens a random pick instead of filtering. */
+const MOODS: { id: Mood | 'surprise'; label: string; hint: string; icon: IconName; color: string }[] = [
+  { id: 'quick', label: 'Super quick', hint: 'Under 20 minutes', icon: 'timer', color: pop.sunshine },
+  { id: 'pantry', label: 'Use my pantry', hint: 'What you can make now', icon: 'fridge', color: pop.leaf },
+  { id: 'cozy', label: 'Cozy comfort', hint: 'Warm and filling', icon: 'pot', color: pop.sky },
+  { id: 'surprise', label: 'Surprise me', hint: 'A random recipe', icon: 'shuffle', color: pop.lilac },
+];
 
 export default function RecipesScreen() {
   const t = useTheme();
   const toast = useToast();
   const { width } = useWindowDimensions();
-  const { category, setCategory, tags, toggleTag, showOnlyTag, clearFilters, plan, allRecipes, getRecipe, favorites, cookbooks, cooked, profile } = useStore();
+  const { category, setCategory, tags, toggleTag, showOnlyTag, clearFilters, plan, allRecipes, getRecipe, favorites, cookbooks, cooked, profile, pantry } = useStore();
 
   const [query, setQuery] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const [sort, setSort] = useState<Sort>('suggested');
+  const [mood, setMood] = useState<Mood | null>(null);
   const { canAddRecipe, canAddCookbook, canImport, trialDaysLeft } = useProGate();
   const [reminderHidden, setReminderHidden] = useState(false);
   // Keeps the paywall's promise: a reminder in the app before the trial ends.
@@ -57,13 +61,10 @@ export default function RecipesScreen() {
   const [searchFocused, setSearchFocused] = useState(false);
   const popular = useMemo(
     () =>
-      POPULAR_SEARCHES.map((word) => {
+      POPULAR_SEARCHES.filter((word) => {
         const w = word.toLowerCase();
-        const hit = allRecipes.find((r) => r.title.toLowerCase().includes(w) || r.ingredients.some((i) => i.name.toLowerCase().includes(w)));
-        return hit ? { word, recipe: hit } : null;
-      })
-        .filter((x): x is { word: string; recipe: Recipe } => !!x)
-        .slice(0, 6),
+        return allRecipes.some((r) => r.title.toLowerCase().includes(w) || r.ingredients.some((i) => i.name.toLowerCase().includes(w)));
+      }).slice(0, 6),
     [allRecipes],
   );
   const filtered = useMemo(
@@ -92,12 +93,16 @@ export default function RecipesScreen() {
     return list;
   }, [filtered, sort, lastCooked]);
 
+  const moodRecipes = useMemo(() => (mood ? recipesForMood(mood, allRecipes, pantry) : []), [mood, allRecipes, pantry]);
+
   const hasFilters = !!category || tags.length > 0;
-  const showExtras = !hasFilters && !q;
+  const showExtras = !hasFilters && !mood;
   const tonight = getRecipe(plan[todayIndex]?.Dinner);
   const mains = allRecipes.filter((r) => r.category !== 'Dessert');
   const featured = tonight ?? mains[dayNumber % Math.max(1, mains.length)] ?? allRecipes[0];
+  const featuredMatch = featured ? pantryMatch(featured, pantry) : { have: 0, needed: 0 };
   const firstName = profile.name.trim().split(/\s+/)[0] ?? '';
+  const streak = streakOf(cooked.map((c) => c.date));
 
   // Rows built only from real data: nothing shows until there's something to show.
   const cookAgain = [...lastCooked.entries()]
@@ -107,13 +112,13 @@ export default function RecipesScreen() {
     .slice(0, 8);
   // Each recipe shows up in one row only, so the screen never repeats itself.
   const shown = new Set([featured?.id, ...cookAgain.map((r) => r.id)]);
+  const quick = allRecipes.filter((r) => matchesFilter(r, QUICK_FILTER) && !shown.has(r.id)).slice(0, 8);
+  quick.forEach((r) => shown.add(r.id));
   const recentlySaved = [...favorites]
     .reverse()
     .map((id) => getRecipe(id))
     .filter((r): r is Recipe => !!r && !shown.has(r.id))
     .slice(0, 8);
-  recentlySaved.forEach((r) => shown.add(r.id));
-  const quick = allRecipes.filter((r) => matchesFilter(r, QUICK_FILTER) && !shown.has(r.id)).slice(0, 8);
 
   const margin = t.layout.screen;
   const contentWidth = Math.min(width, 900);
@@ -121,31 +126,59 @@ export default function RecipesScreen() {
   const gap = t.spacing.md;
   const cardWidth = Math.floor((contentWidth - margin * 2 - gap * (columns - 1)) / columns);
   // Cards in a sideways row: a bit narrower than the grid, so the next one peeks in.
-  const railWidth = Math.min(168, Math.floor((contentWidth - margin * 2) / 2.3));
+  const railWidth = Math.min(168, Math.floor((contentWidth - margin * 2) / 2.25));
   const countLabel = `${filtered.length} ${filtered.length === 1 ? 'recipe' : 'recipes'}`;
 
   // Favorites only shows up once you've hearted something, so it never opens to an empty page.
   const books = favorites.length ? [{ id: FAVORITES_ID, name: 'Favorites', recipeIds: favorites }, ...cookbooks] : cookbooks;
 
-  const startImport = (url?: string) => {
+  const startImport = () => {
     if (!canImport) {
       showPaywall('imports');
       return;
     }
-    router.push(url ? { pathname: '/import', params: { url, auto: '1' } } : '/import');
+    router.push('/import');
   };
 
+  const pickMood = (id: Mood | 'surprise') => {
+    if (id === 'surprise') {
+      router.push('/buddy-pick');
+      return;
+    }
+    setMood(mood === id ? null : id);
+  };
+  const moodInfo = MOODS.find((m) => m.id === mood);
+
+  const header = (
+    <View style={styles.header}>
+      <View style={styles.topRow}>
+        <View style={[styles.avatar, { backgroundColor: t.pop.berry }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          <Text style={[t.type.title3, { color: t.pop.ink }]}>{(firstName[0] ?? '?').toUpperCase()}</Text>
+        </View>
+        <Text style={[t.type.headline, { color: t.colors.secondaryLabel, flex: 1 }]} numberOfLines={1} testID="screen-kicker">
+          {firstName ? `Hey ${firstName}!` : 'Hey there!'}
+        </Text>
+        <PressableScale
+          onPress={() => router.navigate('/progress')}
+          accessibilityLabel={`${streak} day cooking streak. Opens You`}
+          style={[styles.streak, { backgroundColor: t.pop.sunshine, borderColor: t.pop.ink }]}
+          testID="streak-pill"
+        >
+          <Icon name="flameFill" size={16} color={t.pop.tomato} />
+          <Text style={[t.type.headline, { color: t.pop.ink, fontFamily: t.fonts.black }]}>{streak}</Text>
+        </PressableScale>
+        <PopIconButton icon="plus" onPress={() => setMenuOpen(true)} accessibilityLabel="Add a recipe" accessibilityHint="Save one from a link, or write your own" />
+      </View>
+      <Text style={[t.type.hero, { color: t.colors.label, marginTop: 18 }]} accessibilityRole="header">
+        {'Hungry?\nLet’s make something.'}
+      </Text>
+    </View>
+  );
+
   return (
-    <TabScreen
-      maxWidth={900}
-      title="What’s cooking?"
-      kicker={greeting(firstName)}
-      right={<HeaderButton icon="plus" onPress={() => setMenuOpen(true)} accessibilityLabel="Add a recipe" />}
-      keyboardDismissMode="on-drag"
-      keyboardShouldPersistTaps="handled"
-    >
+    <TabScreen maxWidth={900} title="Cook" header={header} keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled">
       {showTrialReminder && (
-        <View style={[styles.reminder, { backgroundColor: t.colors.rewardSoft, borderColor: t.colors.reward }]} accessibilityRole="alert">
+        <View style={[styles.reminder, { backgroundColor: t.colors.rewardSoft, borderColor: t.pop.ink }]} accessibilityRole="alert">
           <Icon name="crown" size={18} color={t.colors.rewardText} />
           <Text style={[t.type.subhead, { color: t.colors.label, flex: 1 }]} testID="trial-reminder">
             Your free trial ends {trialDaysLeft === 0 ? 'today' : `in ${trialDaysLeft} ${trialDaysLeft === 1 ? 'day' : 'days'}`}. Keep Pro, or cancel anytime before then.
@@ -155,179 +188,215 @@ export default function RecipesScreen() {
             accessibilityLabel="Manage subscription"
             style={styles.reminderBtn}
           >
-            <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.bold }]}>Manage</Text>
+            <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.black }]}>Manage</Text>
           </PressableScale>
           <IconButton icon="close" accessibilityLabel="Dismiss trial reminder" iconSize={13} color={t.colors.secondaryLabel} onPress={() => setReminderHidden(true)} />
         </View>
       )}
 
-      {/* 1. Import: the fastest way to get a recipe in */}
-      {showExtras && (
-        <Reveal index={0}>
-          <ImportBox onImport={startImport} />
-        </Reveal>
-      )}
-
-      {/* 2. Search */}
-      <Reveal index={1}>
-        <SearchField
-          value={query}
-          onChangeText={setQuery}
-          placeholder="What would you like to cook?"
-          accessibilityLabel="Search recipes or ingredients"
-          onFocus={() => setSearchFocused(true)}
-          // A short delay, so tapping a popular search still lands before the row hides.
-          onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
-          style={{ marginTop: showExtras ? t.spacing.md : 0 }}
-        />
+      {/* 1. Mood tiles: a 2x2 grid of bold color blocks. */}
+      <Reveal index={0}>
+        <View style={styles.moods} accessibilityLabel="What are you in the mood for?">
+          {MOODS.map((m) => {
+            const on = mood === m.id;
+            return (
+              <PopCard
+                key={m.id}
+                color={m.color}
+                radius={20}
+                depth={on ? 2 : 5}
+                onPress={() => pickMood(m.id)}
+                accessibilityLabel={`${m.label}. ${m.hint}${on ? '. Showing these recipes, tap to show all' : ''}`}
+                style={styles.moodTile}
+                contentStyle={styles.moodFace}
+                testID={`mood-${m.id}`}
+              >
+                <View style={[styles.moodIcon, { backgroundColor: t.pop.white, borderColor: t.pop.ink }]}>
+                  <Icon name={on ? 'check' : m.icon} size={18} color={t.pop.ink} weight="bold" />
+                </View>
+                <Text style={[t.type.title3, styles.moodLabel, { color: t.pop.ink }]} numberOfLines={2} maxFontSizeMultiplier={1.3}>
+                  {m.label}
+                </Text>
+              </PopCard>
+            );
+          })}
+        </View>
       </Reveal>
-      {searchFocused && !q && popular.length > 0 && (
-        <Animated.View entering={FadeIn.duration(180)} exiting={FadeOut.duration(120)} style={styles.popular} testID="popular-searches">
-          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, fontFamily: t.fonts.semibold }]}>Popular searches</Text>
-          <View style={styles.popularRow}>
-            {popular.map(({ word }) => (
-              <Chip
-                key={word}
-                label={word}
-                toggle={false}
-                accessibilityLabel={`Search for ${word.toLowerCase()}`}
-                icon="search"
-                onPress={() => setQuery(word)}
-              />
-            ))}
-          </View>
+
+      {/* 2. A mood is on: its recipes, right here. */}
+      {mood && moodInfo && (
+        <Animated.View entering={FadeIn.duration(220)} key={mood}>
+          <SectionHeader
+            title={moodInfo.label}
+            subtitle={`${moodRecipes.length} ${moodRecipes.length === 1 ? 'recipe' : 'recipes'} · ${moodInfo.hint.toLowerCase()}`}
+            right={<PopChip label="Show all" icon="close" onPress={() => setMood(null)} accessibilityLabel={`Stop showing ${moodInfo.label.toLowerCase()} recipes`} />}
+            style={{ marginTop: 20 }}
+          />
+          {moodRecipes.length === 0 ? (
+            <EmptyState
+              icon={moodInfo.icon}
+              title={mood === 'quick' ? 'Nothing that quick yet' : 'Nothing here yet'}
+              message={mood === 'quick' ? 'Every recipe takes 20 minutes or more. Try the "Under 30 min" filter.' : 'Add a few more recipes and they’ll show up here.'}
+            />
+          ) : (
+            <View style={[styles.grid, { gap, rowGap: t.spacing.md }]}>
+              {moodRecipes.map((r, i) => (
+                <Animated.View key={r.id} entering={FadeInDown.duration(280).delay(Math.min(i, 8) * 40)}>
+                  <RecipeCard recipe={r} width={cardWidth} />
+                </Animated.View>
+              ))}
+            </View>
+          )}
         </Animated.View>
       )}
 
-      {/* 3. Filters: one category at a time, any number of tags. The row scrolls sideways. */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={{ marginHorizontal: -margin, marginTop: t.spacing.sm }}
-        contentContainerStyle={[styles.chips, { paddingHorizontal: margin }]}
-        accessibilityLabel="Filters"
-      >
-        {hasFilters && (
-          <Chip
-            label="Clear"
-            icon="close"
-            toggle={false}
-            accessibilityLabel="Clear filter"
-            onPress={() => {
-              clearFilters();
-              toast({ message: 'Filters cleared', tone: 'info' });
-            }}
-          />
-        )}
-        {categories.map((c) => (
-          <Chip key={c} label={c} selected={category === c} onPress={() => setCategory(category === c ? null : c)} />
-        ))}
-        <View style={[styles.chipDivider, { backgroundColor: t.colors.fillStrong }]} />
-        {filterTags.map((tag) => (
-          <Chip key={tag} label={tag} selected={tags.includes(tag)} onPress={() => toggleTag(tag)} />
-        ))}
-      </ScrollView>
-
-      <Animated.View entering={FadeIn.duration(250)}>
-        {/* 4. Tonight's dinner from the plan, or the recipe of the day */}
-        {showExtras && featured && (
-          <>
-            <SectionHeader
-              title={tonight ? 'Tonight' : 'Today’s pick'}
-              subtitle={tonight ? 'From your meal plan' : 'New every day'}
-              right={
-                <PressableScale onPress={() => router.push('/buddy-pick')} accessibilityLabel="Can't decide? Pick a random recipe" style={styles.surprise}>
-                  <Icon name="shuffle" size={14} color={t.colors.tint} weight="bold" />
-                  <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.bold }]}>Surprise me</Text>
-                </PressableScale>
-              }
-            />
-            <Reveal index={3}>
-              <FeaturedCard recipe={featured} label={tonight ? 'On the menu tonight' : 'Recipe of the day'} />
+      {showExtras && (
+        <Animated.View entering={FadeIn.duration(250)}>
+          {/* 3. Tonight's dinner from the plan, or the pick of the day */}
+          {featured && (
+            <Reveal index={2} style={{ marginTop: 22 }}>
+              <TonightCard
+                recipe={featured}
+                label={tonight ? 'On the menu tonight' : 'Recipe of the day'}
+                have={featuredMatch.have}
+                needed={featuredMatch.needed}
+                onCook={() => router.push({ pathname: '/cook/[id]', params: { id: featured.id } })}
+              />
             </Reveal>
-          </>
-        )}
+          )}
 
-        {/* 5. Rows that come from what you've done */}
-        {showExtras && cookAgain.length > 0 && <Rail title="Cook again" subtitle="Dishes you’ve made before" recipes={cookAgain} width={railWidth} />}
-        {showExtras && recentlySaved.length > 0 && (
-          <Rail
-            title="Recently saved"
-            subtitle="Your newest favorites"
-            recipes={recentlySaved}
-            width={railWidth}
-            action={{ label: 'See all', onPress: () => router.push({ pathname: '/cookbook/[id]', params: { id: FAVORITES_ID } }) }}
-          />
-        )}
-        {showExtras && quick.length > 1 && <Rail title="Quick meals" subtitle="Ready in 30 minutes or less" recipes={quick} width={railWidth} action={{ label: 'See all', onPress: () => showOnlyTag(QUICK_FILTER) }} />}
-
-        {/* 6. Cookbooks, on the same background as the rest of the page */}
-        {showExtras && (
-          <View>
-            <SectionHeader
-              title="Cookbooks"
-              subtitle={books.length ? `${books.length} ${books.length === 1 ? 'collection' : 'collections'}` : 'Save recipes you love in one place'}
+          {/* 4. Rows */}
+          {quick.length > 1 && <Rail title="Under 30 minutes" subtitle="Dinner without the wait" recipes={quick} width={railWidth} action={{ label: 'See all', onPress: () => showOnlyTag(QUICK_FILTER) }} />}
+          {cookAgain.length > 0 && <Rail title="Cook again" subtitle="Dishes you’ve made before" recipes={cookAgain} width={railWidth} />}
+          {recentlySaved.length > 0 && (
+            <Rail
+              title="Recently saved"
+              subtitle="Your newest favorites"
+              recipes={recentlySaved}
+              width={railWidth}
+              action={{ label: 'See all', onPress: () => router.push({ pathname: '/cookbook/[id]', params: { id: FAVORITES_ID } }) }}
             />
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -margin }} contentContainerStyle={[styles.rail, { paddingHorizontal: margin, gap: t.spacing.sm }]}>
-              {books.map((b) => (
-                <CookbookTile key={b.id} id={b.id} name={b.name} width={railWidth} recipes={b.recipeIds.map((id) => getRecipe(id)).filter((r): r is Recipe => !!r)} />
-              ))}
-              <PressableScale
-                onPress={() => (canAddCookbook ? router.push('/cookbook-edit') : showPaywall('cookbooks'))}
-                accessibilityLabel="New cookbook"
-                style={[styles.book, styles.newBook, { width: railWidth, backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]}
-              >
-                <View style={[styles.newIcon, { backgroundColor: t.colors.tintSoft }]}>
-                  <Icon name="plus" size={20} color={t.colors.tint} weight="bold" />
-                </View>
-                <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.bold }]}>New cookbook</Text>
-              </PressableScale>
-            </ScrollView>
-          </View>
-        )}
+          )}
 
-        {/* 7. All recipes */}
-        <SectionHeader
-          title={q ? 'Results' : hasFilters ? 'Filtered' : 'All recipes'}
-          right={
-            <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, marginBottom: 4 }]} testID="result-count">
-              {countLabel}
-            </Text>
-          }
-        />
-        {filtered.length > 1 && (
-          <PressableScale onPress={() => setSortOpen(true)} accessibilityLabel={`Sort recipes. Now: ${SORTS.find((s) => s.value === sort)?.label}`} style={styles.sortBtn} scaleTo={0.96}>
-            <Icon name="sort" size={15} color={t.colors.tint} weight="semibold" />
-            <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.display, fontWeight: 'normal' }]}>{SORTS.find((s) => s.value === sort)?.label}</Text>
-            <Icon name="chevronDown" size={13} color={t.colors.tint} weight="semibold" />
-          </PressableScale>
-        )}
-
-        {filtered.length === 0 ? (
-          <EmptyState
-            icon="search"
-            title="No recipes found"
-            message="Try another word, or clear the filters to see everything."
-            action={{
-              label: 'Clear search and filters',
-              icon: 'close',
-              onPress: () => {
-                haptics.tap();
-                clearFilters();
-                setQuery('');
-              },
-            }}
-          />
-        ) : (
-          <View style={[styles.grid, { gap, rowGap: t.spacing.xl }]}>
-            {sorted.map((r, i) => (
-              <Animated.View key={r.id} layout={LinearTransition.duration(220)} entering={FadeInDown.duration(320).delay(Math.min(i, 8) * 45)}>
-                <RecipeCard recipe={r} width={cardWidth} />
-              </Animated.View>
+          {/* 5. Cookbooks */}
+          <SectionHeader title="Cookbooks" subtitle={books.length ? `${books.length} ${books.length === 1 ? 'collection' : 'collections'}` : 'Save recipes you love in one place'} />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -margin }} contentContainerStyle={[styles.rail, { paddingHorizontal: margin, gap: t.spacing.sm }]}>
+            {books.map((b) => (
+              <CookbookTile key={b.id} id={b.id} name={b.name} width={railWidth} recipes={b.recipeIds.map((id) => getRecipe(id)).filter((r): r is Recipe => !!r)} />
             ))}
-          </View>
-        )}
-      </Animated.View>
+            <PopCard
+              onPress={() => (canAddCookbook ? router.push('/cookbook-edit') : showPaywall('cookbooks'))}
+              accessibilityLabel="New cookbook"
+              color={t.pop.lilacTint}
+              radius={22}
+              depth={4}
+              style={{ width: railWidth }}
+              contentStyle={[styles.book, styles.newBook]}
+            >
+              <View style={[styles.newIcon, { backgroundColor: t.pop.white, borderColor: t.pop.ink }]}>
+                <Icon name="plus" size={20} color={t.pop.ink} weight="bold" />
+              </View>
+              <Text style={[t.type.headline, { color: t.pop.ink, fontFamily: t.fonts.black }]}>New cookbook</Text>
+            </PopCard>
+          </ScrollView>
+        </Animated.View>
+      )}
+
+      {/* 6. All recipes: search, filters, sort and the grid */}
+      {!mood && (
+        <>
+          <SectionHeader
+            title={q ? 'Results' : hasFilters ? 'Filtered' : 'All recipes'}
+            right={
+              <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, marginBottom: 4 }]} testID="result-count">
+                {countLabel}
+              </Text>
+            }
+          />
+          <SearchField
+            value={query}
+            onChangeText={setQuery}
+            placeholder="What would you like to cook?"
+            accessibilityLabel="Search recipes or ingredients"
+            onFocus={() => setSearchFocused(true)}
+            // A short delay, so tapping a popular search still lands before the row hides.
+            onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
+          />
+          {searchFocused && !q && popular.length > 0 && (
+            <Animated.View entering={FadeIn.duration(180)} exiting={FadeOut.duration(120)} style={styles.popular} testID="popular-searches">
+              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>Popular searches</Text>
+              <View style={styles.popularRow}>
+                {popular.map((word) => (
+                  <Chip key={word} label={word} toggle={false} accessibilityLabel={`Search for ${word.toLowerCase()}`} icon="search" onPress={() => setQuery(word)} />
+                ))}
+              </View>
+            </Animated.View>
+          )}
+
+          {/* Filters: one category at a time, any number of tags. The row scrolls sideways. */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ marginHorizontal: -margin, marginTop: t.spacing.sm }}
+            contentContainerStyle={[styles.chips, { paddingHorizontal: margin }]}
+            accessibilityLabel="Filters"
+            keyboardShouldPersistTaps="handled"
+          >
+            {hasFilters && (
+              <Chip
+                label="Clear"
+                icon="close"
+                toggle={false}
+                accessibilityLabel="Clear filter"
+                onPress={() => {
+                  clearFilters();
+                  toast({ message: 'Filters cleared', tone: 'info' });
+                }}
+              />
+            )}
+            {categories.map((c) => (
+              <Chip key={c} label={c} selected={category === c} onPress={() => setCategory(category === c ? null : c)} />
+            ))}
+            <View style={[styles.chipDivider, { backgroundColor: t.pop.ink }]} />
+            {filterTags.map((tag) => (
+              <Chip key={tag} label={tag} selected={tags.includes(tag)} onPress={() => toggleTag(tag)} />
+            ))}
+          </ScrollView>
+
+          {filtered.length > 1 && (
+            <PressableScale onPress={() => setSortOpen(true)} accessibilityLabel={`Sort recipes. Now: ${SORTS.find((s) => s.value === sort)?.label}`} style={styles.sortBtn} scaleTo={0.96}>
+              <Icon name="sort" size={15} color={t.colors.tint} weight="bold" />
+              <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.black }]}>{SORTS.find((s) => s.value === sort)?.label}</Text>
+              <Icon name="chevronDown" size={13} color={t.colors.tint} weight="bold" />
+            </PressableScale>
+          )}
+
+          {filtered.length === 0 ? (
+            <EmptyState
+              icon="search"
+              title="No recipes found"
+              message="Try another word, or clear the filters to see everything."
+              action={{
+                label: 'Clear search and filters',
+                icon: 'close',
+                onPress: () => {
+                  haptics.tap();
+                  clearFilters();
+                  setQuery('');
+                },
+              }}
+            />
+          ) : (
+            <View style={[styles.grid, { gap, rowGap: t.spacing.md }]}>
+              {sorted.map((r, i) => (
+                <Animated.View key={r.id} layout={LinearTransition.duration(220)} entering={FadeInDown.duration(320).delay(Math.min(i, 8) * 45)}>
+                  <RecipeCard recipe={r} width={cardWidth} />
+                </Animated.View>
+              ))}
+            </View>
+          )}
+        </>
+      )}
 
       <Menu
         visible={menuOpen}
@@ -335,7 +404,7 @@ export default function RecipesScreen() {
         label="Add a recipe"
         rows={[
           {
-            label: 'Import from link',
+            label: 'Save from a link',
             hint: 'TikTok, YouTube, Instagram or any recipe site',
             icon: 'link',
             onPress: () => {
@@ -391,68 +460,6 @@ function Rail({ title, subtitle, recipes, width, action }: { title: string; subt
   );
 }
 
-/**
- * The app's signature card: paste a link from TikTok, Instagram, YouTube or a recipe site.
- * Opens the import screen, which reads it.
- */
-function ImportBox({ onImport }: { onImport: (url?: string) => void }) {
-  const t = useTheme();
-  const toast = useToast();
-  const [link, setLink] = useState('');
-  const value = link.trim();
-  const paste = async () => {
-    try {
-      const text = (await Clipboard.getStringAsync()).trim();
-      if (text) {
-        setLink(text);
-        haptics.select();
-      } else toast({ message: 'Your clipboard is empty', tone: 'info' });
-    } catch {
-      toast({ message: 'Couldn’t read the clipboard. Long-press the box to paste.', tone: 'warning' });
-    }
-  };
-  return (
-    <View style={[styles.importBox, { backgroundColor: t.isDark ? t.colors.elevated : cook.background, borderRadius: t.radius.xl, ...t.shadow.card }]} testID="import-box">
-      <View style={styles.importHead}>
-        <View style={{ flex: 1, gap: 2 }}>
-          <Text style={[t.type.title3, { color: cook.label }]}>Save a recipe</Text>
-          <Text style={[t.type.footnote, { color: cook.secondaryLabel }]}>From TikTok, Instagram, YouTube or any recipe site</Text>
-        </View>
-        <View style={[styles.importIcon, { backgroundColor: t.colors.success }]}>
-          <Icon name="link" size={18} color={t.pop.ink} weight="bold" />
-        </View>
-      </View>
-      <View style={styles.importField}>
-        <TextInput
-          value={link}
-          onChangeText={setLink}
-          placeholder="Paste a link"
-          placeholderTextColor={cook.secondaryLabel}
-          // Capped so very large text still fits the hint; the box grows taller instead of cutting it.
-          maxFontSizeMultiplier={1.3}
-          style={[t.type.input, styles.importInput, { color: cook.label }]}
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="url"
-          returnKeyType="go"
-          onSubmitEditing={() => value && onImport(value)}
-          accessibilityLabel="Recipe link"
-        />
-        {!value && (
-          // Just an icon: a second "Paste" word next to the hint looked like a glitch on narrow phones.
-          <PressableScale onPress={paste} accessibilityLabel="Paste link from clipboard" style={styles.pasteBtn}>
-            <Icon name="paste" size={18} color={cook.label} weight="semibold" />
-          </PressableScale>
-        )}
-        {/* A round arrow, like a send button, so the link field keeps almost the whole row. */}
-        <Chunky onPress={() => onImport(value || undefined)} accessibilityLabel={value ? 'Import recipe' : 'Open recipe import'} face={t.colors.reward} faceStyle={styles.importBtn}>
-          <Icon name="arrowRight" size={20} color={t.colors.onReward} weight="bold" />
-        </Chunky>
-      </View>
-    </View>
-  );
-}
-
 /** A cookbook cover: up to four food photos as a collage, then its name and size. */
 function CookbookTile({ id, name, recipes, width }: { id: string; name: string; recipes: Recipe[]; width: number }) {
   const t = useTheme();
@@ -460,14 +467,17 @@ function CookbookTile({ id, name, recipes, width }: { id: string; name: string; 
   const empty = covers.length === 0;
   const fav = id === FAVORITES_ID;
   return (
-    <PressableScale
+    <PopCard
       onPress={() => router.push({ pathname: '/cookbook/[id]', params: { id } })}
       accessibilityLabel={`${name} cookbook, ${recipes.length} recipes`}
-      style={[styles.book, { width, backgroundColor: t.colors.cell, borderRadius: t.layout.cardRadius, ...t.chunky.card }]}
+      radius={22}
+      depth={4}
+      style={{ width }}
+      contentStyle={styles.book}
     >
-      <View style={[styles.covers, { backgroundColor: empty ? t.colors.tintSoft : t.colors.imagePlaceholder }]}>
+      <View style={[styles.covers, { backgroundColor: empty ? t.pop.berryTint : t.colors.imagePlaceholder, borderColor: t.pop.ink }]}>
         {empty ? (
-          <Icon name={fav ? 'heart' : 'book'} size={30} color={t.colors.tint} weight="semibold" />
+          <Icon name={fav ? 'heart' : 'book'} size={30} color={t.pop.ink} weight="bold" />
         ) : (
           covers.map((r, i) => {
             // One photo fills the cover; two side by side; three: one wide on top and two below; four as a grid.
@@ -485,15 +495,15 @@ function CookbookTile({ id, name, recipes, width }: { id: string; name: string; 
         )}
       </View>
       <View style={styles.bookText}>
-        {fav && <Icon name="heartFill" size={14} color={t.colors.accent} />}
-        <Text style={[t.type.title3, { color: t.colors.label, fontSize: 17, flexShrink: 1 }]} numberOfLines={1}>
+        {fav && <Icon name="heartFill" size={14} color={t.pop.tomato} />}
+        <Text style={[t.type.title3, { color: t.colors.label, fontSize: 18, flexShrink: 1 }]} numberOfLines={1}>
           {name}
         </Text>
       </View>
-      <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, paddingHorizontal: 12 }]} numberOfLines={1}>
-        {empty ? (fav ? 'Nothing saved yet' : 'Nothing yet') : `${recipes.length} ${recipes.length === 1 ? 'recipe' : 'recipes'}`}
+      <Text style={[t.type.caption1, { color: t.colors.secondaryLabel, paddingHorizontal: 12 }]} numberOfLines={1}>
+        {empty ? 'Nothing yet' : `${recipes.length} ${recipes.length === 1 ? 'recipe' : 'recipes'}`}
       </Text>
-    </PressableScale>
+    </PopCard>
   );
 }
 
@@ -504,26 +514,27 @@ const POPULAR_SEARCHES = ['Chicken', 'Pasta', 'Rice', 'Cheese', 'Potato', 'Mushr
 const COVER_H = 120;
 
 const styles = StyleSheet.create({
-  reminder: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 16, paddingRight: 4, paddingVertical: 8, borderRadius: 20, borderWidth: 1.5, marginBottom: 16, borderCurve: 'continuous' },
+  header: { marginBottom: 20 },
+  topRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  avatar: { width: 44, height: 44, borderRadius: 22, borderWidth: 2.5, borderColor: pop.ink, alignItems: 'center', justifyContent: 'center' },
+  streak: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 44, paddingHorizontal: 12, borderRadius: 999, borderWidth: 2.5 },
+  reminder: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 16, paddingRight: 4, paddingVertical: 8, borderRadius: 20, borderWidth: 2.5, marginBottom: 16, borderCurve: 'continuous' },
   reminderBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
-  sortBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', minHeight: 44, marginTop: -10, marginBottom: 8 },
+  moods: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 },
+  moodTile: { width: '48.4%' },
+  moodFace: { height: 74, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12 },
+  moodIcon: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  moodLabel: { flex: 1, fontSize: 17, lineHeight: 20 },
+  sortBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', minHeight: 44, marginBottom: 4 },
   rail: { paddingBottom: 4 },
-  book: { borderCurve: 'continuous', paddingBottom: 12, minHeight: 164 },
-  newBook: { alignItems: 'center', justifyContent: 'center', gap: 8, paddingTop: 12 },
-  newIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  covers: { height: COVER_H, margin: 6, borderRadius: 16, overflow: 'hidden', flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
+  book: { paddingBottom: 12, minHeight: 168 },
+  newBook: { alignItems: 'center', justifyContent: 'center', gap: 10, paddingTop: 12 },
+  newIcon: { width: 48, height: 48, borderRadius: 24, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
+  covers: { height: COVER_H, margin: 6, borderRadius: 16, borderWidth: 2, overflow: 'hidden', flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
   bookText: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, marginTop: 6 },
   popular: { gap: 8, marginTop: 12 },
   popularRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chips: { gap: 8, paddingVertical: 4, alignItems: 'center', minHeight: 52 },
-  chipDivider: { width: 2, height: 24, marginHorizontal: 4, borderRadius: 1 },
+  chips: { gap: 8, paddingVertical: 4, alignItems: 'center', minHeight: 56 },
+  chipDivider: { width: 2.5, height: 24, marginHorizontal: 4, borderRadius: 2 },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
-  importBox: { padding: 16, gap: 14, borderCurve: 'continuous' },
-  surprise: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingLeft: 8 },
-  importHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  importIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  importField: { flexDirection: 'row', alignItems: 'center', minHeight: 52, paddingLeft: 18, paddingRight: 4, borderRadius: 999, backgroundColor: cook.card, borderWidth: 1, borderColor: cook.track, borderCurve: 'continuous' },
-  importInput: { flex: 1, minWidth: 0, alignSelf: 'stretch', minHeight: 44, paddingVertical: 0, paddingRight: 4, outlineStyle: 'none' } as never,
-  pasteBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  importBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 });

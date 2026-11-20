@@ -68,3 +68,23 @@ export async function pickPhoto(): Promise<string | null> {
   if (res.canceled || !res.assets[0]) return null;
   return keepPhoto(res.assets[0].uri);
 }
+
+/**
+ * Takes a photo with the camera and returns a lasting URI, null if cancelled. Falls back to the
+ * photo library where there is no camera (simulator, web) or camera access was refused.
+ */
+export async function takePhoto(): Promise<string | null> {
+  if (native) {
+    try {
+      const perm = await ImagePicker.requestCameraPermissionsAsync();
+      if (perm.granted) {
+        const res = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.8 });
+        if (res.canceled || !res.assets[0]) return null;
+        return keepPhoto(res.assets[0].uri);
+      }
+    } catch {
+      // No camera here: use the library instead.
+    }
+  }
+  return pickPhoto();
+}

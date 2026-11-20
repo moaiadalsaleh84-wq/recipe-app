@@ -9,12 +9,13 @@ import { Reveal } from '../../../components/Reveal';
 import { RecipePhoto, openRecipe } from '../../../components/RecipeCard';
 import { useToast } from '../../../components/Toast';
 import { Button, Chip, EmptyState, IconButton, ProgressBar, Section, SectionHeader, Separator } from '../../../components/ui';
+import { MascotSlot, PopCard } from '../../../components/pop';
 import { haptics } from '../../../lib/haptics';
 import { COMMON_ITEMS, PANTRY_CATEGORIES, pantryCategory, smartSuggestions, suggestionsFor, whatCanICook, type PantryMatch } from '../../../lib/pantry';
 import { showPaywall, useProGate } from '../../../lib/pro';
 import { TabScreen } from '../../../components/TabScreen';
 import { FREE_LIMITS, useStore } from '../../../state/store';
-import { useTheme } from '../../../theme';
+import { popCycle, useTheme } from '../../../theme';
 
 /** What's in your kitchen, and what you can cook with it. */
 export default function PantryScreen() {
@@ -81,7 +82,7 @@ export default function PantryScreen() {
           style={[t.type.input, styles.addInput, { color: t.colors.label }]}
         />
         {query.trim() ? (
-          <PressableScale onPress={() => add(query)} accessibilityLabel={`Add ${query.trim()}`} style={[styles.addBtn, { backgroundColor: t.colors.tintFill }]}>
+          <PressableScale onPress={() => add(query)} accessibilityLabel={`Add ${query.trim()}`} style={[styles.addBtn, { backgroundColor: t.colors.tintFill, borderColor: t.pop.ink }]}>
             <Icon name="plus" size={18} color={t.colors.onTint} weight="bold" />
           </PressableScale>
         ) : null}
@@ -99,7 +100,7 @@ export default function PantryScreen() {
       {!query && common.length > 0 && (
         <>
           <Text style={[t.type.subhead, styles.label, { color: t.colors.secondaryLabel, fontFamily: t.fonts.bold }]}>Tap to add</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={styles.quick}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -t.layout.screen }} contentContainerStyle={[styles.quick, { paddingHorizontal: t.layout.screen }]} keyboardShouldPersistTaps="handled">
             {common.map((name) => (
               <Chip key={name} label={name} icon="plus" toggle={false} accessibilityLabel={`Add ${name}`} onPress={() => add(name)} />
             ))}
@@ -121,10 +122,16 @@ export default function PantryScreen() {
         }
       />
       {pantry.length === 0 ? (
-        <View style={[styles.emptyCard, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
-          <EmptyState icon="fridge" photos={['mushroom-spaghetti', 'chicken-fried-rice', 'masala-dosa']} title="Your pantry is empty" message="Add what’s in your kitchen. You’ll see which recipes you can cook and what’s missing." />
-          <Text style={styles.hidden} testID="pantry-empty">Your pantry is empty</Text>
-        </View>
+        // One calm card: no stacked photos, and its text never runs under the tab bar.
+        <PopCard color={t.pop.lilacTint} contentStyle={styles.emptyCard}>
+          <MascotSlot message="What’s in your kitchen?" size={56} />
+          <Text style={[t.type.title2, { color: t.colors.label }]} testID="pantry-empty">
+            Your pantry is empty
+          </Text>
+          <Text style={[t.type.body, t.noWidows.style, { color: t.colors.label }]} {...t.noWidows.props}>
+            Add a few things you have at home. You’ll see which recipes you can cook right now, and what’s missing.
+          </Text>
+        </PopCard>
       ) : groups.length === 0 ? (
         <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, marginTop: 8 }]}>Nothing in your pantry matches “{query.trim()}”.</Text>
       ) : (
@@ -133,8 +140,8 @@ export default function PantryScreen() {
           <Section>
             {groups.map(({ cat, items }, gi) => (
               <View key={cat}>
-                <View style={[styles.groupLabel, { backgroundColor: t.colors.fill }, gi > 0 && { borderTopWidth: StyleSheet.hairlineWidth * 2, borderTopColor: t.colors.separator }]}>
-                  <Text style={[t.type.subhead, { color: t.colors.label, fontFamily: t.fonts.display, fontWeight: 'normal' }]} accessibilityRole="header">
+                <View style={[styles.groupLabel, { backgroundColor: popCycle[gi % popCycle.length].tint }, gi > 0 && { borderTopWidth: 2, borderTopColor: t.pop.ink }]}>
+                  <Text style={[t.type.subhead, { color: t.colors.label, fontFamily: t.fonts.black }]} accessibilityRole="header">
                     {cat}
                   </Text>
                 </View>
@@ -154,26 +161,26 @@ export default function PantryScreen() {
         </Animated.View>
       )}
       {!isPro && pantry.length >= FREE_LIMITS.pantry && (
-        <PressableScale onPress={() => showPaywall('pantry')} accessibilityLabel="Unlock an unlimited pantry" style={[styles.limit, { backgroundColor: t.colors.tintSoft }]}>
+        <PressableScale onPress={() => showPaywall('pantry')} accessibilityLabel="Unlock an unlimited pantry" style={[styles.limit, { backgroundColor: t.colors.tintSoft, borderColor: t.pop.ink }]}>
           <Icon name="lock" size={16} color={t.colors.tint} />
-          <Text style={[t.type.footnote, { color: t.colors.tint, flex: 1, fontFamily: t.fonts.semibold }]}>The free pantry holds {FREE_LIMITS.pantry} items. Pro has no limit.</Text>
+          <Text style={[t.type.footnote, { color: t.colors.tint, flex: 1 }]}>The free pantry holds {FREE_LIMITS.pantry} items. Pro has no limit.</Text>
         </PressableScale>
       )}
 
       {/* What can I cook */}
       {pantry.length > 0 && (
         <>
-          <View style={[styles.cookBand, { backgroundColor: t.isDark ? t.colors.cell : t.colors.imagePlaceholder }]}>
+          <View style={[styles.cookBand, { backgroundColor: t.pop.leafTint, borderColor: t.pop.ink, marginHorizontal: -t.layout.screen, paddingHorizontal: t.layout.screen }]}>
           <SectionHeader title="What can I cook?" style={{ marginTop: 0 }} />
-          <Text style={[t.type.subhead, { color: ready ? t.colors.successText : t.colors.secondaryLabel, marginBottom: 2, fontFamily: t.fonts.semibold }]} testID="ready-count">
+          <Text style={[t.type.headline, { color: t.colors.label, marginBottom: 2 }]} testID="ready-count">
             {ready ? `You can cook ${ready} ${ready === 1 ? 'recipe' : 'recipes'} right now` : 'You’re a few items away from these'}
           </Text>
-          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginBottom: 12 }]}>Sorted by how much you already have. Salt, pepper and water are assumed.</Text>
+          <Text style={[t.type.footnote, { color: t.colors.label, marginBottom: 14 }]}>Sorted by how much you already have. Salt, pepper and water are assumed.</Text>
 
           {/* Smart suggestions */}
           {suggestions.length > 0 &&
             (isPro ? (
-              <View style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card, marginBottom: 16 }]} testID="smart-suggestions">
+              <View style={[styles.card, { backgroundColor: t.colors.cell, borderRadius: 20, ...t.chunky.card, marginBottom: 16 }]} testID="smart-suggestions">
                 <Text style={[t.type.headline, { color: t.colors.label, marginBottom: 6 }]}>Buy one thing, cook more</Text>
                 {suggestions.map((s) => (
                   <Text key={s.name} style={[t.type.subhead, { color: t.colors.secondaryLabel, paddingVertical: 3 }]}>
@@ -182,7 +189,7 @@ export default function PantryScreen() {
                 ))}
               </View>
             ) : (
-              <PressableScale onPress={() => showPaywall('pantry')} accessibilityLabel="Smart suggestions, Pro" style={[styles.card, styles.locked, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
+              <PressableScale onPress={() => showPaywall('pantry')} accessibilityLabel="Smart suggestions, Pro" style={[styles.card, styles.locked, { backgroundColor: t.colors.cell, borderRadius: 20, ...t.chunky.card }]}>
                 <Icon name="lock" size={18} color={t.colors.tint} />
                 <View style={{ flex: 1 }}>
                   <Text style={[t.type.headline, { color: t.colors.label }]}>Buy one thing, cook more</Text>
@@ -217,18 +224,18 @@ function MatchCard({ match, onAddMissing }: { match: PantryMatch; onAddMissing: 
   const more = missing.length - shown.length;
   const ready = missing.length === 0;
   return (
-    <View style={[styles.card, styles.match, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
+    <PopCard style={styles.match} contentStyle={styles.card}>
       <PressableScale onPress={() => openRecipe(recipe.id)} scaleTo={0.98} accessibilityLabel={`${recipe.title}, you have ${have.length} of ${needed}`} style={styles.matchTop}>
-        <View style={[styles.thumb, { backgroundColor: t.colors.imagePlaceholder }]}>
+        <View style={[styles.thumb, { backgroundColor: t.colors.imagePlaceholder, borderColor: t.pop.ink }]}>
           <RecipePhoto recipe={recipe} iconSize={22} />
         </View>
         <View style={{ flex: 1, gap: 6, minWidth: 0 }}>
           <Text style={[t.type.title3, { color: t.colors.label }]}>{recipe.title}</Text>
           <View style={styles.meterRow}>
             <View style={{ flex: 1 }}>
-              <ProgressBar value={have.length / Math.max(1, needed)} height={6} color={ready ? t.colors.success : t.colors.reward} label={`You have ${have.length} of ${needed}`} />
+              <ProgressBar value={have.length / Math.max(1, needed)} height={8} color={ready ? t.pop.leaf : t.pop.sunshine} label={`You have ${have.length} of ${needed}`} />
             </View>
-            <Text style={[t.type.footnote, { color: ready ? t.colors.successText : t.colors.secondaryLabel, fontFamily: t.fonts.bold }]}>
+            <Text style={[t.type.footnote, { color: t.colors.label, fontFamily: t.fonts.black }]}>
               {ready ? 'Ready' : `${have.length} of ${needed}`}
             </Text>
           </View>
@@ -241,33 +248,28 @@ function MatchCard({ match, onAddMissing }: { match: PantryMatch; onAddMissing: 
         </View>
       </PressableScale>
       {missing.length > 0 && (
-        <Button label="Add missing to groceries" icon="cartAdd" size="medium" variant="tinted" onPress={onAddMissing} accessibilityLabel={`Add missing for ${recipe.title} to Groceries`} style={{ marginTop: 12, alignSelf: 'stretch' }} />
+        <Button label="Add missing to list" icon="cartAdd" size="medium" variant="tinted" onPress={onAddMissing} accessibilityLabel={`Add missing for ${recipe.title} to Groceries`} style={{ marginTop: 12, alignSelf: 'stretch' }} />
       )}
-    </View>
+    </PopCard>
   );
 }
 
 const styles = StyleSheet.create({
-  addRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 18, paddingRight: 4, minHeight: 52, borderRadius: 999, borderCurve: 'continuous' },
-  quick: { gap: 8, paddingHorizontal: 16, paddingVertical: 4 },
-  emptyCard: { borderRadius: 24, marginTop: 4, borderCurve: 'continuous' },
-  hidden: { position: 'absolute', width: 1, height: 1, opacity: 0 },
-  cookBand: { marginTop: 36, marginHorizontal: -16, paddingHorizontal: 16, paddingVertical: 24 },
+  addRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 16, paddingRight: 4, minHeight: 54, borderRadius: 18, borderCurve: 'continuous' },
+  quick: { gap: 8, paddingVertical: 4 },
+  emptyCard: { padding: 18, gap: 10 },
+  cookBand: { marginTop: 36, paddingVertical: 24, borderTopWidth: 2.5, borderBottomWidth: 2.5 },
   meterRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   addInput: { flex: 1, minHeight: 48, outlineStyle: 'none' } as never,
-  addBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  addBtn: { width: 44, height: 44, borderRadius: 14, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   label: { marginTop: 16 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  empty: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: 20, marginTop: 8, borderCurve: 'continuous' },
-  emptyIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   groupLabel: { paddingHorizontal: 16, paddingVertical: 8, minHeight: 36, justifyContent: 'center' },
   itemRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingLeft: 16, paddingRight: 4, minHeight: 52 },
-  headerRow: { flexDirection: 'row', alignItems: 'baseline', marginTop: 32, marginBottom: 4 },
-  limit: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderRadius: 16, marginTop: 12 },
-  card: { borderRadius: 20, padding: 16, borderCurve: 'continuous' },
+  limit: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderRadius: 16, borderWidth: 2, marginTop: 12 },
+  card: { padding: 14 },
   locked: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 },
   match: { marginBottom: 12 },
   matchTop: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
-  thumb: { width: 92, height: 92, borderRadius: 16, overflow: 'hidden', borderCurve: 'continuous' },
+  thumb: { width: 84, height: 84, borderRadius: 16, borderWidth: 2, overflow: 'hidden', borderCurve: 'continuous' },
 });
