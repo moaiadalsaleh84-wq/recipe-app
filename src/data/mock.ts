@@ -130,7 +130,7 @@ export const recipes: Recipe[] = [
       { id: 'vegetable-oil', name: 'Vegetable oil', quantity: 1, unit: 'tbsp', aisle: 'Pantry' },
     ],
     steps: [
-      'Cut the chicken into small pieces. Fry them in a very hot pan until golden, then move them to one side.',
+      'Cut the chicken into small pieces. Heat the oil in a pan until very hot, then fry the chicken until golden and move it to one side.',
       'Crack the eggs into the empty side of the pan and stir until cooked.',
       'Add the peas, carrots and cold rice. Fry for 4 minutes and stir only now and then.',
       'Add the soy sauce and a pinch of pepper. Stir and serve.',
@@ -238,7 +238,7 @@ export const recipes: Recipe[] = [
     ],
     steps: [
       'Boil the spaghetti in salted water for 8 minutes. It should still be a little firm.',
-      'Slice the mushrooms and fry them in a hot pan until brown. Add the garlic.',
+      'Heat the oil in a pan. Slice the mushrooms and fry them until brown. Add the garlic.',
       'Pour in the cream and a little pasta water. Let it bubble for 2 minutes.',
       'Add the spaghetti and parmesan and stir until creamy. Add black pepper and serve.',
     ],
@@ -319,7 +319,7 @@ export const recipes: Recipe[] = [
     ],
     steps: [
       'Mix the chicken with the yogurt and biryani spices. Leave it for 30 minutes.',
-      'Slice the onions and fry them slowly until brown and crispy. Keep half for the top.',
+      'Heat the oil and fry the sliced onions slowly until brown and crispy. Keep half for the top.',
       'Boil the rice for 5 minutes and drain it. In a heavy pot, add layers of chicken, onions and rice.',
       'Pour the saffron milk on top. Put the lid on and cook on low heat for 35 minutes.',
     ],
@@ -348,7 +348,7 @@ export const recipes: Recipe[] = [
       'Turn the oven on to 180°C. Rub butter all over the inside of the cake tin.',
       'Melt the butter with the cocoa. Then mix in the sugar and eggs.',
       'Gently stir in the flour and pour it into the tin. Bake for 45 minutes.',
-      'Let it cool for 15 minutes, then turn it out of the tin. Top with raspberries and powdered sugar.',
+      'Let it cool for 15 minutes, then turn it out of the tin. Top with the raspberries.',
     ],
   },
   {
@@ -371,7 +371,7 @@ export const recipes: Recipe[] = [
       { id: 'icing-sugar', name: 'Icing sugar', quantity: 2, unit: 'tbsp', aisle: 'Pantry' },
     ],
     steps: [
-      'Beat the cream with the vanilla and powdered sugar until thick and soft.',
+      'Beat the cream with the vanilla and icing sugar until thick and soft.',
       'Cut the cake in half to make a top and a bottom layer. Spread cream on the bottom layer.',
       'Add sliced strawberries, then the top layer and more cream.',
       'Put it in the fridge for 20 minutes. Cut it into squares and add a strawberry on each.',
@@ -432,7 +432,10 @@ export const initialCookbooks: Cookbook[] = [
   { id: 'cb-cozy', name: 'Cozy nights', recipeIds: ['mushroom-spaghetti', 'margherita-pizza', 'apple-turnovers'] },
 ];
 
-export type CookedEntry = { recipeId: string; date: string; servings: number };
+/** How a cooked meal tasted, picked on the Finish screen. */
+export type Rating = 'meh' | 'yum' | 'amazing';
+/** One cooked meal. `date` (an ISO time) also identifies the entry. Rating and photo are optional. */
+export type CookedEntry = { recipeId: string; date: string; servings: number; rating?: Rating; photo?: string };
 export type Goals = { calories: number; protein: number };
 export const defaultGoals: Goals = { calories: 2200, protein: 140 };
 export type Units = 'metric' | 'us';
