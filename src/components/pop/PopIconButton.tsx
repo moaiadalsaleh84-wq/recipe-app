@@ -48,11 +48,11 @@ export function PopIconButton({ icon, onPress, accessibilityLabel, accessibility
       accessibilityLabel={badge ? `${accessibilityLabel}, ${badge}` : accessibilityLabel}
       accessibilityHint={accessibilityHint}
       testID={testID}
-      style={[{ width: d, height: d + depth }, disabled && { opacity: 0.4 }, style]}
+      style={[{ width: d, height: d + depth }, style]}
     >
       <View style={[styles.shadow, { top: depth, width: d, height: d, borderRadius: d / 2 }]} />
-      <Animated.View style={[styles.face, { width: d, height: d, borderRadius: d / 2, backgroundColor: color }, move]}>
-        <Icon name={icon} size={iconSize ?? Math.round(d * 0.42)} color={iconColor} weight="bold" />
+      <Animated.View style={[styles.face, { width: d, height: d, borderRadius: d / 2, backgroundColor: disabled ? pop.lilacTint : color }, move]}>
+        <Icon name={icon} size={iconSize ?? Math.round(d * 0.42)} color={disabled ? pop.inkMuted : iconColor} weight="bold" />
       </Animated.View>
       {badge ? (
         <View style={styles.badge} pointerEvents="none">

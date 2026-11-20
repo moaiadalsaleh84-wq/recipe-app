@@ -33,6 +33,7 @@ import { formatQty, roundQty, useStore } from '../../state/store';
 import { ingredientText } from '../../lib/qty';
 import { macroPercents } from '../../lib/percent';
 import { fonts, pop, popCycle, useTheme } from '../../theme';
+import { nb } from '../../lib/text';
 
 export default function RecipeScreen() {
   const t = useTheme();
@@ -228,9 +229,9 @@ export default function RecipeScreen() {
           {/* Three colored stat tiles: time, difficulty + steps, kcal */}
           <Reveal index={1}>
             <View style={styles.stats}>
-              <StatTile color={t.pop.sunshine} icon="clock" value={`${recipe.minutes} min`} label="Total time" />
-              <StatTile color={t.pop.leaf} hats={level} value={recipe.difficulty} label={`${recipe.steps.length} ${recipe.steps.length === 1 ? 'step' : 'steps'}`} a11y={`${recipe.difficulty}, ${recipe.steps.length} steps`} />
-              <StatTile color={t.pop.sky} icon="flame" value={`${recipe.calories}`} label="kcal each" a11y={`${recipe.calories} calories per serving`} />
+              <StatTile color={t.pop.sunshine} icon="clock" value={nb(recipe.minutes, 'min')} label="Total time" />
+              <StatTile color={t.pop.leaf} hats={level} value={recipe.difficulty} label={nb(recipe.steps.length, recipe.steps.length === 1 ? 'step' : 'steps')} a11y={`${recipe.difficulty}, ${recipe.steps.length} steps`} />
+              <StatTile color={t.pop.sky} icon="flame" value={`${recipe.calories}`} label={'kcal\u00A0each'} a11y={`${recipe.calories} calories per serving`} />
             </View>
           </Reveal>
 

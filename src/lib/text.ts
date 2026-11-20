@@ -10,3 +10,12 @@ export function noWidow(text: string) {
   // Long last words can wrap on their own without looking lonely.
   return last.length > 14 ? text : `${text.slice(0, i)} ${last}`;
 }
+
+/** A non-breaking space: the two sides always stay on the same line. */
+export const NBSP = ' ';
+
+/**
+ * A number and its unit that never split across lines: nb(630, 'kcal') → "630 kcal",
+ * nb(3, 'days') → "3 days". Use it everywhere a number is printed with a unit.
+ */
+export const nb = (n: number | string, unit: string) => `${n}${NBSP}${unit}`;

@@ -84,26 +84,27 @@ export function PopButton({
         if (haptic) haptics[haptic]();
         onPress?.(e);
       }}
-      style={[{ paddingBottom: depth }, disabled && styles.disabled, style]}
+      style={[{ paddingBottom: depth }, style]}
     >
       <View style={[styles.shadow, { top: depth, borderRadius: r }]} />
       <Animated.View
         style={[
           styles.face,
-          { backgroundColor: color, borderRadius: r, minHeight: large ? 56 : 44, paddingHorizontal: large ? 22 : 16 },
+          // Disabled: solid muted colors, never see-through (that would tint the ink border).
+          { backgroundColor: disabled ? pop.lilacTint : color, borderRadius: r, minHeight: large ? 56 : 44, paddingHorizontal: large ? 22 : 16 },
           faceStyle,
           faceMove,
         ]}
       >
         {children ?? (
           <>
-            {icon && <Icon name={icon} size={large ? 20 : 17} color={textColor} weight="bold" />}
+            {icon && <Icon name={icon} size={large ? 20 : 17} color={disabled ? pop.inkMuted : textColor} weight="bold" />}
             {label ? (
-              <Text style={[large ? typeScale.buttonLarge : typeScale.button, { color: textColor, textAlign: 'center', flexShrink: 1 }]}>
+              <Text style={[large ? typeScale.buttonLarge : typeScale.button, { color: disabled ? pop.inkMuted : textColor, textAlign: 'center', flexShrink: 1 }]}>
                 {label}
               </Text>
             ) : null}
-            {iconRight && <Icon name={iconRight} size={large ? 20 : 17} color={textColor} weight="bold" />}
+            {iconRight && <Icon name={iconRight} size={large ? 20 : 17} color={disabled ? pop.inkMuted : textColor} weight="bold" />}
           </>
         )}
       </Animated.View>
@@ -122,5 +123,4 @@ const styles = StyleSheet.create({
     borderColor: pop.ink,
     borderCurve: 'continuous',
   },
-  disabled: { opacity: 0.45 },
 });

@@ -15,6 +15,8 @@ const icons = {
   flame: { ios: 'flame', md: 'local_fire_department' },
   people: { ios: 'person.2', md: 'group' },
   chart: { ios: 'chart.bar', md: 'signal_cellular_alt' },
+  /** A goal you aim for (nutrition goals). */
+  target: { ios: 'target', md: 'track_changes' },
   plus: { ios: 'plus', md: 'add' },
   minus: { ios: 'minus', md: 'remove' },
   check: { ios: 'checkmark', md: 'check' },

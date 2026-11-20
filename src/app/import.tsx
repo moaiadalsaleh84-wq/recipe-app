@@ -31,7 +31,7 @@ import { isIOS } from '../navigation/screenOptions';
 import { FREE_LIMITS, useStore } from '../state/store';
 import { useTheme } from '../theme';
 import { Lift } from '../components/pop/Lift';
-import { noWidow } from '../lib/text';
+import { nb, noWidow } from '../lib/text';
 
 type Phase = { name: 'input' } | { name: 'loading' } | { name: 'failed'; failure: ImportFailure } | { name: 'review'; result: ImportSuccess };
 
@@ -308,7 +308,7 @@ function Review({ result, onSave, onEdit, onDiscard }: { result: ImportSuccess; 
               {r.title}
             </Text>
             <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
-              {[r.servings && `Serves ${r.servings}`, r.minutes && `${r.minutes} min`, `From ${result.source.host ?? sourceLabel[result.source.kind]}`].filter(Boolean).join(' · ')}
+              {[r.servings && `Serves ${r.servings}`, r.minutes && nb(r.minutes, 'min'), `From ${result.source.host ?? sourceLabel[result.source.kind]}`].filter(Boolean).join(' · ')}
             </Text>
           </View>
         </View>
@@ -347,7 +347,7 @@ function Review({ result, onSave, onEdit, onDiscard }: { result: ImportSuccess; 
         {n ? (
           <>
             <Text style={[t.type.body, { color: t.colors.label }]}>
-              {n.calories} kcal · {n.protein} g protein · {n.carbs} g carbs · {n.fat} g fat
+              {nb(n.calories, 'kcal')} · {nb(n.protein, 'g')} protein · {nb(n.carbs, 'g')} carbs · {nb(n.fat, 'g')} fat
             </Text>
             <Text style={[t.type.caption1, { color: t.colors.secondaryLabel, marginTop: 4 }]}>
               Estimated per serving{n.basis === 'source' ? ', as given by the source' : ', worked out from the ingredients'}. Real values depend on brands and portions.

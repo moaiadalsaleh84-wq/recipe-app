@@ -46,7 +46,7 @@ export type Benefit = { icon: IconName; title: string; detail: string; for: Goal
 export const proBenefits: Benefit[] = [
   { icon: 'link', title: 'Unlimited imports', detail: 'Save recipes from TikTok, YouTube, Instagram and any website (free: 3)', for: ['home', 'learn', 'save'] },
   { icon: 'cart', title: 'Unlimited pantry + smart suggestions', detail: 'See the one item that unlocks the most recipes (free: 10 items)', for: ['waste', 'save'] },
-  { icon: 'chart', title: 'Nutrition goals', detail: 'Daily protein and calorie targets, tracked from the meals you cook', for: ['muscle', 'healthier'] },
+  { icon: 'target', title: 'Nutrition goals', detail: 'Daily protein and calorie targets, tracked from the meals you cook', for: ['muscle', 'healthier'] },
   { icon: 'bookmark', title: 'Unlimited cookbooks and recipes', detail: 'Organize everything you love (free: 3 cookbooks, 5 handwritten recipes)', for: ['learn', 'home'] },
 ];
 

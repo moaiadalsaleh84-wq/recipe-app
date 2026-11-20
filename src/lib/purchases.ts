@@ -34,8 +34,29 @@ export const MANAGE_SUBSCRIPTIONS_URL = 'https://apps.apple.com/account/subscrip
 export const money = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: CURRENCY }).format(n);
 
 /** Honest comparisons only: computed from the real prices above. */
-export const perWeek = (id: PlanId) => (PLANS[id].period === 'year' ? PLANS[id].price / 52 : (PLANS[id].price * 12) / 52);
-export const yearlySavingsPct = () => Math.floor((1 - PLANS.yearly.price / (PLANS.monthly.price * 12)) * 100);
+export const perWeek = (id: PlanId, plans: Record<PlanId, { price: number; period: 'year' | 'month' }> = PLANS) => (plans[id].period === 'year' ? plans[id].price / 52 : (plans[id].price * 12) / 52);
+/** How much the yearly plan saves against 12 monthly payments, rounded: $29.99 vs $4.99 → 50. */
+export const savingsPct = (yearly: number, monthly: number) => (monthly > 0 ? Math.round((1 - yearly / (monthly * 12)) * 100) : 0);
+export const yearlySavingsPct = () => savingsPct(PLANS.yearly.price, PLANS.monthly.price);
+
+export type Plan = { productId: string; price: number; period: 'year' | 'month'; trialDays: number };
+
+/**
+ * The plans as the store sells them: real prices and trial lengths from RevenueCat when real
+ * purchases are on; the PLANS above in test mode (or if the store can't be reached).
+ */
+export async function loadPlans(): Promise<Record<PlanId, Plan>> {
+  if (PURCHASES_ARE_MOCK) return PLANS;
+  try {
+    const live = await (await import('./revenuecat')).rcPlans();
+    return {
+      yearly: { ...PLANS.yearly, ...(live.yearly ? { price: live.yearly.price, trialDays: live.yearly.trialDays } : null) },
+      monthly: { ...PLANS.monthly, ...(live.monthly ? { price: live.monthly.price, trialDays: live.monthly.trialDays } : null) },
+    };
+  } catch {
+    return PLANS;
+  }
+}
 
 export type Entitlement = { plan: PlanId; since: string; trialEndsAt: string | null };
 

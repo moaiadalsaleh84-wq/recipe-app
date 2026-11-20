@@ -30,13 +30,14 @@ export function findTimers(step: string): { label: string; seconds: number }[] {
   return out.map(({ label, seconds }) => ({ label, seconds }));
 }
 
-/** A short, readable length for a timer: "45 sec", "18 min", "1 hr 30 min". Never wraps awkwardly. */
+/** A short, readable length for a timer: "45 sec", "18 min", "1 hr 30 min". Numbers never split from their units. */
 export function durationLabel(seconds: number): string {
   const s = Math.max(0, Math.round(seconds));
-  if (s < 60) return `${s} sec`;
+  const n = (v: number, u: string) => `${v}\u00A0${u}`;
+  if (s < 60) return n(s, 'sec');
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
   const rest = s % 60;
-  if (h > 0) return m ? `${h} hr ${m} min` : `${h} hr`;
-  return rest ? `${m} min ${rest} sec` : `${m} min`;
+  if (h > 0) return m ? `${n(h, 'hr')} ${n(m, 'min')}` : n(h, 'hr');
+  return rest ? `${n(m, 'min')} ${n(rest, 'sec')}` : n(m, 'min');
 }

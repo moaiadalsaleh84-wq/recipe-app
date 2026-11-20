@@ -8,7 +8,8 @@ import type { Recipe, RecipeImage } from '../data/mock';
 import { photoUri } from '../lib/photos';
 import { useStore } from '../state/store';
 import { haptics } from '../lib/haptics';
-import { useTheme, pop } from '../theme';
+import { fonts, useTheme, pop } from '../theme';
+import { nb } from '../lib/text';
 import { Icon } from './Icon';
 import { PressableScale } from './PressableScale';
 import { PopButton } from './pop/PopButton';
@@ -102,7 +103,7 @@ function Spark({ dx, dy, burst }: { dx: number; dy: number; burst: ReturnType<ty
   return <Animated.View pointerEvents="none" style={[styles.spark, { backgroundColor: pop.tomato }, style]} />;
 }
 
-const useMeta = () => (r: Recipe) => `${r.minutes} min · ${r.calories} kcal`;
+const useMeta = () => (r: Recipe) => `${nb(r.minutes, 'min')} · ${nb(r.calories, 'kcal')}`;
 
 /** Difficulty chip colors on cards. */
 const DIFFICULTY_TINT = { Easy: pop.leafTint, Medium: pop.sunshineTint, Hard: pop.tomatoTint } as const;
@@ -123,7 +124,7 @@ export function RecipeCard({ recipe, width, color }: { recipe: Recipe; width: nu
         accessibilityLabel={`${recipe.title}, ${recipe.minutes} minutes, ${recipe.difficulty}`}
         accessibilityHint="Opens the recipe"
         color={color}
-        radius={22}
+        radius={24}
         style={{ flexGrow: 1 }}
         contentStyle={{ flexGrow: 1 }}
       >
@@ -135,7 +136,7 @@ export function RecipeCard({ recipe, width, color }: { recipe: Recipe; width: nu
           <View style={styles.cardMeta}>
             <View style={styles.meta}>
               <Icon name="clock" size={14} color={t.colors.label} weight="bold" />
-              <Text style={[t.type.caption1, { color: t.colors.label }]}>{recipe.minutes} min</Text>
+              <Text style={[t.type.caption1, { color: t.colors.label }]}>{nb(recipe.minutes, 'min')}</Text>
             </View>
             <PopChip label={recipe.difficulty} color={DIFFICULTY_TINT[recipe.difficulty]} small />
           </View>
@@ -177,8 +178,9 @@ export function TonightCard({ recipe, label, have, needed, onCook }: { recipe: R
             <Text style={[t.type.title1, { color: t.colors.label, fontSize: 24, lineHeight: 29 }]}>
               {recipe.title}
             </Text>
+            {/* Nothing at home yet: just how big the job is. From one item up: how close you are. */}
             <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]} testID="tonight-meta">
-              {recipe.minutes} min · {needed > 0 ? `you have ${have} of ${needed}` : recipe.difficulty}
+              {nb(recipe.minutes, 'min')} · {needed === 0 ? recipe.difficulty : have === 0 ? nb(needed, needed === 1 ? 'ingredient' : 'ingredients') : `you have ${have} of\u00A0${needed}`}
             </Text>
           </View>
         </PressableScale>
@@ -228,10 +230,12 @@ export function RecipeRow({
 
 const styles = StyleSheet.create({
   // Photos (4:3) with a thick ink line underneath.
-  imageWrap: { width: '100%', aspectRatio: 4 / 3, overflow: 'hidden', borderBottomWidth: 2.5, borderBottomColor: pop.ink },
+  // Flush with the card's top border (no gap): the photo's top corners follow the card's inner curve (24 − 2.5).
+  imageWrap: { width: '100%', aspectRatio: 4 / 3, overflow: 'hidden', borderTopLeftRadius: 21.5, borderTopRightRadius: 21.5, borderBottomWidth: 2.5, borderBottomColor: pop.ink },
   // 14pt inside on every side; the meta sits at the bottom so cards in a row line up.
   cardBody: { flexGrow: 1, padding: 14, gap: 10, justifyContent: 'space-between' },
-  cardTitle: { fontSize: 18, lineHeight: 22, minHeight: 44 },
+  // Fredoka 700, 19/23, up to 3 lines; 3 lines of room on every card so a row lines up.
+  cardTitle: { fontFamily: fonts.heading, fontSize: 19, lineHeight: 23, minHeight: 69 },
   cardMeta: { gap: 8, alignItems: 'flex-start' },
   meta: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   noPhoto: { alignItems: 'center', justifyContent: 'center' },
@@ -249,7 +253,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tonightPhoto: { height: 150, overflow: 'hidden', borderBottomWidth: 2.5, borderBottomColor: pop.ink },
+  tonightPhoto: { height: 150, overflow: 'hidden', borderTopLeftRadius: 21.5, borderTopRightRadius: 21.5, borderBottomWidth: 2.5, borderBottomColor: pop.ink },
   tonightText: { paddingHorizontal: 16, paddingTop: 22, gap: 4 },
   tonightBtn: { marginHorizontal: 16, marginTop: 12, marginBottom: 16 },
   tonightSticker: { position: 'absolute', top: 134, left: 14 },

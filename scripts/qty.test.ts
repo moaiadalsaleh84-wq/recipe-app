@@ -54,8 +54,8 @@ test('the reported bug: 1 of 9 servings of a sponge cake is not a quarter', () =
   assert.equal(formatQty(roundQty(1 / 9), ''), '⅛');
   assert.equal(formatQty(roundQty(3 / 9), ''), '⅓');
   assert.equal(formatQty(roundQty(9 / 9), ''), '1');
-  assert.equal(formatQty(1.5, 'cups'), '1½ cups');
-  assert.equal(formatQty(2.95, 'tbsp'), '3 tbsp');
+  assert.equal(formatQty(1.5, 'cups'), '1½\u00A0cups');
+  assert.equal(formatQty(2.95, 'tbsp'), '3\u00A0tbsp');
   assert.equal(formatQty(0, 'tsp'), '');
 });
 
@@ -74,9 +74,9 @@ test('ingredients read the way a cook says them', () => {
   assert.deepEqual(ingredientText(0.5, '', 'Garlic cloves'), { amount: '1', text: 'small garlic clove' });
   assert.deepEqual(ingredientText(4, '', 'Garlic cloves'), { amount: '4', text: 'garlic cloves' });
   assert.deepEqual(ingredientText(1.4, '', 'Eggs'), { amount: '1', text: 'egg' });
-  assert.deepEqual(ingredientText(350, 'g', 'Chicken thighs'), { amount: '350 g', text: 'chicken thighs' });
-  assert.deepEqual(ingredientText(75, 'g', 'Greek yogurt'), { amount: '75 g', text: 'Greek yogurt' });
-  assert.deepEqual(ingredientText(1.5, 'tbsp', 'Olive oil'), { amount: '1 1/2 tbsp', text: 'olive oil' });
+  assert.deepEqual(ingredientText(350, 'g', 'Chicken thighs'), { amount: '350\u00A0g', text: 'chicken thighs' });
+  assert.deepEqual(ingredientText(75, 'g', 'Greek yogurt'), { amount: '75\u00A0g', text: 'Greek yogurt' });
+  assert.deepEqual(ingredientText(1.5, 'tbsp', 'Olive oil'), { amount: '1\u00A01/2\u00A0tbsp', text: 'olive oil' });
   assert.deepEqual(ingredientText(0, '', 'Salt'), { amount: '', text: 'Salt' });
-  assert.equal(plainFractions('1¾ cups'), '1 3/4 cups');
+  assert.equal(plainFractions('1¾\u00A0cups'), '1\u00A03/4\u00A0cups');
 });

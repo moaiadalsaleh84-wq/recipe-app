@@ -54,3 +54,24 @@ export async function rcCurrent(): Promise<Entitlement | null> {
   ensureConfigured();
   return entitlementFrom(await Purchases.getCustomerInfo());
 }
+
+/**
+ * The real prices and free-trial lengths from the App Store, through RevenueCat's current
+ * offering, so the paywall never shows a hard-coded price. Null for a plan the offering lacks.
+ */
+export async function rcPlans(): Promise<Partial<Record<PlanId, { price: number; priceString: string; trialDays: number }>>> {
+  ensureConfigured();
+  const offerings = await Purchases.getOfferings();
+  const out: Partial<Record<PlanId, { price: number; priceString: string; trialDays: number }>> = {};
+  for (const pkg of offerings.current?.availablePackages ?? []) {
+    const id: PlanId | null = pkg.packageType === PACKAGE_TYPE.ANNUAL ? 'yearly' : pkg.packageType === PACKAGE_TYPE.MONTHLY ? 'monthly' : null;
+    if (!id) continue;
+    const p = pkg.product;
+    const intro = p.introPrice;
+    // A free intro period is the trial; its length in days.
+    const unitDays: Record<string, number> = { DAY: 1, WEEK: 7, MONTH: 30, YEAR: 365 };
+    const trialDays = intro && intro.price === 0 ? intro.periodNumberOfUnits * (unitDays[intro.periodUnit] ?? 1) : 0;
+    out[id] = { price: p.price, priceString: p.priceString, trialDays };
+  }
+  return out;
+}

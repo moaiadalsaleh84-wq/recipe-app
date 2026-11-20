@@ -52,10 +52,10 @@ export function Chunky({ children, face, radius, depth = DEPTH.button, style, fa
         if (haptic) haptics[haptic]();
         onPress?.(e);
       }}
-      style={[{ paddingBottom: depth }, style, disabled && { opacity: 0.45 }]}
+      style={[{ paddingBottom: depth }, style]}
     >
       <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, top: depth, borderRadius: r, backgroundColor: pop.ink, borderCurve: 'continuous' }} />
-      <Animated.View style={[{ backgroundColor: face, borderRadius: r, borderWidth: stroke.thick, borderColor: pop.ink, borderCurve: 'continuous' }, faceStyle, move]}>{children}</Animated.View>
+      <Animated.View style={[{ backgroundColor: disabled ? pop.lilacTint : face, borderRadius: r, borderWidth: stroke.thick, borderColor: pop.ink, borderCurve: 'continuous' }, faceStyle, move]}>{children}</Animated.View>
     </Pressable>
   );
 }

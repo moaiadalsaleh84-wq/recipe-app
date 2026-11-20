@@ -488,7 +488,8 @@ const styles = StyleSheet.create({
   print: { borderRadius: 18, borderWidth: 1, padding: 5, paddingBottom: 14, borderCurve: 'continuous' },
   printPhoto: { flex: 1, borderRadius: 13 },
   center: { alignItems: 'center', justifyContent: 'center' },
-  sh: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginTop: 32, marginBottom: 14, minHeight: 44 },
+  // 32 above every section, 12 between its title and its content. (Buttons on the right bring their own 44pt height.)
+  sh: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginTop: 32, marginBottom: 12 },
   shAction: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 44, paddingLeft: 8 },
   emptyIcon: { width: 96, height: 96, borderRadius: 48, borderWidth: 1, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   emptyIconInner: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center' },

@@ -14,12 +14,13 @@ import { useToast } from '../../../components/Toast';
 import { Chip, EmptyState, IconButton, SearchField, SectionHeader } from '../../../components/ui';
 import { FAVORITES_ID, QUICK_FILTER, categories, filterTags, matchesFilter, type Recipe } from '../../../data/mock';
 import { haptics } from '../../../lib/haptics';
-import { pantryMatch, recipesForMood, type Mood } from '../../../lib/moods';
+import { byPantryMatch, pantryMatch, recipesForMood, type Mood } from '../../../lib/moods';
 import { showPaywall, useProGate } from '../../../lib/pro';
 import { streakOf } from '../../../lib/progress';
 import { MANAGE_SUBSCRIPTIONS_URL } from '../../../lib/purchases';
 import { useStore } from '../../../state/store';
-import { pop, useTheme } from '../../../theme';
+import { fonts, pop, useTheme } from '../../../theme';
+import { nb, noWidow } from '../../../lib/text';
 
 const todayIndex = (new Date().getDay() + 6) % 7; // Monday = 0
 /** Days since 1970, so the recipe of the day really changes daily. */
@@ -107,7 +108,10 @@ export default function RecipesScreen() {
   const showExtras = !hasFilters && !mood;
   const tonight = getRecipe(plan[todayIndex]?.Dinner);
   const mains = allRecipes.filter((r) => r.category !== 'Dessert');
-  const featured = tonight ?? mains[dayNumber % Math.max(1, mains.length)] ?? allRecipes[0];
+  // Tonight's dinner from the plan; otherwise something you can mostly make (best pantry match,
+  // rotating daily among the top three), else a different main every day.
+  const canMake = byPantryMatch(mains, pantry).slice(0, 3);
+  const featured = tonight ?? (canMake.length ? canMake[dayNumber % canMake.length] : mains[dayNumber % Math.max(1, mains.length)]) ?? allRecipes[0];
   const featuredMatch = featured ? pantryMatch(featured, pantry) : { have: 0, needed: 0 };
   const firstName = profile.name.trim().split(/\s+/)[0] ?? '';
   const streak = streakOf(cooked.map((c) => c.date));
@@ -131,10 +135,11 @@ export default function RecipesScreen() {
   const margin = t.layout.screen;
   const contentWidth = Math.min(width, 900);
   const columns = contentWidth >= 700 ? 3 : 2;
-  const gap = t.spacing.md;
+  // Two columns with a 12pt gap; carousels use exactly the same card width.
+  const gap = t.spacing.sm;
   const cardWidth = Math.floor((contentWidth - margin * 2 - gap * (columns - 1)) / columns);
   // Cards in a sideways row: a bit narrower than the grid, so the next one peeks in.
-  const railWidth = Math.min(168, Math.floor((contentWidth - margin * 2) / 2.25));
+  const railWidth = cardWidth;
   const countLabel = `${filtered.length} ${filtered.length === 1 ? 'recipe' : 'recipes'}`;
 
   // Favorites only shows up once you've hearted something, so it never opens to an empty page.
@@ -295,7 +300,7 @@ export default function RecipesScreen() {
           )}
 
           {/* 5. Cookbooks */}
-          <SectionHeader title="Cookbooks" subtitle={books.length ? `${books.length} ${books.length === 1 ? 'collection' : 'collections'}` : 'Save recipes you love in one place'} />
+          <SectionHeader title="Cookbooks" subtitle={books.length ? nb(books.length, books.length === 1 ? 'collection' : 'collections') : 'Save recipes you love in one place'} />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -margin }} contentContainerStyle={[styles.rail, { paddingHorizontal: margin, gap: t.spacing.sm }]}>
             {books.map((b) => (
               <CookbookTile key={b.id} id={b.id} name={b.name} width={railWidth} recipes={b.recipeIds.map((id) => getRecipe(id)).filter((r): r is Recipe => !!r)} />
@@ -304,16 +309,21 @@ export default function RecipesScreen() {
               onPress={() => (canAddCookbook ? router.push('/cookbook-edit') : showPaywall('cookbooks'))}
               accessibilityLabel="New cookbook"
               color={t.pop.lilacTint}
-              radius={22}
-              depth={4}
+              radius={24}
               style={{ width: railWidth }}
-              contentStyle={[styles.book, styles.newBook]}
+              contentStyle={styles.newBook}
             >
               <View style={[styles.newIcon, { backgroundColor: t.pop.white, borderColor: t.pop.ink }]}>
                 <Icon name="plus" size={20} color={t.pop.ink} weight="bold" />
               </View>
-              <Text style={[t.type.headline, { color: t.pop.ink, fontFamily: t.fonts.black }]}>New cookbook</Text>
+              <Text style={[styles.newLabel, { color: t.pop.ink }]}>{'New\u00A0cookbook'}</Text>
             </PopCard>
+            {books.length === 0 && (
+              // No cookbooks yet: a hint beside the card, in the same row.
+              <View style={[styles.bookHint, { width: railWidth }]}>
+                <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]}>{noWidow('Group recipes like ‘Weeknights’ or ‘Date night’')}</Text>
+              </View>
+            )}
           </ScrollView>
         </Animated.View>
       )}
@@ -486,12 +496,11 @@ function CookbookTile({ id, name, recipes, width }: { id: string; name: string; 
     <PopCard
       onPress={() => router.push({ pathname: '/cookbook/[id]', params: { id } })}
       accessibilityLabel={`${name} cookbook, ${recipes.length} recipes`}
-      radius={22}
-      depth={4}
+      radius={24}
       style={{ width }}
       contentStyle={styles.book}
     >
-      <View style={[styles.covers, { backgroundColor: empty ? t.pop.berryTint : t.colors.imagePlaceholder, borderColor: t.pop.ink }]}>
+      <View style={[styles.covers, { backgroundColor: empty ? t.pop.berryTint : t.colors.imagePlaceholder, borderBottomColor: t.pop.ink }]}>
         {empty ? (
           <Icon name={fav ? 'heart' : 'book'} size={30} color={t.pop.ink} weight="bold" />
         ) : (
@@ -546,9 +555,13 @@ const styles = StyleSheet.create({
   sortBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', minHeight: 44, marginBottom: 4 },
   rail: { paddingBottom: 4 },
   book: { paddingBottom: 12, minHeight: 168 },
-  newBook: { alignItems: 'center', justifyContent: 'center', gap: 10, paddingTop: 12 },
+  // 16pt inside; the + circle and the label both centered.
+  newBook: { flexGrow: 1, minHeight: 168, padding: 16, gap: 10, alignItems: 'center', justifyContent: 'center' },
   newIcon: { width: 48, height: 48, borderRadius: 24, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
-  covers: { height: COVER_H, margin: 6, borderRadius: 16, borderWidth: 2.5, overflow: 'hidden', flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
+  newLabel: { fontFamily: fonts.black, fontSize: 16, lineHeight: 21, textAlign: 'center' },
+  bookHint: { justifyContent: 'center', paddingHorizontal: 4 },
+  // Flush with the card's top border, top corners following its inner curve (24 − 2.5).
+  covers: { height: COVER_H, overflow: 'hidden', borderTopLeftRadius: 21.5, borderTopRightRadius: 21.5, borderBottomWidth: 2.5, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' },
   bookText: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, marginTop: 6 },
   popular: { gap: 8, marginTop: 12 },
   popularRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

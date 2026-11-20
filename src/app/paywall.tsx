@@ -11,7 +11,7 @@
  * hidden or delayed close buttons, hidden prices or renewal terms.
  */
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../components/Text';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
@@ -22,10 +22,12 @@ import type { Line } from '../components/mascot/lines';
 import { Icon, type IconName } from '../components/Icon';
 import { PressableScale } from '../components/PressableScale';
 import { useToast } from '../components/Toast';
-import { Button, IconButton } from '../components/ui';
+import { Button } from '../components/ui';
+import { PopChip, PopIconButton } from '../components/pop';
+import { scheduleTrialReminder } from '../lib/trialReminder';
 import { benefitsFor, goalPhrase } from '../data/onboarding';
 import { haptics } from '../lib/haptics';
-import { noWidow } from '../lib/text';
+import { nb, noWidow } from '../lib/text';
 import type { PaywallSource } from '../lib/pro';
 import {
   MANAGE_SUBSCRIPTIONS_URL,
@@ -37,11 +39,13 @@ import {
   perWeek,
   purchase,
   restore,
-  yearlySavingsPct,
+  loadPlans,
+  savingsPct,
+  type Plan,
   type PlanId,
 } from '../lib/purchases';
 import { FREE_LIMITS, useStore } from '../state/store';
-import { useTheme } from '../theme';
+import { fonts, useTheme } from '../theme';
 import { Lift } from '../components/pop/Lift';
 
 type Source = PaywallSource;
@@ -54,6 +58,19 @@ export default function Paywall() {
   const { profile, pro, setPro } = useStore();
 
   const [plan, setPlan] = useState<PlanId>('yearly'); // default effect: the best value is preselected
+  // Prices and trial lengths from the store when real purchases are on (test mode: PLANS).
+  const [plans, setPlans] = useState<Record<PlanId, Plan>>(PLANS);
+  useEffect(() => {
+    let live = true;
+    loadPlans().then((p) => live && setPlans(p));
+    return () => {
+      live = false;
+    };
+  }, []);
+  // The top bar gets its ink line once the content scrolls under it; the scroll leaves room for both bars.
+  const [scrolled, setScrolled] = useState(false);
+  const [topH, setTopH] = useState(0);
+  const [footH, setFootH] = useState(0);
   const [busy, setBusy] = useState<'buy' | 'restore' | null>(null);
   const [welcome, setWelcome] = useState(false);
 
@@ -62,9 +79,9 @@ export default function Paywall() {
     else router.back();
   };
 
-  const yearly = PLANS.yearly;
-  const monthly = PLANS.monthly;
-  const selected = PLANS[plan];
+  const yearly = plans.yearly;
+  const monthly = plans.monthly;
+  const selected = plans[plan];
   const trial = selected.trialDays;
 
   const copy = headline(source, goalPhrase(profile), profile.name.trim().split(/\s+/)[0] ?? '');
@@ -76,6 +93,8 @@ export default function Paywall() {
     try {
       const ent = await purchase(plan);
       setPro(ent);
+      // Day 5 of the trial: a real reminder (permission is asked now, only when a trial starts).
+      if (ent.trialEndsAt) scheduleTrialReminder(ent.trialEndsAt).catch(() => {});
       haptics.success();
       setWelcome(true);
     } catch (e) {
@@ -111,28 +130,24 @@ export default function Paywall() {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.background }}>
-      {/* Always-visible, full-size close button and restore */}
-      <View style={[styles.top, { paddingTop: insets.top + 4 }]}>
-        <IconButton icon="close" accessibilityLabel={source === 'onboarding' ? 'Close and continue with the free version' : 'Close'} onPress={close} color={t.colors.label} background={t.colors.fill} />
-        <PressableScale onPress={onRestore} style={styles.restore} accessibilityLabel="Restore purchases" disabled={!!busy}>
-          {busy === 'restore' ? <ActivityIndicator color={t.colors.tint} /> : <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.semibold }]}>Restore</Text>}
-        </PressableScale>
-      </View>
-
-      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 210 }]}>
+      <ScrollView
+        onScroll={(e) => setScrolled(e.nativeEvent.contentOffset.y > 2)}
+        scrollEventThrottle={32}
+        contentContainerStyle={[styles.content, { paddingTop: topH + 8, paddingBottom: footH + 24 }]}
+      >
         <MascotSays line={line} size={104} />
 
-        <Animated.Text entering={FadeInDown.duration(320)} style={[t.type.largeTitle, { color: t.colors.label, marginTop: 14 }]} accessibilityRole="header">
-          {copy.title}
+        <Animated.Text entering={FadeInDown.duration(320)} style={[t.type.largeTitle, { color: t.colors.label, marginTop: 14 }]} accessibilityRole="header" maxFontSizeMultiplier={1.3}>
+          {noWidow(copy.title)}
         </Animated.Text>
-        <Text style={[t.type.body, { color: t.colors.secondaryLabel, marginTop: 6 }]}>{copy.subtitle}</Text>
+        <Text style={[t.type.body, { color: t.colors.secondaryLabel, marginTop: 6 }]}>{noWidow(copy.subtitle)}</Text>
 
         {/* Benefits, most relevant first */}
         <Lift radius={22} style={styles.cardLift}>
           <View style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
             {benefits.map((b, k) => (
               <Animated.View key={b.title} entering={FadeInDown.delay(80 * k).duration(300)} style={styles.benefit}>
-                <View style={[styles.benefitIcon, { backgroundColor: t.colors.tintSoft }]}>
+                <View style={[styles.benefitIcon, { backgroundColor: t.colors.tintSoft, borderColor: t.pop.ink }]}>
                   <Icon name={b.icon} size={18} color={t.colors.tint} weight="bold" />
                 </View>
                 <View style={{ flex: 1 }}>
@@ -145,17 +160,24 @@ export default function Paywall() {
         </Lift>
 
         {/* Two clear choices */}
-        <View style={{ gap: 10, marginTop: 18 }} accessibilityRole="radiogroup" accessibilityLabel="Choose a plan">
+        <View style={{ gap: 16, marginTop: 24 }} accessibilityRole="radiogroup" accessibilityLabel="Choose a plan">
           <PlanCard
             id="yearly"
             selected={plan === 'yearly'}
             onPress={() => setPlan('yearly')}
             title="Yearly"
-            price={`${money(yearly.price)} / year`}
-            note={`${money(perWeek('yearly'))}/week${yearly.trialDays ? ` · ${yearly.trialDays} days free` : ''}`}
-            badge={`Best value · Save ${yearlySavingsPct()}%`}
+            price={`${money(yearly.price)}\u00A0/\u00A0year`}
+            note={`${money(perWeek('yearly', plans))}/week${yearly.trialDays ? ` · ${nb(yearly.trialDays, 'days')} free` : ''}`}
+            badge={savingsPct(yearly.price, monthly.price) > 0 ? `Save ${savingsPct(yearly.price, monthly.price)}%` : undefined}
           />
-          <PlanCard id="monthly" selected={plan === 'monthly'} onPress={() => setPlan('monthly')} title="Monthly" price={`${money(monthly.price)} / month`} note="Flexible, cancel anytime" />
+          <PlanCard
+            id="monthly"
+            selected={plan === 'monthly'}
+            onPress={() => setPlan('monthly')}
+            title="Monthly"
+            price={`${money(monthly.price)}\u00A0/\u00A0month`}
+            note={monthly.trialDays ? `${nb(monthly.trialDays, 'days')} free · cancel anytime` : 'Flexible, cancel anytime'}
+          />
         </View>
 
         {/* Transparent trial timeline: knowing exactly what happens builds trust */}
@@ -164,8 +186,8 @@ export default function Paywall() {
             <Animated.View entering={FadeIn.duration(250)} style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
               <Text style={[t.type.headline, { color: t.colors.label, marginBottom: 10 }]}>How your free trial works</Text>
               <TimelineRow icon="crown" title="Today" detail="Everything unlocked. Cook, plan and track with no limits." first />
-              <TimelineRow icon="notes" title={`Day ${Math.max(1, trial - 2)}`} detail="We’ll remind you in the app that your trial is ending." />
-              <TimelineRow icon="calendar" title={`Day ${trial}`} detail={`Your subscription starts at ${money(selected.price)} per ${selected.period}. Cancel before then and you pay nothing.`} last />
+              <TimelineRow icon="notes" title={`Day\u00A0${Math.max(1, trial - 2)}`} detail="We’ll send you a reminder that your trial is ending." />
+              <TimelineRow icon="calendar" title={`Day\u00A0${trial}`} detail={`Your subscription starts at ${money(selected.price)} per ${selected.period}. Cancel before then and you pay nothing.`} last />
             </Animated.View>
           </Lift>
         )}
@@ -189,21 +211,33 @@ export default function Paywall() {
       </ScrollView>
 
       {/* Sticky purchase area: price and renewal terms are always visible next to the button */}
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: t.colors.background, borderTopColor: t.colors.separator }]}>
+      <View onLayout={(e) => setFootH(e.nativeEvent.layout.height)} style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: t.colors.background, borderTopColor: t.pop.ink }]}>
         <Button
           label={busy === 'buy' ? 'One moment…' : trial ? `Start my ${trial}-day free trial` : `Subscribe for ${money(selected.price)}/${selected.period}`}
+          accessibilityLabel={trial ? `Start my ${trial}-day free trial, then ${money(selected.price)} per ${selected.period}` : `Subscribe for ${money(selected.price)} per ${selected.period}`}
           onPress={buy}
           disabled={!!busy}
         />
         <Text style={[t.type.caption1, { color: t.colors.secondaryLabel, textAlign: 'center', marginTop: 8 }]} testID="price-terms">
           {noWidow(
             trial
-              ? `${trial} days free, then ${money(selected.price)} per ${selected.period}. Renews automatically. Cancel anytime in Settings at least 24 hours before the trial ends.`
-              : `${money(selected.price)} per ${selected.period}. Renews automatically. Cancel anytime in Settings at least 24 hours before renewal.`,
+              ? `${nb(trial, 'days')} free, then ${money(selected.price)} per ${selected.period}. Renews automatically. Cancel anytime in Settings at least 24 hours before the trial ends.`
+              : `Renews ${selected.period === 'year' ? 'yearly' : 'monthly'}. Cancel anytime in Settings.`,
           )}
         </Text>
         <PressableScale onPress={close} style={styles.free} accessibilityLabel={source === 'onboarding' ? 'Continue with the free version' : 'Not now'}>
           <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.semibold }]}>{source === 'onboarding' ? 'Continue with the free version' : 'Not now'}</Text>
+        </PressableScale>
+      </View>
+
+      {/* Top bar: solid white, above the content (which scrolls under it, hidden). An ink line once scrolled. */}
+      <View
+        onLayout={(e) => setTopH(e.nativeEvent.layout.height)}
+        style={[styles.top, { paddingTop: insets.top + 6, backgroundColor: t.colors.background, borderBottomColor: scrolled ? t.pop.ink : 'transparent' }]}
+      >
+        <PopIconButton icon="close" accessibilityLabel="Close" accessibilityHint={source === 'onboarding' ? 'Continue with the free version' : undefined} onPress={close} />
+        <PressableScale onPress={onRestore} style={styles.restore} accessibilityLabel="Restore purchases" disabled={!!busy}>
+          {busy === 'restore' ? <ActivityIndicator color={t.colors.tint} /> : <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.black }]}>Restore</Text>}
         </PressableScale>
       </View>
     </View>
@@ -238,54 +272,58 @@ function mascotLine(source: Source): Line {
   return { text: 'Pro is the big kitchen!', mood: 'happy' };
 }
 
+/**
+ * One plan: radio on the left (centered); then the name (and a badge on the right), the price big,
+ * and a muted line. Selected: sunshine tint on a 4pt shadow; not selected: white on a 3pt shadow.
+ */
 function PlanCard({ id, selected, onPress, title, price, note, badge }: { id: PlanId; selected: boolean; onPress: () => void; title: string; price: string; note: string; badge?: string }) {
   const t = useTheme();
+  const depth = selected ? t.depth.card : t.depth.small;
   return (
-    <Lift radius={20} pressed={selected}>
+    <Lift radius={20} offset={depth}>
       <PressableScale
         onPress={onPress}
         haptic="select"
         scaleTo={0.98}
         accessibilityRole="radio"
         aria-checked={selected}
-        accessibilityLabel={`${title} plan, ${price}. ${note}`}
+        accessibilityLabel={`${title} plan, ${price}. ${note}${badge ? `. ${badge}` : ''}`}
         testID={`plan-${id}`}
-        style={[styles.plan, { backgroundColor: selected ? t.colors.tintSoft : t.colors.cell, borderColor: t.pop.ink }, selected && { transform: [{ translateY: t.depth.card }] }]}
+        style={[styles.plan, { backgroundColor: selected ? t.pop.sunshineTint : t.colors.cell, borderColor: t.pop.ink }]}
       >
-        <View style={[styles.radio, { borderColor: selected ? t.colors.tintFill : t.colors.tertiaryLabel }]}>
-          {selected && <View style={[styles.radioDot, { backgroundColor: t.colors.tintFill }]} />}
+        <View style={[styles.radio, { borderColor: t.pop.ink, backgroundColor: t.colors.cell }]}>
+          {selected && <View style={[styles.radioDot, { backgroundColor: t.pop.sunshine, borderColor: t.pop.ink }]} />}
         </View>
-        <View style={{ flex: 1 }}>
-          <Text style={[t.type.headline, { color: t.colors.label }]}>{title}</Text>
-          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 1 }, t.noWidows.style]} {...t.noWidows.props}>
-            {noWidow(note)}
-          </Text>
-        </View>
-        <Text style={[t.type.headline, { color: t.colors.label }]}>{price}</Text>
-        {badge && (
-          <View style={[styles.planBadge, { backgroundColor: t.colors.success }]}>
-            <Text style={[t.type.caption2, { color: t.pop.ink, fontWeight: 'normal', fontFamily: t.fonts.rounded }]}>{badge}</Text>
+        <View style={{ flex: 1, gap: 2 }}>
+          <View style={styles.planTop}>
+            <Text style={[t.type.headline, { color: t.colors.label, flex: 1 }]}>{title}</Text>
+            {badge && <PopChip label={badge} color={t.pop.leaf} small />}
           </View>
-        )}
+          <Text style={[styles.planPrice, { color: t.colors.label }]}>{price}</Text>
+          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{noWidow(note)}</Text>
+        </View>
       </PressableScale>
     </Lift>
   );
 }
 
+/**
+ * One step of the trial timeline. Every icon is a 44pt circle with an ink border (Today sunshine,
+ * the rest white). A 3pt ink line runs from the center of each icon to the next, unbroken.
+ */
 function TimelineRow({ icon, title, detail, first, last }: { icon: IconName; title: string; detail: string; first?: boolean; last?: boolean }) {
   const t = useTheme();
   return (
     <View style={styles.tlRow}>
       <View style={styles.tlRail}>
-        {!first && <View style={[styles.tlLine, { backgroundColor: t.colors.tintSoft, top: 0, height: 10 }]} />}
-        <View style={[styles.tlDot, { backgroundColor: first ? t.colors.tintFill : t.colors.tintSoft }]}>
-          <Icon name={icon} size={14} color={first ? t.colors.onTint : t.colors.tint} weight="bold" />
+        {!last && <View style={[styles.tlLine, { backgroundColor: t.pop.ink }]} />}
+        <View style={[styles.tlDot, { backgroundColor: first ? t.pop.sunshine : t.colors.cell, borderColor: t.pop.ink }]}>
+          <Icon name={icon} size={18} color={t.pop.ink} weight="bold" />
         </View>
-        {!last && <View style={[styles.tlLine, { backgroundColor: t.colors.tintSoft, top: 38, bottom: -4 }]} />}
       </View>
-      <View style={{ flex: 1, paddingBottom: last ? 0 : 14 }}>
-        <Text style={[t.type.subhead, { color: t.colors.label, fontFamily: t.fonts.bold }]}>{title}</Text>
-        <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 1 }]}>{detail}</Text>
+      <View style={{ flex: 1, paddingTop: 2, paddingBottom: last ? 0 : 18 }}>
+        <Text style={[t.type.subhead, { color: t.colors.label, fontFamily: t.fonts.black }]}>{title}</Text>
+        <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 1 }]}>{noWidow(detail)}</Text>
       </View>
     </View>
   );
@@ -313,24 +351,28 @@ function Welcome({ onDone, trialEndsAt }: { onDone: () => void; trialEndsAt: str
 }
 
 const styles = StyleSheet.create({
-  top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 12 },
+  // Above the scroll content, solid white, so nothing shows through it.
+  top: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8, borderBottomWidth: 2 },
   restore: { minHeight: 44, minWidth: 64, justifyContent: 'center', alignItems: 'flex-end', paddingHorizontal: 8 },
-  content: { paddingHorizontal: 16, width: '100%', maxWidth: 560, alignSelf: 'center' },
-  card: { borderRadius: 22, padding: 16, gap: 12, borderCurve: 'continuous' },
-  cardLift: { marginTop: 18 },
-  benefit: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  benefitIcon: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
-  plan: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, minHeight: 72, borderRadius: 20, borderWidth: 2.5, borderCurve: 'continuous' },
-  radio: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  radioDot: { width: 12, height: 12, borderRadius: 6 },
-  planBadge: { position: 'absolute', top: -10, right: 16, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
-  tlRow: { flexDirection: 'row', gap: 12 },
-  tlRail: { width: 30, alignItems: 'center' },
-  tlDot: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', marginTop: 4 },
-  tlLine: { position: 'absolute', width: 3, borderRadius: 2 },
+  content: { paddingHorizontal: 20, width: '100%', maxWidth: 560, alignSelf: 'center' },
+  card: { borderRadius: 22, padding: 16, gap: 14, borderCurve: 'continuous' },
+  cardLift: { marginTop: 24 },
+  // Icons line up with the top of the title, not the middle of the block.
+  benefit: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  benefitIcon: { width: 40, height: 40, borderRadius: 20, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  plan: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 20, borderWidth: 2.5, borderCurve: 'continuous' },
+  planTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  planPrice: { fontFamily: fonts.heading, fontSize: 24, lineHeight: 29 },
+  radio: { width: 26, height: 26, borderRadius: 13, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
+  radioDot: { width: 12, height: 12, borderRadius: 6, borderWidth: 1.5 },
+  tlRow: { flexDirection: 'row', gap: 14 },
+  tlRail: { width: 44, alignItems: 'center' },
+  tlDot: { width: 44, height: 44, borderRadius: 22, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  // From this icon's center down past the row's end into the next row, to the next icon's center.
+  tlLine: { position: 'absolute', top: 22, bottom: -22, width: 3, left: 20.5 },
   links: { flexDirection: 'row', justifyContent: 'center', gap: 4, marginTop: 16, flexWrap: 'wrap' },
   link: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
-  footer: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 16, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth },
+  footer: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 2 },
   free: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  welcome: { flex: 1, paddingHorizontal: 16 },
+  welcome: { flex: 1, paddingHorizontal: 20 },
 });

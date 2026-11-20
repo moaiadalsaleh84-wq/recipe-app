@@ -34,7 +34,8 @@ export const formatQty = (quantity: number, unit: string) => {
     const [value, symbol] = nearest(quantity - whole, PARTS);
     text = value === 1 ? String(whole + 1) : `${whole}${symbol}`;
   }
-  return unit ? `${text} ${unit}` : text;
+  // The number and its unit never split across lines (a non-breaking space).
+  return unit ? `${text}\u00A0${unit}` : text;
 };
 
 /**
@@ -53,7 +54,8 @@ export function nameFor(quantity: number, unit: string, name: string) {
 export const plainFractions = (s: string) =>
   s.replace(/(\d)?([⅛¼⅓½⅔¾])/g, (_, whole: string | undefined, f: string) => {
     const map: Record<string, string> = { '⅛': '1/8', '¼': '1/4', '⅓': '1/3', '½': '1/2', '⅔': '2/3', '¾': '3/4' };
-    return whole ? `${whole} ${map[f]}` : map[f];
+    // "1 1/2" stays together on one line.
+    return whole ? `${whole}\u00A0${map[f]}` : map[f];
   });
 
 /** Things nobody uses half of: round to whole ones ("1 small clove", never "½ garlic clove"). */
@@ -74,7 +76,7 @@ export function ingredientText(quantity: number, unit: string, name: string): { 
     const n = Math.max(1, Math.round(quantity));
     const small = quantity < n * 0.75;
     const base = lower(nameFor(n, unit, name));
-    return { amount: unit ? `${n} ${unit}` : String(n), text: small ? `small ${base}` : base };
+    return { amount: unit ? `${n}\u00A0${unit}` : String(n), text: small ? `small ${base}` : base };
   }
   const amount = plainFractions(formatQty(quantity, unit));
   return { amount, text: lower(unit ? name : nameFor(quantity <= 1 ? 1 : quantity, unit, name)) };

@@ -15,6 +15,7 @@ import { isIOS } from '../navigation/screenOptions';
 import { useStore } from '../state/store';
 import { useTheme } from '../theme';
 import { Lift } from '../components/pop/Lift';
+import { nb } from '../lib/text';
 
 /** "Can't decide?" Biscuit shuffles through recipes and lands on one. */
 export default function BuddyPick() {
@@ -74,7 +75,7 @@ export default function BuddyPick() {
                 {recipe.title}
               </Text>
               <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
-                {recipe.minutes} min · {recipe.calories} kcal
+                {nb(recipe.minutes, 'min')} · {nb(recipe.calories, 'kcal')}
               </Text>
             </View>
           </View>
