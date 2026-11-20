@@ -1,20 +1,20 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Text } from '../../../components/Text';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
-import { Pop, Reveal } from '../../../components/Reveal';
+import { Reveal } from '../../../components/Reveal';
 import { RecipePhoto, RecipeRow, openRecipe } from '../../../components/RecipeCard';
-import { PopButton, PopCard, PopChip, PopIconButton } from '../../../components/pop';
+import { Lift, PopButton, PopCard, PopChip, PopIconButton } from '../../../components/pop';
 import { useToast } from '../../../components/Toast';
 import { IconButton, Section, SectionHeader, Separator } from '../../../components/ui';
 import { meals, type Meal, type Recipe } from '../../../data/mock';
 import { haptics } from '../../../lib/haptics';
 import { TabScreen } from '../../../components/TabScreen';
 import { totalsFor, useStore } from '../../../state/store';
-import { pop, popCycle, useTheme } from '../../../theme';
+import { fonts, pop, popCycle, useTheme } from '../../../theme';
 import { weekDays } from '../../../lib/week';
 import { fillDinners } from '../../../lib/planFill';
 
@@ -93,37 +93,41 @@ export default function PlanScreen() {
     });
   };
 
-  const plannedWeek = weekDays.filter((d) => meals.some((m) => plan[d.index]?.[m])).length;
+  // On narrow phones the weekday is two letters ("Mo"), so there's always room around it.
+  const { width } = useWindowDimensions();
+  const narrowDays = (Math.min(width, 700) - 40 - 36) / 7 - 5 < 40;
+
 
   return (
     <TabScreen title="Meal plan" kicker={weekDays[day].isToday ? weekDays[day].full : `Today is ${weekDays.find((d) => d.isToday)?.long ?? ''}`}>
-      {/* The week as date pills: the chosen day is sunshine; dots show planned meals. */}
+      {/* The week as 7 equal date pills. Today is sunshine; the chosen day is pressed in; past days are
+          quiet (no shadow). A centered dot means the day has meals. */}
       <Reveal index={0} style={styles.week}>
       <View style={styles.weekInner} accessibilityRole="tablist">
         {weekDays.map((d) => {
           const selected = d.index === day;
           const count = meals.filter((m) => plan[d.index]?.[m]).length;
+          const past = d.index < todayIndex;
           return (
-            <Pop key={d.index} active={selected} style={{ flex: 1 }}>
-            <PressableScale
-              haptic="select"
-              scaleTo={0.92}
-              onPress={() => setDay(d.index)}
-              accessibilityRole="tab"
-              aria-selected={selected}
-              accessibilityLabel={`${d.long}${d.isToday ? ', today' : ''}, ${count} meals planned`}
-              style={[styles.day, { backgroundColor: selected ? t.pop.sunshine : t.colors.cell, borderColor: t.pop.ink }, d.isToday && !selected && { borderStyle: 'dashed' }, t.chunky.lip]}
-            >
-              <Text style={[t.type.caption1, { color: selected ? t.pop.ink : t.colors.secondaryLabel, fontFamily: selected ? t.fonts.black : t.fonts.bold }]}>{d.short}</Text>
-              <Text style={[t.type.title3, { color: t.colors.label, fontVariant: ['tabular-nums'] }]}>{d.date}</Text>
-              {/* Dots: one per planned meal. */}
-              <View style={styles.dots}>
-                {[0, 1, 2].map((n) => (
-                  <View key={n} style={[styles.dot, n < count && { backgroundColor: t.pop.leaf, borderColor: t.pop.ink, borderWidth: 1 }]} />
-                ))}
-              </View>
-            </PressableScale>
-            </Pop>
+            <Lift key={d.index} radius={14} offset={t.depth.small} pressed={selected || past} style={{ flex: 1 }}>
+              <PressableScale
+                haptic="select"
+                scaleTo={0.94}
+                onPress={() => setDay(d.index)}
+                accessibilityRole="tab"
+                aria-selected={selected}
+                accessibilityLabel={`${d.long}${d.isToday ? ', today' : ''}, ${count} ${count === 1 ? 'meal' : 'meals'} planned`}
+                style={[
+                  styles.day,
+                  { backgroundColor: d.isToday ? t.pop.sunshine : selected ? t.pop.lilacTint : t.colors.cell, borderColor: t.pop.ink },
+                  selected && !past && { transform: [{ translateY: t.depth.small }] },
+                ]}
+              >
+                <Text style={[styles.dayName, { color: past && !selected ? t.pop.inkMuted : t.pop.ink }]}>{narrowDays ? d.short.slice(0, 2) : d.short}</Text>
+                <Text style={[styles.dayNum, { color: past && !selected ? t.pop.inkMuted : t.pop.ink }]}>{d.date}</Text>
+                <View style={[styles.dot, count > 0 && { backgroundColor: t.pop.leaf, borderColor: t.pop.ink, borderWidth: 1.5 }]} />
+              </PressableScale>
+            </Lift>
           );
         })}
       </View>
@@ -131,7 +135,7 @@ export default function PlanScreen() {
 
       <SectionHeader
         title={weekDays[day].isToday ? 'Today' : weekDays[day].long}
-        subtitle={plannedToday > 0 ? `${plannedToday} of 3 planned · about ${dayTotals.calories} kcal` : 'Nothing planned yet. Pick a meal or two.'}
+        subtitle={plannedToday > 0 ? `${plannedToday} of 3 planned · about ${dayTotals.calories} kcal` : 'Nothing planned yet.'}
         style={{ marginTop: 24 }}
       />
       <Text style={styles.hidden} testID="plan-count">
@@ -174,44 +178,43 @@ export default function PlanScreen() {
       {/* Fill the week's empty dinners in one tap. Only shown when there are at least two to fill. */}
       {dinnerPicks.length >= 2 && (
         <Reveal index={3}>
-          <PressableScale
-            onPress={planDinners}
-            scaleTo={0.98}
-            accessibilityLabel={`Plan my dinners: fills ${dinnerPicks.length} empty dinners this week. You can undo.`}
-            testID="plan-dinners"
-            style={[styles.fillCard, { backgroundColor: t.pop.lilacTint, ...t.chunky.card }]}
-          >
-            <View style={[styles.fillIcon, { backgroundColor: t.pop.sunshine, borderColor: t.pop.ink }]}>
-              <Icon name="sparkles" size={22} color={t.colors.onReward} weight="bold" />
-            </View>
-            <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
-              <Text style={[t.type.title3, { color: t.colors.label }]}>Plan my dinners</Text>
-              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
-                Fill {dinnerPicks.length} empty {dinnerPicks.length === 1 ? 'night' : 'nights'} with one tap. Your own picks stay.
-              </Text>
-            </View>
-            <Icon name="chevronRight" size={16} color={t.pop.ink} weight="bold" />
-          </PressableScale>
+          <Lift radius={24} style={{ marginTop: 24 }}>
+            <PressableScale
+              onPress={planDinners}
+              scaleTo={0.98}
+              accessibilityLabel={`Plan my dinners: fills ${dinnerPicks.length} empty dinners this week. You can undo.`}
+              testID="plan-dinners"
+              style={[styles.fillCard, { backgroundColor: t.pop.lilacTint, ...t.chunky.card }]}
+            >
+              <View style={[styles.fillIcon, { backgroundColor: t.pop.sunshine, borderColor: t.pop.ink }]}>
+                <Icon name="sparkles" size={22} color={t.colors.onReward} weight="bold" />
+              </View>
+              <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
+                <Text style={[t.type.title3, { color: t.colors.label }]}>Plan my dinners</Text>
+                <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
+                  Fill {dinnerPicks.length} empty {dinnerPicks.length === 1 ? 'night' : 'nights'} with one tap. Your own picks stay.
+                </Text>
+              </View>
+              <Icon name="chevronRight" size={16} color={t.pop.ink} weight="bold" />
+            </PressableScale>
+          </Lift>
         </Reveal>
       )}
 
       {/* The week's shopping, in one tap: a basil banner. */}
       {weekRecipes.length > 0 && (
         <Reveal index={4}>
-        <View style={[styles.weekCard, { backgroundColor: t.pop.sky, ...t.chunky.card }]} testID="week-groceries">
-          <View style={styles.weekTop}>
-            <View style={{ flex: 1, gap: 2 }}>
+        <Lift radius={26} style={{ marginTop: 24 }}>
+          <View style={[styles.weekCard, { backgroundColor: t.pop.sky, ...t.chunky.card }]} testID="week-groceries">
+            <View style={{ gap: 2 }}>
               <Text style={[t.type.title2, { color: t.colors.onTint }]}>This week</Text>
               <Text style={[t.type.subhead, { color: t.colors.onTint }]}>
-                {weekRecipes.length} {weekRecipes.length === 1 ? 'meal' : 'meals'} across {plannedWeek} {plannedWeek === 1 ? 'day' : 'days'}. Same ingredients are added up, and nothing is added twice.
+                {weekRecipes.length} {weekRecipes.length === 1 ? 'meal' : 'meals'} planned. Shared ingredients are{'\u00A0'}combined.
               </Text>
             </View>
-            <View style={[styles.weekIcon, { backgroundColor: t.pop.white, borderColor: t.pop.ink }]}>
-              <Icon name="cart" size={22} color={t.pop.ink} weight="bold" />
-            </View>
+            <PopButton label="Add all to list" icon="cartAdd" onPress={addWeek} accessibilityLabel="Add this week to groceries" />
           </View>
-          <PopButton label="Add this week to the list" icon="cartAdd" onPress={addWeek} accessibilityLabel="Add this week to groceries" />
-        </View>
+        </Lift>
         </Reveal>
       )}
 
@@ -282,9 +285,11 @@ function MealCard({ meal, recipe, onChange, onRemove }: { meal: string; recipe: 
 const styles = StyleSheet.create({
   week: {},
   weekInner: { flexDirection: 'row', justifyContent: 'space-between', gap: 6 },
-  day: { alignItems: 'center', gap: 1, paddingTop: 8, paddingBottom: 7, borderRadius: 16, borderWidth: 2.5, minHeight: 74, borderCurve: 'continuous' },
-  dots: { flexDirection: 'row', gap: 3, height: 7 },
-  dot: { width: 7, height: 7, borderRadius: 4 },
+  // At least 6pt between the text and the border, even on a 375pt-wide phone.
+  day: { alignItems: 'center', gap: 2, paddingTop: 8, paddingBottom: 8, paddingHorizontal: 3, borderRadius: 14, borderWidth: 2.5, minHeight: 76, borderCurve: 'continuous' },
+  dayName: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 16 },
+  dayNum: { fontFamily: fonts.heading, fontSize: 20, lineHeight: 24, fontVariant: ['tabular-nums'] },
+  dot: { width: 8, height: 8, borderRadius: 4, alignSelf: 'center' },
   hidden: { position: 'absolute', width: 1, height: 1, opacity: 0 },
   slot: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14, minHeight: 84, borderRadius: 22, borderWidth: 2.5, borderStyle: 'dashed', borderCurve: 'continuous' },
   slotIcon: { width: 52, height: 52, borderRadius: 16, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
@@ -292,9 +297,7 @@ const styles = StyleSheet.create({
   mealMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14 },
   mealPhoto: { width: 92, height: 92, borderRadius: 16, borderWidth: 2.5, overflow: 'hidden', borderCurve: 'continuous' },
   mealActions: { alignItems: 'center' },
-  fillCard: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, marginTop: 24, borderRadius: 24, borderCurve: 'continuous' },
+  fillCard: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 24, borderCurve: 'continuous' },
   fillIcon: { width: 48, height: 48, borderRadius: 16, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
-  weekCard: { padding: 18, gap: 16, marginTop: 24, borderRadius: 26, borderCurve: 'continuous' },
-  weekTop: { flexDirection: 'row', gap: 12 },
-  weekIcon: { width: 48, height: 48, borderRadius: 24, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
+  weekCard: { padding: 18, gap: 16, borderRadius: 26, borderCurve: 'continuous' },
 });

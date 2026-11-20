@@ -10,7 +10,7 @@ import { Reveal } from '../../../components/Reveal';
 import { RecipePhoto, openRecipe } from '../../../components/RecipeCard';
 import { useToast } from '../../../components/Toast';
 import { Button, Chip, EmptyState, IconButton, ProgressBar, Section, SectionHeader, Separator } from '../../../components/ui';
-import { Lift, MascotSlot, PopCard } from '../../../components/pop';
+import { Lift, PopCard } from '../../../components/pop';
 import { haptics } from '../../../lib/haptics';
 import { COMMON_ITEMS, PANTRY_CATEGORIES, pantryCategory, smartSuggestions, suggestionsFor, whatCanICook, type PantryMatch } from '../../../lib/pantry';
 import { showPaywall, useProGate } from '../../../lib/pro';
@@ -125,7 +125,6 @@ export default function PantryScreen() {
       {pantry.length === 0 ? (
         // One calm card: no stacked photos, and its text never runs under the tab bar.
         <PopCard color={t.pop.lilacTint} contentStyle={styles.emptyCard}>
-          <MascotSlot message="What’s in your kitchen?" size={56} />
           <Text style={[t.type.title2, { color: t.colors.label }]} testID="pantry-empty">
             Your pantry is empty
           </Text>

@@ -4,13 +4,14 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { fonts, pop, stroke } from '../../theme';
 
 /**
- * Where the Pantry Pop character goes. Until the character is ready, this shows a dashed circle
- * the size of the character. Set to false to show only the speech bubble.
+ * Where the Pantry Pop character goes. While false, nothing of the character is drawn (no empty
+ * dashed circle): only the speech bubble, where a screen has something to say. Set to true to see
+ * the dashed placeholder while laying out a screen.
  *
  * To drop the character in: render it in place of the dashed circle in `MascotSlot` below. Every
  * screen that shows the character uses this one component.
  */
-export const SHOW_MASCOT_PLACEHOLDER = true;
+export const SHOW_MASCOT_PLACEHOLDER = false;
 
 type Props = {
   /** What the character says. Changing it fades the new line in. */

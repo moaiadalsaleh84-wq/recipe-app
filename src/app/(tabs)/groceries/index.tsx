@@ -14,9 +14,13 @@ import { PopCard, PopChip } from '../../../components/pop';
 import { aisleOrder, type GroceryItem } from '../../../data/mock';
 import { haptics } from '../../../lib/haptics';
 import { plainFractions } from '../../../lib/qty';
+import { noWidow } from '../../../lib/text';
 import { TabScreen } from '../../../components/TabScreen';
 import { formatQty, useStore } from '../../../state/store';
 import { useTheme } from '../../../theme';
+
+/** How an aisle is named on screen. "Pantry" is shown as "Cupboard", so it doesn't clash with the Pantry tab (saved data keeps its name). */
+const aisleName = (aisle: string) => (aisle === 'Pantry' ? 'Cupboard' : aisle);
 
 export default function GroceriesScreen() {
   const t = useTheme();
@@ -40,7 +44,7 @@ export default function GroceriesScreen() {
   const shareList = useCallback(async () => {
     const lines = aisleOrder.flatMap((aisle) => {
       const items = groceries.filter((g) => g.aisle === aisle && !g.checked);
-      return items.length ? [aisle, ...items.map((g) => `• ${g.name} (${formatQty(g.quantity, g.unit)})`), ''] : [];
+      return items.length ? [aisleName(aisle), ...items.map((g) => `• ${g.name} (${formatQty(g.quantity, g.unit)})`), ''] : [];
     });
     if (lines.length === 0) {
       toast({ message: 'Nothing left to buy, nothing to share!', tone: 'info' });
@@ -83,13 +87,11 @@ export default function GroceriesScreen() {
   };
 
 
-  const fromRecipes = new Set(groceries.flatMap((g) => g.recipeIds)).size;
-  const own = groceries.filter((g) => g.recipeIds.length === 0).length;
   const toBuy = total - done;
 
   return (
     <View style={{ flex: 1 }}>
-    <TabScreen title="Shopping list" kicker={total === 0 ? 'Nothing to buy yet' : toBuy === 0 ? 'All done' : `${toBuy} ${toBuy === 1 ? 'thing' : 'things'} to buy`} right={headerRight} keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled">
+    <TabScreen title="Shopping list" kicker={total === 0 ? 'Nothing to buy yet' : toBuy === 0 ? 'All done' : `${toBuy} left to buy`} right={headerRight} keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled">
       {/* Where you are: a leaf bar that fills as items go in the basket */}
       {total > 0 && (
         <Reveal index={0}>
@@ -99,11 +101,7 @@ export default function GroceriesScreen() {
                 <Text style={[t.type.title2, { color: t.colors.label }]} testID="grocery-progress">
                   {done === total ? 'Everything’s in the basket!' : `${done} of ${total} in your basket`}
                 </Text>
-                <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
-                  {done === total
-                    ? 'Nice shopping. Clear the list when you’re ready.'
-                    : [fromRecipes ? `From ${fromRecipes} ${fromRecipes === 1 ? 'recipe' : 'recipes'}` : '', own ? `${own} of your own` : ''].filter(Boolean).join(' · ')}
-                </Text>
+                {done === total && <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>Nice shopping. Clear the list when you’re ready.</Text>}
               </View>
             </View>
             <View style={styles.heroBar}>
@@ -153,7 +151,7 @@ export default function GroceriesScreen() {
             <Animated.View key={g.aisle} layout={LinearTransition.duration(220)} entering={FadeInDown.duration(300).delay(gi * 50)}>
               <View style={styles.aisleHead}>
                 <Text style={[t.type.title3, { color: t.colors.label }]} accessibilityRole="header">
-                  {g.aisle}
+                  {aisleName(g.aisle)}
                 </Text>
                 <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]}>{g.items.length} left</Text>
               </View>
@@ -198,7 +196,7 @@ export default function GroceriesScreen() {
               )}
             </Animated.View>
           )}
-          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, textAlign: 'center' }]}>Swipe left on an item to delete it.</Text>
+          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, textAlign: 'center', marginTop: 16 }]}>{noWidow('Swipe left on an item to delete it.')}</Text>
         </>
       )}
     </TabScreen>
@@ -210,7 +208,9 @@ export default function GroceriesScreen() {
 function GroceryRow({ item, onToggle, onDelete }: { item: GroceryItem; onToggle: () => void; onDelete: () => void }) {
   const t = useTheme();
   const { getRecipe } = useStore();
-  const sources = item.recipeIds.map((id) => getRecipe(id)?.title).filter(Boolean).join(', ');
+  const names = item.recipeIds.map((id) => getRecipe(id)?.title).filter((n): n is string => !!n);
+  // One recipe: its name. Several: "For 2 recipes", which opens the list of names.
+  const [showSources, setShowSources] = useState(false);
   // A swipe must never also count as a tap that ticks the item.
   const swiping = useRef(false);
   const startSwipe = () => {
@@ -233,43 +233,51 @@ function GroceryRow({ item, onToggle, onDelete }: { item: GroceryItem; onToggle:
       // No close() before deleting: the row unmounts, and closing a gesture mid-unmount errors.
       renderRightActions={(progress) => <DeleteAction progress={progress} label={`Delete ${item.name}`} onPress={onDelete} />}
     >
-      <PressableScale
-        onPress={() => {
-          if (swiping.current) return;
-          haptics.select();
-          onToggle();
-        }}
-        haptic={null}
-        scaleTo={0.99}
-        accessibilityRole="checkbox"
-        aria-checked={item.checked}
-        accessibilityLabel={`${item.name}, ${formatQty(item.quantity, item.unit)}`}
-        accessibilityActions={[{ name: 'delete', label: 'Delete' }]}
-        onAccessibilityAction={(e) => e.nativeEvent.actionName === 'delete' && onDelete()}
-        style={[styles.row, { backgroundColor: t.colors.cell }]}
-      >
-        <CheckCircle checked={item.checked} color={t.pop.leaf} />
-        <View style={{ flex: 1 }}>
-          <Text
-            style={[
-              t.type.body,
-              { color: item.checked ? t.colors.secondaryLabel : t.colors.label },
-              item.checked && styles.struck,
-            ]}
-          >
-            {item.name}
-          </Text>
-          {!!sources && (
-            <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 1 }]}>
-              {sources}
+      <View style={{ backgroundColor: t.colors.cell }}>
+        <PressableScale
+          onPress={() => {
+            if (swiping.current) return;
+            haptics.select();
+            onToggle();
+          }}
+          haptic={null}
+          scaleTo={0.99}
+          accessibilityRole="checkbox"
+          aria-checked={item.checked}
+          accessibilityLabel={`${item.name}, ${formatQty(item.quantity, item.unit)}`}
+          accessibilityActions={[{ name: 'delete', label: 'Delete' }]}
+          onAccessibilityAction={(e) => e.nativeEvent.actionName === 'delete' && onDelete()}
+          style={[styles.row, names.length > 1 && styles.rowTight]}
+        >
+          <CheckCircle checked={item.checked} color={t.pop.leaf} />
+          <View style={{ flex: 1 }}>
+            {/* A name you typed can be long: it gets two lines, then "…". */}
+            <Text style={[t.type.body, { color: item.checked ? t.colors.secondaryLabel : t.colors.label }, item.checked && styles.struck]} numberOfLines={2}>
+              {item.name}
             </Text>
-          )}
-        </View>
-        {/* the amount fades and is crossed out together with the name */}
-        <Text style={[t.type.subhead, { color: item.checked ? t.colors.secondaryLabel : t.colors.label, fontVariant: ['tabular-nums'] }, item.checked && styles.struck]}>
-          {plainFractions(formatQty(item.quantity, item.unit))}
-        </Text>
-      </PressableScale>
+            {names.length === 1 && <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 1 }]}>{noWidow(names[0])}</Text>}
+          </View>
+          {/* the amount fades and is crossed out together with the name */}
+          <Text style={[t.type.subhead, { color: item.checked ? t.colors.secondaryLabel : t.colors.label, fontVariant: ['tabular-nums'] }, item.checked && styles.struck]}>
+            {plainFractions(formatQty(item.quantity, item.unit))}
+          </Text>
+        </PressableScale>
+        {names.length > 1 && (
+          <PressableScale
+            onPress={() => setShowSources((v) => !v)}
+            haptic="select"
+            scaleTo={0.98}
+            aria-expanded={showSources}
+            accessibilityLabel={`For ${names.length} recipes. ${showSources ? 'Hide' : 'Show'} which`}
+            style={styles.sources}
+          >
+            <Text style={[t.type.footnote, { color: t.colors.label, flexShrink: 1 }]}>
+              For {names.length} recipes{showSources ? `: ${names.join(', ')}` : ''}
+            </Text>
+            <Icon name={showSources ? 'chevronDown' : 'chevronRight'} size={11} color={t.colors.label} weight="bold" />
+          </PressableScale>
+        )}
+      </View>
     </ReanimatedSwipeable>
   );
 }
@@ -289,12 +297,15 @@ const styles = StyleSheet.create({
   hero: { padding: 16, gap: 14 },
   heroTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   heroBar: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44 },
-  aisleHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 22, marginBottom: 8, paddingHorizontal: 4 },
+  // Lined up with the card's edges: the name at its left, the count at its right.
+  aisleHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 22, marginBottom: 8 },
   addRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 16, paddingRight: 4, minHeight: 54, borderRadius: 18, marginTop: 14, borderCurve: 'continuous' },
   addInput: { flex: 1, paddingVertical: 12, outlineStyle: 'none' } as never,
   addButton: { minHeight: 42, paddingHorizontal: 18, borderRadius: 14, borderWidth: 2, justifyContent: 'center', borderCurve: 'continuous' },
   basketHead: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 56, paddingHorizontal: 16, borderRadius: 18, borderWidth: 2.5, marginTop: 24 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12, minHeight: 60 },
+  rowTight: { paddingBottom: 0, minHeight: 48 },
+  sources: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 44, paddingLeft: 56, paddingRight: 16 },
   struck: { textDecorationLine: 'line-through' },
   delete: { width: 80, height: '100%' },
 });
