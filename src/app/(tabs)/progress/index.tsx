@@ -6,7 +6,7 @@ import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
 import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
 import { RecipePhoto } from '../../../components/RecipeCard';
-import { PopCard, PopChip, PopIconButton } from '../../../components/pop';
+import { Lift, PopButton, PopCard, PopChip, PopIconButton } from '../../../components/pop';
 import { Image } from 'expo-image';
 import { photoUri } from '../../../lib/photos';
 import { useToast } from '../../../components/Toast';
@@ -16,7 +16,7 @@ import { showPaywall, useProGate } from '../../../lib/pro';
 import { BADGES, levelFor, streakOf, xpFor } from '../../../lib/progress';
 import { TabScreen } from '../../../components/TabScreen';
 import { totalsFor, useStore } from '../../../state/store';
-import { pop, popCycle, useTheme } from '../../../theme';
+import { fonts, pop, popCycle, useTheme } from '../../../theme';
 
 const dayKey = (d: Date) => d.toDateString();
 const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -50,7 +50,7 @@ export default function ProgressScreen() {
   const week = DAYS.map((label, i) => {
     const d = new Date(now);
     d.setDate(now.getDate() - todayIndex + i);
-    return { label, done: cookedDays.has(dayKey(d)), today: i === todayIndex, future: i > todayIndex };
+    return { label, done: cookedDays.has(dayKey(d)), today: i === todayIndex, past: i < todayIndex };
   });
 
   // One row per dish, newest first: when you last made it and how it tasted.
@@ -71,11 +71,11 @@ export default function ProgressScreen() {
           <Text style={[t.type.title1, { color: t.pop.ink }]}>{(firstName[0] ?? '?').toUpperCase()}</Text>
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={[t.type.largeTitle, { color: t.colors.label, fontSize: 30, lineHeight: 36 }]} numberOfLines={1} accessibilityRole="header">
+          <Text style={[t.type.largeTitle, { color: t.colors.label, fontSize: 30, lineHeight: 36 }]} accessibilityRole="header">
             {firstName || 'You'}
           </Text>
-          <Text style={[t.type.headline, { color: t.colors.secondaryLabel }]} testID="chef-level">
-            Lv {lvl.level} · {lvl.title}
+          <Text style={[styles.level, { color: t.colors.secondaryLabel }]} testID="chef-level">
+            {`Lv\u00A0${lvl.level}\u00A0· ${lvl.title.replace(' ', '\u00A0')}`}
           </Text>
         </View>
         <PopIconButton icon="gear" accessibilityLabel="Settings" onPress={() => router.push('/settings')} />
@@ -103,7 +103,7 @@ export default function ProgressScreen() {
               <Text style={[t.type.title1, { color: t.pop.ink }]} testID="streak-count">
                 {streak} day streak
               </Text>
-              <Text style={[t.type.subhead, { color: t.pop.ink }]}>{cookedToday ? `You cooked today. Come back tomorrow for ${streak + 1}!` : `Cook tonight to make it ${streak + 1}!`}</Text>
+              <Text style={[t.type.subhead, { color: t.pop.ink }]}>{cookedToday ? `Nice! Come back tomorrow for\u00A0${streak + 1}\u00A0days` : `Cook today to reach\u00A0${streak + 1}\u00A0${streak + 1 === 1 ? 'day' : 'days'}`}</Text>
             </View>
           </View>
           <View style={styles.week} accessibilityLabel={`This week: cooked on ${week.filter((d) => d.done).length} of 7 days`}>
@@ -113,11 +113,14 @@ export default function ProgressScreen() {
                   entering={ZoomIn.duration(240).delay(i * 40)}
                   style={[
                     styles.dayDot,
+                    // Cooked: tomato with a check. Today (not cooked yet): dashed. Earlier days with no
+                    // cooking: white, faded. Days still to come: white.
                     { borderColor: t.pop.ink, backgroundColor: d.done ? t.pop.tomato : t.pop.white },
                     d.today && !d.done && { borderStyle: 'dashed', backgroundColor: 'transparent' },
+                    d.past && !d.done && { opacity: 0.6 },
                   ]}
                 >
-                  {d.done && <Icon name="check" size={15} color={t.pop.ink} weight="bold" />}
+                  {d.done && <Icon name="check" size={14} color={t.pop.ink} weight="bold" />}
                 </Animated.View>
                 <Text style={[t.type.caption1, { color: t.pop.ink, fontFamily: d.today ? t.fonts.black : t.fonts.bold }]}>{d.label}</Text>
               </View>
@@ -144,10 +147,11 @@ export default function ProgressScreen() {
               accessibilityLabel={got ? `${b.title}, earned` : `${b.title}, not earned yet. ${Math.min(done, needed)} of ${needed}. ${b.hint}.`}
               style={styles.badgeCell}
             >
+              <Lift radius={42} pressed={!got}>
               <View
                 style={[
                   styles.badgeCoin,
-                  got ? { backgroundColor: tone.fill, borderColor: t.pop.ink, ...t.chunky.lip } : { backgroundColor: tone.tint, borderColor: t.pop.ink, borderStyle: 'dashed' },
+                  got ? { backgroundColor: tone.fill, borderColor: t.pop.ink } : { backgroundColor: tone.tint, borderColor: t.pop.ink, borderStyle: 'dashed' },
                 ]}
               >
                 <Icon name={b.icon} size={30} color={t.pop.ink} weight="bold" />
@@ -159,7 +163,9 @@ export default function ProgressScreen() {
                   </View>
                 )}
               </View>
-              <Text style={[t.type.caption1, { color: t.colors.label, textAlign: 'center' }]} numberOfLines={2}>
+              </Lift>
+              {/* Two lines of room for every name, so the row stays level. */}
+              <Text style={[t.type.caption1, styles.badgeName, { color: t.colors.label }]}>
                 {b.title}
               </Text>
             </PressableScale>
@@ -209,26 +215,25 @@ export default function ProgressScreen() {
             const r = getRecipe(c.recipeId);
             if (!r) return null;
             const when = new Date(c.date);
-            const day = dayKey(when) === dayKey(now) ? 'today' : when.toLocaleDateString('en-US', { weekday: 'long' });
+            // Short: "Thu · loved it", "Today", "Nov 12 · yum".
             const old = now.getTime() - when.getTime() > 6 * 86400000;
+            const day = dayKey(when) === dayKey(now) ? 'Today' : old ? when.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : when.toLocaleDateString('en-US', { weekday: 'short' });
             const said = c.rating === 'amazing' ? ' · loved it' : c.rating === 'yum' ? ' · yum' : c.rating === 'meh' ? ' · it was okay' : '';
             return (
               <PopCard key={c.recipeId} radius={20} depth={4} contentStyle={styles.historyRow}>
-                <PressableScale onPress={() => router.push({ pathname: '/recipe/[id]', params: { id: r.id } })} scaleTo={0.98} accessibilityLabel={`${r.title}, last cooked ${old ? when.toDateString() : day}${said}`} style={styles.historyMain}>
+                <PressableScale onPress={() => router.push({ pathname: '/recipe/[id]', params: { id: r.id } })} scaleTo={0.98} accessibilityLabel={`${r.title}, last cooked ${old ? when.toDateString() : day}${said}. Opens the recipe`} style={styles.historyMain}>
                   <View style={[styles.historyThumb, { borderColor: t.pop.ink, backgroundColor: t.colors.imagePlaceholder }]}>
-                    {c.photo ? <Image source={{ uri: photoUri(c.photo) }} style={StyleSheet.absoluteFill} contentFit="cover" /> : <RecipePhoto recipe={r} iconSize={20} />}
+                    {c.photo ? <Image source={{ uri: photoUri(c.photo) }} style={[StyleSheet.absoluteFill, { borderRadius: 11.5 }]} contentFit="cover" /> : <RecipePhoto recipe={r} iconSize={20} radius={11.5} />}
                   </View>
                   <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text style={[t.type.title3, { color: t.colors.label, fontSize: 17, lineHeight: 21 }]} numberOfLines={2}>
-                      {r.title}
-                    </Text>
-                    <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]} numberOfLines={1}>
-                      Last cooked {old ? when.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : day}
+                    <Text style={[t.type.title3, { color: t.colors.label, fontSize: 17, lineHeight: 21 }]}>{r.title}</Text>
+                    <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]}>
+                      {day}
                       {said}
                     </Text>
                   </View>
                 </PressableScale>
-                <PopChip label="Again" icon="restart" color={t.pop.sunshine} onPress={() => router.push({ pathname: '/cook/[id]', params: { id: r.id } })} accessibilityLabel={`Cook ${r.title} again`} />
+                <PopIconButton icon="restart" color={t.pop.sunshine} onPress={() => router.push({ pathname: '/cook/[id]', params: { id: r.id } })} accessibilityLabel="Cook again" accessibilityHint={`Cooks ${r.title} again`} />
               </PopCard>
             );
           })}
@@ -239,12 +244,13 @@ export default function ProgressScreen() {
       {/* Pro goals: small, at the bottom */}
       <SectionHeader title="Daily goals" />
       {!isPro ? (
-        <PopCard color={t.pop.skyTint} radius={20} depth={4} contentStyle={styles.goalsSmall}>
-          <Icon name="crown" size={20} color={t.pop.ink} />
-          <Text style={[t.type.subhead, { color: t.colors.label, flex: 1 }]}>
-            {cookedToday ? `Today: about ${eaten.protein} g protein, ${eaten.calories} kcal.` : 'Protein and calorie goals for the meals you cook.'}
-          </Text>
-          <PopChip label="Pro" icon="lock" color={t.pop.white} onPress={() => showPaywall('goals')} accessibilityLabel="Unlock daily goals with Pro" />
+        <PopCard color={t.pop.skyTint} radius={20} contentStyle={styles.goalsSmall}>
+          {/* The crown lines up with the first line of text; the Pro button is centered. */}
+          <View style={[styles.crown, { backgroundColor: t.pop.white, borderColor: t.pop.ink }]}>
+            <Icon name="crown" size={20} color={t.pop.ink} />
+          </View>
+          <Text style={[t.type.headline, styles.goalsText, { color: t.colors.label }]}>Set protein &amp; calorie goals</Text>
+          <PopButton label="Pro" icon="lock" size="small" color={t.pop.white} onPress={() => showPaywall('goals')} accessibilityLabel="Unlock daily goals with Pro" style={{ alignSelf: 'center' }} />
         </PopCard>
       ) : (
         <Section footer="Meals you finish in Cook Mode count toward today, one serving each. Recipe nutrition is estimated.">
@@ -287,9 +293,11 @@ const styles = StyleSheet.create({
   flame: { width: 60, height: 60, borderRadius: 30, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
   week: { flexDirection: 'row', justifyContent: 'space-between' },
   day: { alignItems: 'center', gap: 5 },
-  dayDot: { width: 36, height: 36, borderRadius: 18, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
+  dayDot: { width: 32, height: 32, borderRadius: 16, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
+  level: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 20 },
   badges: { flexDirection: 'row', justifyContent: 'space-between', gap: 10 },
   badgeCell: { flex: 1, alignItems: 'center', gap: 8, minHeight: 44 },
+  badgeName: { textAlign: 'center', minHeight: 34 },
   badgeCoin: { width: 84, height: 84, borderRadius: 42, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
   badgeTag: { position: 'absolute', bottom: -10, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 },
   badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12, minHeight: 60 },
@@ -297,7 +305,9 @@ const styles = StyleSheet.create({
   emptyHistory: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16 },
   historyRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 12 },
   historyMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, minHeight: 76 },
-  historyThumb: { width: 56, height: 56, borderRadius: 14, borderWidth: 2, overflow: 'hidden' },
-  goalsSmall: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12 },
+  historyThumb: { width: 56, height: 56, borderRadius: 14, borderWidth: 2.5, overflow: 'hidden' },
+  goalsSmall: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, padding: 16 },
+  crown: { width: 44, height: 44, borderRadius: 22, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
+  goalsText: { flex: 1, marginTop: 10 },
   goal: { padding: 16, gap: 10 },
 });
