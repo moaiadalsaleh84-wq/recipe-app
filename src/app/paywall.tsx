@@ -25,7 +25,7 @@ import { useToast } from '../components/Toast';
 import { Button } from '../components/ui';
 import { PopChip, PopIconButton } from '../components/pop';
 import { scheduleTrialReminder } from '../lib/trialReminder';
-import { benefitsFor, goalPhrase } from '../data/onboarding';
+import { benefitsFor, goalPhrase, type Goal } from '../data/onboarding';
 import { haptics } from '../lib/haptics';
 import { nb, noWidow } from '../lib/text';
 import type { PaywallSource } from '../lib/pro';
@@ -54,7 +54,7 @@ export default function Paywall() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const toast = useToast();
-  const { source = 'settings' } = useLocalSearchParams<{ source?: Source }>();
+  const { source = 'settings', then } = useLocalSearchParams<{ source?: Source; then?: string }>();
   const { profile, pro, setPro } = useStore();
 
   const [plan, setPlan] = useState<PlanId>('yearly'); // default effect: the best value is preselected
@@ -75,7 +75,9 @@ export default function Paywall() {
   const [welcome, setWelcome] = useState(false);
 
   const close = () => {
-    if (source === 'onboarding' || !router.canGoBack()) router.replace('/');
+    // After onboarding: straight to the recipe picked for tonight (its back button goes Home).
+    if (source === 'onboarding' && then) router.replace({ pathname: '/recipe/[id]', params: { id: then } });
+    else if (source === 'onboarding' || !router.canGoBack()) router.replace('/');
     else router.back();
   };
 
@@ -84,7 +86,7 @@ export default function Paywall() {
   const selected = plans[plan];
   const trial = selected.trialDays;
 
-  const copy = headline(source, goalPhrase(profile), profile.name.trim().split(/\s+/)[0] ?? '');
+  const copy = headline(source, goalPhrase(profile), profile.name.trim().split(/\s+/)[0] ?? '', profile.goals[0]);
   const line = mascotLine(source);
   const benefits = benefitsFor(profile);
 
@@ -244,13 +246,25 @@ export default function Paywall() {
   );
 }
 
-function headline(source: Source, goal: string, name: string): { title: string; subtitle: string } {
+/** The onboarding headline, by the goal picked there. */
+const GOAL_HEADLINES: Partial<Record<Goal, string>> = {
+  muscle: 'hit your protein goals with food you love',
+  save: 'cook more and spend less',
+  healthier: 'healthy dinners that actually taste good',
+  home: 'dinner sorted every night',
+  learn: 'learn to cook one easy win at a time',
+};
+
+function headline(source: Source, goal: string, name: string, goalId?: Goal): { title: string; subtitle: string } {
   switch (source) {
-    case 'onboarding':
+    case 'onboarding': {
+      const line = goalId ? GOAL_HEADLINES[goalId] : undefined;
+      const title = line ? (name ? `${name}, ${line}` : line.charAt(0).toUpperCase() + line.slice(1)) : name ? `${name}, save every recipe you find` : 'Save every recipe you find';
       return {
-        title: name ? `${name}, save every recipe you find` : 'Save every recipe you find',
+        title,
         subtitle: `The free version includes ${FREE_LIMITS.imports} imports. Pro imports without limits and adds the tools to help you ${goal}.`,
       };
+    }
     case 'imports':
       return { title: 'Import without limits', subtitle: `You’ve used your ${FREE_LIMITS.imports} free imports. Pro imports as many recipes as you like from TikTok, YouTube, Instagram and any website.` };
     case 'pantry':

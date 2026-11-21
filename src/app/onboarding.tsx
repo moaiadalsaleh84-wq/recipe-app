@@ -1,222 +1,845 @@
 /**
- * First launch: five quick screens, then the user imports their first recipe, then the paywall.
+ * First launch, in about a minute:
+ *   Welcome → Name → Goal → Cooking for → Diet → Dinner moment → Reminder → Pantry
+ *   → Building (the first pick is worked out here) → First pick → Paywall → that recipe.
  *
- * Kept short on purpose. Value comes before the price: the user sees the app turn one of their
- * own saved recipes into something cookable before Pro is mentioned. Every step can be skipped
- * or answered in one tap, and every answer is used (see data/onboarding.ts).
+ * Rules: one-answer questions move on by themselves (no checkboxes, no Continue); several-answer
+ * questions have checkmarks and a Continue. Every answer is saved as it's given, and the current
+ * step is saved too, so closing the app mid-way resumes on the same step.
  */
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
-import { Text } from '../components/Text';
-import Animated, { FadeIn, FadeInDown, FadeInRight, useAnimatedStyle, withTiming } from 'react-native-reanimated';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native';
+import Animated, { FadeIn, FadeInRight, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Mascot } from '../components/mascot/Mascot';
-import { MascotSays } from '../components/mascot/MascotSays';
-import type { Line } from '../components/mascot/lines';
-import type { IconName } from '../components/Icon';
-import { Icon } from '../components/Icon';
-import { PressableScale } from '../components/PressableScale';
-import { Button, CheckCircle, IconButton } from '../components/ui';
-import { dietTags, type DietTag } from '../data/mock';
-import { displayName, goalOptions, householdOptions, type Profile } from '../data/onboarding';
+import { Chunky } from '../components/Chunky';
+import { Icon, type IconName } from '../components/Icon';
+import { PopButton, PopCard, PopIconButton, Sticker } from '../components/pop';
+import { RecipePhoto } from '../components/RecipeCard';
+import { Text } from '../components/Text';
+import { useToast } from '../components/Toast';
+import { recipes as builtInRecipes, type Recipe } from '../data/mock';
+import { dietOptions, dinnerMoments, goalOptions, householdOptions, timeLabel, type Goal } from '../data/onboarding';
+import { track } from '../lib/analytics';
+import { askReminderPermission, reminderText } from '../lib/dinnerReminders';
 import { haptics } from '../lib/haptics';
+import { cookableCount, rankPicks, type Pick } from '../lib/onboardingPicks';
+import { restore } from '../lib/purchases';
+import { nb, noWidow } from '../lib/text';
 import { useStore } from '../state/store';
-import { fonts, useTheme } from '../theme';
-import { Lift } from '../components/pop/Lift';
+import { fonts, pop, stroke } from '../theme';
 
-const STEPS = ['name', 'goal', 'diet', 'household'] as const;
-type Step = (typeof STEPS)[number];
+const SCREENS = ['welcome', 'name', 'goal', 'household', 'diet', 'dinner', 'reminder', 'pantry', 'building', 'pick'] as const;
+type Screen = (typeof SCREENS)[number];
+/** Which of the 8 progress segments each screen fills (0 = no bar). */
+const SEGMENT: Record<Screen, number> = { welcome: 0, name: 1, goal: 2, household: 3, diet: 4, dinner: 5, reminder: 6, pantry: 7, building: 0, pick: 8 };
+const SEGMENTS = 8;
+
+/** Where the current step is kept, so a closed app resumes on it. */
+const STEP_KEY = 'pantry-pop-onboarding-step-v2';
+
+/** The quick-add pantry items. Each name matches ingredients in the bundled recipes. */
+export const QUICK_PANTRY = ['Eggs', 'Pasta', 'Rice', 'Garlic', 'Onions', 'Olive oil', 'Butter', 'Milk', 'Cheese', 'Tomatoes', 'Chicken', 'Potatoes', 'Bread', 'Flour', 'Peppers'];
+
+const ADVANCE_MS = 350;
+const TITLE_TOP = 126;
 
 export default function Onboarding() {
-  const t = useTheme();
   const insets = useSafeAreaInsets();
-  const { profile, setProfile, completeOnboarding } = useStore();
+  const { profile, setProfile, completeOnboarding, pantry, addPantry, removePantry, allRecipes, pro, setPro } = useStore();
+  const toast = useToast();
 
-  const [i, setI] = useState(0);
-  const step: Step = STEPS[i];
-  const name = profile.name.trim();
+  const [screen, setScreen] = useState<Screen | null>(null);
+  const [picks, setPicks] = useState<Pick[] | null>(null);
+  const [history, setHistory] = useState<Screen[]>([]);
 
+  // Resume where the person left off.
+  useEffect(() => {
+    AsyncStorage.getItem(STEP_KEY)
+      .then((v) => setScreen(SCREENS.includes(v as Screen) ? (v as Screen) : 'welcome'))
+      .catch(() => setScreen('welcome'));
+  }, []);
+  useEffect(() => {
+    if (!screen) return;
+    AsyncStorage.setItem(STEP_KEY, screen).catch(() => {});
+    track('onboarding_step_viewed', { step: screen });
+  }, [screen]);
+
+  const go = (to: Screen) => {
+    if (!screen) return;
+    track('onboarding_step_completed', { step: screen });
+    setHistory((h) => [...h, screen]);
+    setScreen(to);
+  };
   const next = () => {
-    haptics.select();
-    setI((n) => Math.min(STEPS.length - 1, n + 1));
+    if (!screen) return;
+    go(SCREENS[SCREENS.indexOf(screen) + 1]);
   };
-  const back = () => setI((n) => Math.max(0, n - 1));
-  /** Single choice: show the selection for a beat, then move on. */
-  const pickThenNext = (p: Partial<Profile>) => {
-    setProfile(p);
-    setTimeout(next, 260);
+  const back = () => {
+    if (!screen) return;
+    const prev = history[history.length - 1] ?? SCREENS[Math.max(0, SCREENS.indexOf(screen) - 1)];
+    setHistory((h) => h.slice(0, -1));
+    // Never back into the "building" moment: straight to the step before it.
+    setScreen(prev === 'building' ? 'pantry' : prev);
   };
 
-  const finish = () => {
+  const name = profile.name.trim().split(/\s+/)[0] ?? '';
+  const goal = profile.goals[0] as Goal | undefined;
+  const servings = profile.household ?? 2;
+  const dinnerTime = profile.dinnerTime ?? profile.reminder?.time ?? '18:00';
+
+  const computePicks = () => rankPicks({ recipes: allRecipes, pantry, diets: profile.diets, goal });
+
+  const finish = async (recipeId: string | undefined) => {
+    track('onboarding_step_completed', { step: 'pick' });
     completeOnboarding();
+    await AsyncStorage.removeItem(STEP_KEY).catch(() => {});
     haptics.success();
-    // Value before price: import one of your own recipes first. Skippable.
-    router.replace({ pathname: '/import', params: { from: 'onboarding' } });
+    router.replace({ pathname: '/paywall', params: { source: 'onboarding', ...(recipeId ? { then: recipeId } : {}) } });
   };
 
-  const progress = (i + 1) / STEPS.length;
-  const barStyle = useAnimatedStyle(() => ({ width: withTiming(`${progress * 100}%`, { duration: 300 }) }), [progress]);
+  const [restoring, setRestoring] = useState(false);
+  const onRestore = async () => {
+    setRestoring(true);
+    try {
+      const ent = await restore(pro);
+      if (ent) {
+        setPro(ent);
+        completeOnboarding();
+        await AsyncStorage.removeItem(STEP_KEY).catch(() => {});
+        toast({ message: 'Welcome back! Pro is restored.', icon: 'crown' });
+        router.replace('/');
+      } else {
+        toast({ message: 'No account found on this phone. Let’s set you up, it takes a minute.', tone: 'info' });
+      }
+    } catch {
+      toast({ message: 'Couldn’t reach the App Store. Check your connection.', tone: 'warning' });
+    } finally {
+      setRestoring(false);
+    }
+  };
+
+  if (!screen) return <View style={{ flex: 1, backgroundColor: pop.sunshine }} />;
+
+  const segment = SEGMENT[screen];
+  const bg = screen === 'welcome' ? pop.sunshine : screen === 'reminder' ? pop.skyTint : screen === 'pick' ? pop.sunshineTint : pop.white;
+
+  let body: ReactNode;
+  switch (screen) {
+    case 'welcome':
+      body = <Welcome onStart={next} onRestore={onRestore} restoring={restoring} />;
+      break;
+    case 'name':
+      body = <NameStep value={profile.name} onChange={(v) => setProfile({ name: v })} onDone={next} />;
+      break;
+    case 'goal':
+      body = (
+        <GoalStep
+          name={name}
+          selected={goal}
+          onPick={(g) => {
+            setProfile({ goals: [g] });
+            setTimeout(next, ADVANCE_MS);
+          }}
+        />
+      );
+      break;
+    case 'household':
+      body = (
+        <HouseholdStep
+          selected={profile.household}
+          onPick={(size) => {
+            setProfile({ household: size });
+            setTimeout(next, ADVANCE_MS);
+          }}
+        />
+      );
+      break;
+    case 'diet':
+      body = <DietStep diets={profile.diets} onChange={(diets) => setProfile({ diets })} onDone={next} />;
+      break;
+    case 'dinner':
+      body = (
+        <DinnerStep
+          selected={profile.dinnerTime}
+          onPick={(time) => {
+            // The reminder is offered at the same time.
+            setProfile({ dinnerTime: time, reminder: { enabled: profile.reminder?.enabled ?? false, time } });
+            setTimeout(next, ADVANCE_MS);
+          }}
+        />
+      );
+      break;
+    case 'reminder':
+      body = (
+        <ReminderStep
+          time={dinnerTime}
+          preview={computePicks()[0]}
+          onYes={async () => {
+            const granted = await askReminderPermission();
+            setProfile({ reminder: { enabled: granted, time: dinnerTime } });
+            if (!granted && Platform.OS !== 'web') toast({ message: 'No problem. You can turn it on later in Settings.', tone: 'info' });
+            next();
+          }}
+          onNo={() => {
+            setProfile({ reminder: { enabled: false, time: dinnerTime } });
+            next();
+          }}
+        />
+      );
+      break;
+    case 'pantry':
+      body = (
+        <PantryStep
+          pantry={pantry}
+          recipes={allRecipes}
+          diets={profile.diets}
+          onDone={(chosen) => {
+            const have = new Set(pantry.map((p) => p.toLowerCase()));
+            const want = new Set(chosen.map((p) => p.toLowerCase()));
+            chosen.filter((c) => !have.has(c.toLowerCase())).forEach((c) => addPantry(c));
+            // Quick-add items that were un-ticked come out of the pantry again.
+            pantry.filter((p) => QUICK_PANTRY.some((q) => q.toLowerCase() === p.toLowerCase()) && !want.has(p.toLowerCase())).forEach((p) => removePantry(p));
+            setPicks(null);
+            next();
+          }}
+        />
+      );
+      break;
+    case 'building':
+      body = <Building servings={servings} onCompute={() => setPicks(computePicks())} onDone={() => go('pick')} />;
+      break;
+    case 'pick':
+      body = <FirstPick name={name} servings={servings} picks={picks ?? computePicks()} onCook={(id) => finish(id)} />;
+      break;
+  }
 
   return (
-    <View style={{ flex: 1, backgroundColor: t.colors.background }}>
-      <View style={[styles.header, { paddingTop: insets.top + 6 }]}>
-        {i > 0 ? <IconButton icon="back" accessibilityLabel="Previous question" onPress={back} color={t.colors.tint} /> : <View style={{ width: 44 }} />}
-        <View
-          style={[styles.track, { backgroundColor: t.colors.fillStrong }]}
-          accessibilityRole="progressbar"
-          accessibilityLabel={`Step ${i + 1} of ${STEPS.length}`}
-          accessibilityValue={{ min: 1, max: STEPS.length, now: i + 1 }}
-        >
-          <Animated.View style={[styles.bar, { backgroundColor: t.colors.tintFill }, barStyle]} />
-        </View>
-        <Text style={[t.type.footnote, styles.count, { color: t.colors.secondaryLabel }]} testID="ob-step">
-          {i + 1}/{STEPS.length}
-        </Text>
-      </View>
-
-      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 130 }]} keyboardShouldPersistTaps="handled">
-        <Animated.View key={step} entering={FadeInRight.duration(240)}>
-          {step === 'name' && (
-            <View>
-              <Animated.View entering={FadeInDown.delay(80).duration(380)} style={styles.duo}>
-                <Mascot mood="wave" size={150} />
-              </Animated.View>
-              <Animated.Text entering={FadeIn.delay(280).duration(380)} style={[t.type.largeTitle, { color: t.colors.label, textAlign: 'center' }]} accessibilityRole="header">
-                Every recipe you save, ready to cook.
-              </Animated.Text>
-              <Text style={[t.type.body, { color: t.colors.secondaryLabel, textAlign: 'center', marginTop: 8, marginBottom: 24 }]}>
-                Import recipes from TikTok, YouTube, Instagram and any website. Plan your week, shop by aisle, and cook step by step.
-              </Text>
-              <Text style={[t.type.headline, { color: t.colors.label, marginBottom: 8 }]}>What should we call you?</Text>
-              <TextInput maxFontSizeMultiplier={1.3}
-                value={profile.name}
-                onChangeText={(v) => setProfile({ name: v })}
-                placeholder="Your first name"
-                placeholderTextColor={t.colors.tertiaryLabel}
-                autoCapitalize="words"
-                autoComplete="given-name"
-                textContentType="givenName"
-                returnKeyType="next"
-                maxLength={24}
-                onSubmitEditing={next}
-                accessibilityLabel="Your first name"
-                style={[styles.nameInput, { color: t.colors.label, backgroundColor: t.colors.cell, borderColor: t.pop.ink, ...t.chunky.lip }]}
-              />
-            </View>
-          )}
-
-          {step !== 'name' && <MascotSays line={narratorLine(step, profile)} size={96} style={{ marginBottom: 16 }} />}
-
-          {step === 'goal' && (
-            <Question title={name ? `What’s your main goal, ${name}?` : 'What’s your main goal?'} subtitle="Pick one. You can change it later.">
-              {goalOptions.map((o) => (
-                <OptionCard key={o.id} label={o.label} icon={o.icon} selected={profile.goals[0] === o.id} onPress={() => pickThenNext({ goals: [o.id] })} />
-              ))}
-            </Question>
-          )}
-
-          {step === 'diet' && (
-            <Question title="Anything we should keep in mind?" subtitle="Suggestions will only include recipes that fit.">
-              <OptionCard label="No preference" selected={profile.diets.length === 0} onPress={() => setProfile({ diets: [] })} multi />
-              {dietTags
-                .filter((d) => d !== 'One pan' && d !== 'Comfort food')
-                .map((d) => (
-                  <OptionCard key={d} label={d} multi selected={profile.diets.includes(d)} onPress={() => setProfile({ diets: toggle(profile.diets, d) as DietTag[] })} />
-                ))}
-            </Question>
-          )}
-
-          {step === 'household' && (
-            <Question title="How many are you cooking for?" subtitle="Recipes will open sized for you.">
-              {householdOptions.map((o) => (
-                <OptionCard key={o.size} label={o.label} selected={profile.household === o.size} onPress={() => setProfile({ household: o.size })} />
-              ))}
-            </Question>
-          )}
-
-        </Animated.View>
-      </ScrollView>
-
-      {step !== 'goal' && (
-        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16), backgroundColor: t.colors.background }]}>
-          {step === 'name' ? (
-            <Button label={name ? `Nice to meet you, ${name}` : 'Skip for now'} icon="arrowRight" onPress={next} variant={name ? 'filled' : 'tinted'} accessibilityLabel={name ? 'Continue' : 'Skip name'} />
-          ) : step === 'household' ? (
-            <Button label="Let’s get cooking" icon="arrowRight" onPress={finish} accessibilityLabel="Finish and start" />
-          ) : (
-            <Button label="Continue" icon="arrowRight" onPress={next} />
-          )}
+    <View style={{ flex: 1, backgroundColor: bg }}>
+      {segment > 0 && (
+        <View style={[styles.header, { top: insets.top + 8 }]}>
+          <PopIconButton icon="back" accessibilityLabel={screen === 'name' ? 'Back to the start' : 'Previous question'} onPress={back} />
+          <ProgressBar filled={segment} />
         </View>
       )}
+      <Animated.View key={screen} entering={screen === 'welcome' ? FadeIn.duration(260) : FadeInRight.duration(240)} style={{ flex: 1 }}>
+        {body}
+      </Animated.View>
     </View>
   );
 }
 
-const toggle = <T,>(list: T[], v: T) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
+/* ------------------------------------------------------------------ */
+/* Shared pieces                                                        */
+/* ------------------------------------------------------------------ */
 
-/** Biscuit reacts to the answers so far. */
-function narratorLine(step: Step, p: Profile): Line {
-  const n = displayName(p, 'friend');
-  switch (step) {
-    case 'goal':
-      return p.name.trim() ? { text: `Nice to meet you, ${n}!`, mood: 'wave' } : { text: 'Hi! I’m Biscuit.', mood: 'wave' };
-    case 'diet':
-      return p.diets.length ? { text: 'Got it! No sneaky surprises.', mood: 'proud' } : { text: 'Tell me what you love!', mood: 'excited' };
-    case 'household':
-      return (p.household ?? 0) >= 3 ? { text: 'A full table! My favorite kind.', mood: 'celebrating' } : { text: 'One plate or a feast?', mood: 'happy' };
-    default:
-      return { text: '', mood: 'idle' };
-  }
+function ProgressBar({ filled }: { filled: number }) {
+  return (
+    <View style={styles.bar} accessibilityRole="progressbar" accessibilityLabel={`Step ${filled} of ${SEGMENTS}`} accessibilityValue={{ min: 0, max: SEGMENTS, now: filled }}>
+      {Array.from({ length: SEGMENTS }, (_, i) => (
+        <View key={i} testID={i < filled ? 'ob-seg-done' : 'ob-seg'} style={[styles.segment, { backgroundColor: i < filled ? pop.sunshine : pop.white }]} />
+      ))}
+    </View>
+  );
 }
 
-function Question({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
-  const t = useTheme();
+/** Title block at the same height on every step, a scrolling body and an optional pinned footer. */
+function Step({ title, subtitle, children, footer, contentStyle }: { title: string; subtitle?: string; children: ReactNode; footer?: ReactNode; contentStyle?: StyleProp<ViewStyle> }) {
+  const insets = useSafeAreaInsets();
+  // The title starts at 126pt, or under the header on phones with a very tall status area.
+  const top = Math.max(TITLE_TOP, insets.top + 8 + 47 + 18);
   return (
-    <View>
-      <Text style={[t.type.title1, { color: t.colors.label }]} accessibilityRole="header">
-        {title}
+    <View style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={[{ paddingTop: top, paddingHorizontal: 20, paddingBottom: footer ? 24 : insets.bottom + 24 }, contentStyle]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        <Text style={styles.title} accessibilityRole="header">
+          {title}
+        </Text>
+        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+        <View style={{ marginTop: 24 }}>{children}</View>
+      </ScrollView>
+      {footer ? <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>{footer}</View> : null}
+    </View>
+  );
+}
+
+/** The white check in a circle on a picked option. */
+function CheckBadge({ dark }: { dark?: boolean }) {
+  return (
+    <View style={[styles.badge, { backgroundColor: dark ? pop.ink : pop.white }]}>
+      <Icon name="check" size={dark ? 13 : 16} color={dark ? pop.white : pop.ink} weight="bold" />
+    </View>
+  );
+}
+
+/** One-answer step: remembers the tap for the 350ms before moving on, and ignores further taps. */
+function useOneTap<T>(initial: T | null | undefined, onPick: (v: T) => void) {
+  const [picked, setPicked] = useState<T | null>(initial ?? null);
+  const locked = useRef(false);
+  return {
+    picked,
+    pick: (v: T) => {
+      if (locked.current) return;
+      locked.current = true;
+      setPicked(v);
+      haptics.tap();
+      onPick(v);
+    },
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/* 0. Welcome                                                           */
+/* ------------------------------------------------------------------ */
+
+const COLLAGE_IDS = ['creamy-mushroom-spaghetti', 'pepper-feta-penne', 'chicken-fried-rice', 'margherita-pizza'];
+
+function Welcome({ onStart, onRestore, restoring }: { onStart: () => void; onRestore: () => void; restoring: boolean }) {
+  const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+  const photos = useMemo(() => {
+    const byId = COLLAGE_IDS.map((id) => builtInRecipes.find((r) => r.id === id)).filter((r): r is Recipe => !!r?.image);
+    return byId.length === 4 ? byId : builtInRecipes.filter((r) => r.image).slice(0, 4);
+  }, []);
+  // Four photos in two staggered columns, sized to leave room for the words on short phones.
+  const tile = Math.min((Math.min(width, 500) - 40 - 16) / 2, (height - 430) / 2.2, 170);
+  return (
+    <View style={{ flex: 1, paddingTop: insets.top + 20, paddingBottom: Math.max(insets.bottom, 16), paddingHorizontal: 20 }}>
+      <View style={styles.collage} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        <View style={{ gap: 16 }}>
+          <PhotoTile recipe={photos[0]} size={tile} />
+          <PhotoTile recipe={photos[1]} size={tile} />
+        </View>
+        <View style={{ gap: 16, marginTop: tile * 0.28 }}>
+          <PhotoTile recipe={photos[2]} size={tile} />
+          <PhotoTile recipe={photos[3]} size={tile} />
+        </View>
+        <Sticker label={nb(25, 'min')} color={pop.tomato} style={{ position: 'absolute', top: tile - 14, left: tile - 24 }} />
+      </View>
+      <View style={{ flex: 1 }} />
+      <Text style={styles.welcomeTitle} accessibilityRole="header">
+        Never wonder what’s for dinner{' '}again.
       </Text>
-      <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, marginTop: 4, marginBottom: 16 }]}>{subtitle}</Text>
-      <View style={{ gap: 10 }}>{children}</View>
+      <Text style={[styles.subtitle, { color: pop.ink, marginTop: 10 }]}>Save recipes from anywhere. Cook with what you already have.</Text>
+      <PopButton label="Let’s go" color={pop.ink} textColor={pop.white} onPress={onStart} style={{ marginTop: 24 }} testID="ob-start" />
+      <Pressable onPress={onRestore} disabled={restoring} accessibilityRole="button" style={styles.link} hitSlop={6}>
+        <Text style={styles.linkText}>{restoring ? 'Checking…' : 'I already have an account'}</Text>
+      </Pressable>
     </View>
   );
 }
 
-function OptionCard({ label, icon, selected, onPress, multi }: { label: string; icon?: IconName; selected: boolean; onPress: () => void; multi?: boolean }) {
-  const t = useTheme();
+function PhotoTile({ recipe, size }: { recipe: Recipe | undefined; size: number }) {
+  const r = 22;
   return (
-    <Lift radius={18} offset={t.depth.small} pressed={selected}>
-      <PressableScale
-        onPress={onPress}
-        haptic="select"
-        scaleTo={0.98}
-        accessibilityRole={multi ? 'checkbox' : 'radio'}
-        aria-checked={selected}
-        accessibilityLabel={label}
-        style={[styles.option, { backgroundColor: selected ? t.colors.tintSoft : t.colors.cell, borderColor: t.pop.ink }, selected && { transform: [{ translateY: t.depth.small }] }]}
-      >
-        {icon && (
-          <View style={[styles.optionIcon, { backgroundColor: selected ? t.colors.tintFill : t.colors.fill }]}>
-            <Icon name={icon} size={18} color={selected ? t.colors.onTint : t.colors.tint} weight="bold" />
+    <View style={{ width: size, height: size + 4 }}>
+      <View style={{ position: 'absolute', top: 4, left: 0, width: size, height: size, borderRadius: r, backgroundColor: pop.ink }} />
+      <View style={{ width: size, height: size, borderRadius: r, borderWidth: 3, borderColor: pop.ink, overflow: 'hidden', backgroundColor: pop.white }}>
+        {recipe ? <RecipePhoto recipe={recipe} radius={r - 3} /> : null}
+      </View>
+    </View>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* 1. Name                                                              */
+/* ------------------------------------------------------------------ */
+
+function NameStep({ value, onChange, onDone }: { value: string; onChange: (v: string) => void; onDone: () => void }) {
+  const has = value.trim().length > 0;
+  return (
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <Step title="What should we call you?" footer={<PopButton label={has ? 'Continue' : 'Skip'} color={has ? pop.sunshine : pop.white} onPress={onDone} testID="ob-name-next" />}>
+        <TextInput
+          value={value}
+          onChangeText={onChange}
+          placeholder="Your first name"
+          placeholderTextColor={pop.inkMuted}
+          autoFocus
+          autoCapitalize="words"
+          autoComplete="given-name"
+          textContentType="givenName"
+          returnKeyType="next"
+          onSubmitEditing={onDone}
+          maxLength={30}
+          accessibilityLabel="Your first name"
+          style={styles.input}
+          testID="ob-name"
+        />
+      </Step>
+    </KeyboardAvoidingView>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* 2. Goal                                                              */
+/* ------------------------------------------------------------------ */
+
+function GoalStep({ name, selected, onPick }: { name: string; selected: Goal | undefined; onPick: (g: Goal) => void }) {
+  const { picked, pick } = useOneTap<Goal>(null, onPick);
+  const shown = picked ?? selected;
+  return (
+    <Step
+      title={name ? `What brings you here, ${name}?` : 'What brings you here?'}
+      subtitle="Pick one. We’ll tailor every pick to it."
+      footer={<Text style={styles.hint}>Tap one to continue</Text>}
+    >
+      <View style={{ gap: 12 }} accessibilityRole="radiogroup">
+        {goalOptions.map((g) => (
+          <OptionRow key={g.id} label={g.label} icon={g.icon} tint={pop[g.tint]} selected={shown === g.id} onPress={() => pick(g.id)} />
+        ))}
+      </View>
+    </Step>
+  );
+}
+
+function OptionRow({ label, detail, icon, tint, selected, fill = pop.sunshine, onPress, testID }: { label: string; detail?: string; icon?: IconName; tint?: string; selected: boolean; fill?: string; onPress: () => void; testID?: string }) {
+  return (
+    <PopCard
+      onPress={onPress}
+      pressed={selected}
+      haptic={null}
+      color={selected ? fill : pop.white}
+      radius={20}
+      accessibilityLabel={detail ? `${label}, ${detail}` : label}
+      testID={testID}
+      contentStyle={[styles.row, { minHeight: detail ? 74 : 70 }]}
+    >
+      {icon ? (
+        <View style={[styles.iconCircle, { backgroundColor: tint }]}>
+          <Icon name={icon} size={21} color={pop.ink} weight="bold" />
+        </View>
+      ) : null}
+      <View style={{ flex: 1 }}>
+        <Text style={styles.rowLabel}>{label}</Text>
+        {detail ? <Text style={[styles.rowDetail, selected && { color: pop.ink }]}>{detail}</Text> : null}
+      </View>
+      {selected ? <CheckBadge /> : null}
+    </PopCard>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* 3. Cooking for                                                       */
+/* ------------------------------------------------------------------ */
+
+function HouseholdStep({ selected, onPick }: { selected: number | null; onPick: (n: number) => void }) {
+  const { picked, pick } = useOneTap<number>(null, onPick);
+  const shown = picked ?? selected;
+  return (
+    <Step title={'Who are you cooking for?'} subtitle="Every recipe opens sized for you.">
+      <View style={styles.grid} accessibilityRole="radiogroup">
+        {householdOptions.map((h) => (
+          <PopCard
+            key={h.size}
+            onPress={() => pick(h.size)}
+            pressed={shown === h.size}
+            haptic={null}
+            color={shown === h.size ? pop.sky : pop.white}
+            radius={22}
+            accessibilityLabel={`${h.label}, ${h.big}`}
+            style={styles.tile}
+            contentStyle={styles.tileInner}
+          >
+            <Text style={styles.big}>{h.big}</Text>
+            <Text style={styles.rowLabel}>{h.label}</Text>
+            {shown === h.size ? (
+              <View style={{ position: 'absolute', top: 10, right: 10 }}>
+                <CheckBadge />
+              </View>
+            ) : null}
+          </PopCard>
+        ))}
+      </View>
+    </Step>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* 4. Diet (several answers)                                            */
+/* ------------------------------------------------------------------ */
+
+function DietStep({ diets, onChange, onDone }: { diets: readonly string[]; onChange: (d: string[]) => void; onDone: () => void }) {
+  const [none, setNone] = useState(false);
+  const toggle = (d: string) => {
+    haptics.select();
+    setNone(false);
+    onChange(diets.includes(d) ? diets.filter((x) => x !== d) : [...diets, d]);
+  };
+  return (
+    <Step title="Anything we should keep in mind?" subtitle="Suggestions will only include recipes that fit." footer={<PopButton label="Continue" onPress={onDone} testID="ob-diet-next" />}>
+      <DietChip
+        label="No preference"
+        checked={none && diets.length === 0}
+        onPress={() => {
+          haptics.select();
+          setNone(true);
+          onChange([]);
+        }}
+        style={{ alignSelf: 'stretch' }}
+      />
+      <View style={styles.wrap}>
+        {dietOptions.map((d) => (
+          <DietChip key={d} label={d} checked={diets.includes(d)} onPress={() => toggle(d)} />
+        ))}
+      </View>
+    </Step>
+  );
+}
+
+function DietChip({ label, checked, onPress, style }: { label: string; checked: boolean; onPress: () => void; style?: StyleProp<ViewStyle> }) {
+  return (
+    <Chunky
+      face={checked ? pop.sunshineTint : pop.white}
+      depth={3}
+      radius={16}
+      haptic={null}
+      onPress={onPress}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked }}
+      accessibilityLabel={label}
+      style={style}
+      faceStyle={styles.chip}
+    >
+      {checked ? <CheckBadge dark /> : null}
+      <Text style={styles.chipText}>{label.replace(' ', ' ')}</Text>
+    </Chunky>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* 5. Dinner moment                                                     */
+/* ------------------------------------------------------------------ */
+
+function DinnerStep({ selected, onPick }: { selected: string | null; onPick: (t: string) => void }) {
+  const { picked, pick } = useOneTap<string>(null, onPick);
+  const shown = picked ?? selected;
+  return (
+    <Step title={'When does the “what’s for dinner?” moment hit?'} subtitle="We’ll have an idea ready before it does.">
+      <View style={{ gap: 12 }} accessibilityRole="radiogroup">
+        {dinnerMoments.map((m) => (
+          <OptionRow key={m.time} label={m.title} detail={m.detail} fill={pop.berry} selected={shown === m.time} onPress={() => pick(m.time)} />
+        ))}
+      </View>
+    </Step>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* 6. Reminder (the friendly ask before iOS asks)                       */
+/* ------------------------------------------------------------------ */
+
+function ReminderStep({ time, preview, onYes, onNo }: { time: string; preview: Pick | undefined; onYes: () => void; onNo: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const label = timeLabel(time);
+  const text = preview ? reminderText(preview.recipe, preview.have, preview.needed) : null;
+  return (
+    <Step
+      title={`Want tonight’s pick at ${label}?`}
+      subtitle="One friendly nudge a day. Turn it off anytime."
+      footer={
+        <View style={{ gap: 4 }}>
+          <PopButton
+            label="Yes, remind me"
+            disabled={busy}
+            onPress={async () => {
+              setBusy(true);
+              await onYes();
+            }}
+            testID="ob-remind-yes"
+          />
+          <Pressable onPress={onNo} accessibilityRole="button" style={styles.link} testID="ob-remind-no">
+            <Text style={styles.linkText}>Not now</Text>
+          </Pressable>
+        </View>
+      }
+    >
+      {text ? (
+        <View style={styles.notif} accessibilityLabel={`Example notification: ${text.title}. ${text.body}`} accessible>
+          <Image source={require('../../assets/icon.png')} style={styles.appIcon} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.notifApp}>PANTRY POP · {label.toUpperCase()}</Text>
+            <Text style={styles.notifTitle}>{text.title}</Text>
+            <Text style={styles.notifBody}>{noWidow(text.body)}</Text>
+          </View>
+        </View>
+      ) : null}
+      <View style={{ gap: 14, marginTop: 24 }}>
+        {['A dinner idea that fits what you have', 'Quiet on days you already cooked', 'No “we miss you” spam. Ever.'].map((line) => (
+          <View key={line} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <View style={[styles.badge, { backgroundColor: pop.leaf }]}>
+              <Icon name="check" size={15} color={pop.ink} weight="bold" />
+            </View>
+            <Text style={[styles.rowLabel, { flex: 1, fontSize: 16 }]}>{line}</Text>
+          </View>
+        ))}
+      </View>
+    </Step>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* 7. Pantry quick add                                                  */
+/* ------------------------------------------------------------------ */
+
+function PantryStep({ pantry, recipes, diets, onDone }: { pantry: string[]; recipes: Recipe[]; diets: readonly string[]; onDone: (chosen: string[]) => void }) {
+  const [chosen, setChosen] = useState<string[]>(() => QUICK_PANTRY.filter((q) => pantry.some((p) => p.toLowerCase() === q.toLowerCase())));
+  // Count with everything already in the pantry, plus the ticked chips.
+  const others = pantry.filter((p) => !QUICK_PANTRY.some((q) => q.toLowerCase() === p.toLowerCase()));
+  const count = cookableCount(recipes, [...others, ...chosen], diets);
+  const shown = useCountUp(count);
+  const toggle = (item: string) => {
+    haptics.tap();
+    setChosen((c) => (c.includes(item) ? c.filter((x) => x !== item) : [...c, item]));
+  };
+  return (
+    <Step title="Tap what’s in your kitchen" subtitle="Rough is fine. You can change it later." footer={<PopButton label="Continue" onPress={() => onDone(chosen)} testID="ob-pantry-next" />}>
+      <PopCard color={pop.leafTint} radius={20} contentStyle={styles.counter}>
+        <Text style={styles.counterNum} testID="ob-count">
+          {shown}
+        </Text>
+        <Text style={[styles.rowLabel, { flex: 1 }]} accessibilityLiveRegion="polite">
+          {count === 1 ? 'recipe' : 'recipes'} you can cook right now with what you{' '}have
+        </Text>
+      </PopCard>
+      <View style={[styles.wrap, { marginTop: 20 }]}>
+        {QUICK_PANTRY.map((item) => {
+          const on = chosen.includes(item);
+          return (
+            <Chunky
+              key={item}
+              face={on ? pop.leaf : pop.white}
+              depth={3}
+              radius={16}
+              haptic={null}
+              onPress={() => toggle(item)}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: on }}
+              accessibilityLabel={item}
+              faceStyle={styles.chip}
+            >
+              {on ? <CheckBadge /> : null}
+              <Text style={styles.chipText}>{item.replace(' ', ' ')}</Text>
+            </Chunky>
+          );
+        })}
+      </View>
+    </Step>
+  );
+}
+
+/** Counts up to `target` (about 400ms). Jumps straight there with Reduce Motion on. */
+function useCountUp(target: number) {
+  const reduceMotion = useReducedMotion();
+  const [shown, setShown] = useState(target);
+  const from = useRef(target);
+  useEffect(() => {
+    if (reduceMotion || from.current === target) {
+      from.current = target;
+      setShown(target);
+      return;
+    }
+    const start = from.current;
+    const began = Date.now();
+    let frame = 0;
+    const tick = () => {
+      const p = Math.min(1, (Date.now() - began) / 400);
+      const v = Math.round(start + (target - start) * (1 - (1 - p) * (1 - p)));
+      setShown(v);
+      from.current = v;
+      if (p < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [target, reduceMotion]);
+  return shown;
+}
+
+/* ------------------------------------------------------------------ */
+/* Building                                                             */
+/* ------------------------------------------------------------------ */
+
+function Building({ servings, onCompute, onDone }: { servings: number; onCompute: () => void; onDone: () => void }) {
+  const [done, setDone] = useState(0);
+  const lines = ['Matching your goal', `Sizing recipes for ${servings === 1 ? nb(1, 'person') : nb(servings, 'people')}`, 'Checking your pantry'];
+  const finished = useRef(false);
+  useEffect(() => {
+    // The first pick is worked out here, while the lines tick off.
+    onCompute();
+    const timers = [400, 800, 1200].map((ms, i) => setTimeout(() => setDone(i + 1), ms));
+    timers.push(
+      setTimeout(() => {
+        if (finished.current) return;
+        finished.current = true;
+        onDone();
+      }, 1600),
+    );
+    return () => timers.forEach(clearTimeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 32 }} accessibilityLiveRegion="polite">
+      <Text style={[styles.title, { textAlign: 'center' }]}>Setting up your kitchen…</Text>
+      <View style={{ gap: 16, marginTop: 28, alignSelf: 'center' }}>
+        {lines.map((line, i) => (
+          <View key={line} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <View style={[styles.badge, { backgroundColor: i < done ? pop.leaf : pop.white }]}>{i < done ? <Icon name="check" size={15} color={pop.ink} weight="bold" /> : null}</View>
+            <Text style={[styles.rowLabel, { fontSize: 17, color: i < done ? pop.ink : pop.inkMuted }]}>{line}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* 8. First pick                                                        */
+/* ------------------------------------------------------------------ */
+
+const MAX_SHUFFLES = 5;
+
+function FirstPick({ name, servings, picks, onCook }: { name: string; servings: number; picks: Pick[]; onCook: (id: string | undefined) => void }) {
+  const insets = useSafeAreaInsets();
+  const reduceMotion = useReducedMotion();
+  const [i, setI] = useState(0);
+  const pool = picks.slice(0, MAX_SHUFFLES);
+  const pick = pool[i % Math.max(1, pool.length)];
+  const turn = useSharedValue(0);
+  const flip = useAnimatedStyle(() => ({ transform: [{ perspective: 900 }, { rotateY: `${turn.get()}deg` }] }));
+  const busy = useRef(false);
+
+  const another = () => {
+    if (busy.current || pool.length < 2) return;
+    haptics.select();
+    const nextI = (i + 1) % pool.length;
+    if (reduceMotion) {
+      setI(nextI);
+      return;
+    }
+    busy.current = true;
+    turn.set(withTiming(90, { duration: 160 }));
+    setTimeout(() => {
+      setI(nextI);
+      turn.set(-90);
+      turn.set(withTiming(0, { duration: 180 }));
+      setTimeout(() => {
+        busy.current = false;
+      }, 190);
+    }, 165);
+  };
+
+  const more = pick ? picks.filter((p) => p !== pick && p.needed > 0 && p.have / p.needed >= 0.5) : [];
+  const thumbs = (more.length ? more : picks.filter((p) => p !== pick)).slice(0, 2);
+  // Same top as every other step's title, under the progress bar.
+  const top = Math.max(TITLE_TOP, insets.top + 8 + 47 + 18);
+
+  return (
+    <View style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={{ paddingTop: top, paddingHorizontal: 20, paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+        <Text style={styles.small}>{name ? `All set, ${name}. Your kitchen is ready.` : 'All set. Your kitchen is ready.'}</Text>
+        <Text style={[styles.title, { marginTop: 4 }]} accessibilityRole="header">
+          Here’s tonight’s pick
+        </Text>
+        {pick ? (
+          <Animated.View style={[{ marginTop: 20 }, flip]}>
+            <PopCard radius={24} contentStyle={{ padding: 0 }} testID="ob-pick-card">
+              <View style={{ height: 190 }}>
+                <RecipePhoto recipe={pick.recipe} radius={0} />
+              </View>
+              <View style={{ padding: 16, borderTopWidth: stroke.thick, borderColor: pop.ink }}>
+                <Text style={styles.cardTitle} testID="ob-pick-title">
+                  {pick.recipe.title}
+                </Text>
+                <View style={[styles.wrap, { marginTop: 12, gap: 8 }]}>
+                  <Tag icon="clock" label={nb(pick.recipe.minutes, 'min')} color={pop.tomatoTint} />
+                  <Tag icon="people" label={`For ${servings}`} color={pop.skyTint} />
+                  <Tag icon="fridge" label={`You have ${pick.have} of ${pick.needed}`} color={pop.leafTint} />
+                </View>
+              </View>
+            </PopCard>
+          </Animated.View>
+        ) : (
+          <Text style={[styles.subtitle, { marginTop: 20 }]}>Add a few recipes and we’ll pick one for you every night.</Text>
+        )}
+        {more.length > 0 && (
+          <View style={styles.moreRow}>
+            <View style={{ width: 44 + (thumbs.length - 1) * 22, height: 44 }}>
+              {thumbs.map((p, k) => (
+                <View key={p.recipe.id} style={[styles.thumb, { left: k * 22, zIndex: 2 - k }]}>
+                  <RecipePhoto recipe={p.recipe} radius={10} iconSize={18} />
+                </View>
+              ))}
+            </View>
+            <Text style={[styles.rowLabel, { flex: 1 }]}>+{more.length} more you can make this{' '}week</Text>
           </View>
         )}
-        <Text style={[t.type.headline, { color: t.colors.label, flex: 1 }]}>{label}</Text>
-        <CheckCircle checked={selected} color={t.colors.tintFill} />
-      </PressableScale>
-    </Lift>
+      </ScrollView>
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16), gap: 12 }]}>
+        <PopButton label="Cook this tonight" icon="play" onPress={() => onCook(pick?.recipe.id)} testID="ob-cook" />
+        {pool.length > 1 && <PopButton label="Show me another" icon="shuffle" color={pop.white} size="small" onPress={another} haptic={null} testID="ob-another" />}
+      </View>
+    </View>
   );
 }
 
+function Tag({ icon, label, color }: { icon: IconName; label: string; color: string }) {
+  return (
+    <View style={[styles.tag, { backgroundColor: color }]}>
+      <Icon name={icon} size={14} color={pop.ink} weight="bold" />
+      <Text style={styles.tagText}>{label}</Text>
+    </View>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 8, paddingBottom: 8 },
-  track: { flex: 1, height: 10, borderRadius: 5, overflow: 'hidden' },
-  bar: { height: 10, borderRadius: 5 },
-  count: { width: 44, textAlign: 'center', fontVariant: ['tabular-nums'] },
-  content: { paddingHorizontal: 16, paddingTop: 8, width: '100%', maxWidth: 560, alignSelf: 'center' },
-  duo: { alignItems: 'center', marginBottom: 4 },
-  nameInput: { minHeight: 60, borderRadius: 18, borderWidth: 2.5, paddingHorizontal: 18, fontSize: 22, fontFamily: fonts.bold, borderCurve: 'continuous', outlineStyle: 'none' } as never,
-  option: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12, minHeight: 60, borderRadius: 18, borderWidth: 2, borderCurve: 'continuous' },
-  optionIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  footer: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 16, paddingTop: 12 },
+  header: { position: 'absolute', left: 20, right: 20, zIndex: 10, flexDirection: 'row', alignItems: 'center', gap: 14 },
+  bar: { flex: 1, flexDirection: 'row', gap: 4, height: 14 },
+  segment: { flex: 1, borderRadius: 7, borderWidth: 2, borderColor: pop.ink },
+  title: { fontFamily: fonts.heading, fontSize: 32, lineHeight: 38, color: pop.ink },
+  subtitle: { fontFamily: fonts.body, fontSize: 16, lineHeight: 22, color: pop.inkMuted, marginTop: 8 },
+  small: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 20, color: pop.inkMuted },
+  footer: { paddingHorizontal: 20, paddingTop: 12 },
+  hint: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 20, color: pop.inkMuted, textAlign: 'center', paddingVertical: 6 },
+  link: { minHeight: 44, alignItems: 'center', justifyContent: 'center', marginTop: 6 },
+  linkText: { fontFamily: fonts.bold, fontSize: 16, color: pop.ink, textDecorationLine: 'underline' },
+  welcomeTitle: { fontFamily: fonts.heading, fontSize: 38, lineHeight: 44, color: pop.ink },
+  collage: { flexDirection: 'row', justifyContent: 'center', gap: 16 },
+  input: {
+    height: 60,
+    borderWidth: stroke.thick,
+    borderColor: pop.ink,
+    borderRadius: 18,
+    paddingHorizontal: 18,
+    fontFamily: fonts.bold,
+    fontSize: 20,
+    color: pop.ink,
+    backgroundColor: pop.white,
+  },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 14, paddingVertical: 10 },
+  iconCircle: { width: 42, height: 42, borderRadius: 21, borderWidth: 2, borderColor: pop.ink, alignItems: 'center', justifyContent: 'center' },
+  rowLabel: { fontFamily: fonts.bold, fontSize: 17, lineHeight: 22, color: pop.ink },
+  rowDetail: { fontFamily: fonts.body, fontSize: 14, lineHeight: 19, color: pop.inkMuted, marginTop: 1 },
+  badge: { width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: pop.ink, alignItems: 'center', justifyContent: 'center' },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 14 },
+  tile: { width: '47%', flexGrow: 1 },
+  tileInner: { height: 150, alignItems: 'center', justifyContent: 'center', gap: 2 },
+  big: { fontFamily: fonts.heading, fontSize: 48, lineHeight: 56, color: pop.ink },
+  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 14 },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, paddingHorizontal: 14, paddingVertical: 6 },
+  chipText: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 21, color: pop.ink },
+  notif: { flexDirection: 'row', gap: 12, backgroundColor: pop.white, borderWidth: stroke.thick, borderColor: pop.ink, borderRadius: 20, padding: 14, borderCurve: 'continuous' },
+  appIcon: { width: 38, height: 38, borderRadius: 9, borderWidth: 1.5, borderColor: pop.ink },
+  notifApp: { fontFamily: fonts.black, fontSize: 12, lineHeight: 16, letterSpacing: 0.5, color: pop.inkMuted },
+  notifTitle: { fontFamily: fonts.black, fontSize: 16, lineHeight: 21, color: pop.ink, marginTop: 2 },
+  notifBody: { fontFamily: fonts.body, fontSize: 15, lineHeight: 20, color: pop.ink, marginTop: 2 },
+  counter: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 16, paddingVertical: 14 },
+  counterNum: { fontFamily: fonts.heading, fontSize: 44, lineHeight: 50, color: pop.ink, minWidth: 48, textAlign: 'center', fontVariant: ['tabular-nums'] },
+  cardTitle: { fontFamily: fonts.heading, fontSize: 24, lineHeight: 29, color: pop.ink },
+  tag: { flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 2, borderColor: pop.ink, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 5 },
+  tagText: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 18, color: pop.ink },
+  moreRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 20 },
+  thumb: { position: 'absolute', top: 0, width: 44, height: 44, borderRadius: 12, borderWidth: 2, borderColor: pop.ink, overflow: 'hidden', backgroundColor: pop.white },
 });
