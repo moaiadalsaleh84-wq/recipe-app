@@ -1,0 +1,936 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Photo picks</title>
+<style>
+  :root { --bg: #ffffff; --ink: #1B1340; --muted: #5B5478; --line: #ECE6FF; --badge: #FFC83D; --card: #fff; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #16102e; --ink: #f4f1ff; --muted: #b9b2d6; --line: #2c2450; --card: #1f1840; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 1200px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 28px; margin: 0 0 6px; }
+  .intro { color: var(--muted); margin: 0 0 8px; max-width: 70ch; }
+  h3.group { margin: 40px 0 0; padding-top: 16px; border-top: 2px solid var(--line); font-size: 20px; }
+  .recipe { margin-top: 28px; }
+  h2 { font-size: 20px; margin: 0 0 4px; }
+  .note { margin: 0 0 8px; color: var(--muted); font-size: 14px; }
+  .row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  figure { margin: 0; min-width: 0; }
+  figure a { position: relative; display: block; border-radius: 14px; overflow: hidden; background: var(--line); aspect-ratio: 4 / 3; }
+  figure img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .2s ease-out; }
+  figure a:hover img { transform: scale(1.03); }
+  .num { position: absolute; top: 8px; left: 8px; z-index: 1; width: 32px; height: 32px; border-radius: 50%; background: var(--badge); color: #1B1340; font-weight: 800; display: grid; place-items: center; border: 2px solid #1B1340; }
+  figcaption { font-size: 13px; color: var(--muted); margin-top: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  @media (max-width: 560px) { .row { gap: 6px; } .num { width: 24px; height: 24px; font-size: 13px; top: 5px; left: 5px; } figcaption { font-size: 11px; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Photo picks</h1>
+  <p class="intro">Three Unsplash candidates per recipe, numbered 1–3. Nothing is chosen. Tap a photo to open it on Unsplash. Tell Claude your choice per recipe, for example "Crispy Beef Tacos 2".</p>
+  <p class="intro">Previews are cropped to 4:3 here; tap through to see the whole photo.</p>
+  <h3 class="group">The 20 new recipes</h3>
+  
+  <section class="recipe">
+    <h2>Crispy Beef Tacos</h2>
+    <p class="note">Unsplash has no pan-fried folded tacos: these are soft beef tacos.</p>
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/a-wooden-plate-topped-with-three-tacos-and-a-lime-_j4S4V2C8ew" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1648437595587-e6a8b0cdf1f9?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8M3x8Q3Jpc3B5JTIwQmVlZiUyMFRhY29zfGVufDF8fHx8MTc5NTI5Mjg2Nnww&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Crispy Beef Tacos, candidate 1" loading="lazy">
+        </a>
+        <figcaption>Frankie Lopez · 5843 × 3895</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/close-up-photography-of-food-JiRSy0GfqPA" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1552332386-f8dd00dc2f85?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8Mnx8Q3Jpc3B5JTIwQmVlZiUyMFRhY29zfGVufDF8fHx8MTc5NTI5Mjg2Nnww&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Crispy Beef Tacos, candidate 2" loading="lazy">
+        </a>
+        <figcaption>Tai's Captures · 5858 × 3905</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/three-tacos-with-meat-lettuce-and-sauce-on-a-white-plate-oDC_9Uq1los" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1687881063470-a78e6ea2590e?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8OHx8Q3Jpc3B5JTIwQmVlZiUyMFRhY29zfGVufDF8fHx8MTc5NTI5Mjg2Nnww&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Crispy Beef Tacos, candidate 3" loading="lazy">
+        </a>
+        <figcaption>Robby McCullough · 3822 × 2950</figcaption>
+      </figure>
+    </div>
+  </section>
+  <section class="recipe">
+    <h2>Hot Honey Crispy Chicken Burger</h2>
+    <p class="note">All three are photos that don't appear for the Crunchy Chicken Burger.</p>
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/a-chicken-sandwich-with-lettuce-and-tomato-on-a-bun-n3HKmHpCDpQ" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1690749127581-c9351d7d0abc?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8MTh8fEhvdCUyMEhvbmV5JTIwQ3Jpc3B5JTIwQ2hpY2tlbiUyMEJ1cmdlcnxlbnwxfHx8fDE3OTUyOTI4NjZ8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Hot Honey Crispy Chicken Burger, candidate 1" loading="lazy">
+        </a>
+        <figcaption>Pablo Escobar · 5964 × 3356</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/a-sandwich-with-meat-and-veggies-on-it-4qFX6XG6F4Q" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1683027958636-e6f682983aa0?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8MTZ8fEhvdCUyMEhvbmV5JTIwQ3Jpc3B5JTIwQ2hpY2tlbiUyMEJ1cmdlcnxlbnwxfHx8fDE3OTUyOTI4NjZ8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Hot Honey Crispy Chicken Burger, candidate 2" loading="lazy">
+        </a>
+        <figcaption>Pinaak Kumar · 4000 × 6000</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/burger-with-lettuce-and-fries-on-brown-wooden-table-DspT8Smoc0k" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1606149059549-6042addafc5a?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8OHx8SG90JTIwSG9uZXklMjBDcmlzcHklMjBDaGlja2VuJTIwQnVyZ2VyfGVufDF8fHx8MTc5NTI5Mjg2Nnww&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Hot Honey Crispy Chicken Burger, candidate 3" loading="lazy">
+        </a>
+        <figcaption>Eiliv Aceron · 3585 × 5377</figcaption>
+      </figure>
+    </div>
+  </section>
+  <section class="recipe">
+    <h2>Baked Feta Pasta</h2>
+    <p class="note">1 and 2 show the baked feta and tomatoes; 3 is the finished pasta.</p>
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/food-in-bowl-q9itiHqVO10" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1565805403925-fe49242d1892?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8M3x8QmFrZWQlMjBGZXRhJTIwUGFzdGF8ZW58MXx8fHwxNzk1MjkyODY3fDA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Baked Feta Pasta, candidate 1" loading="lazy">
+        </a>
+        <figcaption>Roberto  Arias · 4032 × 3024</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/a-plate-of-tomatoes-and-a-cupcake-on-a-table-iM4pw-3hR74" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1707702278801-a48691237869?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8NHx8QmFrZWQlMjBGZXRhJTIwUGFzdGF8ZW58MXx8fHwxNzk1MjkyODY3fDA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Baked Feta Pasta, candidate 2" loading="lazy">
+        </a>
+        <figcaption>Helgi Olgeirsson · 7728 × 5152</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/pasta-with-cheese-on-white-ceramic-plate-oeulo_9RRO0" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1595086839290-0fccfb52e9b6?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8Mnx8QmFrZWQlMjBGZXRhJTIwUGFzdGF8ZW58MXx8fHwxNzk1MjkyODY3fDA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Baked Feta Pasta, candidate 3" loading="lazy">
+        </a>
+        <figcaption>Paula Hayes · 3024 × 4032</figcaption>
+      </figure>
+    </div>
+  </section>
+  <section class="recipe">
+    <h2>Marry Me Chicken</h2>
+    <p class="note">Closest matches: chicken in a creamy or tomato sauce.</p>
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/a-bowl-of-food-sitting-on-top-of-a-wooden-table-189sgF0xMOQ" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1708782342203-2c1b8ffaf8cd?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8NHx8Y3JlYW15JTIwc3VuJTIwZHJpZWQlMjB0b21hdG8lMjBjaGlja2VufGVufDF8fHx8MTc5NTI5Mjg2N3ww&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Marry Me Chicken, candidate 1" loading="lazy">
+        </a>
+        <figcaption>Rimsha Noor · 5000 × 5000</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/chicken-with-tomatoes-and-basil-Wd00iFID5aI" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1748864221145-269b4a23a67e?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8Mnx8Y3JlYW15JTIwc3VuJTIwZHJpZWQlMjB0b21hdG8lMjBjaGlja2VufGVufDF8fHx8MTc5NTI5Mjg2N3ww&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Marry Me Chicken, candidate 2" loading="lazy">
+        </a>
+        <figcaption>Rodrigo Rodrigues | WOLF Λ R T · 3468 × 5202</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/cooked-dish-Pv8-5BugPi8" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1559753496-89b160628831?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8NXx8Y3JlYW15JTIwc3VuJTIwZHJpZWQlMjB0b21hdG8lMjBjaGlja2VufGVufDF8fHx8MTc5NTI5Mjg2N3ww&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Marry Me Chicken, candidate 3" loading="lazy">
+        </a>
+        <figcaption>Fatema Enayath · 5005 × 3337</figcaption>
+      </figure>
+    </div>
+  </section>
+  <section class="recipe">
+    <h2>Smash Burger Tacos</h2>
+    <p class="note">No smash burger tacos on Unsplash: these are smash burgers.</p>
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/a-hamburger-sitting-on-top-of-a-wooden-cutting-board-MNHQqLNEvow" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1713330801172-03f8d1c0dde7?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8MXx8c21hc2glMjBidXJnZXIlMjB0YWNvfGVufDF8fHx8MTc5NTI5Mjg2N3ww&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Smash Burger Tacos, candidate 1" loading="lazy">
+        </a>
+        <figcaption>amirali mirhashemian · 2296 × 3444</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/a-cheeseburger-on-a-black-plate-on-a-cooling-rack-knraRhF5aKA" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1678110707493-8d05425137ac?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8Mnx8c21hc2glMjBidXJnZXIlMjB0YWNvfGVufDF8fHx8MTc5NTI5Mjg2N3ww&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Smash Burger Tacos, candidate 2" loading="lazy">
+        </a>
+        <figcaption>Arvid Skywalker · 3648 × 5472</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/burger-and-fries-on-white-ceramic-plate-DHxLfzqhoIk" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1600688640154-9619e002df30?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8OHx8c21hc2glMjBidXJnZXIlMjB0YWNvfGVufDF8fHx8MTc5NTI5Mjg2N3ww&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Smash Burger Tacos, candidate 3" loading="lazy">
+        </a>
+        <figcaption>Emanuel Ekström · 4375 × 7779</figcaption>
+      </figure>
+    </div>
+  </section>
+  <section class="recipe">
+    <h2>Crispy Rice Salmon Bites</h2>
+    <p class="note">1 is the closest (crispy rice with salmon); 3 is sushi rolls.</p>
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/a-white-plate-topped-with-sushi-covered-in-sauce-EOSVTJIbtLo" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1648146299661-e88c9c263478?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8M3x8Y3Jpc3B5JTIwcmljZSUyMHNhbG1vbnxlbnwxfHx8fDE3OTUyOTI4Njh8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Crispy Rice Salmon Bites, candidate 1" loading="lazy">
+        </a>
+        <figcaption>Ahtziri Lagarde · 5472 × 3648</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/a-white-plate-topped-with-fish-and-veggies-V0TUKexdlb4" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1712334562767-5d366d0c40d9?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8MXx8Y3Jpc3B5JTIwcmljZSUyMHNhbG1vbnxlbnwxfHx8fDE3OTUyOTI4Njh8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Crispy Rice Salmon Bites, candidate 2" loading="lazy">
+        </a>
+        <figcaption>Sara Nichols · 3024 × 4032</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/a-sushi-roll-is-on-a-black-plate-Wt9tqSaWi4A" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1679279727924-c7fc51732f9e?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8N3x8Y3Jpc3B5JTIwcmljZSUyMHNhbG1vbnxlbnwxfHx8fDE3OTUyOTI4Njh8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Crispy Rice Salmon Bites, candidate 3" loading="lazy">
+        </a>
+        <figcaption>Xavier Chng · 3648 × 5472</figcaption>
+      </figure>
+    </div>
+  </section>
+  <section class="recipe">
+    <h2>Gochujang Butter Noodles</h2>
+    <p class="note">Saucy noodles; none is labelled gochujang.</p>
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/spaghetti-with-sauce-on-black-plate-YAXnpznjw_I" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1603661688298-870c8958ebf8?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8NHx8R29jaHVqYW5nJTIwQnV0dGVyJTIwTm9vZGxlc3xlbnwxfHx8fDE3OTUyOTI4Njh8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Gochujang Butter Noodles, candidate 1" loading="lazy">
+        </a>
+        <figcaption>Behnam Norouzi · 4000 × 5743</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/a-person-is-eating-a-bowl-of-noodles-bMO0TUVQ8tM" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1714611446765-3e85644ea4ae?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8OHx8R29jaHVqYW5nJTIwQnV0dGVyJTIwTm9vZGxlc3xlbnwxfHx8fDE3OTUyOTI4Njh8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Gochujang Butter Noodles, candidate 2" loading="lazy">
+        </a>
+        <figcaption>Mustafa Fatemi · 3376 × 6000</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/pasta-on-black-ceramic-bowl-IDHESUEbDgY" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1627900440398-5db32dba8db1?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8M3x8R29jaHVqYW5nJTIwQnV0dGVyJTIwTm9vZGxlc3xlbnwxfHx8fDE3OTUyOTI4Njh8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Gochujang Butter Noodles, candidate 3" loading="lazy">
+        </a>
+        <figcaption>montatip lilitsanong · 2912 × 4545</figcaption>
+      </figure>
+    </div>
+  </section>
+  <section class="recipe">
+    <h2>Hot Honey Salmon Rice Bowl</h2>
+    
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/sliced-cucumber-and-sliced-lemon-on-white-ceramic-bowl-pO9851jklaE" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1604259597308-5321e8e4789c?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8M3x8SG90JTIwSG9uZXklMjBTYWxtb24lMjBSaWNlJTIwQm93bHxlbnwxfHx8fDE3OTUyOTI4Njh8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Hot Honey Salmon Rice Bowl, candidate 1" loading="lazy">
+        </a>
+        <figcaption>Miu Sua · 5968 × 4317</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/bowl-of-vegetable-salad-_Uqj5BQb-mw" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1546069901-d5bfd2cbfb1f?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8Nnx8SG90JTIwSG9uZXklMjBTYWxtb24lMjBSaWNlJTIwQm93bHxlbnwxfHx8fDE3OTUyOTI4Njh8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Hot Honey Salmon Rice Bowl, candidate 2" loading="lazy">
+        </a>
+        <figcaption>Anh Nguyen · 3264 × 3264</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/sliced-cucumber-and-cucumber-on-white-ceramic-bowl-_aQZnmZTuvo" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1604259596863-57153177d40b?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8Mnx8SG90JTIwSG9uZXklMjBTYWxtb24lMjBSaWNlJTIwQm93bHxlbnwxfHx8fDE3OTUyOTI4Njh8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Hot Honey Salmon Rice Bowl, candidate 3" loading="lazy">
+        </a>
+        <figcaption>Miu Sua · 4000 × 6000</figcaption>
+      </figure>
+    </div>
+  </section>
+  <section class="recipe">
+    <h2>Garlic Parmesan Smashed Potatoes</h2>
+    
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/crispy-baked-potatoes-with-melted-cheese-l-rC6Hmb0kQ" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1777229988046-5393c1d1ef43?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8Mnx8c21hc2hlZCUyMHBvdGF0b2VzfGVufDF8fHx8MTc5NTI5Mjg4OXww&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Garlic Parmesan Smashed Potatoes, candidate 1" loading="lazy">
+        </a>
+        <figcaption>Alpha Perspective · 7008 × 4672</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/crispy-smashed-potatoes-with-herbs-and-spices-tO3eaZL2Ns0" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1777229987315-af5700ef5c3b?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8N3x8c21hc2hlZCUyMHBvdGF0b2VzfGVufDF8fHx8MTc5NTI5Mjg4OXww&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Garlic Parmesan Smashed Potatoes, candidate 2" loading="lazy">
+        </a>
+        <figcaption>Alpha Perspective · 7008 × 4672</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/crispy-smashed-potatoes-on-a-baking-sheet-Epim2rzorz8" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1777229987480-d19f32acc68f?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8MXx8c21hc2hlZCUyMHBvdGF0b2VzfGVufDF8fHx8MTc5NTI5Mjg4OXww&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Garlic Parmesan Smashed Potatoes, candidate 3" loading="lazy">
+        </a>
+        <figcaption>Alpha Perspective · 7008 × 4672</figcaption>
+      </figure>
+    </div>
+  </section>
+  <section class="recipe">
+    <h2>Oven Doner Kebab Wraps</h2>
+    <p class="note">3 shows a hand holding the wrap (no face).</p>
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/two-wraps-with-french-fries-on-a-wooden-board-APbsVh624WA" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1773620494884-940e0db95e46?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8M3x8ZG9uZXIlMjBrZWJhYiUyMHdyYXB8ZW58MXx8fHwxNzk1MjkyODY5fDA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Oven Doner Kebab Wraps, candidate 1" loading="lazy">
+        </a>
+        <figcaption>Omar Hakeem · 3648 × 3647</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/three-meat-and-lettuce-wraps-stacked-on-a-table-UmnvfuGPIuE" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1778168199427-4e839943d20f?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8Mnx8ZG9uZXIlMjBrZWJhYiUyMHdyYXB8ZW58MXx8fHwxNzk1MjkyODY5fDA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Oven Doner Kebab Wraps, candidate 2" loading="lazy">
+        </a>
+        <figcaption>Yosia Cahyana · 4640 × 6160</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/a-person-holding-a-sandwich-with-meat-and-vegetables-sPmF7MNzdnU" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1699728088614-7d1d4277414b?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8MXx8ZG9uZXIlMjBrZWJhYiUyMHdyYXB8ZW58MXx8fHwxNzk1MjkyODY5fDA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Oven Doner Kebab Wraps, candidate 3" loading="lazy">
+        </a>
+        <figcaption>Yoad Shejtman · 5504 × 8256</figcaption>
+      </figure>
+    </div>
+  </section>
+  <section class="recipe">
+    <h2>Coconut Red Curry Dumpling Bake</h2>
+    <p class="note">No dumplings baked in curry on Unsplash: red curries and a bowl of dumplings.</p>
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/a-bowl-of-delicious-curry-with-tofu-QXa2hmeb7Mg" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1741243854650-5c6d1e8d69a5?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8M3x8ZHVtcGxpbmdzJTIwY29jb251dCUyMGN1cnJ5fGVufDF8fHx8MTc5NTI5Mjg3MHww&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Coconut Red Curry Dumpling Bake, candidate 1" loading="lazy">
+        </a>
+        <figcaption>Khanh Nguyen · 4000 × 6000</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/a-bowl-of-soup-A7mQu9JK8Ps" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1658372800407-c6c3ed5f3433?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8NHx8ZHVtcGxpbmdzJTIwY29jb251dCUyMGN1cnJ5fGVufDF8fHx8MTc5NTI5Mjg3MHww&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Coconut Red Curry Dumpling Bake, candidate 2" loading="lazy">
+        </a>
+        <figcaption>ozan reds · 3712 × 5568</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/blue-bowl-with-green-vaetable-wr8Ze_O-sjI" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1541696432-82c6da8ce7bf?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8MXx8ZHVtcGxpbmdzJTIwY29jb251dCUyMGN1cnJ5fGVufDF8fHx8MTc5NTI5Mjg3MHww&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Coconut Red Curry Dumpling Bake, candidate 3" loading="lazy">
+        </a>
+        <figcaption>charlesdeluvio · 5472 × 3648</figcaption>
+      </figure>
+    </div>
+  </section>
+  <section class="recipe">
+    <h2>Greek Chicken Bowls</h2>
+    
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/pasta-with-meat-on-white-ceramic-plate-CzD0EHabuzE" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1579619002916-88cd4c81a70c?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8OHx8R3JlZWslMjBDaGlja2VuJTIwQm93bHN8ZW58MXx8fHwxNzk1MjkyODcwfDA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Greek Chicken Bowls, candidate 1" loading="lazy">
+        </a>
+        <figcaption>James Frewin · 5838 × 3285</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/a-couple-of-plates-of-food-on-a-table--46yZGDotm8" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1690979405976-91db03982b31?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8NHx8R3JlZWslMjBDaGlja2VuJTIwQm93bHN8ZW58MXx8fHwxNzk1MjkyODcwfDA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Greek Chicken Bowls, candidate 2" loading="lazy">
+        </a>
+        <figcaption>sheri silver · 2609 × 3478</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/chicken-salad-with-feta-and-olives-a32qDsxmR8Q" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1787087090329-63d501db683c?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8Mnx8R3JlZWslMjBDaGlja2VuJTIwQm93bHN8ZW58MXx8fHwxNzk1MjkyODcwfDA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Greek Chicken Bowls, candidate 3" loading="lazy">
+        </a>
+        <figcaption>Chloë Forbes-Kindlen · 3721 × 2627</figcaption>
+      </figure>
+    </div>
+  </section>
+  <section class="recipe">
+    <h2>Cottage Cheese Flatbread Wraps</h2>
+    
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/a-close-up-of-a-plate-of-food-on-a-table-jZkoFQAt4cw" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1721980743519-01f627e7b4b6?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8M3x8Q290dGFnZSUyMENoZWVzZSUyMEZsYXRicmVhZCUyMFdyYXBzfGVufDF8fHx8MTc5NTI5Mjg3MXww&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Cottage Cheese Flatbread Wraps, candidate 1" loading="lazy">
+        </a>
+        <figcaption>Dreamer Dude · 4864 × 7292</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/square-white-plate-with-foods-TN2iS7mq84U" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1558649332-e896e6f71fb4?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8MXx8Q290dGFnZSUyMENoZWVzZSUyMEZsYXRicmVhZCUyMFdyYXBzfGVufDF8fHx8MTc5NTI5Mjg3MXww&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Cottage Cheese Flatbread Wraps, candidate 2" loading="lazy">
+        </a>
+        <figcaption>Mette van der Linden · 3456 × 4608</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/fried-fish-with-sauce-on-plate-oarCyKIew-8" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1553621043-42d982218838?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8NXx8Q290dGFnZSUyMENoZWVzZSUyMEZsYXRicmVhZCUyMFdyYXBzfGVufDF8fHx8MTc5NTI5Mjg3MXww&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Cottage Cheese Flatbread Wraps, candidate 3" loading="lazy">
+        </a>
+        <figcaption>Riccardo Bergamini · 4368 × 3495</figcaption>
+      </figure>
+    </div>
+  </section>
+  <section class="recipe">
+    <h2>Smash Falafel Pita</h2>
+    
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/falafel-and-hummus-lunch-plate-zUMeZl7oxsA" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1788795567489-22430aa94402?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8OHx8ZmFsYWZlbCUyMHBpdGF8ZW58MXx8fHwxNzk1MjkyODg5fDA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Smash Falafel Pita, candidate 1" loading="lazy">
+        </a>
+        <figcaption>Wera Durakova · 5472 × 3648</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/falafel-and-pita-bread-are-displayed-on-a-table-1k-7E0jueTA" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1741980597454-54f338cea614?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8N3x8ZmFsYWZlbCUyMHBpdGF8ZW58MXx8fHwxNzk1MjkyODg5fDA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Smash Falafel Pita, candidate 2" loading="lazy">
+        </a>
+        <figcaption>lrsflx · 4592 × 3064</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/a-white-plate-topped-with-meatballs-and-a-salad-WVoLfiKbYBQ" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1680990999782-ba7fe26e4d0b?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8Mnx8ZmFsYWZlbCUyMHBpdGF8ZW58MXx8fHwxNzk1MjkyODg5fDA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Smash Falafel Pita, candidate 3" loading="lazy">
+        </a>
+        <figcaption>Zoshua Colah · 2659 × 2175</figcaption>
+      </figure>
+    </div>
+  </section>
+  <section class="recipe">
+    <h2>Pesto Eggs on Toast</h2>
+    
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/bread-with-sunny-side-up-egg-served-on-white-ceramic-plate-FFqNATH27EM" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1525351484163-7529414344d8?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8M3x8UGVzdG8lMjBFZ2dzJTIwb24lMjBUb2FzdHxlbnwxfHx8fDE3OTUyOTI4NzF8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Pesto Eggs on Toast, candidate 1" loading="lazy">
+        </a>
+        <figcaption>Ben Kolde · 3456 × 3456</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/bread-with-egg-and-vegetable-on-white-ceramic-plate-IQSDSFO9UuI" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1613769049987-b31b641f25b1?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8NXx8UGVzdG8lMjBFZ2dzJTIwb24lMjBUb2FzdHxlbnwxfHx8fDE3OTUyOTI4NzF8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Pesto Eggs on Toast, candidate 2" loading="lazy">
+        </a>
+        <figcaption>David B Townsend · 3872 × 2592</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/a-sandwich-with-an-egg-and-asparagus-on-it-w1NiWDrp68M" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1687276287139-88f7333c8ca4?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8MXx8UGVzdG8lMjBFZ2dzJTIwb24lMjBUb2FzdHxlbnwxfHx8fDE3OTUyOTI4NzF8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Pesto Eggs on Toast, candidate 3" loading="lazy">
+        </a>
+        <figcaption>Imad 786 · 3543 × 4429</figcaption>
+      </figure>
+    </div>
+  </section>
+  <section class="recipe">
+    <h2>Creamy Tuscan Gnocchi</h2>
+    <p class="note">3 is gnocchi in tomato sauce with burrata.</p>
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/creamy-gnocchi-with-chicken-and-herbs-JQMGHY9KLFU" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1757972367438-581ad5e299f5?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8M3x8Y3JlYW15JTIwZ25vY2NoaXxlbnwxfHx8fDE3OTUyOTI4ODl8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Creamy Tuscan Gnocchi, candidate 1" loading="lazy">
+        </a>
+        <figcaption>Nafsika G. · 2967 × 3709</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/two-bowls-of-food-on-a-marble-table-FnhZXKOgL6M" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1679556221456-bde72ab024a1?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8NHx8Y3JlYW15JTIwZ25vY2NoaXxlbnwxfHx8fDE3OTUyOTI4ODl8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Creamy Tuscan Gnocchi, candidate 2" loading="lazy">
+        </a>
+        <figcaption>Bakd&amp;Raw by Karolin Baitinger · 4480 × 6720</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/gnocchi-with-tomato-sauce-and-basil-garnish-O7Uq62XKz34" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1778837224436-82a8f1fa8bb1?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8MXx8Y3JlYW15JTIwZ25vY2NoaXxlbnwxfHx8fDE3OTUyOTI4ODl8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Creamy Tuscan Gnocchi, candidate 3" loading="lazy">
+        </a>
+        <figcaption>Eva Greenberg · 3456 × 2304</figcaption>
+      </figure>
+    </div>
+  </section>
+  <section class="recipe">
+    <h2>Korean Beef Bowls</h2>
+    <p class="note">Bibimbap-style beef bowls.</p>
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/egg-on-white-ceramic-plate-gPpbFaEkl00" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1600289031464-74d374b64991?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8Mnx8S29yZWFuJTIwQmVlZiUyMEJvd2xzfGVufDF8fHx8MTc5NTI5Mjg3Mnww&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Korean Beef Bowls, candidate 1" loading="lazy">
+        </a>
+        <figcaption>Nikolay Smeh · 3752 × 2808</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/egg-dish-on-stainless-steel-round-plate-pmTMvAd8akU" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1584278858536-52532423b9ea?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8NXx8S29yZWFuJTIwQmVlZiUyMEJvd2xzfGVufDF8fHx8MTc5NTI5Mjg3Mnww&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Korean Beef Bowls, candidate 2" loading="lazy">
+        </a>
+        <figcaption>Delaney Van · 4050 × 2700</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/a-black-bowl-filled-with-noodles-and-an-egg-JEGlSCbjV9Q" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1713047203705-44dd7d762d0c?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8M3x8S29yZWFuJTIwQmVlZiUyMEJvd2xzfGVufDF8fHx8MTc5NTI5Mjg3Mnww&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Korean Beef Bowls, candidate 3" loading="lazy">
+        </a>
+        <figcaption>Javier Esteban · 4554 × 6522</figcaption>
+      </figure>
+    </div>
+  </section>
+  <section class="recipe">
+    <h2>Chicken Birria-Style Quesadillas</h2>
+    <p class="note">Quesadillas; none is labelled birria.</p>
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/sliced-pizza-on-brown-wooden-table-pvTgyioFSTY" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1618040996337-56904b7850b9?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8MXx8cXVlc2FkaWxsYXxlbnwxfHx8fDE3OTUyOTI4OTB8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Chicken Birria-Style Quesadillas, candidate 1" loading="lazy">
+        </a>
+        <figcaption>Lottie Griffiths · 6000 × 4000</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/sliced-pizza-on-brown-wooden-table-FRObR62TyKk" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1617990590988-895fe6cbabda?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8N3x8cXVlc2FkaWxsYXxlbnwxfHx8fDE3OTUyOTI4OTB8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Chicken Birria-Style Quesadillas, candidate 2" loading="lazy">
+        </a>
+        <figcaption>Lottie Griffiths · 6000 × 4000</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/a-plate-topped-with-a-quesadilla-cut-in-half-_BW-YmENFcM" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1673990349292-ed2dfa7988c9?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8M3x8cXVlc2FkaWxsYXxlbnwxfHx8fDE3OTUyOTI4OTB8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Chicken Birria-Style Quesadillas, candidate 3" loading="lazy">
+        </a>
+        <figcaption>Benjamin Guardia · 3456 × 5184</figcaption>
+      </figure>
+    </div>
+  </section>
+  <section class="recipe">
+    <h2>Protein Baked Oats</h2>
+    <p class="note">3 is a bake that looks like a crumble; check it before picking.</p>
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/desert-with-sliced-apple-BCOOGQJlkhU" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1571931031580-13669de1d6fd?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8OHx8UHJvdGVpbiUyMEJha2VkJTIwT2F0c3xlbnwxfHx8fDE3OTUyOTI4NzN8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Protein Baked Oats, candidate 1" loading="lazy">
+        </a>
+        <figcaption>Semi O · 3024 × 3024</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/a-close-up-of-a-bowl-of-food-on-a-table-e3p5eGEVwf4" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1706799419621-14d7f424de83?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8NHx8UHJvdGVpbiUyMEJha2VkJTIwT2F0c3xlbnwxfHx8fDE3OTUyOTI4NzN8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Protein Baked Oats, candidate 2" loading="lazy">
+        </a>
+        <figcaption>Alex Bayev · 5610 × 3740</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/oatmeal-bars-with-white-icing-and-dried-raspberries-rTW4RvO_kWo" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1763080348919-0a4969e31afc?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8Mnx8UHJvdGVpbiUyMEJha2VkJTIwT2F0c3xlbnwxfHx8fDE3OTUyOTI4NzN8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Protein Baked Oats, candidate 3" loading="lazy">
+        </a>
+        <figcaption>sheri silver · 2116 × 2821</figcaption>
+      </figure>
+    </div>
+  </section>
+  <section class="recipe">
+    <h2>Garlic Butter Steak Bites</h2>
+    
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/a-white-plate-topped-with-steak-and-potatoes-gqUFXms9FYs" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1678684277915-5d3f48977b87?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8OHx8R2FybGljJTIwQnV0dGVyJTIwU3RlYWslMjBCaXRlc3xlbnwxfHx8fDE3OTUyOTI4NzN8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Garlic Butter Steak Bites, candidate 1" loading="lazy">
+        </a>
+        <figcaption>Natalia Gusakova · 5568 × 3511</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/beef-and-broccoli-stir-fry-with-vegetables-on-a-red-plate-qKPKDb4_W24" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1760504526069-ff0f8bf6e4ca?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8M3x8R2FybGljJTIwQnV0dGVyJTIwU3RlYWslMjBCaXRlc3xlbnwxfHx8fDE3OTUyOTI4NzN8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Garlic Butter Steak Bites, candidate 2" loading="lazy">
+        </a>
+        <figcaption>Davis Dai · 7008 × 4672</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/fried-food-on-white-ceramic-plate-VigUxbQNc0w" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1602029394716-1fc381bb0095?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8NXx8R2FybGljJTIwQnV0dGVyJTIwU3RlYWslMjBCaXRlc3xlbnwxfHx8fDE3OTUyOTI4NzN8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Garlic Butter Steak Bites, candidate 3" loading="lazy">
+        </a>
+        <figcaption>Emile Mbunzama · 3024 × 4032</figcaption>
+      </figure>
+    </div>
+  </section>
+  <h3 class="group">The 12 original recipes</h3>
+  
+  <section class="recipe">
+    <h2>Roasted Pepper &amp; Feta Penne</h2>
+    
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/a-plate-of-food-Gks3MkxX6ZA" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1665233273469-4abcf32c5be7?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8NHx8cm9hc3RlZCUyMHBlcHBlciUyMGZldGElMjBwYXN0YXxlbnwxfHx8fDE3OTUyOTI4NzR8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Roasted Pepper &amp; Feta Penne, candidate 1" loading="lazy">
+        </a>
+        <figcaption>Marios Gkortsilas · 4024 × 5030</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/a-plate-of-food-on-a-wooden-table-pD9zFXle6MY" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1653233797117-9975c9c54321?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8NXx8cm9hc3RlZCUyMHBlcHBlciUyMGZldGElMjBwYXN0YXxlbnwxfHx8fDE3OTUyOTI4NzR8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Roasted Pepper &amp; Feta Penne, candidate 2" loading="lazy">
+        </a>
+        <figcaption>Or Hakim · 6000 × 4000</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/pasta-dish-on-white-ceramic-bowl-dHS6ftEzzJA" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1606325625602-2efd3bc49abd?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8Mnx8cm9hc3RlZCUyMHBlcHBlciUyMGZldGElMjBwYXN0YXxlbnwxfHx8fDE3OTUyOTI4NzR8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Roasted Pepper &amp; Feta Penne, candidate 3" loading="lazy">
+        </a>
+        <figcaption>Vitalii S. · 2683 × 3354</figcaption>
+      </figure>
+    </div>
+  </section>
+  <section class="recipe">
+    <h2>Crispy Masala Dosa</h2>
+    
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/a-crispy-dosa-with-dips-on-a-silver-tray-zKmzgVixk_I" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1743517894265-c86ab035adef?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8NHx8Q3Jpc3B5JTIwTWFzYWxhJTIwRG9zYXxlbnwxfHx8fDE3OTUyOTI4NzR8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Crispy Masala Dosa, candidate 1" loading="lazy">
+        </a>
+        <figcaption>Zoshua Colah · 7308 × 5421</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/dosa-with-masala-and-chutney-breakfast-5oF7d_hPJG4" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1668236543090-82eba5ee5976?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8Nnx8Q3Jpc3B5JTIwTWFzYWxhJTIwRG9zYXxlbnwxfHx8fDE3OTUyOTI4NzR8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Crispy Masala Dosa, candidate 2" loading="lazy">
+        </a>
+        <figcaption>Paul · 8256 × 5504</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/dosa-with-chutney-and-sambar-breakfast-VIqcVqZ1uxM" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1694849789325-914b71ab4075?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8MXx8Q3Jpc3B5JTIwTWFzYWxhJTIwRG9zYXxlbnwxfHx8fDE3OTUyOTI4NzR8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Crispy Masala Dosa, candidate 3" loading="lazy">
+        </a>
+        <figcaption>Zoshua Colah · 4000 × 3000</figcaption>
+      </figure>
+    </div>
+  </section>
+  <section class="recipe">
+    <h2>Chicken Fried Rice</h2>
+    
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/fried-rice-with-tofu-and-vegetables-in-a-bowl--4V4SjHPPDk" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1751618646882-4221d5e3b1c2?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8NHx8Q2hpY2tlbiUyMEZyaWVkJTIwUmljZXxlbnwxfHx8fDE3OTUyOTI4NzR8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Chicken Fried Rice, candidate 1" loading="lazy">
+        </a>
+        <figcaption>Pavan Reddy · 6176 × 4912</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/a-bowl-of-rice-with-vegetables-MVMohJBieo4" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1664717698774-84f62382613b?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8M3x8Q2hpY2tlbiUyMEZyaWVkJTIwUmljZXxlbnwxfHx8fDE3OTUyOTI4NzR8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Chicken Fried Rice, candidate 2" loading="lazy">
+        </a>
+        <figcaption>herry shani · 5734 × 3823</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/fried-rice-with-peas-and-carrots-rQX9eVpSFz8" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1603133872878-684f208fb84b?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8MXx8Q2hpY2tlbiUyMEZyaWVkJTIwUmljZXxlbnwxfHx8fDE3OTUyOTI4NzR8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Chicken Fried Rice, candidate 3" loading="lazy">
+        </a>
+        <figcaption>Christopher Alvarenga · 5202 × 4162</figcaption>
+      </figure>
+    </div>
+  </section>
+  <section class="recipe">
+    <h2>Butter Chicken</h2>
+    
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/brown-and-green-dish-on-brown-wooden-bowl-sqcH2q7lkvo" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8MXx8QnV0dGVyJTIwQ2hpY2tlbnxlbnwxfHx8fDE3OTUyOTI4NzV8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Butter Chicken, candidate 1" loading="lazy">
+        </a>
+        <figcaption>Raman · 4416 × 2944</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/a-bowl-of-food-on-a-table-next-to-some-green-beans-Kv-3EtUcUC4" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1708782341807-ed35fc16b4ea?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8N3x8QnV0dGVyJTIwQ2hpY2tlbnxlbnwxfHx8fDE3OTUyOTI4NzV8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Butter Chicken, candidate 2" loading="lazy">
+        </a>
+        <figcaption>Rimsha Noor · 5000 × 5000</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/delicious-indian-chicken-curry-and-rice-ready-to-eat-gwUA_pHaOYY" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1742599361539-f096753d1100?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8OHx8QnV0dGVyJTIwQ2hpY2tlbnxlbnwxfHx8fDE3OTUyOTI4NzV8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Butter Chicken, candidate 3" loading="lazy">
+        </a>
+        <figcaption>Imad 786 · 4000 × 5000</figcaption>
+      </figure>
+    </div>
+  </section>
+  <section class="recipe">
+    <h2>Crunchy Chicken Burger</h2>
+    
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/hamburger-by-french-fries-on-board-uVPV_nV17Tw" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1551782450-a2132b4ba21d?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8MXx8Y3Jpc3B5JTIwY2hpY2tlbiUyMGJ1cmdlcnxlbnwxfHx8fDE3OTUyOTI4NzV8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Crunchy Chicken Burger, candidate 1" loading="lazy">
+        </a>
+        <figcaption>sk · 6016 × 4016</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/hamburger-beside-fries-and-ketchup-CK6tjAIMJWM" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1551782450-17144efb9c50?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8M3x8Y3Jpc3B5JTIwY2hpY2tlbiUyMGJ1cmdlcnxlbnwxfHx8fDE3OTUyOTI4NzV8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Crunchy Chicken Burger, candidate 2" loading="lazy">
+        </a>
+        <figcaption>sk · 6016 × 4016</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/a-chicken-sandwich-with-lettuce-and-mayonnaise-on-a-black-background-VFVnZfogE7s" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1692737349870-e3bfc704ebf9?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8OHx8Y3Jpc3B5JTIwY2hpY2tlbiUyMGJ1cmdlcnxlbnwxfHx8fDE3OTUyOTI4NzV8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Crunchy Chicken Burger, candidate 3" loading="lazy">
+        </a>
+        <figcaption>David Foodphototasty · 7952 × 5304</figcaption>
+      </figure>
+    </div>
+  </section>
+  <section class="recipe">
+    <h2>Flaky Apple Turnovers</h2>
+    <p class="note">3 is apple strudel rather than turnovers.</p>
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/a-black-plate-topped-with-pastries-covered-in-powdered-sugar--tt3ZuPNe8Q" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1672311002208-2f000567024c?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8OHx8YXBwbGUlMjB0dXJub3ZlcnN8ZW58MXx8fHwxNzk1MjkyODc1fDA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Flaky Apple Turnovers, candidate 1" loading="lazy">
+        </a>
+        <figcaption>Jon Handley · 4351 × 2446</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/a-pile-of-brown-and-yellow-food-1QDNaIYlKVo" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1657313937945-c7aa356b832b?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8MXx8YXBwbGUlMjB0dXJub3ZlcnN8ZW58MXx8fHwxNzk1MjkyODc1fDA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Flaky Apple Turnovers, candidate 2" loading="lazy">
+        </a>
+        <figcaption>Ben Stein · 5184 × 3456</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/a-piece-of-pie-and-whipped-cream-on-a-plate-bDeZFhF7OTw" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1731696744138-b52b504aab72?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8Mnx8YXBwbGUlMjB0dXJub3ZlcnN8ZW58MXx8fHwxNzk1MjkyODc1fDA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Flaky Apple Turnovers, candidate 3" loading="lazy">
+        </a>
+        <figcaption>The Now Time · 5450 × 3633</figcaption>
+      </figure>
+    </div>
+  </section>
+  <section class="recipe">
+    <h2>Creamy Mushroom Spaghetti</h2>
+    
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/creamy-mushroom-spaghetti-pasta-dish-tZPP-habQcQ" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1791410299868-2e8efa1de76c?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8N3x8Y3JlYW15JTIwbXVzaHJvb20lMjBzcGFnaGV0dGl8ZW58MXx8fHwxNzk1MjkyODc2fDA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Creamy Mushroom Spaghetti, candidate 1" loading="lazy">
+        </a>
+        <figcaption>Zoshua Colah · 8160 × 4676</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/pasta-dish-on-white-ceramic-bowl-wTBGTwHlf0c" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1608219992759-8d74ed8d76eb?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8MXx8Y3JlYW15JTIwbXVzaHJvb20lMjBzcGFnaGV0dGl8ZW58MXx8fHwxNzk1MjkyODc2fDA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Creamy Mushroom Spaghetti, candidate 2" loading="lazy">
+        </a>
+        <figcaption>Sama Hosseini · 4000 × 6000</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/a-plate-of-food-on-a-wooden-table-aUWZwYFtg6M" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1724116380587-08942b137f9f?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8OHx8Y3JlYW15JTIwbXVzaHJvb20lMjBzcGFnaGV0dGl8ZW58MXx8fHwxNzk1MjkyODc2fDA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Creamy Mushroom Spaghetti, candidate 3" loading="lazy">
+        </a>
+        <figcaption>Gina's Auckland · 5342 × 4274</figcaption>
+      </figure>
+    </div>
+  </section>
+  <section class="recipe">
+    <h2>Margherita Pizza</h2>
+    
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/round-cooked-pizza-x00CzBt4Dfk" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1574071318508-1cdbab80d002?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8M3x8TWFyZ2hlcml0YSUyMFBpenphfGVufDF8fHx8MTc5NTI5Mjg3Nnww&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Margherita Pizza, candidate 1" loading="lazy">
+        </a>
+        <figcaption>Aurélien Lemasson-Théobald · 6016 × 4016</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/pizza-with-green-leaves-and-red-sauce-XtLPfib7OuM" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1598023696416-0193a0bcd302?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8NHx8TWFyZ2hlcml0YSUyMFBpenphfGVufDF8fHx8MTc5NTI5Mjg3Nnww&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Margherita Pizza, candidate 2" loading="lazy">
+        </a>
+        <figcaption>amirali mirhashemian · 5980 × 3709</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/cooked-food-on-round-white-ceramic-plate-cC0_UO1Obg4" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1564936281291-294551497d81?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8NXx8TWFyZ2hlcml0YSUyMFBpenphfGVufDF8fHx8MTc5NTI5Mjg3Nnww&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Margherita Pizza, candidate 3" loading="lazy">
+        </a>
+        <figcaption>Louis Hansel · 4479 × 3456</figcaption>
+      </figure>
+    </div>
+  </section>
+  <section class="recipe">
+    <h2>Crispy Vegetable Samosas</h2>
+    
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/samosas-with-green-chili-and-pomegranate-8T9AVksyt7s" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1601050690597-df0568f70950?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8MXx8dmVnZXRhYmxlJTIwc2Ftb3Nhc3xlbnwxfHx8fDE3OTUyOTI4NzZ8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Crispy Vegetable Samosas, candidate 1" loading="lazy">
+        </a>
+        <figcaption>kabir cheema · 6000 × 4000</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/brown-wooden-tray-with-food-oUIPGCBx2OI" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8NXx8dmVnZXRhYmxlJTIwc2Ftb3Nhc3xlbnwxfHx8fDE3OTUyOTI4NzZ8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Crispy Vegetable Samosas, candidate 2" loading="lazy">
+        </a>
+        <figcaption>kabir cheema · 5316 × 4000</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/a-hot-dog-with-mustard-and-onions-rRFE8agWJNw" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1666190091090-1d312a4b04c2?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8M3x8dmVnZXRhYmxlJTIwc2Ftb3Nhc3xlbnwxfHx8fDE3OTUyOTI4NzZ8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Crispy Vegetable Samosas, candidate 3" loading="lazy">
+        </a>
+        <figcaption>Umair Ali Asad · 5184 × 3456</figcaption>
+      </figure>
+    </div>
+  </section>
+  <section class="recipe">
+    <h2>Chicken Biryani</h2>
+    
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/a-white-bowl-filled-with-rice-and-meat-ysmeQt1dzcw" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1631515243349-e0cb75fb8d3a?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8Mnx8Q2hpY2tlbiUyMEJpcnlhbml8ZW58MXx8fHwxNzk1MjkyODc3fDA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Chicken Biryani, candidate 1" loading="lazy">
+        </a>
+        <figcaption>Mario Raj · 6000 × 3919</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/a-white-plate-topped-with-rice-and-meat-q29oNjt3sEQ" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1716550781939-beb7d7247aae?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8NXx8Q2hpY2tlbiUyMEJpcnlhbml8ZW58MXx8fHwxNzk1MjkyODc3fDA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Chicken Biryani, candidate 2" loading="lazy">
+        </a>
+        <figcaption>Sarabjeet Singh · 2160 × 3240</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/a-pan-filled-with-rice-and-broccoli-on-top-of-a-stove-3tpobXvtAEw" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1697155406055-2db32d47ca07?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8M3x8Q2hpY2tlbiUyMEJpcnlhbml8ZW58MXx8fHwxNzk1MjkyODc3fDA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Chicken Biryani, candidate 3" loading="lazy">
+        </a>
+        <figcaption>Rashpal Singh · 7008 × 4672</figcaption>
+      </figure>
+    </div>
+  </section>
+  <section class="recipe">
+    <h2>Chocolate Raspberry Cake</h2>
+    
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/round-baked-cake-close-up-photography-ySxSlqeC0YM" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1567009349827-ab242f2c96e6?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8MXx8Q2hvY29sYXRlJTIwUmFzcGJlcnJ5JTIwQ2FrZXxlbnwxfHx8fDE3OTUyOTI4Nzd8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Chocolate Raspberry Cake, candidate 1" loading="lazy">
+        </a>
+        <figcaption>Uliana Kopanytsia · 2865 × 3966</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/chocolate-cupcake-with-red-and-white-sprinkles-9rQik5LTUig" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1610850775639-d47c1c81040c?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8Mnx8Q2hvY29sYXRlJTIwUmFzcGJlcnJ5JTIwQ2FrZXxlbnwxfHx8fDE3OTUyOTI4Nzd8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Chocolate Raspberry Cake, candidate 2" loading="lazy">
+        </a>
+        <figcaption>Owen Bruce · 4480 × 6720</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/baked-cake-on-wooden-surface-rmr6x7nkGwE" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1566803514518-340779a1c46f?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8NXx8Q2hvY29sYXRlJTIwUmFzcGJlcnJ5JTIwQ2FrZXxlbnwxfHx8fDE3OTUyOTI4Nzd8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Chocolate Raspberry Cake, candidate 3" loading="lazy">
+        </a>
+        <figcaption>Anya Bell · 3024 × 4032</figcaption>
+      </figure>
+    </div>
+  </section>
+  <section class="recipe">
+    <h2>Strawberry Cream Squares</h2>
+    
+    <div class="row">
+      
+      <figure>
+        <a href="https://unsplash.com/photos/sliced-strawberries-on-brown-wooden-chopping-board-3bvUDCAtRKY" target="_blank" rel="noopener">
+          <span class="num">1</span>
+          <img src="https://images.unsplash.com/photo-1591271956310-4fad8d88b444?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8NHx8U3RyYXdiZXJyeSUyMENyZWFtJTIwU3F1YXJlc3xlbnwxfHx8fDE3OTUyOTI4Nzd8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Strawberry Cream Squares, candidate 1" loading="lazy">
+        </a>
+        <figcaption>Pierre-Antoine Caisso · 6000 × 4000</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/sliced-strawberry-on-white-cake-B9U3ZQPSWA0" target="_blank" rel="noopener">
+          <span class="num">2</span>
+          <img src="https://images.unsplash.com/photo-1602575975671-d38c34264d27?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8M3x8U3RyYXdiZXJyeSUyMENyZWFtJTIwU3F1YXJlc3xlbnwxfHx8fDE3OTUyOTI4Nzd8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Strawberry Cream Squares, candidate 2" loading="lazy">
+        </a>
+        <figcaption>Martin Wettstein · 6720 × 4480</figcaption>
+      </figure>
+      <figure>
+        <a href="https://unsplash.com/photos/variety-of-cakes-z1OXRb0TOs0" target="_blank" rel="noopener">
+          <span class="num">3</span>
+          <img src="https://images.unsplash.com/photo-1512684463998-d2c0813190be?crop=entropy&amp;cs=tinysrgb&amp;fit=max&amp;fm=jpg&amp;ixid=M3wxMTQwNjQ0fDB8MXxzZWFyY2h8N3x8U3RyYXdiZXJyeSUyMENyZWFtJTIwU3F1YXJlc3xlbnwxfHx8fDE3OTUyOTI4Nzd8MA&amp;ixlib=rb-4.1.0&amp;q=80&amp;w=900" alt="Strawberry Cream Squares, candidate 3" loading="lazy">
+        </a>
+        <figcaption>Obed Hernández · 4626 × 3084</figcaption>
+      </figure>
+    </div>
+  </section>
+</main>
+</body>
+</html>

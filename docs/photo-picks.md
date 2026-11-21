@@ -24,11 +24,13 @@ _Unsplash has no pan-fried folded tacos: these are soft beef tacos._
 
 ### Hot Honey Crispy Chicken Burger
 
+_All three are photos that don't appear for the Crunchy Chicken Burger._
+
 | # | Photo | Photographer | Size | Pick |
 |---|---|---|---|---|
-| 1 | [a chicken sandwich on a plate next to a basket of fries](https://unsplash.com/photos/a-chicken-sandwich-on-a-plate-next-to-a-basket-of-fries-8JklXjB2X3w) | [Hybrid Storytellers](https://unsplash.com/@hybridstorytellers) | 6000 × 4000 | |
-| 2 | [bread with patty and sliced tomato and lettuce burger](https://unsplash.com/photos/bread-with-patty-and-sliced-tomato-and-lettuce-burger-OvNsLemoVEw) | [Haseeb Jamil](https://unsplash.com/@haseebjkhan) | 5472 × 3648 | |
-| 3 | [burger on white and red paper](https://unsplash.com/photos/burger-on-white-and-red-paper-5nvt9BrLaAc) | [Eiliv Aceron](https://unsplash.com/@shootdelicious) | 4000 × 6000 | |
+| 1 | [a chicken sandwich with lettuce and tomato on a bun](https://unsplash.com/photos/a-chicken-sandwich-with-lettuce-and-tomato-on-a-bun-n3HKmHpCDpQ) | [Pablo Escobar](https://unsplash.com/@pabloescobar98) | 5964 × 3356 | |
+| 2 | [a sandwich with meat and veggies on it](https://unsplash.com/photos/a-sandwich-with-meat-and-veggies-on-it-4qFX6XG6F4Q) | [Pinaak Kumar](https://unsplash.com/@pinaakkr) | 4000 × 6000 | |
+| 3 | [burger with lettuce and fries on brown wooden table](https://unsplash.com/photos/burger-with-lettuce-and-fries-on-brown-wooden-table-DspT8Smoc0k) | [Eiliv Aceron](https://unsplash.com/@shootdelicious) | 3585 × 5377 | |
 
 ### Baked Feta Pasta
 
@@ -202,7 +204,7 @@ _3 is a bake that looks like a crumble; check it before picking._
 
 | # | Photo | Photographer | Size | Pick |
 |---|---|---|---|---|
-| 1 | [pasta with cheese on white ceramic plate](https://unsplash.com/photos/pasta-with-cheese-on-white-ceramic-plate-oeulo_9RRO0) | [Paula Hayes](https://unsplash.com/@phayes007) | 3024 × 4032 | |
+| 1 | [a plate of food](https://unsplash.com/photos/a-plate-of-food-Gks3MkxX6ZA) | [Marios Gkortsilas](https://unsplash.com/@mr_mgk) | 4024 × 5030 | |
 | 2 | [a plate of food on a wooden table](https://unsplash.com/photos/a-plate-of-food-on-a-wooden-table-pD9zFXle6MY) | [Or Hakim](https://unsplash.com/@orhakim) | 6000 × 4000 | |
 | 3 | [pasta dish on white ceramic bowl](https://unsplash.com/photos/pasta-dish-on-white-ceramic-bowl-dHS6ftEzzJA) | [Vitalii S.](https://unsplash.com/@vitalso) | 2683 × 3354 | |
 
@@ -298,4 +300,4 @@ _3 is apple strudel rather than turnovers._
 
 
 ---
-Searched with the official Unsplash API on 21 Nov 2026. Pexels wasn't searched (no Pexels API key). 1 photo(s) appear for two recipes.
+Searched with the official Unsplash API on 21 Nov 2026. Pexels wasn't searched (no Pexels API key).
