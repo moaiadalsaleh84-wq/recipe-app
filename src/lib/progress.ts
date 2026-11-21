@@ -3,7 +3,7 @@
  * never drift or double-count: cook a meal, add a recipe, finish a list, earn a badge.
  */
 import type { IconName } from '../components/Icon';
-import { MASCOT_ON } from '../components/mascot/config';
+import { MASCOT_ON } from '../components/mascot/config.ts';
 import type { CookedEntry, Recipe, WeekPlan } from '../data/mock';
 
 export const XP = { cooked: 50, ownRecipe: 30, listDone: 20, badge: 25, pet: 2, petCap: 25 } as const;
@@ -112,9 +112,13 @@ export function levelFor(xp: number) {
 
 const dayKey = (d: Date) => d.toDateString();
 /** Consecutive days with at least one cooked meal, ending today or yesterday. */
-export function streakOf(dates: string[]) {
+/**
+ * Days in a row with at least one meal finished in Cook Mode, in local time. The streak runs up to
+ * today or yesterday: it isn't broken until today ends without a cook. `now` is for tests.
+ */
+export function streakOf(dates: string[], now: Date = new Date()) {
   const days = new Set(dates.map((d) => dayKey(new Date(d))));
-  const cursor = new Date();
+  const cursor = new Date(now);
   if (!days.has(dayKey(cursor))) cursor.setDate(cursor.getDate() - 1);
   let n = 0;
   while (days.has(dayKey(cursor))) {
