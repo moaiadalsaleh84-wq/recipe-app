@@ -28,7 +28,7 @@ export default function SaveToCookbook() {
         mode="cancel"
         inSheet
         right={
-          <PressableScale onPress={() => router.back()} style={styles.done} accessibilityLabel="Done">
+          <PressableScale onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} style={styles.done} accessibilityLabel="Done">
             <Text style={[t.type.headline, { color: t.colors.tint }]}>Done</Text>
           </PressableScale>
         }

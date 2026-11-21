@@ -30,7 +30,8 @@ export default function CookbookEdit() {
       toast({ message: `Renamed to ${name.trim()}`, icon: 'edit' });
     } else {
       if (!canAddCookbook) {
-        router.back();
+        if (router.canGoBack()) router.back();
+        else router.replace('/');
         showPaywall('cookbooks');
         return;
       }
@@ -38,7 +39,8 @@ export default function CookbookEdit() {
       if (addRecipe) toggleInCookbook(newId, addRecipe);
       toast({ message: `Created ${name.trim()}`, icon: 'book' });
     }
-    router.back();
+    if (router.canGoBack()) router.back();
+    else router.replace('/');
   };
 
   return (
