@@ -114,7 +114,7 @@ export default function Onboarding() {
         toast({ message: 'Welcome back! Pro is restored.', icon: 'crown' });
         router.replace('/');
       } else {
-        toast({ message: 'No account found on this phone. Let’s set you up, it takes a minute.', tone: 'info' });
+        toast({ message: 'No account found. Let’s set you up!', tone: 'info' });
       }
     } catch {
       toast({ message: 'Couldn’t reach the App Store. Check your connection.', tone: 'warning' });
@@ -364,7 +364,7 @@ function NameStep({ value, onChange, onDone }: { value: string; onChange: (v: st
   const has = value.trim().length > 0;
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <Step title="What should we call you?" footer={<PopButton label={has ? 'Continue' : 'Skip'} color={has ? pop.sunshine : pop.white} onPress={onDone} testID="ob-name-next" />}>
+      <Step title="What should we call you?" subtitle="So your kitchen feels like yours." footer={<PopButton label={has ? 'Continue' : 'Skip'} color={has ? pop.sunshine : pop.white} onPress={onDone} testID="ob-name-next" />}>
         <TextInput
           value={value}
           onChangeText={onChange}
@@ -610,12 +610,19 @@ function PantryStep({ pantry, recipes, diets, onDone }: { pantry: string[]; reci
   return (
     <Step title="Tap what’s in your kitchen" subtitle="Rough is fine. You can change it later." footer={<PopButton label="Continue" onPress={() => onDone(chosen)} testID="ob-pantry-next" />}>
       <PopCard color={pop.leafTint} radius={20} contentStyle={styles.counter}>
-        <Text style={styles.counterNum} testID="ob-count">
-          {shown}
-        </Text>
-        <Text style={[styles.rowLabel, { flex: 1 }]} accessibilityLiveRegion="polite">
-          {count === 1 ? 'recipe' : 'recipes'} you can cook right now with what you{' '}have
-        </Text>
+        {chosen.length === 0 && others.length === 0 ? (
+          // Never a discouraging 0: a nudge until the first tap.
+          <Text style={[styles.rowLabel, { flex: 1 }]}>Tap a few to see what you can cook</Text>
+        ) : (
+          <>
+            <Text style={styles.counterNum} testID="ob-count">
+              {shown}
+            </Text>
+            <Text style={[styles.rowLabel, { flex: 1 }]} accessibilityLiveRegion="polite">
+              {count === 1 ? 'recipe' : 'recipes'} you can cook right now with what you have
+            </Text>
+          </>
+        )}
       </PopCard>
       <View style={[styles.wrap, { marginTop: 20 }]}>
         {QUICK_PANTRY.map((item) => {
@@ -764,8 +771,8 @@ function FirstPick({ name, servings, picks, onCook }: { name: string; servings: 
                 </Text>
                 <View style={[styles.wrap, { marginTop: 12, gap: 8 }]}>
                   <Tag icon="clock" label={nb(pick.recipe.minutes, 'min')} color={pop.tomatoTint} />
-                  <Tag icon="people" label={`For ${servings}`} color={pop.skyTint} />
-                  <Tag icon="fridge" label={`You have ${pick.have} of ${pick.needed}`} color={pop.leafTint} />
+                  <Tag icon="people" label={`For\u00A0${servings}`} color={pop.skyTint} />
+                  <Tag icon="fridge" label={pick.have > 0 ? `You have ${pick.have} of\u00A0${pick.needed}` : nb(pick.needed, 'ingredients')} color={pop.leafTint} />
                 </View>
               </View>
             </PopCard>
@@ -844,8 +851,8 @@ const styles = StyleSheet.create({
   notifApp: { fontFamily: fonts.black, fontSize: 12, lineHeight: 16, letterSpacing: 0.5, color: pop.inkMuted },
   notifTitle: { fontFamily: fonts.black, fontSize: 16, lineHeight: 21, color: pop.ink, marginTop: 2 },
   notifBody: { fontFamily: fonts.body, fontSize: 15, lineHeight: 20, color: pop.ink, marginTop: 2 },
-  counter: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 16, paddingVertical: 14 },
-  counterNum: { fontFamily: fonts.heading, fontSize: 44, lineHeight: 50, color: pop.ink, minWidth: 48, textAlign: 'center', fontVariant: ['tabular-nums'] },
+  counter: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingHorizontal: 16, paddingVertical: 14, minHeight: 78 },
+  counterNum: { fontFamily: fonts.heading, fontSize: 44, lineHeight: 50, color: pop.ink, textAlign: 'left', fontVariant: ['tabular-nums'] },
   cardTitle: { fontFamily: fonts.heading, fontSize: 24, lineHeight: 29, color: pop.ink },
   tag: { flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 2, borderColor: pop.ink, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 5 },
   tagText: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 18, color: pop.ink },

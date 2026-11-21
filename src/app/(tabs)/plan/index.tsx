@@ -121,7 +121,9 @@ export default function PlanScreen() {
                 accessibilityLabel={`${d.long}${d.isToday ? ', today' : ''}, ${count} ${count === 1 ? 'meal' : 'meals'} planned`}
                 style={[
                   styles.day,
-                  { backgroundColor: d.isToday ? t.pop.sunshine : selected ? t.pop.lilacTint : t.colors.cell, borderColor: t.pop.ink },
+                  // Today sunshine; the day you're looking at lilac; every other day white. Past days sit flat (no shadow) with muted text.
+                  { backgroundColor: d.isToday ? t.pop.sunshine : selected ? t.pop.lilacTint : t.pop.white, borderColor: t.pop.ink },
+                  past && { transform: [{ translateY: t.depth.small }] },
                 ]}
               >
                 <Text style={[styles.dayName, { color: past ? t.pop.inkMuted : t.pop.ink }]}>{narrowDays ? d.short.slice(0, 2) : d.short}</Text>
@@ -192,11 +194,10 @@ export default function PlanScreen() {
               </View>
               <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
                 <Text style={[t.type.title3, { color: t.colors.label }]}>Plan my dinners</Text>
-                <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
-                  Fill {dinnerPicks.length} empty {dinnerPicks.length === 1 ? 'night' : 'nights'} with one tap. Your own picks stay.
+                <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]} numberOfLines={2}>
+                  Fill {nb(dinnerPicks.length, dinnerPicks.length === 1 ? 'empty night' : 'empty nights')} in one tap. Your picks stay.
                 </Text>
               </View>
-              <Icon name="chevronRight" size={16} color={t.pop.ink} weight="bold" />
             </PressableScale>
           </Lift>
         </Reveal>

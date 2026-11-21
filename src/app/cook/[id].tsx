@@ -22,6 +22,7 @@ import Animated, {
   withTiming,
   type SharedValue,
 } from 'react-native-reanimated';
+import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomBar } from '../../components/BottomBar';
 import { Icon } from '../../components/Icon';
@@ -30,7 +31,7 @@ import { RecipePhoto } from '../../components/RecipeCard';
 import { useToast } from '../../components/Toast';
 import { Lift, MascotSlot, PopButton, PopCard, PopChip, PopIconButton, SHOW_MASCOT_PLACEHOLDER } from '../../components/pop';
 import { CheckCircle, EmptyState, ProgressBar } from '../../components/ui';
-import type { Ingredient, Rating } from '../../data/mock';
+import type { Ingredient, Rating, Recipe } from '../../data/mock';
 import { clock, isReady, secondsLeft, type CookTimer } from '../../lib/cookTimers';
 import { haptics } from '../../lib/haptics';
 import { photoUri, takePhoto } from '../../lib/photos';
@@ -45,16 +46,28 @@ import { useTimers } from '../../state/timers';
 import { fonts, pop, popCycle, useTheme } from '../../theme';
 
 export default function CookMode() {
+  const t = useTheme();
+  const params = useLocalSearchParams<{ id: string; servings?: string }>();
+  const { getRecipe } = useStore();
+  const recipe = getRecipe(params.id);
+  if (!recipe) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', backgroundColor: t.colors.background }}>
+        <EmptyState icon="fork" title="Recipe not found" message="It may have been removed." action={{ label: 'Close', onPress: () => router.back() }} />
+      </View>
+    );
+  }
+  return <CookSession key={recipe.id} recipe={recipe} servings={Number(params.servings) || recipe.servings || 1} />;
+}
+
+function CookSession({ recipe, servings }: { recipe: Recipe; servings: number }) {
   // The screen stays on while you cook. Leaving quickly can deactivate before activation finishes; that's harmless.
   useKeepAwake(undefined, { suppressDeactivateWarnings: true });
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const toast = useToast();
-  const params = useLocalSearchParams<{ id: string; servings?: string }>();
   const store = useStore();
-  const { getRecipe, units, logCooked, rateCooked, setCookedPhoto, cooked, customRecipes, plan, favorites, fun } = store;
-  const recipe = getRecipe(params.id);
-  const servings = Number(params.servings) || recipe?.servings || 1;
+  const { units, logCooked, rateCooked, setCookedPhoto, cooked, customRecipes, plan, favorites, fun } = store;
 
   const [page, setPage] = useState(0); // 0 = get ready, 1..n = steps, n+1 = finish
   // Kept for the whole cook: going back never resets what you've set out.
@@ -75,13 +88,17 @@ export default function CookMode() {
     if (recipe) warnStepProblems(recipe.title, recipe.steps, recipe.ingredients);
   }, [recipe]);
 
-  if (!recipe) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', backgroundColor: t.colors.background }}>
-        <EmptyState icon="fork" title="Recipe not found" message="It may have been removed." action={{ label: 'Close', onPress: () => router.back() }} />
-      </View>
-    );
-  }
+  // Swipe the step card: left = next step, right = previous (as well as the buttons). Horizontal only,
+  // so scrolling up and down still works. Calls go() through a ref, so it always sees this render's state.
+  const swipeTo = useRef<(dir: 1 | -1) => void>(() => {});
+  const swipe = usePanGesture({
+    activeOffsetX: [-24, 24],
+    failOffsetY: [-14, 14],
+    runOnJS: true,
+    onDeactivate: (e) => {
+      if (Math.abs(e.translationX) > 60 || Math.abs(e.velocityX) > 500) swipeTo.current(e.translationX < 0 ? 1 : -1);
+    },
+  });
 
   const progressInput = { cooked, customRecipes, plan, favorites, fun, streak: streakOf(cooked.map((c) => c.date)) };
 
@@ -125,6 +142,12 @@ export default function CookMode() {
     const c = convertQty(roundQty(ing.quantity * scale), ing.unit, units);
     return `${formatQty(c.quantity, c.unit)} ${nameFor(c.quantity, c.unit, ing.name)}`.trim();
   };
+  /** The tile's two lines: "Cooked rice" (sentence case, like the recipe) and "400 g". */
+  const partsOf = (ing: Ingredient) => {
+    const c = convertQty(roundQty(ing.quantity * scale), ing.unit, units);
+    const name = nameFor(c.quantity, c.unit, ing.name);
+    return { name: name.charAt(0).toUpperCase() + name.slice(1), qty: formatQty(c.quantity, c.unit) };
+  };
   const toggleGathered = (key: string) => {
     const next = { ...gathered, [key]: !gathered[key] };
     setGathered(next);
@@ -143,6 +166,12 @@ export default function CookMode() {
   const floating = timers.filter((tm) => !(tm.recipeId === recipe.id && tm.step === page && stepTimers.some((s) => s.label === tm.label)));
   const color = onStep ? popCycle[(page - 1) % popCycle.length] : popCycle[0];
   const bg = page === 0 ? pop.sunshineTint : page === last ? pop.sunshine : color.tint;
+
+  useEffect(() => {
+    swipeTo.current = (dir) => {
+      if (onStep) go(page + dir);
+    };
+  });
 
   return (
     <View style={{ flex: 1, backgroundColor: bg }}>
@@ -164,7 +193,8 @@ export default function CookMode() {
           {/* Header: close, where you are, all ingredients */}
           <View style={[styles.header, { paddingTop: Math.max(insets.top, 12) + 4 }]}>
             <PopIconButton icon="close" accessibilityLabel="Exit cook mode" onPress={close} />
-            <View style={{ flex: 1, alignItems: 'center' }}>
+            {/* Centered on the screen, not between the buttons. */}
+            <View style={[StyleSheet.absoluteFill, styles.headerCenter, { top: Math.max(insets.top, 12) + 4 }]} pointerEvents="none">
               {page === 0 ? (
                 <View style={[styles.readyPill, { backgroundColor: setOut === recipe.ingredients.length ? pop.leaf : pop.white }]}>
                   <Text style={[t.type.headline, { color: pop.ink, fontFamily: fonts.black }]} testID="gather-count">
@@ -177,6 +207,7 @@ export default function CookMode() {
                 </Text>
               )}
             </View>
+            <View style={{ flex: 1 }} />
             {page === 0 ? (
               <View style={{ width: 44 }} />
             ) : (
@@ -225,7 +256,7 @@ export default function CookMode() {
                 <View style={styles.grid}>
                   {recipe.ingredients.map((ing, i) => {
                     const key = `${ing.id}-${i}`;
-                    return <GatherTile key={key} label={amountOf(ing)} checked={!!gathered[key]} onPress={() => toggleGathered(key)} />;
+                    return <GatherTile key={key} {...partsOf(ing)} checked={!!gathered[key]} onPress={() => toggleGathered(key)} />;
                   })}
                 </View>
               </Animated.View>
@@ -233,7 +264,8 @@ export default function CookMode() {
 
             {onStep && (
               <Animated.View key={page} entering={(forward ? FadeInRight : FadeInLeft).duration(240)} style={{ gap: 16 }}>
-                {/* The step: a big card with its number sitting on the top edge */}
+                {/* The step: a big card with its number sitting on the top edge. Swipe it to move between steps. */}
+                <GestureDetector gesture={swipe}>
                 <PopCard clip={false} style={{ marginTop: 26 }} contentStyle={styles.stepCard}>
                   <View style={[styles.stepBadge, { backgroundColor: color.fill }]} accessibilityElementsHidden>
                     <Text style={[t.type.title2, { color: pop.ink }]}>{page}</Text>
@@ -249,6 +281,7 @@ export default function CookMode() {
                     </View>
                   )}
                 </PopCard>
+                </GestureDetector>
 
                 {tip && (
                   <View style={[styles.tip, { backgroundColor: pop.berryTint }]} testID="pro-move">
@@ -352,7 +385,7 @@ export default function CookMode() {
  * One ingredient on the counter. Unchecked: white with a dashed empty circle, sitting high on a
  * 5px shadow. Checked: leaf green with a white check, pressed down to a 2px shadow. A small pop when tapped.
  */
-function GatherTile({ label, checked, onPress }: { label: string; checked: boolean; onPress: () => void }) {
+function GatherTile({ name, qty, checked, onPress }: { name: string; qty: string; checked: boolean; onPress: () => void }) {
   const reduceMotion = useReducedMotion();
   const pressed = useSharedValue(checked ? 1 : 0);
   const bounce = useSharedValue(1);
@@ -372,7 +405,7 @@ function GatherTile({ label, checked, onPress }: { label: string; checked: boole
       }}
       accessibilityRole="checkbox"
       aria-checked={checked}
-      accessibilityLabel={label}
+      accessibilityLabel={qty ? `${qty} ${name}` : name}
       style={{ width: tileWidth, paddingBottom: 5 }}
     >
       <View style={styles.tileShadow} />
@@ -384,9 +417,17 @@ function GatherTile({ label, checked, onPress }: { label: string; checked: boole
         ) : (
           <View style={styles.tileEmpty} />
         )}
-        <Text style={styles.tileText}>
-          {label}
-        </Text>
+        <View style={{ gap: 2 }}>
+          <Text style={styles.tileName} numberOfLines={2}>
+            {name}
+          </Text>
+          {qty ? (
+            // Muted grey only on white; ink on the green of a ticked tile (contrast).
+            <Text style={[styles.tileQty, checked && { color: pop.ink }]} numberOfLines={1}>
+              {qty}
+            </Text>
+          ) : null}
+        </View>
       </Animated.View>
     </Pressable>
   );
@@ -676,6 +717,7 @@ const NOTE_KEY = 'pantry-pop-timer-note-seen';
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingBottom: 10, gap: 10 },
+  headerCenter: { bottom: 13, alignItems: 'center', justifyContent: 'center' },
   readyPill: { minHeight: 40, paddingHorizontal: 16, borderRadius: 999, borderWidth: 2.5, borderColor: pop.ink, justifyContent: 'center' },
   segments: { flexDirection: 'row', gap: 6, paddingHorizontal: 20, marginBottom: 4 },
   // A full 44pt tap area around each 12pt segment.
@@ -689,10 +731,12 @@ const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 },
   tileShadow: { position: 'absolute', left: 0, right: 0, top: 5, bottom: 0, borderRadius: 20, backgroundColor: pop.ink },
   // At least 92 tall; a long name makes the tile (and its row partner) taller instead of being cut.
-  tile: { flex: 1, minHeight: 92, borderRadius: 20, borderWidth: 2.5, borderColor: pop.ink, padding: 12, justifyContent: 'space-between', gap: 8, borderCurve: 'continuous' },
+  // Same height for every tile (room for a 2-line name + the amount), text top-aligned under the circle.
+  tile: { flex: 1, height: 116, borderRadius: 20, borderWidth: 2.5, borderColor: pop.ink, padding: 12, justifyContent: 'flex-start', gap: 8, borderCurve: 'continuous' },
   tileEmpty: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderStyle: 'dashed', borderColor: pop.ink },
   tileCheck: { width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: pop.ink, backgroundColor: pop.white, alignItems: 'center', justifyContent: 'center' },
-  tileText: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 19, color: pop.ink },
+  tileName: { fontFamily: fonts.black, fontSize: 17, lineHeight: 21, color: pop.ink },
+  tileQty: { fontFamily: fonts.body, fontSize: 14, lineHeight: 18, color: pop.inkMuted },
   stepCard: { paddingHorizontal: 20, paddingTop: 36, paddingBottom: 20, gap: 16 },
   stepBadge: { position: 'absolute', top: -26, left: 18, width: 50, height: 50, borderRadius: 25, borderWidth: 2.5, borderColor: pop.ink, alignItems: 'center', justifyContent: 'center' },
   stepText: { fontFamily: fonts.headingSemi, fontSize: 30, lineHeight: 38 },

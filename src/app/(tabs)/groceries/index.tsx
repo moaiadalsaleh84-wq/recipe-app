@@ -13,6 +13,9 @@ import { CheckCircle, EmptyState, HeaderButton, IconButton, ProgressBar, Section
 import { PopCard, PopChip } from '../../../components/pop';
 import { aisleOrder, type GroceryItem } from '../../../data/mock';
 import { haptics } from '../../../lib/haptics';
+import { pantryHas } from '../../../lib/pantry';
+import { nb } from '../../../lib/text';
+import { useTonightPick } from '../../../lib/tonightPick';
 import { plainFractions } from '../../../lib/qty';
 import { TabScreen } from '../../../components/TabScreen';
 import { formatQty, useStore } from '../../../state/store';
@@ -24,7 +27,7 @@ const aisleName = (aisle: string) => (aisle === 'Pantry' ? 'Cupboard' : aisle);
 export default function GroceriesScreen() {
   const t = useTheme();
   const toast = useToast();
-  const { groceries, toggleGrocery, removeGrocery, clearCompleted, addCustomItem, undoGroceries } = useStore();
+  const { groceries, toggleGrocery, removeGrocery, clearCompleted, addCustomItem, undoGroceries, addIngredients, pantry, profile } = useStore();
   const [draft, setDraft] = useState('');
   // Confetti once, when the last item goes in the basket.
   const [party, setParty] = useState(0);
@@ -60,7 +63,20 @@ export default function GroceriesScreen() {
     const n = clearCompleted();
     toast({ message: `Cleared ${n} completed ${n === 1 ? 'item' : 'items'}`, icon: 'trash', tone: 'info', action: { label: 'Undo', onPress: undoGroceries } });
   };
-  const headerRight = <HeaderButton icon="share" accessibilityLabel="Share grocery list" onPress={shareList} />;
+  // Nothing to share on an empty list: no share button then.
+  const headerRight = groceries.length > 0 ? <HeaderButton icon="share" accessibilityLabel="Share grocery list" onPress={shareList} /> : undefined;
+
+  // The empty list's one-tap next step: what's missing for tonight's pick (sized for your household).
+  const { tonight } = useTonightPick();
+  const addTonight = () => {
+    if (!tonight) return;
+    const r = tonight.recipe;
+    const missing = r.ingredients.filter((i) => !pantryHas(pantry, i.name));
+    const items = missing.length ? missing : r.ingredients;
+    addIngredients(r.id, items, (profile.household ?? r.servings) / r.servings);
+    haptics.success();
+    toast({ message: `Added ${nb(items.length, items.length === 1 ? 'item' : 'items')} for ${r.title}`, icon: 'cart' });
+  };
 
   const toggle = (item: GroceryItem) => {
     toggleGrocery(item.key);
@@ -140,8 +156,9 @@ export default function GroceriesScreen() {
         <EmptyState
           icon="cart"
           title="Your list is empty"
-          message="Add items here, or add a recipe’s ingredients from its page or your weekly plan."
-          action={{ label: 'Browse recipes', icon: 'book', onPress: () => router.navigate('/') }}
+          message={tonight ? `Tonight’s pick is ${tonight.recipe.title}. Add what you’re missing in one tap.` : 'Add items here, or add a recipe’s ingredients from its page or your weekly plan.'}
+          action={tonight ? { label: 'Add tonight’s pick ingredients', icon: 'cartAdd', onPress: addTonight } : { label: 'Browse recipes', icon: 'book', onPress: () => router.navigate('/') }}
+          secondary={tonight ? { label: 'Browse recipes', onPress: () => router.navigate('/') } : undefined}
         />
       ) : (
         <>

@@ -230,7 +230,7 @@ export default function RecipeScreen() {
           {/* Three colored stat tiles: time, difficulty + steps, kcal */}
           <Reveal index={1}>
             <View style={styles.stats}>
-              <StatTile color={t.pop.sunshine} icon="clock" value={nb(recipe.minutes, 'min')} label="Total time" />
+              <StatTile color={t.pop.sunshine} icon="clock" value={nb(recipe.minutes, 'min')} label="total" a11y={`${recipe.minutes} minutes total`} />
               <StatTile color={t.pop.leaf} hats={level} value={recipe.difficulty} label={nb(recipe.steps.length, recipe.steps.length === 1 ? 'step' : 'steps')} a11y={`${recipe.difficulty}, ${recipe.steps.length} steps`} />
               <StatTile color={t.pop.sky} icon="flame" value={`${recipe.calories}`} label={'kcal\u00A0each'} a11y={`${recipe.calories} calories per serving`} />
             </View>
@@ -257,7 +257,9 @@ export default function RecipeScreen() {
           {/* One row: servings on the left, units on the right. Both 44 tall. */}
           <View style={styles.needRow}>
             <PeopleStepper value={servings} onChange={setServings} />
-            <Segmented small label="Units" value={units} onChange={(u: Units) => setUnits(u)} options={[{ label: 'Metric', value: 'metric' }, { label: 'US', value: 'us' }]} />
+            <View style={{ marginLeft: 'auto' }}>
+              <Segmented small label="Units" value={units} onChange={(u: Units) => setUnits(u)} options={[{ label: 'Metric', value: 'metric' }, { label: 'US', value: 'us' }]} />
+            </View>
           </View>
           {/* Say why the number differs from the recipe, and offer the way back. */}
           {servings !== recipe.servings && (
@@ -278,7 +280,7 @@ export default function RecipeScreen() {
                   <View
                     style={[styles.ingredient, i > 0 && { borderTopWidth: 1.5, borderTopColor: t.colors.separator }, got && { backgroundColor: t.pop.leafTint }]}
                     accessible
-                    accessibilityLabel={`${amount} ${text}${got ? ', already in pantry' : ''}`.trim()}
+                    accessibilityLabel={`${amount} ${text}${got ? ', in pantry' : ''}`.trim()}
                   >
                     {got ? (
                       <View style={[styles.gotCheck, { backgroundColor: t.pop.leaf, borderColor: t.pop.ink }]}>
@@ -297,24 +299,13 @@ export default function RecipeScreen() {
                         ) : null}
                         {text}
                       </Text>
-                      {got && <Text style={[t.type.caption1, { color: t.colors.label }]}>already in pantry</Text>}
+                      {got && <Text style={[t.type.caption1, { color: t.colors.label }]}>in pantry</Text>}
                     </View>
                   </View>
                 </Animated.View>
               );
             })}
           </PopCard>
-          {/* Right under the list, where you decide what to buy */}
-          <Button
-            label={justAdded === 'all' ? 'Added' : have.size ? 'Add all to groceries' : 'Add to groceries'}
-            icon={justAdded === 'all' ? 'check' : 'cartAdd'}
-            variant={justAdded === 'all' ? 'success' : 'tinted'}
-            size="medium"
-            onPress={() => onAdd('all')}
-            style={{ marginTop: 16, alignSelf: 'stretch' }}
-            accessibilityLabel={justAdded === 'all' ? 'Added to the grocery list' : `Add ingredients for ${servings} servings to the grocery list`}
-          />
-
           {/* Method */}
           <Text style={[t.type.title2, styles.h2, { color: t.colors.label }]} accessibilityRole="header">
             How to make it
@@ -378,6 +369,7 @@ export default function RecipeScreen() {
           size={56}
           iconSize={24}
           color={justAdded === 'missing' ? t.pop.leaf : t.pop.white}
+          badge={justAdded ? undefined : missing.length || undefined}
           accessibilityLabel={missing.length && have.size ? `Add the ${missing.length} missing ingredients to the list` : 'Add the ingredients to the list'}
           onPress={() => (have.size ? onAdd('missing') : onAdd('all'))}
           testID="add-missing"
@@ -414,8 +406,12 @@ function StatTile({ color, icon, hats, value, label, a11y }: { color: string; ic
     <Lift radius={20} style={styles.statLift}>
       <View style={[styles.stat, { backgroundColor: color, ...t.chunky.card }]} accessible accessibilityLabel={a11y ?? `${label}: ${value}`}>
         <View style={styles.statIcon}>{hats ? <ChefHats level={hats} color={t.pop.ink} empty={t.pop.ink} /> : icon ? <Icon name={icon} size={18} color={t.pop.ink} weight="bold" /> : null}</View>
-        <Text style={[t.type.title3, { color: t.pop.ink }]}>{value}</Text>
-        <Text style={[styles.statLabel, { color: t.pop.ink }]}>{label}</Text>
+        <Text style={[styles.statValue, { color: t.pop.ink }]} numberOfLines={1}>
+          {value}
+        </Text>
+        <Text style={[styles.statLabel, { color: t.pop.ink }]} numberOfLines={1}>
+          {label}
+        </Text>
       </View>
     </Lift>
   );
@@ -492,8 +488,12 @@ function Nutrition({ recipe, proteinGoal }: { recipe: Recipe; proteinGoal?: numb
           accessibilityLabel={`Nutrition: ${recipe.calories} calories per serving, estimated. ${open ? 'Hide details' : 'Show details'}`}
           style={styles.kcal}
         >
-          <Text style={[t.type.title2, { color: t.colors.label }]}>{recipe.calories}</Text>
-          <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, flex: 1 }]}>kcal per serving, estimated</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={[t.type.title2, { color: t.colors.label }]} numberOfLines={1}>
+              {nb(recipe.calories, 'kcal')}
+            </Text>
+            <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>per serving · estimated</Text>
+          </View>
           <Icon name={open ? 'chevronDown' : 'chevronRight'} size={14} color={t.colors.tertiaryLabel} weight="semibold" />
         </PressableScale>
         {open && total > 0 && (
@@ -600,7 +600,8 @@ const styles = StyleSheet.create({
   source: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, alignSelf: 'flex-start' },
   stats: { flexDirection: 'row', marginTop: 18, gap: 10 },
   statLift: { flex: 1 },
-  stat: { flex: 1, alignItems: 'flex-start', gap: 3, paddingHorizontal: 12, paddingVertical: 12, borderRadius: 20, borderCurve: 'continuous' },
+  stat: { flex: 1, alignItems: 'flex-start', gap: 2, paddingHorizontal: 10, paddingVertical: 10, borderRadius: 20, borderCurve: 'continuous' },
+  statValue: { fontFamily: fonts.heading, fontSize: 22, lineHeight: 27 },
   statIcon: { height: 20, justifyContent: 'center' },
   statLabel: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 18 },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 18 },
@@ -609,7 +610,7 @@ const styles = StyleSheet.create({
   h2: { marginTop: 32, marginBottom: 14 },
   // 39 + 2 × 2.5 border = 44 tall; only as wide as its content.
   people: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', borderWidth: 2.5, borderRadius: 999, paddingHorizontal: 2 },
-  needRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  needRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   peopleText: { minWidth: 84, textAlign: 'center', fontVariant: ['tabular-nums'] },
   card: { overflow: 'hidden', borderCurve: 'continuous' },
   nutrition: { gap: 16, padding: 16, overflow: 'visible' },

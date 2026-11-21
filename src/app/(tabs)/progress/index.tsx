@@ -9,6 +9,7 @@ import { RecipePhoto } from '../../../components/RecipeCard';
 import { Lift, PopButton, PopCard, PopChip, PopIconButton } from '../../../components/pop';
 import { Image } from 'expo-image';
 import { photoUri } from '../../../lib/photos';
+import { useTonightPick } from '../../../lib/tonightPick';
 import { nb, num } from '../../../lib/text';
 import { weekDotSize } from '../../../lib/weekDots';
 import { useToast } from '../../../components/Toast';
@@ -28,6 +29,7 @@ export default function ProgressScreen() {
   const t = useTheme();
   const toast = useToast();
   const { cooked, getRecipe, goals, setGoals, customRecipes, plan, favorites, fun, profile } = useStore();
+  const { tonight } = useTonightPick();
   const { isPro } = useProGate();
   const [showAll, setShowAll] = useState(false);
   const [allHistory, setAllHistory] = useState(false);
@@ -62,7 +64,7 @@ export default function ProgressScreen() {
     ? `Done for today! Back tomorrow for\u00A0${streak + 1}`
     : streak > 0
       ? 'Cook today to keep it going'
-      : 'Cook today to start a streak';
+      : 'Cook anything today to start\u00A0one';
 
   // One row per dish, newest first: when you last made it and how it tasted.
   const dishes = useMemo(() => {
@@ -105,13 +107,13 @@ export default function ProgressScreen() {
       {/* The streak: one big sunshine card with this week underneath */}
       <Reveal index={0}>
         <PopCard color={t.pop.sunshine} contentStyle={styles.streakCard} testID="streak-card">
-          <View style={styles.row} accessible accessibilityLabel={`${streak} day streak. ${streakLine}`}>
+          <View style={styles.row} accessible accessibilityLabel={`${streak > 0 ? `${streak} day streak` : 'No streak yet'}. ${streakLine}`}>
             <View style={[styles.flame, { backgroundColor: t.pop.white, borderColor: t.pop.ink }]}>
               <Icon name="flameFill" size={30} color={t.pop.tomato} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[t.type.title1, { color: t.pop.ink }]} testID="streak-count">
-                {nb(streak, 'day')} streak
+                {streak > 0 ? `${nb(streak, 'day')} streak` : 'No streak yet'}
               </Text>
               <Text style={[t.type.subhead, { color: t.pop.ink }]}>{streakLine}</Text>
             </View>
@@ -215,9 +217,22 @@ export default function ProgressScreen() {
       {/* Cooking history: one outlined row per dish */}
       <SectionHeader title="Cooking history" subtitle={dishes.length ? 'Your dishes, newest first' : undefined} />
       {dishes.length === 0 ? (
-        <PopCard color={t.pop.lilacTint} contentStyle={styles.emptyHistory}>
-          <Icon name="pot" size={26} color={t.pop.ink} weight="bold" />
-          <Text style={[t.type.subhead, { color: t.colors.label, flex: 1 }]}>Cook any recipe in Cook Mode and it shows up here.</Text>
+        // One card, with the obvious next step pre-picked: tonight's pick.
+        <PopCard color={t.pop.lilacTint} contentStyle={[styles.emptyHistory, { flexDirection: 'column', alignItems: 'stretch' }]} testID="history-empty">
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <Icon name="pot" size={26} color={t.pop.ink} weight="bold" />
+            <Text style={[t.type.subhead, { color: t.colors.label, flex: 1 }]}>Every meal you finish in Cook Mode shows up here.</Text>
+          </View>
+          {tonight && (
+            <PopButton
+              label="Cook tonight’s pick"
+              icon="pot"
+              size="small"
+              onPress={() => router.push({ pathname: '/cook/[id]', params: { id: tonight.recipe.id } })}
+              accessibilityHint={`Cooks ${tonight.recipe.title}`}
+              testID="history-cook-pick"
+            />
+          )}
         </PopCard>
       ) : (
         <View style={{ gap: 12 }}>

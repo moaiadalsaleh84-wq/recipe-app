@@ -16,17 +16,15 @@ import { FAVORITES_ID, QUICK_FILTER, categories, filterTags, matchesFilter, type
 import { useImportTip } from '../../../lib/appOpens';
 import { haptics } from '../../../lib/haptics';
 import { EXAMPLE_URL } from '../../../lib/importApi';
-import { byPantryMatch, pantryMatch, recipesForMood, type Mood } from '../../../lib/moods';
+import { recipesForMood, type Mood } from '../../../lib/moods';
 import { showPaywall, useProGate } from '../../../lib/pro';
 import { streakOf } from '../../../lib/progress';
 import { MANAGE_SUBSCRIPTIONS_URL } from '../../../lib/purchases';
+import { useTonightPick } from '../../../lib/tonightPick';
 import { useStore } from '../../../state/store';
 import { fonts, pop, useTheme } from '../../../theme';
 import { nb } from '../../../lib/text';
 
-const todayIndex = (new Date().getDay() + 6) % 7; // Monday = 0
-/** Days since 1970, so the recipe of the day really changes daily. */
-const dayNumber = Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 86400000);
 
 type Sort = 'suggested' | 'az' | 'quickest' | 'cooked';
 const SORTS: { value: Sort; label: string }[] = [
@@ -54,7 +52,7 @@ export default function RecipesScreen() {
   const t = useTheme();
   const toast = useToast();
   const { width } = useWindowDimensions();
-  const { category, setCategory, tags, toggleTag, showOnlyTag, clearFilters, plan, allRecipes, getRecipe, favorites, cookbooks, cooked, profile, pantry } = useStore();
+  const { category, setCategory, tags, toggleTag, showOnlyTag, clearFilters, allRecipes, getRecipe, favorites, cookbooks, cooked, profile, pantry } = useStore();
 
   const [query, setQuery] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
@@ -108,13 +106,12 @@ export default function RecipesScreen() {
 
   const hasFilters = !!category || tags.length > 0;
   const showExtras = !hasFilters && !mood;
-  const tonight = getRecipe(plan[todayIndex]?.Dinner);
-  const mains = allRecipes.filter((r) => r.category !== 'Dessert');
-  // Tonight's dinner from the plan; otherwise something you can mostly make (best pantry match,
-  // rotating daily among the top three), else a different main every day.
-  const canMake = byPantryMatch(mains, pantry).slice(0, 3);
-  const featured = tonight ?? (canMake.length ? canMake[dayNumber % canMake.length] : mains[dayNumber % Math.max(1, mains.length)]) ?? allRecipes[0];
-  const featuredMatch = featured ? pantryMatch(featured, pantry) : { have: 0, needed: 0 };
+  // Tonight's dinner from the plan, otherwise the day's pick: fits your diet and goal, 45 minutes or
+  // less, best pantry match (the same pick as onboarding, the reminder and the empty states).
+  const { tonight: pick } = useTonightPick();
+  const tonight = pick?.fromPlan ? pick.recipe : undefined;
+  const featured = pick?.recipe;
+  const featuredMatch = pick ? { have: pick.have, needed: pick.needed } : { have: 0, needed: 0 };
   const firstName = profile.name.trim().split(/\s+/)[0] ?? '';
   const streak = streakOf(cooked.map((c) => c.date));
 
@@ -187,12 +184,12 @@ export default function RecipesScreen() {
         </Text>
         <PressableScale
           onPress={() => router.navigate('/progress')}
-          accessibilityLabel={`${streak} day cooking streak. Opens You`}
+          accessibilityLabel={streak > 0 ? `${streak} day cooking streak. Opens You` : 'No streak yet. Opens You'}
           style={[styles.streak, { backgroundColor: t.pop.sunshine, borderColor: t.pop.ink }]}
           testID="streak-pill"
         >
           <Icon name="flameFill" size={16} color={t.pop.tomato} />
-          <Text style={[t.type.headline, { color: t.pop.ink, fontFamily: t.fonts.black }]}>{streak}</Text>
+          <Text style={[t.type.headline, { color: t.pop.ink, fontFamily: t.fonts.black }]}>{streak > 0 ? streak : 'Start'}</Text>
         </PressableScale>
         <PopIconButton icon="plus" onPress={() => setMenuOpen(true)} accessibilityLabel="Add a recipe" accessibilityHint="Save one from a link, or write your own" />
       </View>
@@ -224,14 +221,19 @@ export default function RecipesScreen() {
       {importTip.show && (
         <Animated.View exiting={FadeOut.duration(160)} style={{ marginBottom: t.spacing.lg }}>
           <PopCard color={t.pop.skyTint} contentStyle={styles.tip} testID="import-tip">
+            {/* Icon row (icon left, small ✕ right), then the text full width, then the button full width. */}
             <View style={styles.tipTop}>
-              <View style={[styles.tipIcon, { borderColor: t.pop.ink }]}>
+              <View style={[styles.tipIcon, { borderColor: t.pop.ink, backgroundColor: t.pop.white }]}>
                 <Icon name="link" size={18} color={t.pop.ink} weight="bold" />
               </View>
-              <Text style={[t.type.headline, { color: t.pop.ink, flex: 1 }]}>{'Got a recipe on TikTok or a blog? Paste the link and cook from it.'}</Text>
-              <PopIconButton icon="close" size={44} iconSize={14} onPress={importTip.dismiss} accessibilityLabel="Dismiss tip" haptic={null} />
+              <PressableScale onPress={importTip.dismiss} hitSlop={4} accessibilityLabel="Dismiss tip" style={[styles.tipClose, { borderColor: t.pop.ink, backgroundColor: t.pop.white }]}>
+                <Icon name="close" size={13} color={t.pop.ink} weight="bold" />
+              </PressableScale>
             </View>
-            <PopButton label="Try an example" icon="sparkles" size="small" color={t.pop.white} onPress={tryExample} style={{ alignSelf: 'flex-start' }} testID="import-example" />
+            <Text style={[t.type.headline, { color: t.pop.ink }]} numberOfLines={3}>
+              Got a recipe on TikTok or a blog? Paste the link and cook from it.
+            </Text>
+            <PopButton label="Try an example" icon="sparkles" size="small" color={t.pop.white} onPress={tryExample} testID="import-example" />
           </PopCard>
         </Animated.View>
       )}
@@ -564,8 +566,10 @@ const COVER_H = 120;
 
 const styles = StyleSheet.create({
   tip: { padding: 14, gap: 12 },
-  tipTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  tipIcon: { width: 40, height: 40, borderRadius: 20, borderWidth: 2, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
+  tipTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  tipIcon: { width: 40, height: 40, borderRadius: 20, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  // 36 to look at, 44 to tap (hitSlop 4).
+  tipClose: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   header: { marginBottom: 20 },
   topRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   avatar: { width: 44, height: 44, borderRadius: 22, borderWidth: 2.5, borderColor: pop.ink, alignItems: 'center', justifyContent: 'center' },

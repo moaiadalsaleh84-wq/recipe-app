@@ -372,12 +372,16 @@ export function EmptyState({
   title,
   message,
   action,
+  secondary,
   cat,
 }: {
   icon: IconName;
   title: string;
   message: string;
+  /** The ONE pre-selected next step. */
   action?: { label: string; onPress: () => void; icon?: IconName };
+  /** A quieter alternative, as a text link under it. */
+  secondary?: { label: string; onPress: () => void };
   /** Show Biscuit acting out the empty state instead of an icon: pass the mood. */
   cat?: Mood;
 }) {
@@ -404,6 +408,11 @@ export function EmptyState({
         <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 10 }}>
           <Button label={action.label} icon={action.icon} onPress={action.onPress} variant="filled" size="medium" style={{ alignSelf: 'auto' }} />
         </View>
+      )}
+      {secondary && (
+        <PressableScale onPress={secondary.onPress} accessibilityRole="link" style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 12 }}>
+          <Text style={[t.type.subhead, { color: t.colors.label, fontFamily: t.fonts.black, textDecorationLine: 'underline' }]}>{secondary.label}</Text>
+        </PressableScale>
       )}
     </View>
   );
@@ -484,7 +493,8 @@ const styles = StyleSheet.create({
   },
   buttonLarge: { minHeight: 54, paddingHorizontal: 24 },
   buttonMedium: { minHeight: 46, paddingHorizontal: 20 },
-  stepper: { flexDirection: 'row', alignItems: 'center', borderRadius: 999, borderCurve: 'continuous', paddingHorizontal: 2 },
+  // Every stepper is the same width (150), so stacked ones line up.
+  stepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minWidth: 150, borderRadius: 999, borderCurve: 'continuous', paddingHorizontal: 2 },
   stepperDivider: { width: StyleSheet.hairlineWidth, height: 18 },
   stepperValue: { minWidth: 36, textAlign: 'center', fontVariant: ['tabular-nums'] },
   // Rounded squares: the tick pops in on a basil fill.
@@ -501,7 +511,8 @@ const styles = StyleSheet.create({
   emptyIconInner: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center' },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, minHeight: 28 },
   sectionBody: { borderCurve: 'continuous' },
-  sectionFooter: { paddingHorizontal: 16, marginTop: 8 },
+  // Lines up with the card's left edge.
+  sectionFooter: { paddingHorizontal: 0, marginTop: 8 },
   search: { flexDirection: 'row', alignItems: 'center', gap: 10, borderCurve: 'continuous', paddingLeft: 16, minHeight: 54 },
   searchInput: { flex: 1, alignSelf: 'stretch', minHeight: 44, paddingVertical: 0, outlineStyle: 'none' } as never,
 });

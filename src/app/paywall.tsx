@@ -14,9 +14,9 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../components/Text';
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, ZoomIn, useReducedMotion } from 'react-native-reanimated';
+import { ConfettiBurst } from '../components/ConfettiBurst';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Mascot } from '../components/mascot/Mascot';
 import { MascotSays } from '../components/mascot/MascotSays';
 import type { Line } from '../components/mascot/lines';
 import { Icon, type IconName } from '../components/Icon';
@@ -24,7 +24,7 @@ import { PressableScale } from '../components/PressableScale';
 import { BottomBar } from '../components/BottomBar';
 import { useToast } from '../components/Toast';
 import { Button } from '../components/ui';
-import { PopChip, PopIconButton } from '../components/pop';
+import { PopButton, PopChip, PopIconButton } from '../components/pop';
 import { scheduleTrialReminder } from '../lib/trialReminder';
 import { benefitsFor, goalPhrase, type Goal } from '../data/onboarding';
 import { haptics } from '../lib/haptics';
@@ -127,7 +127,7 @@ export default function Paywall() {
 
   const open = (url: string) => Linking.openURL(url).catch(() => toast({ message: 'Couldn’t open the link', tone: 'warning' }));
 
-  if (welcome) return <Welcome onDone={close} trialEndsAt={pro?.trialEndsAt ?? null} />;
+  if (welcome) return <Welcome onDone={close} trialEndsAt={pro?.trialEndsAt ?? null} name={profile.name.trim().split(/\s+/)[0] ?? ''} benefits={benefits} />;
 
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.background }}>
@@ -241,22 +241,22 @@ export default function Paywall() {
   );
 }
 
-/** The onboarding headline, by the goal picked there. */
-const GOAL_HEADLINES: Partial<Record<Goal, string>> = {
-  muscle: 'hit your protein goals with food you love',
-  save: 'cook more and spend less',
-  healthier: 'healthy dinners that actually taste good',
-  home: 'dinner sorted every night',
-  learn: 'learn to cook one easy win at a time',
+/** The onboarding headline and its subtitle, by the goal picked there (each says what Pro adds for it). */
+const GOAL_COPY: Partial<Record<Goal, { line: string; subtitle: string }>> = {
+  muscle: { line: 'hit your protein goals with food you love', subtitle: 'Track protein from every meal you cook, and import recipes without limits.' },
+  save: { line: 'cook more and spend less', subtitle: 'Plan the week, shop once, waste less. Pro’s unlimited pantry shows what you can cook from it.' },
+  healthier: { line: 'healthy dinners that actually taste good', subtitle: 'Set calorie and protein goals and watch them fill up from the meals you cook.' },
+  home: { line: 'dinner sorted every night', subtitle: 'Save every recipe you find, from TikTok to blogs, and keep them in as many cookbooks as you like.' },
+  learn: { line: 'learn to cook one easy win at a time', subtitle: 'Import the recipes you want to try and cook them step by step, with timers built in.' },
 };
 
 function headline(source: Source, goal: string, name: string, goalId?: Goal): { title: string; subtitle: string } {
   switch (source) {
     case 'onboarding': {
-      const line = goalId ? GOAL_HEADLINES[goalId] : undefined;
-      const title = line ? (name ? `${name}, ${line}` : line.charAt(0).toUpperCase() + line.slice(1)) : name ? `${name}, save every recipe you find` : 'Save every recipe you find';
+      const copy = goalId ? GOAL_COPY[goalId] : undefined;
+      if (copy) return { title: name ? `${name}, ${copy.line}` : copy.line.charAt(0).toUpperCase() + copy.line.slice(1), subtitle: copy.subtitle };
       return {
-        title,
+        title: name ? `${name}, save every recipe you find` : 'Save every recipe you find',
         subtitle: `The free version includes ${FREE_LIMITS.imports} imports. Pro imports without limits and adds the tools to help you ${goal}.`,
       };
     }
@@ -339,27 +339,56 @@ function TimelineRow({ icon, title, detail, first, last }: { icon: IconName; tit
 }
 
 /** Peak-end: the purchase ends on a happy, celebrated moment. */
-function Welcome({ onDone, trialEndsAt }: { onDone: () => void; trialEndsAt: string | null }) {
+function Welcome({ onDone, trialEndsAt, name, benefits }: { onDone: () => void; trialEndsAt: string | null; name: string; benefits: { icon: IconName; title: string }[] }) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
+  const reduceMotion = useReducedMotion();
   const ends = trialEndsAt ? new Date(trialEndsAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) : null;
+  // Peak-end: a sunshine page, a confetti burst, the crown pops in, then what's now unlocked.
+  const pop_ = (delay: number) => (reduceMotion ? FadeIn.duration(200) : ZoomIn.springify().damping(12).delay(delay));
+  const row = (i: number) => (reduceMotion ? FadeIn.duration(200) : FadeInDown.duration(320).delay(500 + i * 120));
   return (
-    <View style={[styles.welcome, { backgroundColor: t.colors.background, paddingTop: insets.top + 40, paddingBottom: Math.max(insets.bottom, 16) }]}>
-      <View style={{ alignItems: 'center', flex: 1, justifyContent: 'center' }}>
-        <Mascot mood="celebrating" size={220} petable={false} />
-        <Text style={[t.type.largeTitle, { color: t.colors.label, textAlign: 'center', marginTop: 12 }]} accessibilityRole="header">
-          Welcome to Pro!
+    <View style={{ flex: 1, backgroundColor: t.pop.sunshine }}>
+      {!reduceMotion && <ConfettiBurst count={36} />}
+      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 48, paddingHorizontal: t.layout.screen, paddingBottom: 24, alignItems: 'center' }}>
+        <Animated.View entering={pop_(120)}>
+          <Lift radius={56}>
+            <View style={[styles.crown, { backgroundColor: t.pop.white, borderColor: t.pop.ink }]}>
+              <Icon name="crown" size={54} color={t.pop.ink} weight="bold" />
+            </View>
+          </Lift>
+        </Animated.View>
+        <Text style={[t.type.largeTitle, { color: t.pop.ink, textAlign: 'center', marginTop: 20 }]} accessibilityRole="header">
+          {noWidow(name ? `Welcome to Pro, ${name}!` : 'Welcome to Pro!')}
         </Text>
-        <Text style={[t.type.body, { color: t.colors.secondaryLabel, textAlign: 'center', marginTop: 8, maxWidth: 320 }]}>
-          {ends ? `Everything is unlocked. Your free trial runs until ${ends}, and we’ll remind you before it ends.` : 'Everything is unlocked. Happy cooking!'}
+        <Text style={[t.type.body, { color: t.pop.ink, textAlign: 'center', marginTop: 8, maxWidth: 330 }]} testID="welcome-trial">
+          {ends ? `Your free trial runs until ${ends}. We’ll remind you before it ends.` : 'Everything is unlocked. Happy cooking!'}
         </Text>
-      </View>
-      <Button label="Start cooking" icon="pot" onPress={onDone} />
+        <View style={{ alignSelf: 'stretch', gap: 12, marginTop: 28 }}>
+          {benefits.slice(0, 3).map((b, i) => (
+            <Animated.View key={b.title} entering={row(i)}>
+              <View style={[styles.unlocked, { backgroundColor: t.pop.white, borderColor: t.pop.ink }]}>
+                <View style={[styles.unlockedIcon, { backgroundColor: t.pop.leafTint, borderColor: t.pop.ink }]}>
+                  <Icon name={b.icon} size={18} color={t.pop.ink} weight="bold" />
+                </View>
+                <Text style={[t.type.headline, { color: t.pop.ink, flex: 1 }]}>{b.title}</Text>
+                <Icon name="check" size={18} color={t.pop.ink} weight="bold" />
+              </View>
+            </Animated.View>
+          ))}
+        </View>
+      </ScrollView>
+      <BottomBar color={t.pop.sunshine}>
+        <PopButton label="Start cooking" icon="pot" color={t.pop.ink} textColor={t.pop.white} onPress={onDone} style={{ flex: 1 }} testID="welcome-start" />
+      </BottomBar>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  crown: { width: 112, height: 112, borderRadius: 56, borderWidth: 3, alignItems: 'center', justifyContent: 'center' },
+  unlocked: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 2.5, borderRadius: 18, paddingHorizontal: 14, paddingVertical: 12 },
+  unlockedIcon: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   // Above the scroll content, solid white, so nothing shows through it.
   top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8, borderBottomWidth: 2 },
   restore: { minHeight: 44, minWidth: 64, justifyContent: 'center', alignItems: 'flex-end', paddingHorizontal: 8 },
@@ -382,5 +411,4 @@ const styles = StyleSheet.create({
   links: { flexDirection: 'row', justifyContent: 'center', gap: 4, marginTop: 16, flexWrap: 'wrap' },
   link: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
   free: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  welcome: { flex: 1, paddingHorizontal: 20 },
 });
