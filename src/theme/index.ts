@@ -18,6 +18,7 @@
  * Read tokens in components with `const t = useTheme()`. The app is light only.
  */
 import { Platform, type TextStyle, type ViewStyle } from 'react-native';
+import { popSpring, pressSpring, spring } from '../motion';
 
 /* ------------------------------------------------------------------ */
 /* Palette                                                              */
@@ -275,13 +276,14 @@ export const stroke = { thick: 2.5, thin: 2 } as const;
 /** Apple's minimum tap target. */
 export const hitTarget = 44;
 
+/** Kept for older code: the springs now come from src/motion.ts, so there's one set. */
 export const motion = {
   pressScale: 0.97,
-  press: { damping: 18, stiffness: 420, mass: 0.6 },
-  release: { damping: 14, stiffness: 380, mass: 0.6 },
+  press: pressSpring,
+  release: pressSpring,
   /** Bouncy confirmation, e.g. checkmarks. */
-  pop: { damping: 12, stiffness: 320, mass: 0.7 },
-  settle: { damping: 16, stiffness: 180, mass: 0.9 },
+  pop: popSpring,
+  settle: spring,
   /** Toasts hide on their own after 3 seconds (or a tap). */
   toastDuration: 3000,
 } as const;

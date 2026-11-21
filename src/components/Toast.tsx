@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import { StyleSheet, View } from 'react-native';
 import { Text } from './Text';
 import Animated, { FadeInDown, FadeOutUp } from 'react-native-reanimated';
+import { uiEase } from '../motion';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { haptics } from '../lib/haptics';
 import { useTheme } from '../theme';
@@ -83,8 +84,8 @@ function ToastView({ toast, onDone }: { toast: ToastState; onDone: () => void })
     <View pointerEvents="box-none" style={[StyleSheet.absoluteFill, { paddingTop: insets.top + t.spacing.xs }]}>
       <Animated.View
         // A short drop-in from just above, no spring, so it never bounces.
-        entering={FadeInDown.duration(220)}
-        exiting={FadeOutUp.duration(160)}
+        entering={uiEase(FadeInDown.duration(220))}
+        exiting={uiEase(FadeOutUp.duration(160))}
         accessibilityLiveRegion="polite"
         accessibilityRole="alert"
         style={[

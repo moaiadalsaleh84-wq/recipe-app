@@ -15,7 +15,7 @@ import Animated, {
   useSharedValue,
   useReducedMotion,
 } from 'react-native-reanimated';
-import { enter } from '../../motion';
+import { enter, popoverIn } from '../../motion';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { pantryHas } from '../../lib/pantry';
@@ -576,10 +576,13 @@ function ChefHats({ level, color, empty }: { level: number; color?: string; empt
 /** The "…" menu in the header: Share and Save to a cookbook. */
 function MoreMenu({ visible, onClose, top, rows }: { visible: boolean; onClose: () => void; top: number; rows: { label: string; icon: IconName; onPress: () => void }[] }) {
   const t = useTheme();
+  const reduceMotion = useReducedMotion();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: t.colors.scrim }]} onPress={onClose} accessibilityLabel="Close menu" />
-      <Lift radius={20} style={[styles.menu, { top }]}>
+      {/* Grows out of the ⋯ button's corner (top right). */}
+      <Animated.View entering={popoverIn(reduceMotion)} style={[styles.menu, { top, transformOrigin: 'top right' }]}>
+      <Lift radius={20}>
         <View style={[styles.menuFace, { backgroundColor: t.colors.elevated, ...t.chunky.card }]} accessibilityRole="menu">
           {rows.map((r, i) => (
             <PressableScale
@@ -599,6 +602,7 @@ function MoreMenu({ visible, onClose, top, rows }: { visible: boolean; onClose: 
           ))}
         </View>
       </Lift>
+      </Animated.View>
     </Modal>
   );
 }

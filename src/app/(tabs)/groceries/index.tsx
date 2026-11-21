@@ -3,8 +3,8 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { Share, StyleSheet, TextInput, View } from 'react-native';
 import { Text } from '../../../components/Text';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
-import Animated, { FadeIn, FadeOut, LinearTransition, SlideOutDown, ZoomIn, useAnimatedStyle, useReducedMotion, type SharedValue } from 'react-native-reanimated';
-import { enter } from '../../../motion';
+import Animated, { FadeIn, FadeOut, LinearTransition, FadeOutDown, ZoomIn, useAnimatedStyle, useReducedMotion, type SharedValue } from 'react-native-reanimated';
+import { enter, uiEase } from '../../../motion';
 import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
 import { Reveal } from '../../../components/Reveal';
@@ -177,7 +177,7 @@ export default function GroceriesScreen() {
               </View>
               <Section>
                 {g.items.map((item, i) => (
-                  <Animated.View key={item.key} layout={glide} entering={FadeIn.duration(200)} exiting={reduceMotion ? FadeOut.duration(150) : SlideOutDown.duration(260)}>
+                  <Animated.View key={item.key} layout={glide} entering={FadeIn.duration(200)} exiting={reduceMotion ? FadeOut.duration(150) : uiEase(FadeOutDown.duration(200))}>
                     {i > 0 && <Separator inset={60} />}
                     <GroceryRow item={item} onToggle={() => toggle(item)} onDelete={() => remove(item)} />
                   </Animated.View>
@@ -270,7 +270,7 @@ function GroceryRow({ item, onToggle, onDelete }: { item: GroceryItem; onToggle:
         <PressableScale
           onPress={tick}
           haptic={null}
-          scaleTo={0.9}
+          scaleTo={0.96}
           accessibilityRole="checkbox"
           aria-checked={item.checked}
           accessibilityLabel={`${item.name}, ${formatQty(item.quantity, item.unit)}`}

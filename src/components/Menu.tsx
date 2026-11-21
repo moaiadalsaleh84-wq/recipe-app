@@ -1,6 +1,8 @@
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from './Text';
+import Animated, { useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { popoverIn } from '../motion';
 import { useTheme } from '../theme';
 import { Icon, type IconName } from './Icon';
 import { PressableScale } from './PressableScale';
@@ -22,10 +24,13 @@ export type MenuRow = {
 export function Menu({ visible, onClose, rows, top = 64, label }: { visible: boolean; onClose: () => void; rows: MenuRow[]; top?: number; label: string }) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
+  const reduceMotion = useReducedMotion();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} supportedOrientations={['portrait', 'landscape']}>
       <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: t.colors.scrim }]} onPress={onClose} accessibilityLabel="Close menu" />
-      <Lift radius={20} style={[styles.menu, { top: insets.top + top }]}>
+      {/* Grows out of the button's corner (top right), not out of nowhere. */}
+      <Animated.View entering={popoverIn(reduceMotion)} style={[styles.menu, { top: insets.top + top, transformOrigin: 'top right' }]}>
+      <Lift radius={20}>
         <View style={[styles.menuFace, { backgroundColor: t.colors.elevated, ...t.chunky.card }]} accessibilityRole="menu" accessibilityLabel={label}>
           {rows.map((r, i) => (
             <PressableScale
@@ -51,6 +56,7 @@ export function Menu({ visible, onClose, rows, top = 64, label }: { visible: boo
           ))}
         </View>
       </Lift>
+      </Animated.View>
     </Modal>
   );
 }

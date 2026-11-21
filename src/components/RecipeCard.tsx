@@ -87,7 +87,7 @@ export function FavoriteButton({ recipe, onPhoto }: { recipe: Recipe; onPhoto?: 
   if (onPhoto) {
     // On photos: a small solid white circle (32pt) inside a full 44pt tap area.
     return (
-      <PressableScale onPress={onPress} haptic={null} scaleTo={0.9} accessibilityLabel={label} style={styles.favTap}>
+      <PressableScale onPress={onPress} haptic={null} scaleTo={0.96} accessibilityLabel={label} style={styles.favTap}>
         <Animated.View pointerEvents="none" style={[styles.burstRing, { borderColor: pop.tomato }, ringStyle]} />
         {SPARKS.map((sp, i) => (
           <Spark key={i} dx={sp[0]} dy={sp[1]} burst={burst} />

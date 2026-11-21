@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { Image } from 'expo-image';
-import { Modal, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Text } from '../../components/Text';
 import Animated, {
   FadeIn,
@@ -12,7 +12,6 @@ import Animated, {
   FadeInRight,
   FadeInUp,
   LinearTransition,
-  SlideInDown,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -27,8 +26,9 @@ import Animated, {
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomBar } from '../../components/BottomBar';
+import { BottomSheet } from '../../components/BottomSheet';
 import { ConfettiBurst } from '../../components/ConfettiBurst';
-import { duration, enter, popSpring, pressSpring, spring } from '../../motion';
+import { duration, enter, popSpring, pressSpring, spring, uiEase } from '../../motion';
 import { scheduleOnRN } from 'react-native-worklets';
 import { rollBonus, type Bonus } from '../../lib/bonus';
 import { stickers } from '../../data/stickers';
@@ -114,8 +114,14 @@ function CookSession({ recipe, servings }: { recipe: Recipe; servings: number })
     onDeactivate: (e) => {
       'worklet';
       const far = Math.abs(e.translationX) > 60 || Math.abs(e.velocityX) > 500;
-      drag.set(withSpring(0, pressSpring));
-      if (far) scheduleOnRN(onSwipe, e.translationX < 0 ? 1 : -1);
+      if (far) {
+        // Committed: the card resets at once and only the new step slides in (no two motions fighting).
+        drag.set(0);
+        scheduleOnRN(onSwipe, e.translationX < 0 ? 1 : -1);
+      } else {
+        // Not far enough: spring back, carrying the finger's speed.
+        drag.set(withSpring(0, pressSpring));
+      }
     },
   });
   // Follows the finger with a little resistance and tilt. Numbers only in here (UI thread).
@@ -266,7 +272,7 @@ function CookSession({ recipe, servings }: { recipe: Recipe; servings: number })
 
           <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="never" automaticallyAdjustContentInsets={false} contentContainerStyle={styles.content}>
             {page === 0 && (
-              <Animated.View key="gather" entering={(forward ? FadeInRight : FadeInLeft).duration(240)} style={{ gap: 18 }}>
+              <Animated.View key="gather" entering={uiEase((forward ? FadeInRight : FadeInLeft).duration(240))} style={{ gap: 18 }}>
                 <View style={{ gap: 4 }}>
                   <Text style={[t.type.largeTitle, { color: pop.ink }]} accessibilityRole="header">
                     Grab your stuff
@@ -292,7 +298,7 @@ function CookSession({ recipe, servings }: { recipe: Recipe; servings: number })
             )}
 
             {onStep && (
-              <Animated.View key={page} entering={(forward ? FadeInRight : FadeInLeft).duration(240)} style={{ gap: 16 }}>
+              <Animated.View key={page} entering={uiEase((forward ? FadeInRight : FadeInLeft).duration(240))} style={{ gap: 16 }}>
                 {/* The step: a big card with its number sitting on the top edge. Swipe it to move between steps. */}
                 <GestureDetector gesture={swipe}>
                 <Animated.View style={reduceMotion ? undefined : dragStyle}>
@@ -370,14 +376,15 @@ function CookSession({ recipe, servings }: { recipe: Recipe; servings: number })
       )}
 
       {/* Every ingredient, any time, without leaving the step */}
-      <Modal visible={listOpen} transparent animationType="fade" onRequestClose={() => setListOpen(false)}>
-        <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: t.colors.scrim }]} onPress={() => setListOpen(false)} accessibilityLabel="Close ingredients" />
-        <Animated.View entering={SlideInDown.duration(260)} style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]} accessibilityViewIsModal>
+      {/* Slides up; slides back down on ✕, a tap outside, or dragging it down. */}
+      <BottomSheet visible={listOpen} onClose={() => setListOpen(false)} style={{ paddingBottom: Math.max(insets.bottom, 16) }} accessibilityLabel="Ingredients">
+        {(closeSheet) => (
+        <>
           <View style={styles.sheetHead}>
             <Text style={[t.type.title2, { color: pop.ink, flex: 1 }]} accessibilityRole="header">
               Ingredients
             </Text>
-            <PopIconButton icon="close" accessibilityLabel="Close ingredients" onPress={() => setListOpen(false)} />
+            <PopIconButton icon="close" accessibilityLabel="Close ingredients" onPress={closeSheet} />
           </View>
           <Text style={[t.type.subhead, { color: pop.inkMuted, marginBottom: 8 }]}>
             For {servings} {servings === 1 ? 'person' : 'people'}
@@ -402,8 +409,9 @@ function CookSession({ recipe, servings }: { recipe: Recipe; servings: number })
               );
             })}
           </ScrollView>
-        </Animated.View>
-      </Modal>
+        </>
+        )}
+      </BottomSheet>
     </View>
   );
 }
@@ -898,7 +906,6 @@ const styles = StyleSheet.create({
   timerClock: { fontFamily: fonts.heading, fontSize: 40, lineHeight: 46, fontVariant: ['tabular-nums'] },
   timerBtns: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   stopFace: { minHeight: 48, paddingHorizontal: 18 },
-  sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 20, paddingTop: 16, backgroundColor: pop.white, borderWidth: 2.5, borderBottomWidth: 0, borderColor: pop.ink },
   sheetHead: { flexDirection: 'row', alignItems: 'center' },
   sheetRow: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 56 },
   finish: { paddingHorizontal: 20, gap: 22, alignItems: 'center', width: '100%', maxWidth: 560, alignSelf: 'center' },

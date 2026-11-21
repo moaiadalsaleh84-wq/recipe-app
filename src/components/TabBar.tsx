@@ -1,11 +1,11 @@
 import type { BottomTabBarProps } from 'expo-router/tabs';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from './Text';
-import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { haptics } from '../lib/haptics';
-import { duration, popSpring, spring } from '../motion';
+import { spring } from '../motion';
 import { fonts, pop, stroke } from '../theme';
 import { Icon, type IconName } from './Icon';
 
@@ -92,20 +92,12 @@ export function TabBar({ state, emitter, navigateToTab, badges = {} }: BottomTab
 }
 
 function TabIcon({ icon, selected, badge }: { icon: IconName; selected: boolean; badge: number }) {
-  const reduceMotion = useReducedMotion();
-  const bounce = useSharedValue(1);
-  const was = useRef(selected);
-  useEffect(() => {
-    // The newly selected icon bounces once: 1 → 1.15 → 1.
-    if (selected && !was.current && !reduceMotion) bounce.set(withSequence(withTiming(1.15, { duration: duration.fast }), withSpring(1, popSpring)));
-    was.current = selected;
-  }, [selected, reduceMotion, bounce]);
-  const iconStyle = useAnimatedStyle(() => ({ transform: [{ scale: bounce.get() }] }));
+  // No bounce: tabs are switched tens of times a day, so the sliding pill is all the motion they get.
   return (
     <View style={styles.iconBox}>
-      <Animated.View style={iconStyle}>
+      <View>
         <Icon name={icon} size={22} color={selected ? pop.ink : pop.inkMuted} weight={selected ? 'bold' : 'semibold'} />
-      </Animated.View>
+      </View>
       {badge > 0 && (
         <View style={styles.badge} pointerEvents="none">
           <Text style={styles.badgeText} maxFontSizeMultiplier={1.2}>

@@ -30,7 +30,7 @@ import { haptics } from '../lib/haptics';
 import { cookableCount, rankPicks, type Pick } from '../lib/onboardingPicks';
 import { restore } from '../lib/purchases';
 import { nb } from '../lib/text';
-import { duration } from '../motion';
+import { duration, uiEase } from '../motion';
 import { useStore } from '../state/store';
 import { fonts, pop, stroke } from '../theme';
 
@@ -237,7 +237,7 @@ export default function Onboarding() {
       <ScreenBg.Provider value={bg}>
         <Animated.View
           key={screen}
-          entering={reduceMotion || screen === 'welcome' || screen === 'building' ? FadeIn.duration(duration.base) : (backwards ? SlideInLeft : SlideInRight).duration(duration.base)}
+          entering={reduceMotion || screen === 'welcome' || screen === 'building' ? FadeIn.duration(duration.base) : uiEase((backwards ? SlideInLeft : SlideInRight).duration(duration.base))}
           style={{ flex: 1 }}
         >
           {body}
