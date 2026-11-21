@@ -297,6 +297,7 @@ export default function RecipeScreen() {
                     style={[styles.ingredient, i > 0 && { borderTopWidth: 1.5, borderTopColor: t.colors.separator }, got && { backgroundColor: t.pop.leafTint }]}
                     accessible
                     accessibilityLabel={`${amount} ${text}${got ? ', in pantry' : ''}`.trim()}
+                    testID={`ing-row-${ing.id}`}
                   >
                     {got ? (
                       <View style={[styles.gotCheck, { backgroundColor: t.pop.leaf, borderColor: t.pop.ink }]}>
