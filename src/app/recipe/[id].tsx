@@ -2,8 +2,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import { Reveal } from '../../components/Reveal';
-import { Linking, Modal, Pressable, ScrollView, Share, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
-import { Text } from '../../components/Text';
+import { Linking, Modal, PixelRatio, Pressable, ScrollView, Share, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
+import { MAX_FONT_SCALE, Text } from '../../components/Text';
 import Svg, { Path } from 'react-native-svg';
 import Animated, {
   Extrapolation,
@@ -37,7 +37,7 @@ import { amountFor, ingredientLabel } from '../../lib/scale';
 import { useStore } from '../../state/store';
 import { macroPercents } from '../../lib/percent';
 import { fonts, pop, popCycle, useTheme } from '../../theme';
-import { nb } from '../../lib/text';
+import { duration, nb } from '../../lib/text';
 
 export default function RecipeScreen() {
   const reduceMotion = useReducedMotion();
@@ -244,7 +244,7 @@ export default function RecipeScreen() {
           {/* Three colored stat tiles: time, difficulty + steps, kcal */}
           <Reveal index={1}>
             <View style={styles.stats}>
-              <StatTile color={t.pop.sunshine} icon="clock" value={nb(recipe.minutes, 'min')} label="total" a11y={`${recipe.minutes} minutes total`} />
+              <StatTile color={t.pop.sunshine} icon="clock" value={duration(recipe.minutes)} label="total" a11y={`${recipe.minutes} minutes total`} />
               <StatTile color={t.pop.leaf} hats={level} value={recipe.difficulty} label={nb(recipe.steps.length, recipe.steps.length === 1 ? 'step' : 'steps')} a11y={`${recipe.difficulty}, ${recipe.steps.length} steps`} />
               <StatTile color={t.pop.sky} icon="flame" value={`${recipe.calories}`} label={'kcal\u00A0each'} a11y={`${recipe.calories} calories per serving`} />
             </View>
@@ -434,11 +434,23 @@ const TAG_LOOK: Partial<Record<DietTag, { label: string; color: string }>> = {
 /** One colored stat tile: an icon (or chef hats), the value and a label. All three are the same height and size. */
 function StatTile({ color, icon, hats, value, label, a11y }: { color: string; icon?: IconName; hats?: number; value: string; label: string; a11y?: string }) {
   const t = useTheme();
+  // The value always shows in full on one line ("1 h 5 min"): the font shrinks to fit the tile
+  // (Fredoka is about 0.56 em per letter, 0.28 per space) instead of cutting it off.
+  const [width, setWidth] = useState(0);
+  const scale = Math.min(PixelRatio.getFontScale(), MAX_FONT_SCALE);
+  const ems = [...value].reduce((n, c) => n + (/\s/.test(c) ? 0.28 : 0.56), 0);
+  const fontSize = width ? Math.max(12, Math.min(22, Math.floor(width / (ems * scale)))) : 22;
   return (
     <Lift radius={20} style={styles.statLift}>
       <View style={[styles.stat, { backgroundColor: color, ...t.chunky.card }]} accessible accessibilityLabel={a11y ?? `${label}: ${value}`}>
         <View style={styles.statIcon}>{hats ? <ChefHats level={hats} color={t.pop.ink} empty={t.pop.ink} /> : icon ? <Icon name={icon} size={18} color={t.pop.ink} weight="bold" /> : null}</View>
-        <Text style={[styles.statValue, { color: t.pop.ink }]} numberOfLines={1}>
+        <Text
+          style={[styles.statValue, { color: t.pop.ink, fontSize, lineHeight: 27, alignSelf: 'stretch' }]}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.5}
+          onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
+        >
           {value}
         </Text>
         <Text style={[styles.statLabel, { color: t.pop.ink }]} numberOfLines={1}>

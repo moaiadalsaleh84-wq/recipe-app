@@ -74,7 +74,7 @@
           "name": "Onion",
           "quantity": 80,
           "unit": "g",
-          "note": "finely chopped (about 1 small)"
+          "note": "finely chopped"
         },
         {
           "id": "gb",
@@ -258,8 +258,7 @@
           "id": "ch",
           "name": "Boneless skinless chicken thighs",
           "quantity": 600,
-          "unit": "g",
-          "note": "about 4 thighs"
+          "unit": "g"
         },
         {
           "id": "bm",
@@ -1317,8 +1316,7 @@
           "id": "sal",
           "name": "Salmon fillets",
           "quantity": 300,
-          "unit": "g",
-          "note": "about 2 fillets"
+          "unit": "g"
         },
         {
           "id": "oil",
@@ -1806,8 +1804,7 @@
           "id": "cm",
           "name": "Coconut milk",
           "quantity": 400,
-          "unit": "ml",
-          "note": "1 can"
+          "unit": "ml"
         },
         {
           "id": "cp",
@@ -1838,7 +1835,7 @@
           "name": "Frozen pork or chicken dumplings",
           "quantity": 600,
           "unit": "g",
-          "note": "about 24, no need to thaw"
+          "note": "no need to thaw"
         },
         {
           "id": "lime",
@@ -2306,7 +2303,7 @@
           "name": "Canned chickpeas",
           "quantity": 240,
           "unit": "g",
-          "note": "drained (1 can)"
+          "note": "drained"
         },
         {
           "id": "on",
@@ -3208,7 +3205,7 @@
           "name": "Ripe banana",
           "quantity": 120,
           "unit": "g",
-          "note": "about 1, peeled"
+          "note": "peeled"
         },
         {
           "id": "egg",

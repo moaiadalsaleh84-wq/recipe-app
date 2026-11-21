@@ -14,6 +14,7 @@ import { TabScreen } from '../../../components/TabScreen';
 import { useToast } from '../../../components/Toast';
 import { Chip, EmptyState, IconButton, SearchField, SectionHeader } from '../../../components/ui';
 import { FAVORITES_ID, QUICK_FILTER, categories, filterTags, matchesFilter, type Recipe } from '../../../data/mock';
+import { fitsDiet } from '../../../lib/onboardingPicks';
 import { useImportTip } from '../../../lib/appOpens';
 import { haptics } from '../../../lib/haptics';
 import { EXAMPLE_URL } from '../../../lib/importApi';
@@ -83,11 +84,12 @@ export default function RecipesScreen() {
     () =>
       allRecipes.filter(
         (r) =>
+          fitsDiet(r, profile.diets) &&
           (!category || r.category === category) &&
           tags.every((tag) => matchesFilter(r, tag)) &&
           (!q || r.title.toLowerCase().includes(q) || r.ingredients.some((i) => i.name.toLowerCase().includes(q))),
       ),
-    [allRecipes, category, tags, q],
+    [allRecipes, profile.diets, category, tags, q],
   );
 
   // When each recipe was last cooked (ISO dates sort as text).
@@ -188,9 +190,13 @@ export default function RecipesScreen() {
         <View style={[styles.avatar, { backgroundColor: t.pop.berry }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
           <Text style={[t.type.title3, { color: t.pop.ink }]}>{(firstName[0] ?? '?').toUpperCase()}</Text>
         </View>
-        <Text style={[t.type.headline, { color: t.colors.secondaryLabel, flex: 1 }]} testID="screen-kicker">
-          {firstName ? `Hey ${firstName}!` : 'Hey there!'}
-        </Text>
+        {/* One line: a very long name is shortened ("Hey Maximilia…"), never "Hey". */}
+        <View style={styles.greeting} testID="screen-kicker" accessible accessibilityLabel={firstName ? `Hey ${firstName}!` : 'Hey there!'}>
+          <Text style={[t.type.headline, { color: t.colors.secondaryLabel }]}>{'Hey\u00A0'}</Text>
+          <Text style={[t.type.headline, { color: t.colors.secondaryLabel, flexShrink: 1 }]} numberOfLines={1}>
+            {`${firstName || 'there'}!`}
+          </Text>
+        </View>
         <PressableScale
           onPress={() => router.navigate('/progress')}
           accessibilityLabel={streak > 0 ? `${streak} day cooking streak. Opens You` : 'No streak yet. Opens You'}
@@ -373,7 +379,10 @@ export default function RecipesScreen() {
       {!mood && (
         <>
           <SectionHeader
-            title={q ? 'Results' : hasFilters ? 'Filtered' : 'All recipes'}
+            // Your diet from onboarding always applies (change it in Settings); "Clear" only removes
+            // the filters tapped here.
+            title={q ? 'Results' : hasFilters ? 'Filtered' : profile.diets.length ? 'For you' : 'All recipes'}
+            subtitle={profile.diets.length ? profile.diets.join(' · ') : undefined}
             right={
               <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, marginBottom: 4 }]} testID="result-count">
                 {countLabel}
@@ -442,7 +451,7 @@ export default function RecipesScreen() {
             <EmptyState
               icon="search"
               title="No recipes found"
-              message="Try another word, or clear the filters to see everything."
+              message={profile.diets.length ? `Try another word, or clear the filters. Only recipes that fit your diet (${profile.diets.join(', ')}) are shown; change it in Settings.` : 'Try another word, or clear the filters to see everything.'}
               action={{
                 label: 'Clear search and filters',
                 icon: 'close',
@@ -602,6 +611,7 @@ const styles = StyleSheet.create({
   // 36 to look at, 44 to tap (hitSlop 4).
   tipClose: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   header: { marginBottom: 20 },
+  greeting: { flex: 1, flexDirection: 'row', minWidth: 0 },
   topRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   avatar: { width: 44, height: 44, borderRadius: 22, borderWidth: 2.5, borderColor: pop.ink, alignItems: 'center', justifyContent: 'center' },
   streak: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 44, paddingHorizontal: 12, borderRadius: 999, borderWidth: 2.5 },

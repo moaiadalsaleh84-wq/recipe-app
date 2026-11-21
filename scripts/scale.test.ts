@@ -64,3 +64,11 @@ test('shopping list: same name adds up in one unit; a pinch never joins a number
   assert.equal(combine({ quantity: null, unit: 'pinch' }, { quantity: 1, unit: 'tsp' }), null);
   assert.equal(combine({ quantity: 100, unit: 'g' }, { quantity: 1, unit: 'tsp' }), null);
 });
+
+test('US mode: produce under 2 oz stays in grams, bigger produce and other food turn into oz', () => {
+  assert.equal(showAmount(20, 'g', 'Onion', 'us', 'Produce').text, '20 g');
+  assert.equal(showAmount(10, 'g', 'Fresh parsley', 'us', 'Produce').text, '10 g');
+  assert.equal(showAmount(80, 'g', 'Onion', 'us', 'Produce').text, '2¾ oz');
+  assert.equal(showAmount(20, 'g', 'Grated parmesan', 'us', 'Dairy & Eggs').text, '⅔ oz');
+  assert.equal(amountFor({ quantity: 40, unit: 'g', name: 'Onion', aisle: 'Produce' }, 1, 2, 'us').text, '20 g');
+});

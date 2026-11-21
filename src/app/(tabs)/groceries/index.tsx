@@ -51,7 +51,7 @@ export default function GroceriesScreen() {
   const shareList = useCallback(async () => {
     const lines = aisleOrder.flatMap((aisle) => {
       const items = groceries.filter((g) => g.aisle === aisle && !g.checked);
-      return items.length ? [aisleName(aisle), ...items.map((g) => `• ${g.name} (${showAmount(g.quantity, g.unit, g.name, units).text})`), ''] : [];
+      return items.length ? [aisleName(aisle), ...items.map((g) => `• ${g.name} (${showAmount(g.quantity, g.unit, g.name, units, g.aisle).text})`), ''] : [];
     });
     if (lines.length === 0) {
       toast({ message: 'Nothing left to buy, nothing to share!', tone: 'info' });
@@ -274,7 +274,7 @@ function GroceryRow({ item, onToggle, onDelete }: { item: GroceryItem; onToggle:
           scaleTo={0.96}
           accessibilityRole="checkbox"
           aria-checked={item.checked}
-          accessibilityLabel={`${item.name}, ${showAmount(item.quantity, item.unit, item.name, units).text}`}
+          accessibilityLabel={`${item.name}, ${showAmount(item.quantity, item.unit, item.name, units, item.aisle).text}`}
           accessibilityActions={[{ name: 'delete', label: 'Delete' }]}
           onAccessibilityAction={(e) => e.nativeEvent.actionName === 'delete' && onDelete()}
           style={styles.checkTap}
@@ -310,7 +310,7 @@ function GroceryRow({ item, onToggle, onDelete }: { item: GroceryItem; onToggle:
           </View>
           {/* The amount fades and is crossed out together with the name. */}
           <Text style={[t.type.subhead, { color: item.checked ? t.colors.secondaryLabel : t.colors.label, fontVariant: ['tabular-nums'] }, item.checked && styles.struck]}>
-            {plainFractions(showAmount(item.quantity, item.unit, item.name, units).text)}
+            {plainFractions(showAmount(item.quantity, item.unit, item.name, units, item.aisle).text)}
           </Text>
         </PressableScale>
       </View>

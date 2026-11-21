@@ -18,14 +18,15 @@
  * US display (from the precise metric value, then rounded)
  *   1 cup = 240 ml · 1 tbsp = 15 ml · 1 tsp = 5 ml · 1 oz = 28.35 g · 1 lb = 453.6 g.
  *   Under 60 ml → spoons (the tsp/tbsp rule) · 60 ml and up → cups. Under 1 lb → oz · else lb.
- *   oz, lb and cups show the nearest kitchen fraction.
+ *   oz, lb and cups show the nearest kitchen fraction. Produce under 2 oz (onion, garlic, herbs)
+ *   stays in grams: "⅔ oz onion" means nothing in a kitchen.
  * Times, temperatures, timers and nutrition per serving never change with servings.
  *
  * Pure (no app imports), so scripts/scale.test.ts runs it in plain Node.
  */
 
 export type Units = 'metric' | 'us';
-type Amount = { quantity: number | null; unit: string; name: string };
+type Amount = { quantity: number | null; unit: string; name: string; aisle?: string };
 
 /** Half-up rounding: 2.5 → 3, 0.125 × 2 → … always up on a tie. */
 export const halfUp = (x: number) => Math.floor(x + 0.5);
@@ -110,6 +111,9 @@ function halves(v: number): string {
 
 /* ---------------- display ---------------- */
 
+/** Under 2 oz, produce is shown in grams in US mode. */
+export const US_SMALL_PRODUCE_G = 2 * 28.35;
+
 /** Things you can use half of. "Green onions" are whole (a bunch of stems), so they're excluded. */
 const HALVES = /\b(eggs?|avocados?|limes?|tomato(es)?|onions?)\b/i;
 const isHalvable = (name: string) => HALVES.test(name) && !/\b(green|spring)\s+onions?\b/i.test(name);
@@ -145,12 +149,12 @@ const join = (qty: string, unit: string): Shown => ({ qty, unit, text: qty && un
 /**
  * How an (already scaled, unrounded) amount is shown. This is the only place amounts are rounded.
  */
-export function showAmount(value: number | null, unit: string, name: string, units: Units = 'metric'): Shown {
+export function showAmount(value: number | null, unit: string, name: string, units: Units = 'metric', aisle?: string): Shown {
   const info = unitInfo(unit);
   if (value == null || info.family === 'none' || !(value > 0)) return join('', info.family === 'none' ? unitKey(unit) : value == null ? 'pinch' : '');
   const base = value * info.factor;
   if (info.family === 'mass') {
-    if (units === 'us') return base < 453.6 ? join(kitchenFraction(base / 28.35).text, 'oz') : join(kitchenFraction(base / 453.6).text, 'lb');
+    if (units === 'us' && !(aisle === 'Produce' && base < US_SMALL_PRODUCE_G)) return base < 453.6 ? join(kitchenFraction(base / 28.35).text, 'oz') : join(kitchenFraction(base / 453.6).text, 'lb');
     const m = metricMass(base, 'g', 'kg');
     return join(m.qty, m.unit);
   }
@@ -180,7 +184,7 @@ export function showAmount(value: number | null, unit: string, name: string, uni
 
 /** One ingredient, scaled for `servings` and shown in `units`. */
 export function amountFor(ing: Amount, servings: number, baseServings: number, units: Units = 'metric'): Shown {
-  return showAmount(scaleQuantity(ing.quantity, servings, baseServings), ing.unit, ing.name, units);
+  return showAmount(scaleQuantity(ing.quantity, servings, baseServings), ing.unit, ing.name, units, ing.aisle);
 }
 
 /* ---------------- shopping list ---------------- */

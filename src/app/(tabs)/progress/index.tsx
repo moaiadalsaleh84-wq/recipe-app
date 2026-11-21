@@ -129,8 +129,9 @@ export default function ProgressScreen() {
               {streak > 0 ? (
                 <AnimatedNumber value={streak} suffix={'\u00A0day streak'} style={[t.type.title1, { color: t.pop.ink }]} testID="streak-count" />
               ) : (
-                <Text style={[t.type.title1, { color: t.pop.ink }]} testID="streak-count">
-                  No streak yet
+                // Smaller than the streak number and never split: no word ends up alone on a line.
+                <Text style={[t.type.title2, { color: t.pop.ink }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} testID="streak-count">
+                  {'No\u00A0streak\u00A0yet'}
                 </Text>
               )}
               <Text style={[t.type.subhead, { color: t.pop.ink }]}>{streakLine}</Text>

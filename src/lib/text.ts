@@ -22,3 +22,12 @@ export const nb = (n: number | string, unit: string) => `${num(n)}${NBSP}${unit}
 
 /** Numbers from 1,000 up get a thousands separator: 2200 → "2,200". Strings pass through. */
 export const num = (n: number | string) => (typeof n === 'number' && Math.abs(n) >= 1000 ? n.toLocaleString('en-US') : String(n));
+
+/** A cooking time as words that never split: 30 → "30 min", 60 → "1 h", 65 → "1 h 5 min". */
+export function duration(minutes: number) {
+  const m = Math.max(0, Math.round(minutes));
+  if (m < 60) return nb(m, 'min');
+  const h = Math.floor(m / 60);
+  const rest = m % 60;
+  return rest ? `${nb(h, 'h')}${NBSP}${nb(rest, 'min')}` : nb(h, 'h');
+}

@@ -146,7 +146,7 @@ export default function ImportScreen() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: t.colors.groupedBackground }}>
       <PageHeader
-        title="Import a recipe"
+        title="Import recipe"
         mode={fromOnboarding ? 'none' : 'cancel'}
         inSheet={isIOS && !fromOnboarding}
         onBack={() => {

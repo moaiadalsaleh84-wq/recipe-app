@@ -46,7 +46,7 @@ export function PageHeader({
         )}
       </View>
       <View style={styles.titleWrap} pointerEvents="none">
-        <Text style={[t.type.title3, { color: t.colors.label }]} numberOfLines={1} accessibilityRole="header">
+        <Text style={[t.type.title3, { color: t.colors.label }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} accessibilityRole="header">
           {title}
         </Text>
         {subtitle && <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]}>{subtitle}</Text>}
