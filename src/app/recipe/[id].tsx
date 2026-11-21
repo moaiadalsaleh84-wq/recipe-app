@@ -13,7 +13,9 @@ import Animated, {
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
+  useReducedMotion,
 } from 'react-native-reanimated';
+import { enter } from '../../motion';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { pantryHas } from '../../lib/pantry';
@@ -36,6 +38,7 @@ import { fonts, pop, popCycle, useTheme } from '../../theme';
 import { nb } from '../../lib/text';
 
 export default function RecipeScreen() {
+  const reduceMotion = useReducedMotion();
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -276,7 +279,7 @@ export default function RecipeScreen() {
               const { amount, text } = ingredientText(c.quantity, c.unit, ing.name);
               const got = have.has(ing.id);
               return (
-                <Animated.View key={`${ing.id}-${i}`} entering={FadeIn.duration(260).delay(120 + Math.min(i, 12) * 40)}>
+                <Animated.View key={`${ing.id}-${i}`} entering={enter(i, reduceMotion)}>
                   <View
                     style={[styles.ingredient, i > 0 && { borderTopWidth: 1.5, borderTopColor: t.colors.separator }, got && { backgroundColor: t.pop.leafTint }]}
                     accessible

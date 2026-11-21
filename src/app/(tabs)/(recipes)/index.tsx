@@ -1,8 +1,9 @@
 import { router } from 'expo-router';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Linking, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Text } from '../../../components/Text';
-import Animated, { FadeIn, FadeInDown, FadeInRight, FadeOut, LinearTransition } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInRight, FadeOut, LinearTransition, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
+import { enter } from '../../../motion';
 import { Icon, type IconName } from '../../../components/Icon';
 import { Menu } from '../../../components/Menu';
 import { PopButton, PopCard, PopChip, PopIconButton } from '../../../components/pop';
@@ -21,6 +22,7 @@ import { showPaywall, useProGate } from '../../../lib/pro';
 import { streakOf } from '../../../lib/progress';
 import { MANAGE_SUBSCRIPTIONS_URL } from '../../../lib/purchases';
 import { useTonightPick } from '../../../lib/tonightPick';
+import { useFlip } from '../../../components/useFlip';
 import { useStore } from '../../../state/store';
 import { fonts, pop, useTheme } from '../../../theme';
 import { nb } from '../../../lib/text';
@@ -49,6 +51,7 @@ const MOODS: { id: Mood | 'surprise'; label: string; hint: string; icon: IconNam
 ];
 
 export default function RecipesScreen() {
+  const reduceMotion = useReducedMotion();
   const t = useTheme();
   const toast = useToast();
   const { width } = useWindowDimensions();
@@ -108,12 +111,18 @@ export default function RecipesScreen() {
   const showExtras = !hasFilters && !mood;
   // Tonight's dinner from the plan, otherwise the day's pick: fits your diet and goal, 45 minutes or
   // less, best pantry match (the same pick as onboarding, the reminder and the empty states).
-  const { tonight: pick } = useTonightPick();
-  const tonight = pick?.fromPlan ? pick.recipe : undefined;
+  const { tonight: dayPick, picks } = useTonightPick();
+  // "Show me another" flips through the top 5 picks (not when tonight's dinner is already planned).
+  const [shuffled, setShuffled] = useState(0);
+  const others = dayPick && !dayPick.fromPlan ? [dayPick, ...picks.filter((p) => p.recipe.id !== dayPick.recipe.id).slice(0, 4)] : [];
+  const pick = others.length > 1 ? others[shuffled % others.length] : dayPick;
+  const tonight = dayPick?.fromPlan ? dayPick.recipe : undefined;
   const featured = pick?.recipe;
   const featuredMatch = pick ? { have: pick.have, needed: pick.needed } : { have: 0, needed: 0 };
+  const card = useFlip();
   const firstName = profile.name.trim().split(/\s+/)[0] ?? '';
   const streak = streakOf(cooked.map((c) => c.date));
+  const cookedToday = cooked.some((c) => new Date(c.date).toDateString() === new Date().toDateString());
 
   // Rows built only from real data: nothing shows until there's something to show.
   const cookAgain = [...lastCooked.entries()]
@@ -188,7 +197,9 @@ export default function RecipesScreen() {
           style={[styles.streak, { backgroundColor: t.pop.sunshine, borderColor: t.pop.ink }]}
           testID="streak-pill"
         >
-          <Icon name="flameFill" size={16} color={t.pop.tomato} />
+          <Flicker on={streak >= 1 && !cookedToday}>
+            <Icon name="flameFill" size={16} color={t.pop.tomato} />
+          </Flicker>
           <Text style={[t.type.headline, { color: t.pop.ink, fontFamily: t.fonts.black }]}>{streak > 0 ? streak : 'Start'}</Text>
         </PressableScale>
         <PopIconButton icon="plus" onPress={() => setMenuOpen(true)} accessibilityLabel="Add a recipe" accessibilityHint="Save one from a link, or write your own" />
@@ -288,7 +299,7 @@ export default function RecipesScreen() {
           ) : (
             <View style={[styles.grid, { gap, rowGap: t.spacing.md }]}>
               {moodRecipes.map((r, i) => (
-                <Animated.View key={r.id} entering={FadeInDown.duration(280).delay(Math.min(i, 8) * 40)}>
+                <Animated.View key={r.id} entering={enter(i, reduceMotion)}>
                   <RecipeCard recipe={r} width={cardWidth} />
                 </Animated.View>
               ))}
@@ -302,13 +313,16 @@ export default function RecipesScreen() {
           {/* 3. Tonight's dinner from the plan, or the pick of the day */}
           {featured && (
             <Reveal index={2} style={{ marginTop: 22 }}>
+              <Animated.View style={card.style}>
               <TonightCard
+                onShuffle={others.length > 1 ? () => card.flip(() => setShuffled((n) => n + 1)) : undefined}
                 recipe={featured}
                 label={tonight ? 'On the menu tonight' : 'Recipe of the day'}
                 have={featuredMatch.have}
                 needed={featuredMatch.needed}
                 onCook={() => router.push({ pathname: '/cook/[id]', params: { id: featured.id } })}
               />
+              </Animated.View>
             </Reveal>
           )}
 
@@ -441,7 +455,7 @@ export default function RecipesScreen() {
           ) : (
             <View style={[styles.grid, { gap, rowGap: t.spacing.md }]}>
               {sorted.map((r, i) => (
-                <Animated.View key={r.id} layout={LinearTransition.duration(220)} entering={FadeInDown.duration(320).delay(Math.min(i, 8) * 45)}>
+                <Animated.View key={r.id} layout={LinearTransition.duration(220)} entering={enter(i, reduceMotion)}>
                   <RecipeCard recipe={r} width={cardWidth} />
                 </Animated.View>
               ))}
@@ -496,6 +510,21 @@ export default function RecipesScreen() {
 }
 
 /** A titled row of recipe cards that scrolls sideways. The cards slide in one after another. */
+/**
+ * The streak flame flickers gently (a slow, small scale loop) while today's cook is still to come:
+ * a quiet reminder, nothing more. Still with Reduce Motion, and once you've cooked today.
+ */
+function Flicker({ on, children }: { on: boolean; children: React.ReactNode }) {
+  const reduceMotion = useReducedMotion();
+  const s = useSharedValue(1);
+  useEffect(() => {
+    if (on && !reduceMotion) s.set(withRepeat(withSequence(withTiming(1.14, { duration: 700 }), withTiming(0.96, { duration: 600 })), -1, true));
+    else s.set(withTiming(1, { duration: 150 }));
+  }, [on, reduceMotion, s]);
+  const style = useAnimatedStyle(() => ({ transform: [{ scale: s.get() }] }));
+  return <Animated.View style={style}>{children}</Animated.View>;
+}
+
 function Rail({ title, subtitle, recipes, width, action }: { title: string; subtitle?: string; recipes: Recipe[]; width: number; action?: { label: string; onPress: () => void } }) {
   const t = useTheme();
   return (

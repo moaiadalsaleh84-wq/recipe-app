@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
 import { Text } from '../Text';
-import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
+import { pressSpring } from '../../motion';
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from 'react-native-reanimated';
 import { haptics, type HapticKind } from '../../lib/haptics';
 import { depth as DEPTH, pop, radius, stroke, type as typeScale } from '../../theme';
 import { Icon, type IconName } from '../Icon';
@@ -48,7 +49,7 @@ export function PopButton({
   depth: depthProp,
   style,
   faceStyle,
-  haptic = 'tap',
+  haptic: hapticProp,
   disabled,
   onPressIn,
   onPressOut,
@@ -57,13 +58,15 @@ export function PopButton({
   ...rest
 }: Props) {
   const reduceMotion = useReducedMotion();
+  // A light tap only on primary actions (sunshine or ink); quieter buttons are silent unless asked.
+  const haptic = hapticProp === undefined ? (color === pop.sunshine || color === pop.ink ? 'tap' : null) : hapticProp;
   // 4pt under big buttons, 3pt under small ones.
   const depth = depthProp ?? (size === 'small' ? DEPTH.small : DEPTH.button);
   const down = useSharedValue(0);
   // Only plain numbers in here: this runs on the UI thread.
   const faceMove = useAnimatedStyle(() => ({ transform: [{ translateY: down.get() * depth }] }));
   const large = size === 'large';
-  const press = (to: number) => down.set(reduceMotion ? to : withTiming(to, { duration: to ? 60 : 110 }));
+  const press = (to: number) => down.set(reduceMotion ? to : withSpring(to, pressSpring));
 
   return (
     <Pressable

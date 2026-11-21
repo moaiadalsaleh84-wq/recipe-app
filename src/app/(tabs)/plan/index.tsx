@@ -2,7 +2,8 @@ import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Text } from '../../../components/Text';
-import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
+import Animated, { FadeOut, useReducedMotion } from 'react-native-reanimated';
+import { enter } from '../../../motion';
 import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
 import { Reveal } from '../../../components/Reveal';
@@ -21,6 +22,7 @@ import { nb } from '../../../lib/text';
 
 
 export default function PlanScreen() {
+  const reduceMotion = useReducedMotion();
   const t = useTheme();
   const toast = useToast();
   const { plan, setMeal, addWeekToGroceries, getRecipe, goals, isPro, allRecipes } = useStore();
@@ -150,7 +152,7 @@ export default function PlanScreen() {
         {meals.map((meal, i) => {
           const recipe = getRecipe(dayPlan[meal]);
           return recipe ? (
-            <Animated.View key={`${meal}-${recipe.id}`} entering={FadeInDown.duration(300).delay(i * 60)} exiting={FadeOut.duration(150)}>
+            <Animated.View key={`${meal}-${recipe.id}`} entering={enter(i, reduceMotion)} exiting={FadeOut.duration(150)}>
               <MealCard meal={meal} recipe={recipe} onChange={() => addMeal(meal)} onRemove={() => remove(meal, recipe.id)} />
             </Animated.View>
           ) : (

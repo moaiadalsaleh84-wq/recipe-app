@@ -3,7 +3,8 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { Share, StyleSheet, TextInput, View } from 'react-native';
 import { Text } from '../../../components/Text';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
-import Animated, { FadeIn, FadeInDown, FadeOut, LinearTransition, useAnimatedStyle, type SharedValue } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut, LinearTransition, SlideOutDown, ZoomIn, useAnimatedStyle, useReducedMotion, type SharedValue } from 'react-native-reanimated';
+import { enter } from '../../../motion';
 import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
 import { Reveal } from '../../../components/Reveal';
@@ -41,6 +42,9 @@ export default function GroceriesScreen() {
     [groceries],
   );
   const basket = useMemo(() => groceries.filter((g) => g.checked), [groceries]);
+  const reduceMotion = useReducedMotion();
+  // Rows glide into place as items move, but not on long lists (over 20 items): too much motion.
+  const glide = groceries.length <= 20 ? LinearTransition.duration(220) : undefined;
   const [basketOpen, setBasketOpen] = useState(false);
 
   const shareList = useCallback(async () => {
@@ -164,7 +168,7 @@ export default function GroceriesScreen() {
         <>
           {/* Each aisle on its own outlined card, with its name and count above it */}
           {groups.map((g, gi) => (
-            <Animated.View key={g.aisle} layout={LinearTransition.duration(220)} entering={FadeInDown.duration(300).delay(gi * 50)}>
+            <Animated.View key={g.aisle} layout={glide} entering={enter(gi, reduceMotion)}>
               <View style={styles.aisleHead}>
                 <Text style={[t.type.title3, { color: t.colors.label }]} accessibilityRole="header">
                   {aisleName(g.aisle)}
@@ -173,7 +177,7 @@ export default function GroceriesScreen() {
               </View>
               <Section>
                 {g.items.map((item, i) => (
-                  <Animated.View key={item.key} layout={LinearTransition.duration(220)} entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)}>
+                  <Animated.View key={item.key} layout={glide} entering={FadeIn.duration(200)} exiting={reduceMotion ? FadeOut.duration(150) : SlideOutDown.duration(260)}>
                     {i > 0 && <Separator inset={60} />}
                     <GroceryRow item={item} onToggle={() => toggle(item)} onDelete={() => remove(item)} />
                   </Animated.View>
@@ -184,7 +188,7 @@ export default function GroceriesScreen() {
 
           {/* In the basket: ticked items, folded away until you open it */}
           {basket.length > 0 && (
-            <Animated.View layout={LinearTransition.duration(220)} style={{ marginTop: groups.length ? 0 : 16 }}>
+            <Animated.View layout={glide} style={{ marginTop: groups.length ? 0 : 16 }}>
               <PressableScale
                 onPress={() => setBasketOpen((o) => !o)}
                 haptic="select"
@@ -195,7 +199,13 @@ export default function GroceriesScreen() {
                 testID="basket-toggle"
               >
                 <Icon name="cart" size={18} color={t.pop.ink} weight="bold" />
-                <Text style={[t.type.headline, { color: t.pop.ink, flex: 1 }]}>In the basket ({basket.length})</Text>
+                <Text style={[t.type.headline, { color: t.pop.ink, flex: 1 }]}>
+                  In the basket{' '}
+                  {/* The count pops each time something lands in the basket. */}
+                  <Animated.Text key={basket.length} entering={reduceMotion ? undefined : ZoomIn.springify().damping(9)}>
+                    ({basket.length})
+                  </Animated.Text>
+                </Text>
                 <Icon name={basketOpen ? 'chevronDown' : 'chevronRight'} size={14} color={t.pop.ink} weight="bold" />
               </PressableScale>
               {basketOpen && (

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Text } from '../Text';
+import { pressSpring } from '../../motion';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import { useEffect, useRef } from 'react';
 import { haptics } from '../../lib/haptics';
@@ -69,8 +70,8 @@ export function PopChip({ label, color = pop.white, icon, leading, trailing, sel
         haptics.select();
         onPress();
       }}
-      onPressIn={() => down.set(reduceMotion ? 1 : withTiming(1, { duration: 60 }))}
-      onPressOut={() => down.set(reduceMotion ? 0 : withTiming(0, { duration: 110 }))}
+      onPressIn={() => down.set(reduceMotion ? 1 : withSpring(1, pressSpring))}
+      onPressOut={() => down.set(reduceMotion ? 0 : withSpring(0, pressSpring))}
       accessibilityRole={toggle ? 'togglebutton' : 'button'}
       aria-selected={toggle ? selected : undefined}
       accessibilityLabel={accessibilityLabel ?? label}

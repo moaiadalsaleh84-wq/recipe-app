@@ -1,11 +1,12 @@
 import type { BottomTabBarProps } from 'expo-router/tabs';
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from './Text';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { haptics } from '../lib/haptics';
-import { fonts, motion, pop, stroke } from '../theme';
+import { duration, popSpring, spring } from '../motion';
+import { fonts, pop, stroke } from '../theme';
 import { Icon, type IconName } from './Icon';
 
 /** One entry per tab folder in src/app/(tabs). */
@@ -16,6 +17,8 @@ const tabs: Record<string, { label: string; long: string; icon: IconName }> = {
   groceries: { label: 'List', long: 'Shopping list', icon: 'cart' },
   progress: { label: 'You', long: 'You', icon: 'trophy' },
 };
+
+const PILL_W = 52;
 
 /** Height of the bar itself, above the home indicator. */
 export const TAB_BAR_HEIGHT = 64;
@@ -40,8 +43,22 @@ export function useTabBarSpace() {
  */
 export function TabBar({ state, emitter, navigateToTab, badges = {} }: BottomTabBarProps & { badges?: Record<string, number> }) {
   const insets = useSafeAreaInsets();
+  const reduceMotion = useReducedMotion();
+  // One sunshine pill that slides to the selected tab (a spring), instead of one pill per tab.
+  const count = state.routes.filter((r) => tabs[r.name]).length || 1;
+  const [barW, setBarW] = useState(0);
+  const x = useSharedValue(-1);
+  const tabW = barW / count;
+  useEffect(() => {
+    if (!barW) return;
+    const to = state.index * tabW + (tabW - PILL_W) / 2;
+    // First placement (and Reduce Motion): jump there. Then: slide.
+    x.set(reduceMotion || x.get() < 0 ? to : withSpring(to, spring));
+  }, [state.index, tabW, barW, reduceMotion, x]);
+  const pillStyle = useAnimatedStyle(() => ({ opacity: x.get() < 0 ? 0 : 1, transform: [{ translateX: x.get() }] }));
   return (
-    <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 8) }]} accessibilityRole="tablist">
+    <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 8) }]} accessibilityRole="tablist" onLayout={(e) => setBarW(e.nativeEvent.layout.width)}>
+      <Animated.View pointerEvents="none" style={[styles.pill, styles.slidingPill, pillStyle]} />
       {state.routes.map((route, i) => {
         const tab = tabs[route.name];
         if (!tab) return null;
@@ -76,18 +93,16 @@ export function TabBar({ state, emitter, navigateToTab, badges = {} }: BottomTab
 
 function TabIcon({ icon, selected, badge }: { icon: IconName; selected: boolean; badge: number }) {
   const reduceMotion = useReducedMotion();
-  const pill = useSharedValue(selected ? 1 : 0);
-  const squash = useSharedValue(1);
+  const bounce = useSharedValue(1);
+  const was = useRef(selected);
   useEffect(() => {
-    pill.set(reduceMotion ? (selected ? 1 : 0) : withTiming(selected ? 1 : 0, { duration: 160 }));
-    if (selected && !reduceMotion) squash.set(withSequence(withTiming(0.85, { duration: 70 }), withSpring(1, motion.pop)));
-  }, [selected, reduceMotion, pill, squash]);
-  // The pill grows in from the middle; the icon gives a small squash and pop. Numbers only in here.
-  const pillStyle = useAnimatedStyle(() => ({ opacity: pill.get(), transform: [{ scaleX: 0.6 + pill.get() * 0.4 }] }));
-  const iconStyle = useAnimatedStyle(() => ({ transform: [{ scale: squash.get() }] }));
+    // The newly selected icon bounces once: 1 → 1.15 → 1.
+    if (selected && !was.current && !reduceMotion) bounce.set(withSequence(withTiming(1.15, { duration: duration.fast }), withSpring(1, popSpring)));
+    was.current = selected;
+  }, [selected, reduceMotion, bounce]);
+  const iconStyle = useAnimatedStyle(() => ({ transform: [{ scale: bounce.get() }] }));
   return (
     <View style={styles.iconBox}>
-      <Animated.View style={[styles.pill, pillStyle]} />
       <Animated.View style={iconStyle}>
         <Icon name={icon} size={22} color={selected ? pop.ink : pop.inkMuted} weight={selected ? 'bold' : 'semibold'} />
       </Animated.View>
@@ -118,7 +133,9 @@ const styles = StyleSheet.create({
   // Five equal tabs: the same width whether selected or not.
   tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3, height: TAB_BAR_HEIGHT - 8, minWidth: 0 },
   iconBox: { width: 52, height: 32, alignItems: 'center', justifyContent: 'center' },
-  pill: { position: 'absolute', width: 52, height: 32, borderRadius: 16, backgroundColor: pop.sunshine, borderWidth: stroke.thin, borderColor: pop.ink },
+  pill: { position: 'absolute', width: PILL_W, height: 32, borderRadius: 16, backgroundColor: pop.sunshine, borderWidth: stroke.thin, borderColor: pop.ink },
+  // Sits behind the selected tab's icon: the bar's 6pt top padding + the 3pt left over when the 50pt icon+label block is centered in the 56pt tab.
+  slidingPill: { top: 6 + 3, left: 0 },
   label: { fontSize: 12, lineHeight: 15 },
   labelOn: { fontFamily: fonts.black, color: pop.ink },
   labelOff: { fontFamily: fonts.medium, color: pop.inkMuted },

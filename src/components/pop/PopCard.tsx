@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
-import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
+import { pressSpring } from '../../motion';
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from 'react-native-reanimated';
 import { haptics, type HapticKind } from '../../lib/haptics';
 import { depth as DEPTH, pop, stroke } from '../../theme';
 
@@ -32,13 +33,13 @@ type Props = {
  * A card: white or tinted, a thick ink outline and a solid ink shadow (a real View). With
  * `onPress` the whole card is a button and presses down onto its shadow.
  */
-export function PopCard({ children, color = pop.white, radius = 24, depth = DEPTH.card, style, contentStyle, onPress, accessibilityLabel, accessibilityHint, haptic = 'tap', testID, clip = true, pressed = false }: Props) {
+export function PopCard({ children, color = pop.white, radius = 24, depth = DEPTH.card, style, contentStyle, onPress, accessibilityLabel, accessibilityHint, haptic = null, testID, clip = true, pressed = false }: Props) {
   const reduceMotion = useReducedMotion();
   const down = useSharedValue(0);
   const held = pressed ? 1 : 0;
   // Numbers only in here: this runs on the UI thread.
   const move = useAnimatedStyle(() => ({ transform: [{ translateY: Math.max(held, down.get()) * depth }] }));
-  const press = (to: number) => down.set(reduceMotion ? to : withTiming(to, { duration: to ? 60 : 110 }));
+  const press = (to: number) => down.set(reduceMotion ? to : withSpring(to, pressSpring));
   const face = [styles.face, { backgroundColor: color, borderRadius: radius, overflow: clip ? ('hidden' as const) : ('visible' as const) }, contentStyle];
 
   if (!onPress) {

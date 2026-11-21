@@ -13,6 +13,7 @@ import { nb } from '../lib/text';
 import { Icon } from './Icon';
 import { PressableScale } from './PressableScale';
 import { PopButton } from './pop/PopButton';
+import { PopIconButton } from './pop/PopIconButton';
 import { PopCard } from './pop/PopCard';
 import { PopChip } from './pop/PopChip';
 import { Sticker } from './pop/Sticker';
@@ -26,10 +27,26 @@ export function RecipePhoto({ recipe, iconSize = 36, radius = 0 }: { recipe: Rec
   const t = useTheme();
   // Remembers which image failed (an expired link), so a new photo gets a fresh try.
   const [failed, setFailed] = useState<RecipeImage>(null);
+  const [loaded, setLoaded] = useState<RecipeImage>(null);
   const image = recipe.image;
   if (image && image !== failed) {
     const source = typeof image === 'number' ? image : { uri: photoUri(image.uri) };
-    return <Image source={source} style={[StyleSheet.absoluteFill, { borderRadius: radius }]} contentFit="cover" transition={250} onError={() => setFailed(image)} accessibilityIgnoresInvertColors />;
+    // While it loads: a shimmering placeholder; then the photo fades in (250ms). Cached on disk and in memory.
+    return (
+      <>
+        {loaded !== image && <Skeleton style={[StyleSheet.absoluteFill, { borderRadius: radius }]} />}
+        <Image
+          source={source}
+          style={[StyleSheet.absoluteFill, { borderRadius: radius }]}
+          contentFit="cover"
+          transition={250}
+          cachePolicy="memory-disk"
+          onLoad={() => setLoaded(image)}
+          onError={() => setFailed(image)}
+          accessibilityIgnoresInvertColors
+        />
+      </>
+    );
   }
   return (
     <View style={[StyleSheet.absoluteFill, styles.noPhoto, { backgroundColor: t.colors.imagePlaceholder, borderRadius: radius }]}>
@@ -164,7 +181,26 @@ export function RecipeCardSkeleton({ width }: { width: number }) {
  * "Tonight's pick": a PopCard with the photo (ink line under it), a tilted tomato sticker, the
  * name, "25 min · you have 3 of 6", and a big "Cook it!" button that opens Get ready.
  */
-export function TonightCard({ recipe, label, have, needed, onCook }: { recipe: Recipe; /** For screen readers: why it's featured. */ label: string; have: number; needed: number; onCook: () => void }) {
+export function TonightCard({
+  recipe,
+  label,
+  have,
+  needed,
+  onCook,
+  onShuffle,
+  note,
+}: {
+  recipe: Recipe;
+  /** For screen readers: why it's featured. */
+  label: string;
+  have: number;
+  needed: number;
+  onCook: () => void;
+  /** "Show me another": a shuffle button next to Cook it. */
+  onShuffle?: () => void;
+  /** A small line under the meta, e.g. why it was picked. */
+  note?: string;
+}) {
   const t = useTheme();
   return (
     <View>
@@ -182,9 +218,17 @@ export function TonightCard({ recipe, label, have, needed, onCook }: { recipe: R
             <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]} testID="tonight-meta">
               {nb(recipe.minutes, 'min')} · {needed === 0 ? recipe.difficulty : have === 0 ? nb(needed, needed === 1 ? 'ingredient' : 'ingredients') : `you have ${have} of\u00A0${needed}`}
             </Text>
+            {note ? (
+              <Text style={[t.type.caption1, { color: t.colors.label }]} testID="tonight-note">
+                {note}
+              </Text>
+            ) : null}
           </View>
         </PressableScale>
-        <PopButton label="Cook it!" iconRight="arrowRight" onPress={onCook} accessibilityLabel={`Cook ${recipe.title}`} style={styles.tonightBtn} />
+        <View style={[styles.tonightBtn, { flexDirection: 'row', gap: 12 }]}>
+          <PopButton label="Cook it!" iconRight="arrowRight" onPress={onCook} accessibilityLabel={`Cook ${recipe.title}`} style={{ flex: 1 }} />
+          {onShuffle && <PopIconButton icon="shuffle" size={56} iconSize={22} onPress={onShuffle} accessibilityLabel="Show me another" testID="tonight-shuffle" />}
+        </View>
       </PopCard>
       {/* Slapped on where the photo meets the card. */}
       <Sticker label="Tonight's pick" style={styles.tonightSticker} />

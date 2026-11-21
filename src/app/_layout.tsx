@@ -84,13 +84,13 @@ export default function RootLayout() {
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="onboarding" options={{ gestureEnabled: false, animation: 'fade' }} />
                 <Stack.Screen name="paywall" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
-                <Stack.Screen name="recipe/[id]" />
+                <Stack.Screen name="recipe/[id]" options={{ animation: 'slide_from_right' }} />
                 <Stack.Screen name="recipe/new" options={{ presentation: 'modal', contentStyle: { backgroundColor: t.colors.groupedBackground } }} />
                 <Stack.Screen name="import" options={{ presentation: 'modal', contentStyle: { backgroundColor: t.colors.groupedBackground } }} />
                 <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="privacy" options={{ presentation: 'modal', contentStyle: { backgroundColor: t.colors.groupedBackground } }} />
-                <Stack.Screen name="cook/[id]" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
-                <Stack.Screen name="cookbook/[id]" />
+                <Stack.Screen name="cook/[id]" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
+                <Stack.Screen name="cookbook/[id]" options={{ animation: 'slide_from_right' }} />
                 <Stack.Screen name="plan-picker" options={sheet} />
                 <Stack.Screen name="save-to-cookbook" options={sheet} />
                 <Stack.Screen name="buddy-pick" options={{ ...sheet, sheetAllowedDetents: [0.85] }} />

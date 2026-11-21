@@ -2,11 +2,13 @@
  * Small building blocks shared across screens.
  * All tappable pieces are at least 44pt and give press + haptic feedback.
  */
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from 'react-native';
+import { useEffect, useState, type ReactNode } from 'react';
+import { StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native';
 import { Text } from './Text';
 import { num } from '../lib/text';
+import { duration as motionDuration, popSpring } from '../motion';
 import Animated, {
+  Easing,
   useAnimatedProps,
   useAnimatedStyle,
   useReducedMotion,
@@ -217,26 +219,30 @@ export function CheckCircle({ checked, color, checkColor = pop.ink }: { checked:
   const t = useTheme();
   const reduceMotion = useReducedMotion();
   const scale = useSharedValue(checked ? 1 : 0);
-  const ring = useSharedValue(1);
+  const tick = useSharedValue(checked ? 1 : 0);
 
   useEffect(() => {
     if (checked) {
-      scale.set(reduceMotion ? 1 : withSpring(1, t.motion.pop));
-      ring.set(reduceMotion ? 1 : withSequence(withTiming(0.82, { duration: 90 }), withSpring(1, t.motion.pop)));
+      // The fill pops 0.6 → 1.1 → 1, then the tick draws in (grows and fades in from the left).
+      scale.set(reduceMotion ? 1 : withSequence(withTiming(0.6, { duration: 0 }), withTiming(1.1, { duration: motionDuration.fast }), withSpring(1, popSpring)));
+      tick.set(reduceMotion ? 1 : withSequence(withTiming(0, { duration: 0 }), withTiming(0, { duration: 90 }), withTiming(1, { duration: motionDuration.fast })));
     } else {
       scale.set(withTiming(0, { duration: 140 }));
+      tick.set(0);
     }
-  }, [checked, reduceMotion, ring, scale, t.motion.pop]);
+  }, [checked, reduceMotion, scale, tick]);
 
-  const fillStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }], opacity: scale.get() }));
-  const ringStyle = useAnimatedStyle(() => ({ transform: [{ scale: ring.get() }] }));
+  const fillStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }], opacity: Math.min(1, scale.get() * 1.6) }));
+  const tickStyle = useAnimatedStyle(() => ({ opacity: tick.get(), transform: [{ translateX: (1 - tick.get()) * -4 }, { scale: 0.5 + tick.get() * 0.5 }] }));
 
   return (
-    <Animated.View style={[styles.check, { borderColor: t.pop.ink, backgroundColor: t.colors.cell }, ringStyle]}>
+    <View style={[styles.check, { borderColor: t.pop.ink, backgroundColor: t.colors.cell }]}>
       <Animated.View style={[styles.checkFill, { backgroundColor: color }, fillStyle]}>
-        <Icon name="check" size={14} color={checkColor} weight="bold" />
+        <Animated.View style={tickStyle}>
+          <Icon name="check" size={14} color={checkColor} weight="bold" />
+        </Animated.View>
       </Animated.View>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -299,46 +305,67 @@ export function Ring({ value, size = 56, stroke = 6, color, track, children, lab
 }
 
 /** A number that counts up to its value (quickly, with an ease-out). Shows the value at once with Reduce Motion. */
-export function AnimatedNumber({ value, style, duration = 700 }: { value: number; style?: StyleProp<import('react-native').TextStyle>; duration?: number }) {
+const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
+
+/**
+ * A number that counts up or down to its new value (400ms, eased) on the UI thread: the text is a
+ * read-only field Reanimated updates every frame, so React doesn't re-render 60 times a second.
+ * With Reduce Motion it just shows the new number. 1,000+ get a thousands separator.
+ */
+export function AnimatedNumber({ value, style, duration = 400, prefix = '', suffix = '', testID }: { value: number; style?: StyleProp<TextStyle>; duration?: number; prefix?: string; suffix?: string; testID?: string }) {
   const reduceMotion = useReducedMotion();
-  const [shown, setShown] = useState(reduceMotion ? value : 0);
-  const from = useRef(reduceMotion ? value : 0);
+  const shown = useSharedValue(reduceMotion ? value : 0);
   useEffect(() => {
-    if (reduceMotion) {
-      from.current = value;
-      return;
-    }
-    const start = Date.now();
-    const a = from.current;
-    let raf = 0;
-    const step = () => {
-      const p = Math.min(1, (Date.now() - start) / duration);
-      const eased = 1 - Math.pow(1 - p, 3);
-      setShown(Math.round(a + (value - a) * eased));
-      if (p < 1) raf = requestAnimationFrame(step);
-      else from.current = value;
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [value, reduceMotion, duration]);
+    shown.set(reduceMotion ? value : withTiming(value, { duration, easing: Easing.out(Easing.cubic) }));
+  }, [value, reduceMotion, duration, shown]);
+  const props = useAnimatedProps(() => {
+    const n = String(Math.round(shown.get())).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return { text: prefix + n + suffix, defaultValue: prefix + n + suffix } as object;
+  });
+  const flat = StyleSheet.flatten([{ fontVariant: ['tabular-nums'] as TextStyle['fontVariant'] }, style]);
+  const finalText = `${prefix}${num(value)}${suffix}`;
   return (
-    <Text style={[{ fontVariant: ['tabular-nums'] }, style]} accessibilityLabel={String(value)}>
-      {reduceMotion ? value : shown}
-    </Text>
+    // An invisible copy of the final text gives the size; the counting field sits exactly on top.
+    <View accessible accessibilityLabel={finalText} testID={testID ? `${testID}-box` : undefined}>
+      <Text style={[flat, { opacity: 0 }]} numberOfLines={1} importantForAccessibility="no" accessibilityElementsHidden>
+        {finalText}
+      </Text>
+      <AnimatedTextInput
+        editable={false}
+        underlineColorAndroid="transparent"
+        pointerEvents="none"
+        maxFontSizeMultiplier={1.3}
+        accessibilityElementsHidden
+        importantForAccessibility="no"
+        defaultValue={`${prefix}${num(reduceMotion ? value : 0)}${suffix}`}
+        testID={testID}
+        animatedProps={props}
+        style={[flat, StyleSheet.absoluteFill, { padding: 0, margin: 0, borderWidth: 0 }]}
+      />
+    </View>
   );
 }
 
 /* ---------- Skeleton ---------- */
 
+/**
+ * A placeholder for something still loading: a soft fill with a light band sweeping across it
+ * (transform only, on the UI thread). Reduce Motion: a still fill.
+ */
 export function Skeleton({ style }: { style?: StyleProp<ViewStyle> }) {
   const t = useTheme();
   const reduceMotion = useReducedMotion();
-  const opacity = useSharedValue(1);
+  const sweep = useSharedValue(0);
+  const [w, setW] = useState(0);
   useEffect(() => {
-    if (!reduceMotion) opacity.set(withRepeat(withTiming(0.45, { duration: 800 }), -1, true));
-  }, [opacity, reduceMotion]);
-  const animated = useAnimatedStyle(() => ({ opacity: opacity.get() }));
-  return <Animated.View style={[{ backgroundColor: t.colors.fill, borderRadius: t.radius.sm, borderCurve: 'continuous' }, style, animated]} />;
+    if (!reduceMotion) sweep.set(withRepeat(withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.quad) }), -1, false));
+  }, [sweep, reduceMotion]);
+  const band = useAnimatedStyle(() => ({ transform: [{ translateX: -w * 0.6 + sweep.get() * w * 1.6 }] }));
+  return (
+    <View onLayout={(e) => setW(e.nativeEvent.layout.width)} style={[{ backgroundColor: t.colors.fill, borderRadius: t.radius.sm, borderCurve: 'continuous', overflow: 'hidden' }, style]}>
+      {!reduceMotion && w > 0 && <Animated.View pointerEvents="none" style={[{ position: 'absolute', top: 0, bottom: 0, width: w * 0.6, backgroundColor: 'rgba(255,255,255,0.55)' }, band]} />}
+    </View>
+  );
 }
 
 

@@ -1,7 +1,7 @@
 import { useKeepAwake } from 'expo-keep-awake';
 import { router, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { Image } from 'expo-image';
 import { Modal, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
@@ -16,21 +16,26 @@ import Animated, {
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
+  Easing,
   withDelay,
+  withRepeat,
   withSequence,
   withSpring,
   withTiming,
-  type SharedValue,
+  ZoomIn,
 } from 'react-native-reanimated';
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomBar } from '../../components/BottomBar';
+import { ConfettiBurst } from '../../components/ConfettiBurst';
+import { duration, enter, popSpring, pressSpring, spring } from '../../motion';
+import { scheduleOnRN } from 'react-native-worklets';
 import { Icon } from '../../components/Icon';
 import { PressableScale } from '../../components/PressableScale';
 import { RecipePhoto } from '../../components/RecipeCard';
 import { useToast } from '../../components/Toast';
 import { Lift, MascotSlot, PopButton, PopCard, PopChip, PopIconButton, SHOW_MASCOT_PLACEHOLDER } from '../../components/pop';
-import { CheckCircle, EmptyState, ProgressBar } from '../../components/ui';
+import { AnimatedNumber, CheckCircle, EmptyState, ProgressBar } from '../../components/ui';
 import type { Ingredient, Rating, Recipe } from '../../data/mock';
 import { clock, isReady, secondsLeft, type CookTimer } from '../../lib/cookTimers';
 import { haptics } from '../../lib/haptics';
@@ -91,14 +96,25 @@ function CookSession({ recipe, servings }: { recipe: Recipe; servings: number })
   // Swipe the step card: left = next step, right = previous (as well as the buttons). Horizontal only,
   // so scrolling up and down still works. Calls go() through a ref, so it always sees this render's state.
   const swipeTo = useRef<(dir: 1 | -1) => void>(() => {});
+  const reduceMotion = useReducedMotion();
+  const drag = useSharedValue(0);
+  const onSwipe = useCallback((dir: 1 | -1) => swipeTo.current(dir), []);
   const swipe = usePanGesture({
     activeOffsetX: [-24, 24],
     failOffsetY: [-14, 14],
-    runOnJS: true,
+    onUpdate: (e) => {
+      'worklet';
+      drag.set(e.translationX);
+    },
     onDeactivate: (e) => {
-      if (Math.abs(e.translationX) > 60 || Math.abs(e.velocityX) > 500) swipeTo.current(e.translationX < 0 ? 1 : -1);
+      'worklet';
+      const far = Math.abs(e.translationX) > 60 || Math.abs(e.velocityX) > 500;
+      drag.set(withSpring(0, pressSpring));
+      if (far) scheduleOnRN(onSwipe, e.translationX < 0 ? 1 : -1);
     },
   });
+  // Follows the finger with a little resistance and tilt. Numbers only in here (UI thread).
+  const dragStyle = useAnimatedStyle(() => ({ transform: [{ translateX: drag.get() * 0.6 }, { rotate: `${drag.get() * 0.02}deg` }] }));
 
   const progressInput = { cooked, customRecipes, plan, favorites, fun, streak: streakOf(cooked.map((c) => c.date)) };
 
@@ -197,9 +213,13 @@ function CookSession({ recipe, servings }: { recipe: Recipe; servings: number })
             <View style={[StyleSheet.absoluteFill, styles.headerCenter, { top: Math.max(insets.top, 12) + 4 }]} pointerEvents="none">
               {page === 0 ? (
                 <View style={[styles.readyPill, { backgroundColor: setOut === recipe.ingredients.length ? pop.leaf : pop.white }]}>
-                  <Text style={[t.type.headline, { color: pop.ink, fontFamily: fonts.black }]} testID="gather-count">
-                    {setOut === recipe.ingredients.length ? 'Everything’s ready' : `${setOut} of ${recipe.ingredients.length} ready`}
-                  </Text>
+                  {setOut === recipe.ingredients.length ? (
+                    <Text style={[t.type.headline, { color: pop.ink, fontFamily: fonts.black }]} testID="gather-count">
+                      Everything’s ready
+                    </Text>
+                  ) : (
+                    <AnimatedNumber value={setOut} suffix={` of ${recipe.ingredients.length} ready`} style={[t.type.headline, { color: pop.ink, fontFamily: fonts.black }]} testID="gather-count" />
+                  )}
                 </View>
               ) : (
                 <Text style={[t.type.title3, { color: pop.ink }]} testID="cook-progress">
@@ -220,7 +240,7 @@ function CookSession({ recipe, servings }: { recipe: Recipe; servings: number })
             <View style={styles.segments} accessibilityLabel="Steps" accessibilityValue={{ min: 0, max: steps.length, now: page }}>
               {steps.map((_, i) => (
                 <PressableScale key={i} onPress={() => go(i + 1)} haptic={null} scaleTo={0.96} accessibilityLabel={`Go to step ${i + 1}${i + 1 < page ? ', done' : i + 1 === page ? ', current' : ''}`} style={styles.segmentTap}>
-                  <View testID="cook-segment" style={[styles.segment, { backgroundColor: i + 1 < page ? pop.leaf : i + 1 === page ? pop.sunshine : pop.white }]} />
+                  <Segment state={i + 1 < page ? 'done' : i + 1 === page ? 'current' : 'todo'} />
                 </PressableScale>
               ))}
             </View>
@@ -266,6 +286,7 @@ function CookSession({ recipe, servings }: { recipe: Recipe; servings: number })
               <Animated.View key={page} entering={(forward ? FadeInRight : FadeInLeft).duration(240)} style={{ gap: 16 }}>
                 {/* The step: a big card with its number sitting on the top edge. Swipe it to move between steps. */}
                 <GestureDetector gesture={swipe}>
+                <Animated.View style={reduceMotion ? undefined : dragStyle}>
                 <PopCard clip={false} style={{ marginTop: 26 }} contentStyle={styles.stepCard}>
                   <View style={[styles.stepBadge, { backgroundColor: color.fill }]} accessibilityElementsHidden>
                     <Text style={[t.type.title2, { color: pop.ink }]}>{page}</Text>
@@ -281,6 +302,7 @@ function CookSession({ recipe, servings }: { recipe: Recipe; servings: number })
                     </View>
                   )}
                 </PopCard>
+                </Animated.View>
                 </GestureDetector>
 
                 {tip && (
@@ -411,9 +433,9 @@ function GatherTile({ name, qty, checked, onPress }: { name: string; qty: string
       <View style={styles.tileShadow} />
       <Animated.View style={[styles.tile, { backgroundColor: checked ? pop.leaf : pop.white }, face]}>
         {checked ? (
-          <View style={styles.tileCheck}>
+          <Animated.View entering={reduceMotion ? undefined : ZoomIn.springify().damping(9).stiffness(320)} style={styles.tileCheck}>
             <Icon name="check" size={14} color={pop.ink} weight="bold" />
-          </View>
+          </Animated.View>
         ) : (
           <View style={styles.tileEmpty} />
         )}
@@ -450,13 +472,37 @@ function TimerCard({ seconds, timer: tm, now, first, onStart, onPause, onResume,
   const running = tm?.status === 'running';
   const left = tm ? secondsLeft(tm, now) : seconds;
   const status = done ? 'Done!' : ready ? 'Ready' : running ? 'Running' : 'Stopped';
+  const reduceMotion = useReducedMotion();
+  // A bar that drains smoothly: each second it glides (linear, on the UI thread) to the next value.
+  const drain = useSharedValue(left / seconds);
+  useEffect(() => {
+    const to = done ? 0 : Math.max(0, Math.min(1, left / seconds));
+    drain.set(running && !reduceMotion ? withTiming(to, { duration: 1000, easing: Easing.linear }) : to);
+  }, [left, seconds, running, done, reduceMotion, drain]);
+  const drainStyle = useAnimatedStyle(() => ({ transform: [{ scaleX: drain.get() }] }));
+  // Time's up: a success buzz and the card pulses three times.
+  const pulse = useSharedValue(1);
+  const wasDone = useRef(done);
+  useEffect(() => {
+    if (done && !wasDone.current) {
+      haptics.success();
+      if (!reduceMotion) pulse.set(withRepeat(withSequence(withTiming(1.04, { duration: 160 }), withTiming(1, { duration: 160 })), 3, false));
+    }
+    wasDone.current = done;
+  }, [done, reduceMotion, pulse]);
+  const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse.get() }] }));
   return (
-    <Animated.View entering={FadeIn} layout={LinearTransition}>
+    <Animated.View entering={FadeIn} layout={LinearTransition} style={pulseStyle}>
       <PopCard color={tm?.status === 'done' ? pop.tomatoTint : pop.tomato} contentStyle={styles.timerFace} testID={tm?.status === 'done' ? 'timer-finished-away' : undefined}>
         <View accessible accessibilityRole={tm?.status === 'ringing' ? 'alert' : undefined} accessibilityLabel={`${length} timer. ${status}${done ? '' : `, ${clock(left)} left`}`}>
           <Text style={[styles.timerClock, { color: pop.ink }]} testID={first ? (done ? 'timer-done' : 'timer-display') : undefined}>
             {done ? '0:00' : clock(left)}
           </Text>
+          {!ready && (
+            <View style={styles.drainTrack} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+              <Animated.View style={[styles.drainFill, drainStyle]} />
+            </View>
+          )}
           <Text style={[t.type.headline, { color: pop.ink }]} testID={first ? 'timer-label' : undefined}>
             {status} · {length}
           </Text>
@@ -539,7 +585,11 @@ function Finish({
     playSuccess();
   }, []);
 
+  const reduceMotion = useReducedMotion();
   const streak = progressInput.streak;
+  // Did this cook make the streak go up? (The first meal of the day does.) Then the flame flares once.
+  const streakBefore = streakOf(progressInput.cooked.filter((c) => c.date !== entry?.date).map((c) => c.date));
+  const streakUp = streak > streakBefore;
   const xpNow = xpFor(progressInput);
   const lvl = levelFor(xpNow);
   const gained = entry ? Math.max(0, xpNow - entry.xpBefore) : 0;
@@ -566,9 +616,9 @@ function Finish({
 
   return (
     <View style={{ flex: 1 }}>
-      <Confetti />
+      <ConfettiBurst count={36} />
       <ScrollView contentContainerStyle={[styles.finish, { paddingTop: Math.max(insets.top, 16) + 28, paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
-        <Animated.View entering={FadeIn.duration(300)} style={styles.finishTop}>
+        <Animated.View entering={reduceMotion ? FadeIn.duration(duration.base) : ZoomIn.springify().damping(12).stiffness(160)} style={styles.finishTop}>
           {/* The dish in a 200pt circle, centered: the frame carries the border and clips; the photo is
               3pt smaller all round. With the character on, it says "Chef's kiss!" beside it. */}
           <Lift radius={100}>
@@ -579,7 +629,7 @@ function Finish({
           {SHOW_MASCOT_PLACEHOLDER && <MascotSlot message="Chef’s kiss!" size={56} />}
         </Animated.View>
 
-        <Animated.View entering={FadeInUp.duration(380).delay(120)} style={{ alignItems: 'center', gap: 6 }}>
+        <Animated.View entering={enter(1, reduceMotion)} style={{ alignItems: 'center', gap: 6 }}>
           <Text style={[styles.finishTitle, { color: pop.ink }]} accessibilityRole="header">
             You made it!
           </Text>
@@ -589,21 +639,26 @@ function Finish({
         </Animated.View>
 
         {/* Rewards: your streak and XP, from the app's real progress */}
-        <Animated.View entering={FadeInUp.duration(380).delay(220)} style={styles.rewards}>
+        <View style={styles.rewards}>
+          <Animated.View entering={enter(3, reduceMotion)} style={{ flex: 1 }}>
           <PopCard style={{ flex: 1 }} contentStyle={[styles.reward, { flexGrow: 1 }]}>
-            <Icon name="flameFill" size={26} color={pop.tomato} />
-            <Text style={[t.type.title2, { color: pop.ink }]} testID="finish-streak">
-              {nb(streak, streak === 1 ? 'day' : 'days')}
-            </Text>
+            <Flare active={streakUp}>
+              <Icon name="flameFill" size={26} color={pop.tomato} />
+            </Flare>
+            <AnimatedNumber value={streak} suffix={streak === 1 ? '\u00A0day' : '\u00A0days'} style={[t.type.title2, { color: pop.ink }]} testID="finish-streak" />
             <Text style={[t.type.caption1, { color: pop.inkMuted }]}>cooking streak</Text>
           </PopCard>
+          </Animated.View>
+          <Animated.View entering={enter(4, reduceMotion)} style={{ flex: 1 }}>
           {/* What actually happened this cook: XP earned, and how close the next level is. Only a
               level-up from this cook turns the card into "unlocked!". */}
           <PopCard style={{ flex: 1 }} color={leveledUp ? pop.lilac : pop.white} contentStyle={[styles.reward, { flexGrow: 1 }]}>
             <Icon name={leveledUp ? 'crown' : 'sparkles'} size={26} color={pop.ink} weight="bold" />
-            <Text style={[t.type.title2, { color: pop.ink, textAlign: 'center' }]} testID="finish-xp">
-              {leveledUp ? `LEVEL\u00A0${lvl.level}` : `+${nb(gained, 'XP')}`}
-            </Text>
+            {leveledUp ? (
+              <Text style={[t.type.title2, { color: pop.ink, textAlign: 'center' }]} testID="finish-xp">{`LEVEL\u00A0${lvl.level}`}</Text>
+            ) : (
+              <AnimatedNumber value={gained} prefix="+" suffix={'\u00A0XP'} style={[t.type.title2, { color: pop.ink, textAlign: 'center' }]} testID="finish-xp" />
+            )}
             {leveledUp ? (
               <Text style={[t.type.caption1, { color: pop.ink, textAlign: 'center' }]}>{`${lvl.title.replace(/ /g, '\u00A0')}\u00A0— unlocked!`}</Text>
             ) : (
@@ -613,10 +668,11 @@ function Finish({
               </View>
             )}
           </PopCard>
-        </Animated.View>
+          </Animated.View>
+        </View>
 
         {/* How'd it taste? Saved with this meal in your history. */}
-        <Animated.View entering={FadeInUp.duration(380).delay(320)} style={{ gap: 10, alignSelf: 'stretch' }}>
+        <Animated.View entering={enter(5, reduceMotion)} style={{ gap: 10, alignSelf: 'stretch' }}>
           <Text style={[t.type.title3, { color: pop.ink, textAlign: 'center' }]}>How’d it taste?</Text>
           <View style={styles.ratings} accessibilityRole="radiogroup" accessibilityLabel="How it tasted">
             {RATINGS.map((r) => (
@@ -633,7 +689,7 @@ function Finish({
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInUp.duration(380).delay(400)} style={{ gap: 6, alignSelf: 'stretch' }}>
+        <Animated.View entering={enter(6, reduceMotion)} style={{ gap: 6, alignSelf: 'stretch' }}>
           <PopButton label={photo ? 'Change photo' : 'Snap your plate'} icon="camera" color={pop.ink} textColor={pop.white} onPress={snap} accessibilityLabel={photo ? 'Change the photo of your plate' : 'Snap a photo of your plate'} />
           <PressableScale onPress={onDone} accessibilityLabel={rating || photo ? 'Done, back to Home' : 'Maybe later, back to Home'} style={styles.later} testID="finish-done">
             <Text style={[t.type.button, { color: pop.ink, textDecorationLine: 'underline' }]}>{rating || photo ? 'Done' : 'Maybe later'}</Text>
@@ -667,39 +723,31 @@ function RatingButton({ label, selected, onPress }: { label: string; selected: b
 /** Six little shapes in the app's colors, each with an ink outline. They drop in once; still with Reduce Motion. */
 // Only at the left and right edges, beside the 200pt photo and above the title, so they never
 // cover either.
-const CONFETTI = [
-  { left: '4%', top: 30, size: 18, round: false, rotate: '-18deg', color: pop.tomato },
-  { left: '88%', top: 22, size: 16, round: true, rotate: '0deg', color: pop.sky },
-  { left: '9%', top: 120, size: 14, round: true, rotate: '0deg', color: pop.berry },
-  { left: '85%', top: 110, size: 20, round: false, rotate: '24deg', color: pop.leaf },
-  { left: '90%', top: 190, size: 14, round: false, rotate: '40deg', color: pop.lilac },
-  { left: '3%', top: 200, size: 16, round: true, rotate: '0deg', color: pop.sky },
-] as const;
-
-function Confetti() {
-  const insets = useSafeAreaInsets();
+/** One step segment: white, then it fills from the left with a spring (sunshine = this step, leaf = done). */
+function Segment({ state }: { state: 'todo' | 'current' | 'done' }) {
+  const reduceMotion = useReducedMotion();
+  const fill = useSharedValue(state === 'todo' ? 0 : 1);
+  useEffect(() => {
+    const to = state === 'todo' ? 0 : 1;
+    fill.set(reduceMotion ? to : withSpring(to, spring));
+  }, [state, reduceMotion, fill]);
+  const style = useAnimatedStyle(() => ({ transform: [{ scaleX: Math.max(0, fill.get()) }], opacity: fill.get() > 0.01 ? 1 : 0 }));
   return (
-    <View pointerEvents="none" style={[StyleSheet.absoluteFill, { top: Math.max(insets.top, 16) }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      {CONFETTI.map((c, i) => (
-        <ConfettiBit key={i} index={i} {...c} />
-      ))}
+    <View testID="cook-segment" style={[styles.segment, { backgroundColor: pop.white, overflow: 'hidden' }]}>
+      <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: state === 'done' ? pop.leaf : pop.sunshine, transformOrigin: 'left' }, style]} />
     </View>
   );
 }
 
-function ConfettiBit({ index, left, top, size, round, rotate, color }: (typeof CONFETTI)[number] & { index: number }) {
+/** The streak flame's one "flare" when the streak goes up: grows and tilts, then settles. */
+function Flare({ active, children }: { active: boolean; children: ReactNode }) {
   const reduceMotion = useReducedMotion();
-  const drop = useSharedValue(reduceMotion ? 1 : 0);
+  const p = useSharedValue(0);
   useEffect(() => {
-    if (!reduceMotion) drop.set(withDelay(index * 70, withSpring(1, { damping: 11, stiffness: 140 })));
-  }, [reduceMotion, drop, index]);
-  return <Bit drop={drop} style={{ left, top, width: round ? size : size * 1.6, height: size, borderRadius: round ? size / 2 : 5, backgroundColor: color, transform: [{ rotate }] }} />;
-}
-
-function Bit({ drop, style }: { drop: SharedValue<number>; style: object }) {
-  // Falls from above into place. Numbers only in here.
-  const fall = useAnimatedStyle(() => ({ opacity: Math.min(1, drop.get() * 2), marginTop: (drop.get() - 1) * 140 }));
-  return <Animated.View style={[styles.bit, style, fall]} />;
+    if (active && !reduceMotion) p.set(withDelay(500, withSequence(withTiming(1, { duration: duration.fast }), withSpring(0, popSpring))));
+  }, [active, reduceMotion, p]);
+  const style = useAnimatedStyle(() => ({ transform: [{ scale: 1 + p.get() * 0.4 }, { rotate: `${p.get() * -14}deg` }] }));
+  return <Animated.View style={style}>{children}</Animated.View>;
 }
 
 /* ------------------------------------------------------------------ */
@@ -723,6 +771,8 @@ const styles = StyleSheet.create({
   // A full 44pt tap area around each 12pt segment.
   segmentTap: { flex: 1, height: 44, marginVertical: -12, justifyContent: 'center' },
   segment: { height: 12, borderRadius: 6, borderWidth: 2, borderColor: pop.ink },
+  drainTrack: { height: 10, borderRadius: 5, borderWidth: 2, borderColor: pop.ink, backgroundColor: pop.tomatoTint, overflow: 'hidden', marginVertical: 6 },
+  drainFill: { flex: 1, backgroundColor: pop.white, transformOrigin: 'left' },
   pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 20, marginTop: 14 },
   pill: { flexDirection: 'row', alignItems: 'center', borderRadius: 999, borderWidth: 2, borderColor: pop.ink, paddingLeft: 12, paddingRight: 4, minHeight: 36 },
   pillMain: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 36, paddingRight: 8 },
@@ -761,5 +811,4 @@ const styles = StyleSheet.create({
   rating: { minHeight: 48, paddingHorizontal: 8, borderRadius: 16, borderWidth: 2.5, borderColor: pop.ink, alignItems: 'center', justifyContent: 'center' },
   ratingText: { fontFamily: fonts.black, fontSize: 16, lineHeight: 21, color: pop.ink, textAlign: 'center' },
   later: { minHeight: 48, alignItems: 'center', justifyContent: 'center' },
-  bit: { position: 'absolute', borderWidth: 2, borderColor: pop.ink },
 });

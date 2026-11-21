@@ -2,7 +2,8 @@ import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { Text } from '../../../components/Text';
-import Animated, { FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, LinearTransition, useReducedMotion } from 'react-native-reanimated';
+import { enter } from '../../../motion';
 import { FoodIcon } from '../../../components/FoodIcon';
 import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
@@ -20,6 +21,7 @@ import { popCycle, useTheme } from '../../../theme';
 
 /** What's in your kitchen, and what you can cook with it. */
 export default function PantryScreen() {
+  const reduceMotion = useReducedMotion();
   const t = useTheme();
   const toast = useToast();
   const { pantry, addPantry, removePantry, restorePantry, allRecipes, addIngredients } = useStore();
@@ -208,7 +210,7 @@ export default function PantryScreen() {
             <EmptyState icon="pot" title="No matches yet" message="None of your recipes use these items. Add a few more, or import a recipe you love." />
           ) : (
             matches.map((m, i) => (
-              <Animated.View key={m.recipe.id} entering={FadeInDown.duration(300).delay(Math.min(i, 6) * 50)}>
+              <Animated.View key={m.recipe.id} entering={enter(i, reduceMotion)}>
                 <MatchCard match={m} onAddMissing={() => addMissing(m)} />
               </Animated.View>
             ))

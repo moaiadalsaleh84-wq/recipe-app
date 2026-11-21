@@ -10,10 +10,10 @@ import { Lift, PopButton, PopCard, PopChip, PopIconButton } from '../../../compo
 import { Image } from 'expo-image';
 import { photoUri } from '../../../lib/photos';
 import { useTonightPick } from '../../../lib/tonightPick';
-import { nb, num } from '../../../lib/text';
+import { nb } from '../../../lib/text';
 import { weekDotSize } from '../../../lib/weekDots';
 import { useToast } from '../../../components/Toast';
-import { Button, ProgressBar, Section, SectionHeader, Separator, Stepper } from '../../../components/ui';
+import { AnimatedNumber, Button, ProgressBar, Section, SectionHeader, Separator, Stepper } from '../../../components/ui';
 import { Reveal } from '../../../components/Reveal';
 import { showPaywall, useProGate } from '../../../lib/pro';
 import { BADGES, levelFor, streakOf, xpFor } from '../../../lib/progress';
@@ -95,9 +95,12 @@ export default function ProgressScreen() {
       {/* A chunky XP bar toward the next level */}
       <View style={{ gap: 6, marginTop: 16 }} accessible accessibilityLabel={`${xp} XP. ${lvl.next ? `${lvl.toNext} XP to ${lvl.next.title}` : 'Top level'}`}>
         <ProgressBar value={lvl.progress} color={t.pop.lilac} height={14} label="Level progress" />
-        <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]} testID="xp-label">
-          {lvl.next ? `${nb(xp, 'XP')} · ${nb(lvl.toNext, 'XP')} to ${lvl.next.title}` : `${nb(xp, 'XP')} · Top level!`}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }} testID="xp-label">
+          <AnimatedNumber value={xp} suffix={'\u00A0XP'} style={[t.type.caption1, { color: t.colors.secondaryLabel }]} />
+          <Text style={[t.type.caption1, { color: t.colors.secondaryLabel, flexShrink: 1 }]} numberOfLines={1}>
+            {lvl.next ? ` · ${nb(lvl.toNext, 'XP')} to ${lvl.next.title}` : ' · Top level!'}
+          </Text>
+        </View>
       </View>
     </View>
   );
@@ -112,9 +115,13 @@ export default function ProgressScreen() {
               <Icon name="flameFill" size={30} color={t.pop.tomato} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[t.type.title1, { color: t.pop.ink }]} testID="streak-count">
-                {streak > 0 ? `${nb(streak, 'day')} streak` : 'No streak yet'}
-              </Text>
+              {streak > 0 ? (
+                <AnimatedNumber value={streak} suffix={'\u00A0day streak'} style={[t.type.title1, { color: t.pop.ink }]} testID="streak-count" />
+              ) : (
+                <Text style={[t.type.title1, { color: t.pop.ink }]} testID="streak-count">
+                  No streak yet
+                </Text>
+              )}
               <Text style={[t.type.subhead, { color: t.pop.ink }]}>{streakLine}</Text>
             </View>
           </View>
@@ -303,9 +310,7 @@ function GoalRow({ label, unit, eaten, goal, color, children }: { label: string;
       <View style={styles.row}>
         <View style={{ flex: 1 }}>
           <Text style={[t.type.headline, { color: t.colors.label }]}>{label}</Text>
-          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]} numberOfLines={1}>
-            {num(eaten)} of {nb(goal, unit)} today
-          </Text>
+          <AnimatedNumber value={eaten} suffix={` of ${nb(goal, unit)} today`} style={[t.type.footnote, { color: t.colors.secondaryLabel }]} />
         </View>
         {children}
       </View>

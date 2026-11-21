@@ -11,11 +11,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native';
-import Animated, { FadeIn, FadeInRight, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { FadeIn, SlideInLeft, SlideInRight, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppIcon } from '../components/AppIcon';
 import { BottomBar } from '../components/BottomBar';
 import { Chunky } from '../components/Chunky';
+import { AnimatedNumber } from '../components/ui';
 import { Icon, type IconName } from '../components/Icon';
 import { PopButton, PopCard, PopIconButton, Sticker } from '../components/pop';
 import { RecipePhoto } from '../components/RecipeCard';
@@ -29,6 +30,7 @@ import { haptics } from '../lib/haptics';
 import { cookableCount, rankPicks, type Pick } from '../lib/onboardingPicks';
 import { restore } from '../lib/purchases';
 import { nb } from '../lib/text';
+import { duration } from '../motion';
 import { useStore } from '../state/store';
 import { fonts, pop, stroke } from '../theme';
 
@@ -56,6 +58,9 @@ export default function Onboarding() {
   const [screen, setScreen] = useState<Screen | null>(null);
   const [picks, setPicks] = useState<Pick[] | null>(null);
   const [history, setHistory] = useState<Screen[]>([]);
+  // Forward slides the next step in from the right; back slides the previous one in from the left.
+  const [backwards, setBackwards] = useState(false);
+  const reduceMotion = useReducedMotion();
 
   // Resume where the person left off.
   useEffect(() => {
@@ -73,6 +78,7 @@ export default function Onboarding() {
     if (!screen) return;
     track('onboarding_step_completed', { step: screen });
     setHistory((h) => [...h, screen]);
+    setBackwards(false);
     setScreen(to);
   };
   const next = () => {
@@ -83,6 +89,7 @@ export default function Onboarding() {
     if (!screen) return;
     const prev = history[history.length - 1] ?? SCREENS[Math.max(0, SCREENS.indexOf(screen) - 1)];
     setHistory((h) => h.slice(0, -1));
+    setBackwards(true);
     // Never back into the "building" moment: straight to the step before it.
     setScreen(prev === 'building' ? 'pantry' : prev);
   };
@@ -228,7 +235,11 @@ export default function Onboarding() {
         </View>
       )}
       <ScreenBg.Provider value={bg}>
-        <Animated.View key={screen} entering={screen === 'welcome' ? FadeIn.duration(260) : FadeInRight.duration(240)} style={{ flex: 1 }}>
+        <Animated.View
+          key={screen}
+          entering={reduceMotion || screen === 'welcome' || screen === 'building' ? FadeIn.duration(duration.base) : (backwards ? SlideInLeft : SlideInRight).duration(duration.base)}
+          style={{ flex: 1 }}
+        >
           {body}
         </Animated.View>
       </ScreenBg.Provider>
@@ -602,7 +613,6 @@ function PantryStep({ pantry, recipes, diets, onDone }: { pantry: string[]; reci
   // Count with everything already in the pantry, plus the ticked chips.
   const others = pantry.filter((p) => !QUICK_PANTRY.some((q) => q.toLowerCase() === p.toLowerCase()));
   const count = cookableCount(recipes, [...others, ...chosen], diets);
-  const shown = useCountUp(count);
   const toggle = (item: string) => {
     haptics.tap();
     setChosen((c) => (c.includes(item) ? c.filter((x) => x !== item) : [...c, item]));
@@ -615,9 +625,7 @@ function PantryStep({ pantry, recipes, diets, onDone }: { pantry: string[]; reci
           <Text style={[styles.rowLabel, { flex: 1 }]}>Tap a few to see what you can cook</Text>
         ) : (
           <>
-            <Text style={styles.counterNum} testID="ob-count">
-              {shown}
-            </Text>
+            <AnimatedNumber value={count} style={styles.counterNum} testID="ob-count" />
             <Text style={[styles.rowLabel, { flex: 1 }]} accessibilityLiveRegion="polite">
               {count === 1 ? 'recipe' : 'recipes'} you can cook right now with what you have
             </Text>
@@ -650,32 +658,6 @@ function PantryStep({ pantry, recipes, diets, onDone }: { pantry: string[]; reci
   );
 }
 
-/** Counts up to `target` (about 400ms). Jumps straight there with Reduce Motion on. */
-function useCountUp(target: number) {
-  const reduceMotion = useReducedMotion();
-  const [shown, setShown] = useState(target);
-  const from = useRef(target);
-  useEffect(() => {
-    if (reduceMotion || from.current === target) {
-      from.current = target;
-      setShown(target);
-      return;
-    }
-    const start = from.current;
-    const began = Date.now();
-    let frame = 0;
-    const tick = () => {
-      const p = Math.min(1, (Date.now() - began) / 400);
-      const v = Math.round(start + (target - start) * (1 - (1 - p) * (1 - p)));
-      setShown(v);
-      from.current = v;
-      if (p < 1) frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [target, reduceMotion]);
-  return shown;
-}
 
 /* ------------------------------------------------------------------ */
 /* Building                                                             */

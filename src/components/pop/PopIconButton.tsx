@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Text } from '../Text';
-import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
+import { pressSpring } from '../../motion';
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from 'react-native-reanimated';
 import { haptics, type HapticKind } from '../../lib/haptics';
 import { fonts, pop, stroke } from '../../theme';
 import { Icon, type IconName } from '../Icon';
@@ -28,7 +29,7 @@ type Props = {
 /**
  * A round icon button: white, thick ink outline, a 3px solid shadow. Presses down onto its shadow.
  */
-export function PopIconButton({ icon, onPress, accessibilityLabel, accessibilityHint, color = pop.white, iconColor = pop.ink, size = 44, iconSize, badge, disabled, haptic = 'tap', style, testID }: Props) {
+export function PopIconButton({ icon, onPress, accessibilityLabel, accessibilityHint, color = pop.white, iconColor = pop.ink, size = 44, iconSize, badge, disabled, haptic = null, style, testID }: Props) {
   const reduceMotion = useReducedMotion();
   const down = useSharedValue(0);
   const depth = 3;
@@ -40,8 +41,8 @@ export function PopIconButton({ icon, onPress, accessibilityLabel, accessibility
         if (haptic) haptics[haptic]();
         onPress();
       }}
-      onPressIn={() => down.set(reduceMotion ? 1 : withTiming(1, { duration: 60 }))}
-      onPressOut={() => down.set(reduceMotion ? 0 : withTiming(0, { duration: 110 }))}
+      onPressIn={() => down.set(reduceMotion ? 1 : withSpring(1, pressSpring))}
+      onPressOut={() => down.set(reduceMotion ? 0 : withSpring(0, pressSpring))}
       disabled={disabled}
       aria-disabled={!!disabled}
       accessibilityRole="button"
