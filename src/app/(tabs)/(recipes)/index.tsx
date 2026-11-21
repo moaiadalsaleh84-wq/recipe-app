@@ -456,7 +456,8 @@ export default function RecipesScreen() {
           ) : (
             <View style={[styles.grid, { gap, rowGap: t.spacing.md }]}>
               {sorted.map((r, i) => (
-                <Animated.View key={r.id} layout={LinearTransition.duration(220)} entering={enter(i, reduceMotion)}>
+                // Cards glide when the order changes, but not in long lists (over 20): too much motion.
+                <Animated.View key={r.id} layout={sorted.length <= 20 ? LinearTransition.duration(220) : undefined} entering={enter(i, reduceMotion)}>
                   <RecipeCard recipe={r} width={cardWidth} />
                 </Animated.View>
               ))}

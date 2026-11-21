@@ -71,7 +71,7 @@ export default function CookbookScreen() {
         ) : (
           <Section>
             {recipes.map((r, i) => (
-              <Animated.View key={r.id} layout={LinearTransition.duration(220)} exiting={FadeOut.duration(160)}>
+              <Animated.View key={r.id} layout={recipes.length <= 20 ? LinearTransition.duration(220) : undefined} exiting={FadeOut.duration(160)}>
                 {i > 0 && <Separator inset={84} />}
                 <RecipeRow
                   recipe={r}
