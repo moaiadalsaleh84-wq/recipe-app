@@ -589,5 +589,6 @@ const segStyles = StyleSheet.create({
   wrap: { flexDirection: 'row', borderRadius: 999, padding: 3, borderWidth: 2, borderCurve: 'continuous' },
   // 34 + 2 × 3 padding + 2 × 2 border = 44 tall.
   itemSmall: { minHeight: 34, minWidth: 48, paddingHorizontal: 10 },
+  // 38 + the 3pt padding above and below = 44 to tap.
   item: { minHeight: 38, minWidth: 60, paddingHorizontal: 14, borderRadius: 999, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
 });

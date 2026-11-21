@@ -288,7 +288,8 @@ function MealCard({ meal, recipe, onChange, onRemove }: { meal: string; recipe: 
 
 const styles = StyleSheet.create({
   week: {},
-  weekInner: { flexDirection: 'row', justifyContent: 'space-between', gap: 6 },
+  // A 4pt gap keeps each day at least 44pt wide on a 375pt phone.
+  weekInner: { flexDirection: 'row', justifyContent: 'space-between', gap: 4 },
   // At least 6pt between the text and the border, even on a 375pt-wide phone.
   day: { alignItems: 'center', gap: 2, paddingTop: 8, paddingBottom: 8, paddingHorizontal: 3, borderRadius: 14, borderWidth: 2.5, minHeight: 76, borderCurve: 'continuous' },
   dayName: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 16 },

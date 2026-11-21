@@ -92,7 +92,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    minHeight: 40,
+    // 41 + the 3pt shadow = a 44pt tap target.
+    minHeight: 41,
     paddingHorizontal: 14,
     borderRadius: radius.sm,
     borderWidth: stroke.thin,

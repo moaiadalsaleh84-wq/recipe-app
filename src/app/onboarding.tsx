@@ -376,7 +376,7 @@ function NameStep({ value, onChange, onDone }: { value: string; onChange: (v: st
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <Step title="What should we call you?" subtitle="So your kitchen feels like yours." footer={<PopButton label={has ? 'Continue' : 'Skip'} color={has ? pop.sunshine : pop.white} onPress={onDone} testID="ob-name-next" />}>
-        <TextInput
+        <TextInput maxFontSizeMultiplier={1.3}
           value={value}
           onChangeText={onChange}
           placeholder="Your first name"
