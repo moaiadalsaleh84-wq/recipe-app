@@ -17,6 +17,8 @@ const icons = {
   chart: { ios: 'chart.bar', md: 'signal_cellular_alt' },
   /** A goal you aim for (nutrition goals). */
   target: { ios: 'target', md: 'track_changes' },
+  /** Money (saving on food). */
+  coin: { ios: 'dollarsign.circle', md: 'paid' },
   plus: { ios: 'plus', md: 'add' },
   minus: { ios: 'minus', md: 'remove' },
   check: { ios: 'checkmark', md: 'check' },

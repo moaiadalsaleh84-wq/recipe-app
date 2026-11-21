@@ -1,10 +1,9 @@
 /**
- * The short onboarding (name, goal, diet, household) and what's built from the answers.
- * Every answer is used: Biscuit uses your name, the goal orders the
- * paywall's benefits, the diet filters suggestions, and recipes open sized for your household.
+ * Onboarding answers and what's built from them. Every answer is used: your name on Home, the goal
+ * shapes the first pick and the paywall, the diet filters picks, recipes open sized for your
+ * household, and the dinner moment sets when the daily reminder comes (if you say yes).
  */
 import type { IconName } from '../components/Icon';
-import type { DietTag } from './mock';
 
 export type Goal = 'healthier' | 'muscle' | 'save' | 'home' | 'waste' | 'learn';
 
@@ -13,28 +12,54 @@ export type Profile = {
   name: string;
   /** One goal from onboarding (a list so older saved profiles with several still work). */
   goals: Goal[];
-  diets: DietTag[];
+  /** Diet choices from onboarding (see dietOptions). Empty = no preference. */
+  diets: DietPref[];
   /** People you usually cook for; recipes open scaled to this. null = use the recipe's own servings. */
   household: number | null;
+  /** When the "what's for dinner?" moment hits, "HH:MM" (16:00, 17:00, 18:00, 19:30). */
+  dinnerTime: string | null;
+  /** The daily dinner idea: on or off, and at what time ("HH:MM"). Off unless they said yes. */
+  reminder: { enabled: boolean; time: string };
 };
 
-export const emptyProfile: Profile = { name: '', goals: [], diets: [], household: null };
+export const emptyProfile: Profile = { name: '', goals: [], diets: [], household: null, dinnerTime: null, reminder: { enabled: false, time: '18:00' } };
 
-export const goalOptions: { id: Goal; label: string; icon: IconName }[] = [
-  { id: 'healthier', label: 'Eat healthier', icon: 'heart' },
-  { id: 'muscle', label: 'Get in shape', icon: 'dumbbell' },
-  { id: 'home', label: 'Cook more at home', icon: 'pot' },
-  { id: 'save', label: 'Save money on food', icon: 'cart' },
-  { id: 'waste', label: 'Use up what I have', icon: 'trash' },
-  { id: 'learn', label: 'Learn to cook', icon: 'book' },
+/** Diet choices. Recipes are checked against these by their tags and ingredients (lib/onboardingPicks). */
+export const dietOptions = ['Vegetarian', 'Vegan', 'Pescatarian', 'High protein', 'Gluten free', 'Dairy free', 'No pork'] as const;
+/** A diet choice (older saved profiles may hold other tag names, which are ignored safely). */
+export type DietPref = (typeof dietOptions)[number] | (string & {});
+
+/** The goals offered in onboarding ("waste" is kept only so older saved profiles still load). */
+export const goalOptions: { id: Goal; label: string; icon: IconName; tint: 'berryTint' | 'skyTint' | 'leafTint' | 'tomatoTint' | 'lilacTint' }[] = [
+  { id: 'healthier', label: 'Eat healthier', icon: 'heart', tint: 'berryTint' },
+  { id: 'muscle', label: 'Get in shape', icon: 'dumbbell', tint: 'skyTint' },
+  { id: 'save', label: 'Save money on food', icon: 'coin', tint: 'leafTint' },
+  { id: 'home', label: 'Cook more at home', icon: 'pot', tint: 'tomatoTint' },
+  { id: 'learn', label: 'Learn to cook', icon: 'book', tint: 'lilacTint' },
 ];
 
-export const householdOptions: { size: number; label: string }[] = [
-  { size: 1, label: 'Just me' },
-  { size: 2, label: 'Two of us' },
-  { size: 4, label: '3–4 people' },
-  { size: 6, label: '5 or more' },
+/** Who you cook for. `size` is the default number of servings recipes open with. */
+export const householdOptions: { size: number; big: string; label: string }[] = [
+  { size: 1, big: '1', label: 'Just me' },
+  { size: 2, big: '2', label: 'Two of us' },
+  { size: 4, big: '3–4', label: 'Family' },
+  { size: 6, big: '5+', label: 'A crowd' },
 ];
+
+/** When the dinner question hits; the reminder comes at this time. */
+export const dinnerMoments: { time: string; title: string; detail: string }[] = [
+  { time: '16:00', title: 'Around 4 pm', detail: 'Planning after lunch' },
+  { time: '17:00', title: 'Around 5 pm', detail: 'On the way home' },
+  { time: '18:00', title: 'Around 6 pm', detail: 'Standing at the fridge' },
+  { time: '19:30', title: 'After 7 pm', detail: 'Late and hungry' },
+];
+
+/** "18:00" → "6 pm", "19:30" → "7:30 pm". */
+export function timeLabel(hhmm: string) {
+  const [h, m] = hhmm.split(':').map(Number);
+  const h12 = ((h + 11) % 12) + 1;
+  return `${h12}${m ? `:${String(m).padStart(2, '0')}` : ''}\u00A0${h < 12 ? 'am' : 'pm'}`;
+}
 
 /** Name for the cats to use, or a friendly fallback. */
 export const displayName = (p: Profile, fallback: string) => (p.name.trim() ? p.name.trim().split(/\s+/)[0] : fallback);

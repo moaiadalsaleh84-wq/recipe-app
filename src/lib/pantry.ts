@@ -39,9 +39,21 @@ export function pantryHas(pantry: string[], ingredientName: string): boolean {
     const have = words(item);
     if (!have.length) return false;
     // Pantry "chicken" covers "chicken thigh"; pantry "chicken breast" covers "chicken".
-    return have.every((w) => need.includes(w)) || need.every((w) => have.includes(w));
+    if (have.every((w) => need.includes(w)) || need.every((w) => have.includes(w))) return true;
+    // A general word covers the specific kinds: "Cheese" covers Parmesan, "Pasta" covers penne.
+    return have.length === 1 && (COVERS[have[0]] ?? []).some((w) => need.includes(w));
   });
 }
+
+/** What a general pantry word also covers in recipes (singular words, as `words` returns them). */
+const COVERS: Record<string, string[]> = {
+  cheese: ['parmesan', 'mozzarella', 'feta', 'cheddar', 'paneer', 'halloumi', 'ricotta', 'gruyere', 'pecorino', 'mascarpone'],
+  pasta: ['penne', 'spaghetti', 'fusilli', 'linguine', 'macaroni', 'tagliatelle', 'rigatoni', 'lasagne', 'noodle'],
+  tomato: ['passata'],
+  bread: ['bun', 'brioche', 'baguette', 'sourdough', 'pitta', 'pita', 'roll'],
+  milk: ['buttermilk'],
+  oil: ['olive', 'vegetable', 'sunflower', 'rapeseed'],
+};
 
 export type PantryMatch = { recipe: Recipe; have: Ingredient[]; missing: Ingredient[]; needed: number };
 

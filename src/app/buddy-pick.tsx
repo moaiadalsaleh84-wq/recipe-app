@@ -10,6 +10,7 @@ import { PageHeader } from '../components/PageHeader';
 import { RecipePhoto } from '../components/RecipeCard';
 import { Button } from '../components/ui';
 import { matchesFilter, type Recipe } from '../data/mock';
+import { fitsDiet } from '../lib/onboardingPicks';
 import { haptics } from '../lib/haptics';
 import { isIOS } from '../navigation/screenOptions';
 import { useStore } from '../state/store';
@@ -26,7 +27,7 @@ export default function BuddyPick() {
   // Respect the diet from onboarding and any filters that are on.
   const pool = useMemo(() => {
     const fits = allRecipes.filter(
-      (r) => profile.diets.every((d) => matchesFilter(r, d)) && (!category || r.category === category) && tags.every((tag) => matchesFilter(r, tag)),
+      (r) => fitsDiet(r, profile.diets) && (!category || r.category === category) && tags.every((tag) => matchesFilter(r, tag)),
     );
     return fits.length ? fits : allRecipes;
   }, [allRecipes, profile.diets, category, tags]);
