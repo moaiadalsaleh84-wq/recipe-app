@@ -10,6 +10,7 @@ import { Lift, PopButton, PopCard, PopChip, PopIconButton } from '../../../compo
 import { Image } from 'expo-image';
 import { photoUri } from '../../../lib/photos';
 import { useTonightPick } from '../../../lib/tonightPick';
+import { stickers } from '../../../data/stickers';
 import { nb } from '../../../lib/text';
 import { weekDotSize } from '../../../lib/weekDots';
 import { useToast } from '../../../components/Toast';
@@ -65,6 +66,16 @@ export default function ProgressScreen() {
     : streak > 0
       ? 'Cook today to keep it going'
       : 'Cook anything today to start\u00A0one';
+
+  // "Your kitchen" numbers and the photo gallery.
+  const minutesCooked = history.reduce((n, c) => n + (getRecipe(c.recipeId)?.minutes ?? 0), 0);
+  const favorite = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const c of history) counts.set(c.recipeId, (counts.get(c.recipeId) ?? 0) + 1);
+    const top = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
+    return top ? getRecipe(top[0]) : undefined;
+  }, [history, getRecipe]);
+  const myPhotos = history.filter((c) => !!c.photo);
 
   // One row per dish, newest first: when you last made it and how it tasted.
   const dishes = useMemo(() => {
@@ -221,6 +232,57 @@ export default function ProgressScreen() {
         </Animated.View>
       )}
 
+      {/* Your kitchen: what you've built up so far (only real numbers, nothing invented). */}
+      {history.length > 0 && (
+        <>
+          <SectionHeader title="Your kitchen" />
+          <PopCard color={t.pop.sunshineTint} contentStyle={styles.kitchen} testID="your-kitchen">
+            <KitchenStat value={history.length} label={history.length === 1 ? 'meal cooked' : 'meals cooked'} />
+            <KitchenStat value={minutesCooked} label="minutes cooking" />
+            {favorite && (
+              <View style={{ flex: 1.4, minWidth: 0 }}>
+                <Text style={[t.type.headline, { color: t.pop.ink }]} numberOfLines={2}>
+                  {favorite.title}
+                </Text>
+                <Text style={[t.type.caption1, { color: t.pop.ink }]}>your favorite dish</Text>
+              </View>
+            )}
+          </PopCard>
+        </>
+      )}
+
+      {/* My dishes: every plate you snapped, newest first. */}
+      {myPhotos.length > 0 && (
+        <>
+          <SectionHeader title="My dishes" subtitle={nb(myPhotos.length, myPhotos.length === 1 ? 'photo' : 'photos')} />
+          <View style={styles.gallery} testID="my-dishes">
+            {myPhotos.slice(0, 9).map((c) => (
+              <PressableScale key={c.date} onPress={() => router.push({ pathname: '/recipe/[id]', params: { id: c.recipeId } })} accessibilityLabel={`Your ${getRecipe(c.recipeId)?.title ?? 'dish'}`} style={[styles.galleryItem, { borderColor: t.pop.ink }]}>
+                <Image source={{ uri: photoUri(c.photo!) }} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />
+              </PressableScale>
+            ))}
+          </View>
+        </>
+      )}
+
+      {/* Sticker book: 12 to find, one sometimes turns up after cooking. Locked ones are silhouettes. */}
+      <SectionHeader title="Sticker book" subtitle={`${(fun.stickers ?? []).length} of ${stickers.length} found`} />
+      <PopCard contentStyle={styles.stickerBook} testID="sticker-book">
+        {stickers.map((st) => {
+          const got = (fun.stickers ?? []).includes(st.id);
+          return (
+            <View key={st.id} style={styles.stickerCell} accessible accessibilityLabel={got ? `${st.name} sticker` : 'Sticker not found yet'}>
+              <View style={[styles.stickerDisc, got ? { backgroundColor: t.pop[st.color], borderColor: t.pop.ink } : { backgroundColor: t.pop.lilacTint, borderColor: t.pop.lilac, borderStyle: 'dashed' }]}>
+                <Icon name={st.icon} size={22} color={got ? t.pop.ink : t.pop.lilac} weight="bold" />
+              </View>
+              <Text style={[t.type.caption2, { color: got ? t.pop.ink : t.pop.inkMuted, textAlign: 'center' }]} numberOfLines={2}>
+                {got ? st.name : '?'}
+              </Text>
+            </View>
+          );
+        })}
+      </PopCard>
+
       {/* Cooking history: one outlined row per dish */}
       <SectionHeader title="Cooking history" subtitle={dishes.length ? 'Your dishes, newest first' : undefined} />
       {dishes.length === 0 ? (
@@ -303,6 +365,16 @@ export default function ProgressScreen() {
   );
 }
 
+function KitchenStat({ value, label }: { value: number; label: string }) {
+  const t = useTheme();
+  return (
+    <View style={{ flex: 1, minWidth: 0 }}>
+      <AnimatedNumber value={value} style={[t.type.title2, { color: t.pop.ink }]} />
+      <Text style={[t.type.caption1, { color: t.pop.ink }]}>{label}</Text>
+    </View>
+  );
+}
+
 function GoalRow({ label, unit, eaten, goal, color, children }: { label: string; unit: string; eaten: number; goal: number; color: string; children: React.ReactNode }) {
   const t = useTheme();
   return (
@@ -320,6 +392,12 @@ function GoalRow({ label, unit, eaten, goal, color, children }: { label: string;
 }
 
 const styles = StyleSheet.create({
+  kitchen: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, padding: 16 },
+  gallery: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  galleryItem: { width: '31.5%', aspectRatio: 1, borderRadius: 14, borderWidth: 2, overflow: 'hidden' },
+  stickerBook: { flexDirection: 'row', flexWrap: 'wrap', padding: 12, rowGap: 12 },
+  stickerCell: { width: '25%', alignItems: 'center', gap: 4, paddingHorizontal: 2 },
+  stickerDisc: { width: 52, height: 52, borderRadius: 26, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   header: { marginBottom: 20 },
   avatar: { width: 60, height: 60, borderRadius: 30, borderWidth: 2.5, borderColor: pop.ink, alignItems: 'center', justifyContent: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14 },

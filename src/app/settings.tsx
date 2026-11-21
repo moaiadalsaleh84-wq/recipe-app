@@ -99,6 +99,27 @@ export default function Settings() {
               <PopIconButton icon="plus" accessibilityLabel="30 minutes later" onPress={() => setProfile({ reminder: { ...reminder, time: shiftTime(reminder.time, 30) } })} haptic="select" />
             </View>
           )}
+          <View style={[styles.row, { borderTopWidth: StyleSheet.hairlineWidth, borderColor: t.colors.separator }]}>
+            <Icon name="flameFill" size={18} color={t.pop.tomato} />
+            <View style={{ flex: 1 }}>
+              <Text style={[t.type.body, { color: t.colors.label }]}>Streak saver</Text>
+              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{'At 8\u00A0pm, a quick idea when a 3\u2011day streak hasn’t had today’s cook'}</Text>
+            </View>
+            <Switch
+              value={!!profile.streakSaver}
+              onValueChange={async (on) => {
+                if (!on) return setProfile({ streakSaver: false });
+                const granted = (await askReminderPermission()) || Platform.OS === 'web';
+                if (granted) setProfile({ streakSaver: true });
+                else toast({ message: 'Notifications are off for Pantry Pop. Turn them on in iOS Settings.', tone: 'warning' });
+              }}
+              trackColor={{ true: pop.leaf, false: pop.lilacTint }}
+              thumbColor={pop.white}
+              ios_backgroundColor={pop.lilacTint}
+              accessibilityLabel="Streak saver"
+              testID="saver-switch"
+            />
+          </View>
         </Section>
         <Section>
           <PressableScale onPress={() => router.push('/privacy')} style={styles.row} accessibilityLabel="Privacy" scaleTo={0.99}>

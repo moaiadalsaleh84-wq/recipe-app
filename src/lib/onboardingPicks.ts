@@ -2,9 +2,10 @@
  * Picks built from onboarding answers: which recipes fit a diet, how many you can cook with what you
  * have, and tonight's pick. Plain functions over the recipe list, so they're unit-tested in Node.
  */
-import type { Recipe } from '../data/mock';
+import type { Rating, Recipe } from '../data/mock';
 import type { Goal } from '../data/onboarding';
 // The .ts endings let the unit tests (plain Node) load these files too.
+import { mainIngredient } from './bonus.ts';
 import { pantryMatch } from './moods.ts';
 
 const MEAT = /\b(chicken|beef|pork|lamb|mince|bacon|ham|sausages?|turkey|duck|chorizo|prosciutto|salami|pepperoni|veal|pancetta)\b/i;
@@ -59,29 +60,64 @@ function suitsGoal(r: Recipe, goal: Goal | undefined) {
   return true;
 }
 
-export type Pick = { recipe: Recipe; have: number; needed: number };
+export type Pick = { recipe: Recipe; have: number; needed: number; /** Why it ranks high, when your ratings did it: "you loved Butter Chicken". */ because?: string };
+
+/** Your latest rating of each recipe you've rated: loved ones come up more, "meh" ones less. */
+export type Ratings = Record<string, Rating>;
+
+/**
+ * How your ratings move a recipe: +2 if you loved it, +1 if it shares its main ingredient with one
+ * you loved, -2 if you said "meh". 0 otherwise. Returns the loved recipe behind a boost, if any.
+ */
+export function tasteScore(r: Recipe, ratings: Ratings, all: Recipe[]): { score: number; loved?: Recipe } {
+  const own = ratings[r.id];
+  if (own === 'meh') return { score: -2 };
+  if (own === 'amazing') return { score: 2, loved: r };
+  const key = mainIngredient(r);
+  if (key === 'any') return { score: 0 };
+  const loved = all.find((x) => x.id !== r.id && ratings[x.id] === 'amazing' && mainIngredient(x) === key);
+  return loved ? { score: 1, loved } : { score: 0 };
+}
 
 /**
  * Tonight's picks, best first: fits the diet, a main (not dessert), 45 minutes or less if any fit;
  * then the goal (Get in shape → high protein, Learn to cook → easy, Eat healthier → lighter,
- * Save money → fewest missing ingredients first), then the best pantry match, then the quickest.
+ * Save money → fewest missing ingredients first), then your taste (ratings), then the best pantry
+ * match, then the quickest.
  */
-export function rankPicks({ recipes, pantry, diets, goal, maxMinutes = 45 }: { recipes: Recipe[]; pantry: string[]; diets: readonly string[]; goal?: Goal; maxMinutes?: number }): Pick[] {
+export function rankPicks({
+  recipes,
+  pantry,
+  diets,
+  goal,
+  maxMinutes = 45,
+  ratings = {},
+}: {
+  recipes: Recipe[];
+  pantry: string[];
+  diets: readonly string[];
+  goal?: Goal;
+  maxMinutes?: number;
+  /** Ratings from your cooking history (see tasteScore). */
+  ratings?: Ratings;
+}): Pick[] {
   const mains = recipes.filter((r) => r.category !== 'Dessert' && fitsDiet(r, diets));
   const quick = mains.filter((r) => r.minutes <= maxMinutes);
   const pool = quick.length ? quick : mains;
   const scored = pool.map((recipe) => {
     const m = pantryMatch(recipe, pantry);
-    return { recipe, have: m.have, needed: m.needed, ratio: m.needed ? m.have / m.needed : 0, missing: m.needed - m.have, fit: suitsGoal(recipe, goal) ? 1 : 0 };
+    const taste = tasteScore(recipe, ratings, recipes);
+    return { recipe, have: m.have, needed: m.needed, ratio: m.needed ? m.have / m.needed : 0, missing: m.needed - m.have, fit: suitsGoal(recipe, goal) ? 1 : 0, taste: taste.score, loved: taste.loved };
   });
   scored.sort(
     (a, b) =>
       b.fit - a.fit ||
+      b.taste - a.taste ||
       (goal === 'save' ? a.missing - b.missing || b.ratio - a.ratio : b.ratio - a.ratio || a.missing - b.missing) ||
       a.recipe.minutes - b.recipe.minutes ||
       a.recipe.title.localeCompare(b.recipe.title),
   );
-  return scored.map(({ recipe, have, needed }) => ({ recipe, have, needed }));
+  return scored.map(({ recipe, have, needed, taste, loved }) => ({ recipe, have, needed, ...(taste > 0 && loved ? { because: loved.id === recipe.id ? 'you loved it' : `you loved ${loved.title}` } : {}) }));
 }
 
 /** The pick for a given day: rotates among the top three, so the daily reminder isn't always the same dish. */

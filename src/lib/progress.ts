@@ -23,7 +23,7 @@ export type ProgressInput = {
   customRecipes: Recipe[];
   plan: WeekPlan;
   favorites: string[];
-  fun: { pets: number; listsDone: number; badges: string[] };
+  fun: { pets: number; listsDone: number; badges: string[]; bonusXp?: number };
   streak: number;
 };
 
@@ -89,7 +89,9 @@ export function xpFor(p: ProgressInput) {
     p.customRecipes.length * XP.ownRecipe +
     p.fun.listsDone * XP.listDone +
     p.fun.badges.length * XP.badge +
-    Math.min(p.fun.pets, XP.petCap) * XP.pet
+    Math.min(p.fun.pets, XP.petCap) * XP.pet +
+    // Lucky-pan bonuses from cooking.
+    (p.fun.bonusXp ?? 0)
   );
 }
 

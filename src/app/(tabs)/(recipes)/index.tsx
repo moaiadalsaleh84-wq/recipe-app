@@ -315,6 +315,7 @@ export default function RecipesScreen() {
             <Reveal index={2} style={{ marginTop: 22 }}>
               <Animated.View style={card.style}>
               <TonightCard
+                note={pick?.because ? `Picked for you because ${pick.because}` : undefined}
                 onShuffle={others.length > 1 ? () => card.flip(() => setShuffled((n) => n + 1)) : undefined}
                 recipe={featured}
                 label={tonight ? 'On the menu tonight' : 'Recipe of the day'}

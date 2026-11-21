@@ -30,6 +30,9 @@ import { BottomBar } from '../../components/BottomBar';
 import { ConfettiBurst } from '../../components/ConfettiBurst';
 import { duration, enter, popSpring, pressSpring, spring } from '../../motion';
 import { scheduleOnRN } from 'react-native-worklets';
+import { rollBonus, type Bonus } from '../../lib/bonus';
+import { stickers } from '../../data/stickers';
+import { todayIndex, useTonightPick } from '../../lib/tonightPick';
 import { Icon } from '../../components/Icon';
 import { PressableScale } from '../../components/PressableScale';
 import { RecipePhoto } from '../../components/RecipeCard';
@@ -49,6 +52,8 @@ import { convertQty, convertStepText } from '../../lib/units';
 import { formatQty, nameFor, roundQty, useStore } from '../../state/store';
 import { useTimers } from '../../state/timers';
 import { fonts, pop, popCycle, useTheme } from '../../theme';
+
+type FinishEntry = { date: string; xpBefore: number; levelBefore: number; bonus: Bonus };
 
 export default function CookMode() {
   const t = useTheme();
@@ -72,7 +77,7 @@ function CookSession({ recipe, servings }: { recipe: Recipe; servings: number })
   const insets = useSafeAreaInsets();
   const toast = useToast();
   const store = useStore();
-  const { units, logCooked, rateCooked, setCookedPhoto, cooked, customRecipes, plan, favorites, fun } = store;
+  const { units, logCooked, rateCooked, setCookedPhoto, cooked, customRecipes, plan, favorites, fun, claimBonus } = store;
 
   const [page, setPage] = useState(0); // 0 = get ready, 1..n = steps, n+1 = finish
   // Kept for the whole cook: going back never resets what you've set out.
@@ -81,7 +86,7 @@ function CookSession({ recipe, servings }: { recipe: Recipe; servings: number })
   // Which way the last move went, so the next step slides in from the right side.
   const [forward, setForward] = useState(true);
   // The cooking-history entry made when you finish, and your XP and level just before it.
-  const [entry, setEntry] = useState<{ date: string; xpBefore: number; levelBefore: number } | null>(null);
+  const [entry, setEntry] = useState<FinishEntry | null>(null);
   // Timers live app-wide (src/state/timers.tsx): they keep going outside Cook Mode and ring when the app is closed.
   const { timers, now, support, start, pause, resume, reset, stop } = useTimers();
 
@@ -128,7 +133,11 @@ function CookSession({ recipe, servings }: { recipe: Recipe; servings: number })
     if (next === last && !entry) {
       const xpBefore = xpFor(progressInput);
       const date = logCooked(recipe.id, servings);
-      setEntry({ date, xpBefore, levelBefore: levelFor(xpBefore).level });
+      // The one small surprise for finishing (see lib/bonus.ts): a tip, double XP, or a new sticker.
+      const bonus = rollBonus(recipe, fun.stickers ?? [], Math.random(), Math.random());
+      if (bonus.kind === 'lucky') claimBonus({ xp: bonus.xp });
+      if (bonus.kind === 'sticker') claimBonus({ sticker: bonus.id });
+      setEntry({ date, xpBefore, levelBefore: levelFor(xpBefore).level, bonus });
     }
     setPage(next);
   };
@@ -566,7 +575,7 @@ function Finish({
   recipe: NonNullable<ReturnType<ReturnType<typeof useStore>['getRecipe']>>;
   recipeTitle: string;
   servings: number;
-  entry: { date: string; xpBefore: number; levelBefore: number } | null;
+  entry: FinishEntry | null;
   progressInput: ProgressInput;
   onRate: (r: Rating) => void;
   onPhoto: (uri: string) => void;
@@ -577,6 +586,12 @@ function Finish({
   const toast = useToast();
   const [rating, setRating] = useState<Rating | null>(null);
   const [photo, setPhoto] = useState<string | null>(null);
+  const { setMeal } = useStore();
+  const { tomorrow: tomorrowPick, picks } = useTonightPick();
+  // Tomorrow's idea, never the dish you just made.
+  const tomorrow = [tomorrowPick, ...picks].find((p) => p && p.recipe.id !== recipe.id);
+  const tomorrowIndex = (todayIndex() + 1) % 7;
+  const [planned, setPlanned] = useState(false);
   const celebrated = useRef(false);
   useEffect(() => {
     if (celebrated.current) return;
@@ -671,6 +686,13 @@ function Finish({
           </Animated.View>
         </View>
 
+        {/* The surprise: a chef tip, Lucky pan (double XP) or a new sticker. */}
+        {entry && (
+          <Animated.View entering={enter(5, reduceMotion)} style={{ alignSelf: 'stretch' }}>
+            <BonusCard bonus={entry.bonus} />
+          </Animated.View>
+        )}
+
         {/* How'd it taste? Saved with this meal in your history. */}
         <Animated.View entering={enter(5, reduceMotion)} style={{ gap: 10, alignSelf: 'stretch' }}>
           <Text style={[t.type.title3, { color: pop.ink, textAlign: 'center' }]}>How’d it taste?</Text>
@@ -695,6 +717,36 @@ function Finish({
             <Text style={[t.type.button, { color: pop.ink, textDecorationLine: 'underline' }]}>{rating || photo ? 'Done' : 'Maybe later'}</Text>
           </PressableScale>
         </Animated.View>
+
+        {/* Never a dead end: tomorrow's idea, one tap to put it in the plan. */}
+        {tomorrow && (
+          <Animated.View entering={enter(7, reduceMotion)} style={{ alignSelf: 'stretch' }}>
+            <PopCard color={pop.white} radius={20} contentStyle={styles.tomorrow} testID="finish-tomorrow">
+              <View style={styles.tomorrowThumb}>
+                <RecipePhoto recipe={tomorrow.recipe} radius={12} iconSize={20} />
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={[t.type.caption1, { color: pop.inkMuted }]}>Tomorrow</Text>
+                <Text style={[t.type.headline, { color: pop.ink }]} numberOfLines={2}>
+                  {tomorrow.recipe.title}
+                </Text>
+              </View>
+              <PopButton
+                label={planned ? 'Planned' : 'Add to plan'}
+                icon={planned ? 'check' : 'calendar'}
+                size="small"
+                color={planned ? pop.leaf : pop.sunshine}
+                disabled={planned}
+                onPress={() => {
+                  setMeal(tomorrowIndex, 'Dinner', tomorrow.recipe.id);
+                  setPlanned(true);
+                  toast({ message: `${tomorrow.recipe.title} is in tomorrow’s plan`, icon: 'calendar' });
+                }}
+                testID="finish-add-tomorrow"
+              />
+            </PopCard>
+          </Animated.View>
+        )}
       </ScrollView>
     </View>
   );
@@ -723,6 +775,49 @@ function RatingButton({ label, selected, onPress }: { label: string; selected: b
 /** Six little shapes in the app's colors, each with an ink outline. They drop in once; still with Reduce Motion. */
 // Only at the left and right edges, beside the 200pt photo and above the title, so they never
 // cover either.
+/** The after-cook surprise. Gold for Lucky pan, a sticker for a new sticker, white for a chef tip. */
+function BonusCard({ bonus }: { bonus: Bonus }) {
+  const t = useTheme();
+  if (bonus.kind === 'lucky') {
+    return (
+      <PopCard color={pop.sunshine} radius={20} contentStyle={styles.bonus} testID="bonus-lucky">
+        <View style={[styles.bonusIcon, { backgroundColor: pop.white }]}>
+          <Icon name="pot" size={22} color={pop.ink} weight="bold" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[t.type.headline, { color: pop.ink }]}>Lucky pan! Double XP</Text>
+          <Text style={[t.type.subhead, { color: pop.ink }]}>{`+${nb(bonus.xp, 'XP')} extra for this cook.`}</Text>
+        </View>
+      </PopCard>
+    );
+  }
+  if (bonus.kind === 'sticker') {
+    const s = stickers.find((x) => x.id === bonus.id);
+    return (
+      <PopCard color={pop.lilacTint} radius={20} contentStyle={styles.bonus} testID="bonus-sticker">
+        <View style={[styles.bonusIcon, { backgroundColor: s ? pop[s.color] : pop.sunshine }]}>
+          <Icon name={s?.icon ?? 'sparkles'} size={22} color={pop.ink} weight="bold" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[t.type.headline, { color: pop.ink }]}>New sticker: {bonus.name}!</Text>
+          <Text style={[t.type.subhead, { color: pop.ink }]}>It’s in your Sticker book on the You tab.</Text>
+        </View>
+      </PopCard>
+    );
+  }
+  return (
+    <PopCard color={pop.skyTint} radius={20} contentStyle={styles.bonus} testID="bonus-tip">
+      <View style={[styles.bonusIcon, { backgroundColor: pop.white }]}>
+        <Icon name="sparkles" size={20} color={pop.ink} weight="bold" />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={[t.type.headline, { color: pop.ink }]}>Chef tip</Text>
+        <Text style={[t.type.subhead, { color: pop.ink }]}>{bonus.tip}</Text>
+      </View>
+    </PopCard>
+  );
+}
+
 /** One step segment: white, then it fills from the left with a spring (sunshine = this step, leaf = done). */
 function Segment({ state }: { state: 'todo' | 'current' | 'done' }) {
   const reduceMotion = useReducedMotion();
@@ -771,6 +866,10 @@ const styles = StyleSheet.create({
   // A full 44pt tap area around each 12pt segment.
   segmentTap: { flex: 1, height: 44, marginVertical: -12, justifyContent: 'center' },
   segment: { height: 12, borderRadius: 6, borderWidth: 2, borderColor: pop.ink },
+  bonus: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
+  bonusIcon: { width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: pop.ink, alignItems: 'center', justifyContent: 'center' },
+  tomorrow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12 },
+  tomorrowThumb: { width: 52, height: 52, borderRadius: 14, borderWidth: 2, borderColor: pop.ink, overflow: 'hidden' },
   drainTrack: { height: 10, borderRadius: 5, borderWidth: 2, borderColor: pop.ink, backgroundColor: pop.tomatoTint, overflow: 'hidden', marginVertical: 6 },
   drainFill: { flex: 1, backgroundColor: pop.white, transformOrigin: 'left' },
   pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 20, marginTop: 14 },

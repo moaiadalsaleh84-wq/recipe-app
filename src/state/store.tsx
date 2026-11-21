@@ -44,7 +44,8 @@ type Saved = {
   /** Active Pro subscription (or trial), if any. */
   pro: Entitlement | null;
   /** Fun stuff: counters behind XP, levels and badges. */
-  fun: { pets: number; listsDone: number; badges: string[]; lastLevel: number };
+  /** bonusXp and stickers are newer, optional fields (older saves don't have them). */
+  fun: { pets: number; listsDone: number; badges: string[]; lastLevel: number; bonusXp?: number; stickers?: string[] };
   /** Successful imports so far (the free version includes FREE_LIMITS.imports). */
   importsUsed: number;
   /** Ingredients the user has at home, as typed. */
@@ -72,7 +73,7 @@ const initialSaved: Saved = {
   onboarded: false,
   profile: emptyProfile,
   pro: null,
-  fun: { pets: 0, listsDone: 0, badges: [], lastLevel: 1 },
+  fun: { pets: 0, listsDone: 0, badges: [], lastLevel: 1, bonusXp: 0, stickers: [] },
   importsUsed: 0,
   pantry: [],
   planAdded: [],
@@ -93,6 +94,8 @@ type Store = Saved & {
   setPro: (e: Entitlement | null) => void;
   /** Fun counters */
   addPet: () => void;
+  /** The after-cook surprise: extra XP (Lucky pan) or a sticker for the Sticker book. */
+  claimBonus: (b: { xp?: number; sticker?: string }) => void;
   addListDone: () => void;
   unlockBadges: (ids: string[]) => void;
   setLastLevel: (n: number) => void;
@@ -285,6 +288,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const completeOnboarding = useCallback(() => update(() => ({ onboarded: true })), [update]);
   const setPro = useCallback((pro: Entitlement | null) => update(() => ({ pro })), [update]);
   const addPet = useCallback(() => update((s) => ({ fun: { ...s.fun, pets: s.fun.pets + 1 } })), [update]);
+  const claimBonus = useCallback(
+    (b: { xp?: number; sticker?: string }) =>
+      update((s) => {
+        const have = s.fun.stickers ?? [];
+        return { fun: { ...s.fun, bonusXp: (s.fun.bonusXp ?? 0) + (b.xp ?? 0), stickers: b.sticker && !have.includes(b.sticker) ? [...have, b.sticker] : have } };
+      }),
+    [update],
+  );
   const addListDone = useCallback(() => update((s) => ({ fun: { ...s.fun, listsDone: s.fun.listsDone + 1 } })), [update]);
   const unlockBadges = useCallback(
     (ids: string[]) => update((s) => ({ fun: { ...s.fun, badges: [...s.fun.badges, ...ids.filter((id) => !s.fun.badges.includes(id))] } })),
@@ -441,6 +452,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       completeOnboarding,
       setPro,
       addPet,
+      claimBonus,
       addListDone,
       unlockBadges,
       setLastLevel,
@@ -486,7 +498,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       undoGroceries,
     }),
     [
-      saved, hydrated, setBuddy, setProfile, completeOnboarding, setPro, addPet, addListDone, unlockBadges, setLastLevel, countImport, draft, addPantry, removePantry, restorePantry, allRecipes, getRecipe, addRecipe, manualRecipeCount, deleteRecipe, setRecipeImage, setNote, setUnits, setGoals, logCooked, rateCooked, setCookedPhoto,
+      saved, hydrated, setBuddy, setProfile, completeOnboarding, setPro, addPet, claimBonus, addListDone, unlockBadges, setLastLevel, countImport, draft, addPantry, removePantry, restorePantry, allRecipes, getRecipe, addRecipe, manualRecipeCount, deleteRecipe, setRecipeImage, setNote, setUnits, setGoals, logCooked, rateCooked, setCookedPhoto,
       category, tags, toggleTag, showOnlyTag, clearFilters, isFavorite, toggleFavorite, addCookbook, renameCookbook,
       deleteCookbook, restoreCookbook, toggleInCookbook, setMeal, toggleGrocery, addIngredients, addWeekToGroceries, addCustomItem,
       removeGrocery, clearCompleted, undoGroceries,

@@ -229,6 +229,10 @@ export function TonightCard({
           <PopButton label="Cook it!" iconRight="arrowRight" onPress={onCook} accessibilityLabel={`Cook ${recipe.title}`} style={{ flex: 1 }} />
           {onShuffle && <PopIconButton icon="shuffle" size={56} iconSize={22} onPress={onShuffle} accessibilityLabel="Show me another" testID="tonight-shuffle" />}
         </View>
+        {/* "Cook it!" goes straight to Get ready; the full recipe is one small tap away. */}
+        <PressableScale onPress={() => openRecipe(recipe.id)} accessibilityRole="link" accessibilityLabel={`See the recipe for ${recipe.title}`} style={styles.seeRecipe}>
+          <Text style={[t.type.subhead, { color: t.colors.label, fontFamily: t.fonts.black, textDecorationLine: 'underline' }]}>See recipe</Text>
+        </PressableScale>
       </PopCard>
       {/* Slapped on where the photo meets the card. */}
       <Sticker label="Tonight's pick" style={styles.tonightSticker} />
@@ -310,7 +314,8 @@ const styles = StyleSheet.create({
   },
   tonightPhoto: { height: 150, overflow: 'hidden', borderTopLeftRadius: 21.5, borderTopRightRadius: 21.5, borderBottomWidth: 2.5, borderBottomColor: pop.ink },
   tonightText: { paddingHorizontal: 16, paddingTop: 22, gap: 4 },
-  tonightBtn: { marginHorizontal: 16, marginTop: 12, marginBottom: 16 },
+  tonightBtn: { marginHorizontal: 16, marginTop: 12 },
+  seeRecipe: { alignSelf: 'center', minHeight: 44, justifyContent: 'center', paddingHorizontal: 16, marginBottom: 4 },
   tonightSticker: { position: 'absolute', top: 134, left: 14 },
   featuredFav: { position: 'absolute', top: 4, right: 4 },
   row: { flexDirection: 'row', alignItems: 'center', paddingRight: 8 },

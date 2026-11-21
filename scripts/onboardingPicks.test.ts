@@ -58,3 +58,19 @@ test('tonight: fits the diet, 45 minutes or less, prefers the goal and the best 
   assert.equal(learn[0].recipe.difficulty, 'Easy');
   assert.ok(pickForDay(picks, 12345));
 });
+
+test('ratings: loved comes up, meh goes down, and the pick says why', async () => {
+  const { tasteScore } = await import('../src/lib/onboardingPicks.ts');
+  const plain = rankPicks({ recipes, pantry: [], diets: [] });
+  const first = plain[0].recipe;
+  const meh = rankPicks({ recipes, pantry: [], diets: [], ratings: { [first.id]: 'meh' } });
+  assert.notEqual(meh[0].recipe.id, first.id);
+  const last = plain[plain.length - 1].recipe;
+  const loved = rankPicks({ recipes, pantry: [], diets: [], ratings: { [last.id]: 'amazing' } });
+  assert.equal(loved[0].recipe.id, last.id);
+  assert.equal(loved[0].because, 'you loved it');
+  const chicken = recipes.filter((r: { title: string }) => /chicken/i.test(r.title));
+  const s = tasteScore(chicken[1], { [chicken[0].id]: 'amazing' }, recipes);
+  assert.equal(s.score, 1);
+  assert.equal(s.loved?.id, chicken[0].id);
+});

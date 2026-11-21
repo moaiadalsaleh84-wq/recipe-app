@@ -43,14 +43,24 @@ export async function askReminderPermission(): Promise<boolean> {
 const dayKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const dayNumberOf = (d: Date) => Math.floor((d.getTime() - d.getTimezoneOffset() * 60000) / 86400000);
 
-/** The notification text for one day's pick. */
+/** The notification text for one day's pick: "Tonight: Chicken Fried Rice" / "20 min · you have 4 of 6". */
 export function reminderText(recipe: Recipe, have: number, needed: number) {
-  const time = `${recipe.minutes} min`;
+  const time = `${recipe.minutes}\u00A0min`;
   return {
     title: `Tonight: ${recipe.title}`,
-    body: have > 0 ? `${time}, and you already have ${have} of the ${needed} ingredients. Tap to start.` : `${time} and ${needed} ingredients. Tap to start.`,
+    body: have > 0 ? `${time} · you have ${have} of\u00A0${needed}. Tap to start.` : `${time} · ${needed}\u00A0ingredients. Tap to start.`,
   };
 }
+
+/**
+ * The optional streak saver (off unless you turn it on in Settings): at 8 pm, only when your streak
+ * is 3+ days and you haven't cooked today. Warm, never a loss warning.
+ */
+export function streakSaverText(streak: number, recipe: Recipe) {
+  return { title: `Keep your ${streak}-day run going?`, body: `A ${recipe.minutes}-minute idea: ${recipe.title}. Tap to start.` };
+}
+const SAVER_ID = `${PREFIX}saver`;
+const SAVER_HOUR = 20;
 
 export type ReminderInput = {
   enabled: boolean;
@@ -62,6 +72,10 @@ export type ReminderInput = {
   goal?: Goal;
   /** ISO dates of cooked meals. */
   cookedDates: string[];
+  /** The 8 pm streak saver (Settings). */
+  streakSaver?: boolean;
+  /** Current streak in days. */
+  streak?: number;
 };
 
 /** Cancels the scheduled dinner ideas and, if on, schedules the next 7 days afresh. */
@@ -69,15 +83,29 @@ export async function syncDinnerReminders(input: ReminderInput) {
   const N = await load();
   if (!N) return;
   try {
+    // Start clean every time: the dinner ideas and the streak saver are rebuilt from current data.
     const scheduled = await N.getAllScheduledNotificationsAsync();
     await Promise.all(scheduled.filter((n) => n.identifier.startsWith(PREFIX)).map((n) => N.cancelScheduledNotificationAsync(n.identifier)));
-    if (!input.enabled) return;
     const perm = await N.getPermissionsAsync();
     if (!perm.granted) return;
+    const now = new Date();
+    const cookedToday = input.cookedDates.some((iso) => dayKey(new Date(iso)) === dayKey(now));
+    // Streak saver: today only (tomorrow's streak depends on today), and only if it still applies.
+    if (input.streakSaver && (input.streak ?? 0) >= 3 && !cookedToday) {
+      const at = new Date(now.getFullYear(), now.getMonth(), now.getDate(), SAVER_HOUR, 0, 0, 0);
+      const quick = rankPicks({ recipes: input.recipes, pantry: input.pantry, diets: input.diets, goal: input.goal, maxMinutes: 20 }).sort((a, b) => a.recipe.minutes - b.recipe.minutes)[0];
+      if (quick && at.getTime() > now.getTime()) {
+        await N.scheduleNotificationAsync({
+          identifier: SAVER_ID,
+          content: { ...streakSaverText(input.streak ?? 0, quick.recipe), data: { recipeId: quick.recipe.id, kind: 'dinner' } },
+          trigger: { type: N.SchedulableTriggerInputTypes.DATE, date: at },
+        });
+      }
+    }
+    if (!input.enabled) return;
     const [h, m] = input.time.split(':').map(Number);
     const cookedDays = new Set(input.cookedDates.map((iso) => dayKey(new Date(iso))));
     const picks = rankPicks({ recipes: input.recipes, pantry: input.pantry, diets: input.diets, goal: input.goal });
-    const now = new Date();
     for (let i = 0; i < DAYS; i++) {
       const at = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i, h, m, 0, 0);
       if (at.getTime() <= now.getTime()) continue; // today's time has passed
@@ -86,7 +114,7 @@ export async function syncDinnerReminders(input: ReminderInput) {
       if (!pick) continue;
       await N.scheduleNotificationAsync({
         identifier: `${PREFIX}${dayKey(at)}`,
-        content: { ...reminderText(pick.recipe, pick.have, pick.needed), data: { recipeId: pick.recipe.id } },
+        content: { ...reminderText(pick.recipe, pick.have, pick.needed), data: { recipeId: pick.recipe.id, kind: 'dinner' } },
         trigger: { type: N.SchedulableTriggerInputTypes.DATE, date: at },
       });
     }

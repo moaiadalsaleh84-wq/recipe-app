@@ -2,7 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import { Reveal } from '../../components/Reveal';
-import { Linking, Modal, Pressable, Share, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
+import { Linking, Modal, Pressable, ScrollView, Share, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
 import { Text } from '../../components/Text';
 import Svg, { Path } from 'react-native-svg';
 import Animated, {
@@ -22,7 +22,9 @@ import { pantryHas } from '../../lib/pantry';
 import { FoodIcon } from '../../components/FoodIcon';
 import { Icon, type IconName } from '../../components/Icon';
 import { PressableScale } from '../../components/PressableScale';
-import { RecipePhoto } from '../../components/RecipeCard';
+import { RecipeCard, RecipePhoto } from '../../components/RecipeCard';
+import { mainIngredient } from '../../lib/bonus';
+import { pantryMatch } from '../../lib/moods';
 import { useToast } from '../../components/Toast';
 import { Button, EmptyState, IconButton, Segmented } from '../../components/ui';
 import { BottomBar } from '../../components/BottomBar';
@@ -46,7 +48,7 @@ export default function RecipeScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const {
     getRecipe, isFavorite, toggleFavorite, addIngredients, units, setUnits, notes, setNote,
-    cookbooks, favorites, deleteRecipe, setRecipeImage, goals, profile, isPro, pantry,
+    cookbooks, favorites, deleteRecipe, setRecipeImage, goals, profile, isPro, pantry, allRecipes,
   } = useStore();
   const recipe = getRecipe(id);
 
@@ -99,6 +101,13 @@ export default function RecipeScreen() {
   // What you already have at home (from the Pantry tab), so you only buy the rest.
   const have = new Set(pantry.length ? recipe.ingredients.filter((i) => pantryHas(pantry, i.name)).map((i) => i.id) : []);
   const missing = recipe.ingredients.filter((i) => !have.has(i.id));
+  const main = mainIngredient(recipe);
+  const alsoLike = allRecipes
+    .filter((r) => r.id !== recipe.id)
+    .map((r) => ({ r, score: (main !== 'any' && mainIngredient(r) === main ? 2 : 0) + (r.category === recipe.category ? 1 : 0) + pantryMatch(r, pantry).have / Math.max(1, r.ingredients.length) }))
+    .sort((a, b) => b.score - a.score || a.r.title.localeCompare(b.r.title))
+    .slice(0, 3)
+    .map((x) => x.r);
 
   const onFavorite = () => {
     const now = toggleFavorite(recipe.id);
@@ -341,6 +350,20 @@ export default function RecipeScreen() {
             accessibilityLabel="My notes for this recipe"
             style={[t.type.body, styles.notes, { color: t.colors.label, backgroundColor: t.pop.sunshineTint, ...t.chunky.card }]}
           />
+
+          {/* Never a dead end: three more to try (same main ingredient or meal first, then what you have). */}
+          {alsoLike.length > 0 && (
+            <>
+              <Text style={[t.type.title2, styles.h2, { color: t.colors.label }]} accessibilityRole="header">
+                You might also like
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20 }} contentContainerStyle={{ paddingHorizontal: 20, gap: 12, paddingBottom: 6 }} testID="also-like">
+                {alsoLike.map((r) => (
+                  <RecipeCard key={r.id} recipe={r} width={160} />
+                ))}
+              </ScrollView>
+            </>
+          )}
 
           {recipe.custom && (
             <Button
