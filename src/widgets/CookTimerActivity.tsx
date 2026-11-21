@@ -112,7 +112,7 @@ export function CookTimerActivity(props: CookTimerActivityProps, env: LiveActivi
         </HStack>
         {bar(accent, c.track)}
         <HStack>
-          <Text modifiers={[rounded(12), foregroundStyle(c.secondaryLabel)]}>{paused ? `${p.label} · paused` : ringing ? `${p.buddyName} says: check it now!` : p.label}</Text>
+          <Text modifiers={[rounded(12), foregroundStyle(c.secondaryLabel)]}>{paused ? `${p.label} · stopped` : ringing ? `${p.buddyName} says: check it now!` : p.label}</Text>
           <Spacer />
           {controls(c.accent, c.secondaryLabel)}
         </HStack>

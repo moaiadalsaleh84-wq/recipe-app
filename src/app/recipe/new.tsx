@@ -46,6 +46,8 @@ export default function NewRecipe() {
   const ingredients = ingredientsText.split('\n').map((l, i) => parseIngredient(l, i)).filter((x) => x !== null);
   const steps = stepsText.split('\n').map((s) => s.trim().replace(/^\d+[.)]\s*/, '')).filter(Boolean);
   const missing = [!title.trim() && 'a title', ingredients.length === 0 && 'ingredients', steps.length === 0 && 'steps'].filter(Boolean) as string[];
+  // "a title, ingredients and steps", not "a title, ingredients, steps".
+  const missingText = missing.length > 1 ? `${missing.slice(0, -1).join(', ')} and ${missing[missing.length - 1]}` : (missing[0] ?? '');
   const valid = missing.length === 0;
 
   const pickPhoto = async () => {
@@ -67,7 +69,7 @@ export default function NewRecipe() {
       return;
     }
     if (!valid) {
-      toast({ message: `Add ${missing.join(', ')} to save`, tone: 'warning' });
+      toast({ message: `Add ${missingText} to save`, tone: 'warning' });
       return;
     }
     const url = link.trim();
@@ -203,7 +205,7 @@ export default function NewRecipe() {
           ))}
         </View>
 
-        {!valid && <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, textAlign: 'center', marginTop: 24 }]}>Add {missing.join(', ')} to save.</Text>}
+        {!valid && <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, textAlign: 'center', marginTop: 24 }]}>Add {missingText} to save.</Text>}
         {/* The header Save is easy to miss, so there's a big one at the end of the form too. */}
         <Button label="Save recipe" icon="check" onPress={save} style={{ marginTop: valid ? 28 : 12 }} accessibilityLabel="Save recipe (bottom)" />
       </ScrollView>

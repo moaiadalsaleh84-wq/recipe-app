@@ -396,9 +396,9 @@ function GatherTile({ label, checked, onPress }: { label: string; checked: boole
 /* ------------------------------------------------------------------ */
 
 /**
- * The step's timer: a tomato card. Row 1: the big time and its status (Ready, Running, Paused,
- * Done!), always in full. Row 2: the controls, 48pt each: Play or Pause, Reset, and Stop as a word
- * (not an ✕, which looks like closing the screen). It never starts on its own.
+ * The step's timer: a tomato card. Row 1: the big time and its status (Ready, Running, Stopped,
+ * Done!), always in full. Row 2: the controls, 48pt each: Play, or Stop while it runs (freezes the time
+ * left; Play carries on), Reset, and Stop to silence the alarm when it's done. It never starts on its own.
  */
 function TimerCard({ seconds, timer: tm, now, first, onStart, onPause, onResume, onReset, onStop }: { seconds: number; timer?: CookTimer; now: number; first: boolean; onStart: () => void; onPause: () => void; onResume: () => void; onReset: () => void; onStop: () => void }) {
   const t = useTheme();
@@ -407,7 +407,7 @@ function TimerCard({ seconds, timer: tm, now, first, onStart, onPause, onResume,
   const ready = !tm || isReady(tm);
   const running = tm?.status === 'running';
   const left = tm ? secondsLeft(tm, now) : seconds;
-  const status = done ? 'Done!' : ready ? 'Ready' : running ? 'Running' : 'Paused';
+  const status = done ? 'Done!' : ready ? 'Ready' : running ? 'Running' : 'Stopped';
   return (
     <Animated.View entering={FadeIn} layout={LinearTransition}>
       <PopCard color={tm?.status === 'done' ? pop.tomatoTint : pop.tomato} contentStyle={styles.timerFace} testID={tm?.status === 'done' ? 'timer-finished-away' : undefined}>
@@ -420,24 +420,12 @@ function TimerCard({ seconds, timer: tm, now, first, onStart, onPause, onResume,
           </Text>
         </View>
         <View style={styles.timerBtns}>
-          {!done &&
-            (ready ? (
-              <PopIconButton icon="play" size={48} accessibilityLabel={`Start a ${length} timer`} onPress={tm ? onResume : onStart} haptic={null} />
-            ) : (
-              <PopIconButton icon={running ? 'pause' : 'play'} size={48} accessibilityLabel={running ? 'Pause timer' : 'Resume timer'} onPress={running ? onPause : onResume} haptic="select" />
-            ))}
+          {/* Ready or stopped: Play. Running: Stop, which freezes the time where it is (Play carries on). */}
+          {!done && !running && <PopIconButton icon="play" size={48} accessibilityLabel={ready ? `Start a ${length} timer` : 'Resume timer'} onPress={!tm ? onStart : onResume} haptic={ready ? null : 'select'} />}
+          {running && <PopButton label="Stop" icon="pause" size="small" color={pop.white} onPress={onPause} accessibilityLabel="Stop timer" accessibilityHint="Keeps the time left. Play carries on." haptic="select" faceStyle={styles.stopFace} />}
           {tm && !done && !ready && <PopIconButton icon="restart" size={48} accessibilityLabel="Reset timer" onPress={onReset} haptic="select" />}
-          {tm && (
-            <PopButton
-              label="Stop"
-              size="small"
-              color={pop.white}
-              onPress={onStop}
-              accessibilityLabel={tm.status === 'ringing' ? 'Stop alarm' : 'Stop timer'}
-              haptic="select"
-              faceStyle={styles.stopFace}
-            />
-          )}
+          {/* Time's up: Stop silences the alarm. */}
+          {done && <PopButton label="Stop" size="small" color={pop.white} onPress={onStop} accessibilityLabel={tm?.status === 'ringing' ? 'Stop alarm' : 'Clear timer'} haptic="select" faceStyle={styles.stopFace} />}
         </View>
       </PopCard>
     </Animated.View>
@@ -575,7 +563,7 @@ function Finish({
               {leveledUp ? `LEVEL\u00A0${lvl.level}` : `+${nb(gained, 'XP')}`}
             </Text>
             {leveledUp ? (
-              <Text style={[t.type.caption1, { color: pop.ink, textAlign: 'center' }]}>{`${lvl.title}\u00A0—\u00A0unlocked!`}</Text>
+              <Text style={[t.type.caption1, { color: pop.ink, textAlign: 'center' }]}>{`${lvl.title.replace(/ /g, '\u00A0')}\u00A0— unlocked!`}</Text>
             ) : (
               <View style={{ alignSelf: 'stretch', gap: 4 }}>
                 <ProgressBar value={lvl.progress} color={pop.lilac} height={8} label="Progress to the next level" />
