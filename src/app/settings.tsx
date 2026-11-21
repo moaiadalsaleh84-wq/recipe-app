@@ -126,6 +126,10 @@ export default function Settings() {
             <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>Privacy</Text>
             <Icon name="chevronRight" size={14} color={t.colors.tertiaryLabel} weight="semibold" />
           </PressableScale>
+          <PressableScale onPress={() => router.push('/photo-credits')} style={[styles.row, { borderTopWidth: StyleSheet.hairlineWidth, borderColor: t.colors.separator }]} accessibilityLabel="Photo credits" scaleTo={0.99} testID="photo-credits-row">
+            <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>Photo credits</Text>
+            <Icon name="chevronRight" size={14} color={t.colors.tertiaryLabel} weight="semibold" />
+          </PressableScale>
         </Section>
       </ScrollView>
     </View>

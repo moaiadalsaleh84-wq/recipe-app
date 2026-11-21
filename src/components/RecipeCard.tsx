@@ -22,6 +22,9 @@ import { IconButton, Skeleton } from './ui';
 
 export const openRecipe = (id: string) => router.push({ pathname: '/recipe/[id]', params: { id } });
 
+const TINTS = [pop.sunshineTint, pop.skyTint, pop.berryTint, pop.leafTint, pop.lilacTint, pop.tomatoTint];
+const placeholderTint = (id: string) => TINTS[[...id].reduce((n, c) => (n * 31 + c.charCodeAt(0)) >>> 0, 7) % TINTS.length];
+
 /** The recipe's photo, or a cozy placeholder for recipes added without one. */
 export function RecipePhoto({ recipe, iconSize = 36, radius = 0 }: { recipe: Recipe; iconSize?: number; /** Corner radius of the photo itself: the frame's radius minus its border (2.5). */ radius?: number }) {
   const t = useTheme();
@@ -48,9 +51,10 @@ export function RecipePhoto({ recipe, iconSize = 36, radius = 0 }: { recipe: Rec
       </>
     );
   }
+  // No photo yet: a soft tinted card (one of the palette's tints, the same for the same recipe every time).
   return (
-    <View style={[StyleSheet.absoluteFill, styles.noPhoto, { backgroundColor: t.colors.imagePlaceholder, borderRadius: radius }]}>
-      <Icon name="pot" size={iconSize} color={t.colors.tertiaryLabel} />
+    <View style={[StyleSheet.absoluteFill, styles.noPhoto, { backgroundColor: placeholderTint(recipe.id), borderRadius: radius }]} testID="photo-placeholder">
+      <Icon name="pot" size={iconSize} color={t.pop.inkMuted} />
     </View>
   );
 }

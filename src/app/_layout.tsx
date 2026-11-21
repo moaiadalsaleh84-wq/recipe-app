@@ -91,6 +91,7 @@ export default function RootLayout() {
                 <Stack.Screen name="import" options={{ presentation: 'modal', contentStyle: { backgroundColor: t.colors.groupedBackground } }} />
                 <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="privacy" options={{ presentation: 'modal', contentStyle: { backgroundColor: t.colors.groupedBackground } }} />
+                <Stack.Screen name="photo-credits" options={{ presentation: 'modal', contentStyle: { backgroundColor: t.colors.groupedBackground } }} />
                 <Stack.Screen name="cook/[id]" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
                 <Stack.Screen name="cookbook/[id]" options={{ animation: 'slide_from_right' }} />
                 <Stack.Screen name="plan-picker" options={sheet} />
