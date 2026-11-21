@@ -45,11 +45,14 @@ export function TabScreen({ title, kicker, right, children, maxWidth = 700, head
   const titleStyle = useAnimatedStyle(() => {
     const v = y.get();
     return {
-      opacity: interpolate(v, [0, fadeAt - 8], [1, 0], Extrapolation.CLAMP),
+      // Full ink while readable; it only fades in the last stretch before the small bar covers it.
+      opacity: interpolate(v, [fadeAt - 32, fadeAt - 8], [1, 0], Extrapolation.CLAMP),
       transform: [{ scale: interpolate(v, [-120, 0, fadeAt], [1.12, 1, 0.92], Extrapolation.CLAMP) }, { translateY: interpolate(v, [0, fadeAt], [0, 10], Extrapolation.CLAMP) }],
     };
   });
-  const barStyle = useAnimatedStyle(() => ({ opacity: interpolate(y.get(), [fadeAt - 24, fadeAt - 4], [0, 1], Extrapolation.CLAMP) }));
+  // The small bar is always solid (nothing shows through it): it slides down from behind the
+  // status strip instead of fading in.
+  const barStyle = useAnimatedStyle(() => ({ transform: [{ translateY: interpolate(y.get(), [fadeAt - 24, fadeAt - 4], [-BAR - 4, 0], Extrapolation.CLAMP) }] }));
 
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.background }}>
@@ -85,14 +88,14 @@ export function TabScreen({ title, kicker, right, children, maxWidth = 700, head
         {children}
       </Animated.ScrollView>
 
-      {/* Behind the clock: always solid. */}
-      <View style={[styles.status, { height: insets.top, backgroundColor: t.colors.background }]} testID="screen-status" />
       {/* The small bar, once the big title has scrolled away: white, a 2pt ink line, the title on one line. */}
       <Animated.View pointerEvents="none" style={[styles.bar, { top: insets.top, height: BAR, backgroundColor: t.colors.background, borderBottomColor: t.pop.ink }, barStyle]} testID="screen-bar" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
         <Text style={[t.type.title3, styles.barTitle, { color: t.colors.label }]} numberOfLines={1}>
           {title}
         </Text>
       </Animated.View>
+      {/* Behind the clock: always solid. */}
+      <View style={[styles.status, { height: insets.top, backgroundColor: t.colors.background }]} testID="screen-status" />
     </View>
   );
 }

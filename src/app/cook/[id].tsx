@@ -23,6 +23,7 @@ import Animated, {
   type SharedValue,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BottomBar } from '../../components/BottomBar';
 import { Icon } from '../../components/Icon';
 import { PressableScale } from '../../components/PressableScale';
 import { RecipePhoto } from '../../components/RecipeCard';
@@ -283,15 +284,15 @@ export default function CookMode() {
             )}
           </ScrollView>
 
-          {/* Footer: back + the one big button */}
-          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+          {/* Footer: back + the one big button, under the scroll view (never over it). */}
+          <BottomBar color={bg}>
             {page === 0 ? (
               <PopButton label="Start cooking" iconRight="arrowRight" onPress={() => go(1)} accessibilityLabel="Start the first step" style={{ flex: 1 }} />
             ) : (
               <>
                 <PopIconButton icon="back" size={56} iconSize={22} accessibilityLabel="Previous step" onPress={() => go(page - 1)} haptic={null} />
                 <PopButton
-                  label={page === steps.length ? 'I’m done!' : 'Done! Next step'}
+                  label={page === steps.length ? 'Finish!' : 'Next step'}
                   iconRight={page === steps.length ? 'check' : 'arrowRight'}
                   onPress={() => go(page + 1)}
                   accessibilityLabel={page === steps.length ? 'Finish cooking' : 'Next step'}
@@ -300,7 +301,7 @@ export default function CookMode() {
                 />
               </>
             )}
-          </View>
+          </BottomBar>
         </>
       )}
 
@@ -684,7 +685,7 @@ const styles = StyleSheet.create({
   pill: { flexDirection: 'row', alignItems: 'center', borderRadius: 999, borderWidth: 2, borderColor: pop.ink, paddingLeft: 12, paddingRight: 4, minHeight: 36 },
   pillMain: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 36, paddingRight: 8 },
   pillStop: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  content: { padding: 20, paddingTop: 16, paddingBottom: 140, width: '100%', maxWidth: 640, alignSelf: 'center' },
+  content: { padding: 20, paddingTop: 24, paddingBottom: 24, width: '100%', maxWidth: 640, alignSelf: 'center' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 },
   tileShadow: { position: 'absolute', left: 0, right: 0, top: 5, bottom: 0, borderRadius: 20, backgroundColor: pop.ink },
   // At least 92 tall; a long name makes the tile (and its row partner) taller instead of being cut.
@@ -706,7 +707,6 @@ const styles = StyleSheet.create({
   sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 20, paddingTop: 16, backgroundColor: pop.white, borderWidth: 2.5, borderBottomWidth: 0, borderColor: pop.ink },
   sheetHead: { flexDirection: 'row', alignItems: 'center' },
   sheetRow: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 56 },
-  footer: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingHorizontal: 20, paddingTop: 12 },
   finish: { paddingHorizontal: 20, gap: 22, alignItems: 'center', width: '100%', maxWidth: 560, alignSelf: 'center' },
   finishTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, alignSelf: 'stretch' },
   finishPhoto: { width: 200, height: 200, borderRadius: 100, borderWidth: 3, borderColor: pop.ink, backgroundColor: pop.white, overflow: 'hidden' },

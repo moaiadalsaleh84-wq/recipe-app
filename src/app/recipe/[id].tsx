@@ -9,13 +9,12 @@ import Animated, {
   Extrapolation,
   FadeIn,
   interpolate,
-  useAnimatedReaction,
+  interpolateColor,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { scheduleOnRN } from 'react-native-worklets';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { pantryHas } from '../../lib/pantry';
 import { FoodIcon } from '../../components/FoodIcon';
@@ -24,6 +23,7 @@ import { PressableScale } from '../../components/PressableScale';
 import { RecipePhoto } from '../../components/RecipeCard';
 import { useToast } from '../../components/Toast';
 import { Button, EmptyState, IconButton, Segmented } from '../../components/ui';
+import { BottomBar } from '../../components/BottomBar';
 import { Lift, PopButton, PopCard, PopChip, PopIconButton } from '../../components/pop';
 import { type DietTag, type Recipe, type Units } from '../../data/mock';
 import { haptics } from '../../lib/haptics';
@@ -50,7 +50,6 @@ export default function RecipeScreen() {
   // Opens sized for your household (from onboarding), or the recipe's own servings.
   const [servings, setServings] = useState(profile.household ?? recipe?.servings ?? 2);
   const [justAdded, setJustAdded] = useState<'all' | 'missing' | null>(null);
-  const [barVisible, setBarVisible] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   // Where the big title ends, so the small one appears only once it has scrolled away.
   const [titleBottom, setTitleBottom] = useState(0);
@@ -73,19 +72,13 @@ export default function RecipeScreen() {
     scrollY.set(e.contentOffset.y);
   });
 
-  // The compact bar (and its small title) appears once the big title has scrolled under it.
-  const barThreshold = Math.max(120, titleBottom - insets.top - 60);
-  useAnimatedReaction(
-    () => scrollY.get() > barThreshold,
-    (visible, prev) => {
-      if (visible !== prev) scheduleOnRN(setBarVisible, visible);
-    },
-    [barThreshold],
-  );
-
-  const barStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(scrollY.get(), [barThreshold - 40, barThreshold], [0, 1], Extrapolation.CLAMP),
-  }));
+  // The top bar (back, heart, more) is a solid row above the page: tomato tint like the photo band,
+  // turning white with an ink line once the title has scrolled under it. Nothing shows through.
+  const barThreshold = Math.max(80, titleBottom - 40);
+  const barStyle = useAnimatedStyle(() => {
+    const p = interpolate(scrollY.get(), [barThreshold - 40, barThreshold], [0, 1], Extrapolation.CLAMP);
+    return { backgroundColor: interpolateColor(p, [0, 1], [pop.tomatoTint, pop.white]), borderBottomColor: interpolateColor(p, [0, 1], [pop.tomatoTint, pop.ink]) };
+  });
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
@@ -155,17 +148,25 @@ export default function RecipeScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.background }}>
       <StatusBar style="dark" animated />
+      {/* Back, heart and more: their own row above the photo (12pt gap), never over it. */}
+      <Animated.View style={[styles.controls, { paddingTop: insets.top + 8 }, barStyle]} testID="detail-controls">
+        <PopIconButton icon="back" accessibilityLabel="Back" onPress={goBack} />
+        <View style={styles.controlsRight}>
+          <PopIconButton icon={fav ? 'heartFill' : 'heart'} accessibilityLabel={fav ? 'Remove from Favorites' : 'Add to Favorites'} onPress={onFavorite} iconColor={fav ? t.pop.tomato : t.pop.ink} haptic={null} />
+          <PopIconButton icon="more" accessibilityLabel="More: share or save to a cookbook" onPress={() => setMenuOpen(true)} />
+        </View>
+      </Animated.View>
       <Animated.ScrollView
         onScroll={onScroll}
         scrollEventThrottle={16}
         contentInsetAdjustmentBehavior="never"
         keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ paddingBottom: insets.bottom + 120 }}
+        contentContainerStyle={{ paddingBottom: 24 }}
       >
         {/* Header: a tomato-tint band with the photo as a tilted card */}
         {/* Header: the buttons sit above the photo (12pt gap); the photo is straight, framed in ink. */}
-        <View style={[styles.header, { backgroundColor: t.pop.tomatoTint, paddingTop: insets.top + CONTROLS + 12, borderBottomColor: t.pop.ink }]} testID="hero" onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}>
+        <View style={[styles.header, { backgroundColor: t.pop.tomatoTint, paddingTop: 0, borderBottomColor: t.pop.ink }]} testID="hero" onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}>
           <Lift radius={24}>
             <View style={[styles.photoFrame, { width: photoWidth, height: Math.round(photoWidth * 0.75), backgroundColor: t.colors.imagePlaceholder }]}>
               <RecipePhoto recipe={recipe} iconSize={64} radius={21.5} />
@@ -360,19 +361,6 @@ export default function RecipeScreen() {
         </View>
       </Animated.ScrollView>
 
-      {/* Compact bar that fades in once the title scrolls away: white with a 2pt ink line, buttons only
-          (the title is already big on the page). It catches touches, so nothing under it is tapped by accident. */}
-      <Animated.View style={[styles.topBar, { height: insets.top + 62, backgroundColor: t.colors.background, borderBottomColor: t.pop.ink }, barStyle]} testID="detail-bar" pointerEvents={barVisible ? 'auto' : 'none'} />
-
-      {/* Back, heart and more */}
-      <View style={[styles.controls, { top: insets.top + 8 }]} pointerEvents="box-none" testID="detail-controls">
-        <PopIconButton icon="back" accessibilityLabel="Back" onPress={goBack} />
-        <View style={styles.controlsRight}>
-          <PopIconButton icon={fav ? 'heartFill' : 'heart'} accessibilityLabel={fav ? 'Remove from Favorites' : 'Add to Favorites'} onPress={onFavorite} iconColor={fav ? t.pop.tomato : t.pop.ink} haptic={null} />
-          <PopIconButton icon="more" accessibilityLabel="More: share or save to a cookbook" onPress={() => setMenuOpen(true)} />
-        </View>
-      </View>
-
       <MoreMenu
         visible={menuOpen}
         onClose={() => setMenuOpen(false)}
@@ -384,7 +372,7 @@ export default function RecipeScreen() {
       />
 
       {/* Sticky actions: a basket for what's missing, and the big "Let's cook!" */}
-      <View style={[styles.bottom, { paddingBottom: Math.max(insets.bottom, 14), backgroundColor: t.colors.background, borderTopColor: t.pop.ink }]}>
+      <BottomBar color={t.colors.background} border>
         <PopIconButton
           icon={justAdded === 'missing' ? 'check' : 'cartAdd'}
           size={56}
@@ -403,15 +391,12 @@ export default function RecipeScreen() {
           style={{ flex: 1 }}
           testID="cook-now"
         />
-      </View>
+      </BottomBar>
     </View>
   );
 }
 
 /** How each diet tag looks on the recipe page. */
-/** Height of the back / heart / more row (44 + its 3pt shadow), plus its 8pt top margin. */
-const CONTROLS = 8 + 47;
-
 const TAG_LOOK: Partial<Record<DietTag, { label: string; color: string }>> = {
   Vegetarian: { label: 'Veggie', color: pop.leafTint },
   Vegan: { label: 'Vegan', color: pop.leafTint },
@@ -524,14 +509,14 @@ function Nutrition({ recipe, proteinGoal }: { recipe: Recipe; proteinGoal?: numb
                     <View style={[styles.dot, { backgroundColor: r.color }]} />
                     <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{r.label}</Text>
                   </View>
-                  <Text style={[t.type.headline, { color: t.colors.label }]}>{r.grams} g</Text>
+                  <Text style={[t.type.headline, { color: t.colors.label }]}>{nb(r.grams, 'g')}</Text>
                   <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]}>{pct[r.key]}% of kcal</Text>
                 </View>
               ))}
             </View>
             {proteinGoal ? (
               <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
-                {Math.round((protein / proteinGoal) * 100)}% of your {proteinGoal} g daily protein goal
+                {Math.round((protein / proteinGoal) * 100)}% of your {nb(proteinGoal, 'g')} daily protein goal
               </Text>
             ) : null}
             <Text style={[t.type.caption1, { color: t.colors.tertiaryLabel }]}>{'Estimated from the ingredients. Not medical\u00A0advice.'}</Text>
@@ -638,11 +623,9 @@ const styles = StyleSheet.create({
   step: { flexDirection: 'row', gap: 12, marginBottom: 16 },
   stepNum: { width: 34, height: 34, borderRadius: 17, borderWidth: 2, alignItems: 'center', justifyContent: 'center', marginTop: -4 },
   notes: { minHeight: 96, borderRadius: 20, padding: 16, textAlignVertical: 'top', borderCurve: 'continuous', outlineStyle: 'none' } as never,
-  topBar: { position: 'absolute', top: 0, left: 0, right: 0, borderBottomWidth: 2 },
   resetServings: { minHeight: 44, justifyContent: 'center' },
-  controls: { position: 'absolute', left: 16, right: 16, flexDirection: 'row', justifyContent: 'space-between' },
+  controls: { paddingHorizontal: 16, paddingBottom: 12, flexDirection: 'row', justifyContent: 'space-between', borderBottomWidth: 2 },
   controlsRight: { flexDirection: 'row', gap: 10 },
-  bottom: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingTop: 12, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'flex-start', gap: 12, borderTopWidth: 2.5 },
   menu: { position: 'absolute', right: 16, width: 260, maxWidth: '90%' },
   menuFace: { borderRadius: 20, overflow: 'hidden', borderCurve: 'continuous' },
   menuRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, minHeight: 56 },

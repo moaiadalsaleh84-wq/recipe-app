@@ -14,7 +14,6 @@ import { PopCard, PopChip } from '../../../components/pop';
 import { aisleOrder, type GroceryItem } from '../../../data/mock';
 import { haptics } from '../../../lib/haptics';
 import { plainFractions } from '../../../lib/qty';
-import { noWidow } from '../../../lib/text';
 import { TabScreen } from '../../../components/TabScreen';
 import { formatQty, useStore } from '../../../state/store';
 import { fonts, useTheme } from '../../../theme';
@@ -101,7 +100,7 @@ export default function GroceriesScreen() {
                 <Text style={[t.type.title2, { color: t.colors.label }]} testID="grocery-progress">
                   {done === total ? 'Everything’s in the\u00A0basket!' : `${done} of ${total} in your basket`}
                 </Text>
-                {done === total && <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{noWidow('Nice shopping. Clear the list when you’re ready.')}</Text>}
+                {done === total && <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{'Nice shopping. Clear the list when you’re ready.'}</Text>}
               </View>
             </View>
             <View style={styles.heroBar}>
@@ -196,7 +195,7 @@ export default function GroceriesScreen() {
               )}
             </Animated.View>
           )}
-          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, textAlign: 'center', marginTop: 16 }]}>{noWidow('Swipe left on an item to delete it.')}</Text>
+          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, textAlign: 'center', marginTop: 16 }]}>{'Swipe left on an item to delete it.'}</Text>
         </>
       )}
     </TabScreen>
@@ -274,10 +273,10 @@ function GroceryRow({ item, onToggle, onDelete }: { item: GroceryItem; onToggle:
             <Text style={[t.type.body, { color: item.checked ? t.colors.secondaryLabel : t.colors.label }, item.checked && styles.struck]} numberOfLines={2}>
               {item.name}
             </Text>
-            {names.length === 1 && <Text style={[styles.sub, { color: t.colors.secondaryLabel }]}>{noWidow(names[0])}</Text>}
+            {names.length === 1 && <Text style={[styles.sub, { color: t.colors.secondaryLabel }]}>{names[0]}</Text>}
             {names.length > 1 && (
               <Text style={[styles.sub, { color: t.colors.secondaryLabel }]}>
-                {showSources ? noWidow(names.join(', ')) : `For\u00A0${names.length}\u00A0recipes\u00A0›`}
+                {showSources ? names.join(', ') : `For\u00A0${names.length}\u00A0recipes\u00A0›`}
               </Text>
             )}
           </View>

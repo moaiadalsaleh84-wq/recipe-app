@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from 'react-native';
 import { Text } from './Text';
+import { num } from '../lib/text';
 import Animated, {
   useAnimatedProps,
   useAnimatedStyle,
@@ -16,7 +17,6 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import type { HapticKind } from '../lib/haptics';
-import { noWidow } from '../lib/text';
 import { useTheme, pop } from '../theme';
 import Svg, { Circle } from 'react-native-svg';
 import { Mascot, MASCOT_ON } from './mascot/Mascot';
@@ -195,7 +195,7 @@ export function Stepper({
       accessible
       accessibilityRole="adjustable"
       accessibilityLabel={label}
-      accessibilityValue={{ min, max, now: value, text: `${value}` }}
+      accessibilityValue={{ min, max, now: value, text: num(value) }}
       accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
       onAccessibilityAction={(e) => {
         if (e.nativeEvent.actionName === 'increment' && value < max) onChange(Math.min(max, value + step));
@@ -204,7 +204,7 @@ export function Stepper({
     >
       <IconButton icon="minus" haptic="select" accessibilityLabel={`Decrease ${label}`} disabled={value <= min} onPress={() => onChange(Math.max(min, value - step))} color={t.colors.label} />
       <Text style={[t.type.headline, styles.stepperValue, { color: t.colors.label }]} testID="stepper-value">
-        {value}
+        {num(value)}
       </Text>
       <IconButton icon="plus" haptic="select" accessibilityLabel={`Increase ${label}`} disabled={value >= max} onPress={() => onChange(Math.min(max, value + step))} color={t.colors.label} />
     </View>
@@ -247,13 +247,19 @@ export function ProgressBar({ value, color, track, height = 8, label }: { /** 0 
   const reduceMotion = useReducedMotion();
   const pct = Math.max(0, Math.min(1, value));
   const shown = useSharedValue(0);
+  const trackW = useSharedValue(0);
   useEffect(() => {
     shown.set(reduceMotion ? withTiming(pct, { duration: 200 }) : withSpring(pct, { damping: 14, stiffness: 120, mass: 0.9 }));
   }, [pct, reduceMotion, shown]);
-  // Never an empty-looking bar: a small nub shows where it starts.
-  const fill = useAnimatedStyle(() => ({ width: `${Math.max(3, Math.min(100, shown.get() * 100))}%` }));
+  // Empty means empty: no fill at all at 0. Above 0 the fill is at least as wide as it is tall (a round end, not a sliver).
+  const fill = useAnimatedStyle(() => {
+    const v = shown.get();
+    if (v <= 0.001) return { width: 0, opacity: 0 };
+    return { width: Math.min(trackW.get(), Math.max(height, v * trackW.get())), opacity: 1 };
+  });
   return (
     <View
+      onLayout={(e) => trackW.set(e.nativeEvent.layout.width - 4)}
       style={{ height: height + 4, borderRadius: (height + 4) / 2, backgroundColor: track ?? t.colors.cell, borderWidth: 2, borderColor: t.pop.ink, overflow: 'hidden' }}
       accessibilityRole="progressbar"
       accessibilityLabel={label}
@@ -346,7 +352,7 @@ export function SectionHeader({ title, subtitle, action, right, style }: { title
         <Text style={[t.type.title2, { color: t.colors.label }]} accessibilityRole="header">
           {title}
         </Text>
-        {subtitle ? <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]}>{noWidow(subtitle)}</Text> : null}
+        {subtitle ? <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]}>{subtitle}</Text> : null}
       </View>
       {action && (
         <PressableScale onPress={action.onPress} accessibilityLabel={`${action.label}: ${title}`} style={styles.shAction}>
@@ -391,7 +397,7 @@ export function EmptyState({
       )}
       <Text style={[t.type.title2, { color: t.colors.label, textAlign: 'center' }]}>{title}</Text>
       <Text style={[t.type.callout, t.noWidows.style, { color: t.colors.secondaryLabel, textAlign: 'center', maxWidth: 290 }]} {...t.noWidows.props}>
-        {noWidow(message)}
+        {message}
       </Text>
       {action && (
         // Its own row, so the button's size never depends on the text above it.

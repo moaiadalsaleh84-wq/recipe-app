@@ -8,12 +8,13 @@
  * step is saved too, so closing the app mid-way resumes on the same step.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, { FadeIn, FadeInRight, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AppIcon } from '../components/AppIcon';
+import { BottomBar } from '../components/BottomBar';
 import { Chunky } from '../components/Chunky';
 import { Icon, type IconName } from '../components/Icon';
 import { PopButton, PopCard, PopIconButton, Sticker } from '../components/pop';
@@ -27,7 +28,7 @@ import { askReminderPermission, reminderText } from '../lib/dinnerReminders';
 import { haptics } from '../lib/haptics';
 import { cookableCount, rankPicks, type Pick } from '../lib/onboardingPicks';
 import { restore } from '../lib/purchases';
-import { nb, noWidow } from '../lib/text';
+import { nb } from '../lib/text';
 import { useStore } from '../state/store';
 import { fonts, pop, stroke } from '../theme';
 
@@ -44,7 +45,8 @@ const STEP_KEY = 'pantry-pop-onboarding-step-v2';
 export const QUICK_PANTRY = ['Eggs', 'Pasta', 'Rice', 'Garlic', 'Onions', 'Olive oil', 'Butter', 'Milk', 'Cheese', 'Tomatoes', 'Chicken', 'Potatoes', 'Bread', 'Flour', 'Peppers'];
 
 const ADVANCE_MS = 350;
-const TITLE_TOP = 126;
+/** Space between the progress row and each step's title. */
+const TITLE_GAP = 24;
 
 export default function Onboarding() {
   const insets = useSafeAreaInsets();
@@ -219,14 +221,17 @@ export default function Onboarding() {
   return (
     <View style={{ flex: 1, backgroundColor: bg }}>
       {segment > 0 && (
-        <View style={[styles.header, { top: insets.top + 8 }]}>
+        <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
           <PopIconButton icon="back" accessibilityLabel={screen === 'name' ? 'Back to the start' : 'Previous question'} onPress={back} />
-          <ProgressBar filled={segment} />
+          {/* Setup is done on First pick: no progress bar there, just the way back. */}
+          {screen !== 'pick' && <ProgressBar filled={segment} />}
         </View>
       )}
-      <Animated.View key={screen} entering={screen === 'welcome' ? FadeIn.duration(260) : FadeInRight.duration(240)} style={{ flex: 1 }}>
-        {body}
-      </Animated.View>
+      <ScreenBg.Provider value={bg}>
+        <Animated.View key={screen} entering={screen === 'welcome' ? FadeIn.duration(260) : FadeInRight.duration(240)} style={{ flex: 1 }}>
+          {body}
+        </Animated.View>
+      </ScreenBg.Provider>
     </View>
   );
 }
@@ -245,21 +250,30 @@ function ProgressBar({ filled }: { filled: number }) {
   );
 }
 
-/** Title block at the same height on every step, a scrolling body and an optional pinned footer. */
+/** The current step's background, so its bottom bar matches. */
+const ScreenBg = createContext<string>(pop.white);
+
+/**
+ * Title block at the same place on every step (24pt under the progress row), a scrolling body, and
+ * an optional bottom bar that sits under the scroll view, so nothing can hide behind it.
+ */
 function Step({ title, subtitle, children, footer, contentStyle }: { title: string; subtitle?: string; children: ReactNode; footer?: ReactNode; contentStyle?: StyleProp<ViewStyle> }) {
   const insets = useSafeAreaInsets();
-  // The title starts at 126pt, or under the header on phones with a very tall status area.
-  const top = Math.max(TITLE_TOP, insets.top + 8 + 47 + 18);
+  const bg = useContext(ScreenBg);
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={[{ paddingTop: top, paddingHorizontal: 20, paddingBottom: footer ? 24 : insets.bottom + 24 }, contentStyle]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[{ paddingTop: TITLE_GAP, paddingHorizontal: 20, paddingBottom: footer ? 24 : insets.bottom + 24 }, contentStyle]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <Text style={styles.title} accessibilityRole="header">
           {title}
         </Text>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
         <View style={{ marginTop: 24 }}>{children}</View>
       </ScrollView>
-      {footer ? <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>{footer}</View> : null}
+      {footer ? (
+        <BottomBar color={bg} direction="column" style={{ gap: 4 }}>
+          {footer}
+        </BottomBar>
+      ) : null}
     </View>
   );
 }
@@ -383,13 +397,13 @@ function GoalStep({ name, selected, onPick }: { name: string; selected: Goal | u
     <Step
       title={name ? `What brings you here, ${name}?` : 'What brings you here?'}
       subtitle="Pick one. We’ll tailor every pick to it."
-      footer={<Text style={styles.hint}>Tap one to continue</Text>}
     >
       <View style={{ gap: 12 }} accessibilityRole="radiogroup">
         {goalOptions.map((g) => (
           <OptionRow key={g.id} label={g.label} icon={g.icon} tint={pop[g.tint]} selected={shown === g.id} onPress={() => pick(g.id)} />
         ))}
       </View>
+      <Text style={[styles.hint, { marginTop: 16 }]}>Tap one to continue</Text>
     </Step>
   );
 }
@@ -516,7 +530,7 @@ function DinnerStep({ selected, onPick }: { selected: string | null; onPick: (t:
   const { picked, pick } = useOneTap<string>(null, onPick);
   const shown = picked ?? selected;
   return (
-    <Step title={'When does the “what’s for dinner?” moment hit?'} subtitle="We’ll have an idea ready before it does.">
+    <Step title={'When do you decide what’s for\u00A0dinner?'} subtitle="We’ll have an idea ready before it does.">
       <View style={{ gap: 12 }} accessibilityRole="radiogroup">
         {dinnerMoments.map((m) => (
           <OptionRow key={m.time} label={m.title} detail={m.detail} fill={pop.berry} selected={shown === m.time} onPress={() => pick(m.time)} />
@@ -557,11 +571,11 @@ function ReminderStep({ time, preview, onYes, onNo }: { time: string; preview: P
     >
       {text ? (
         <View style={styles.notif} accessibilityLabel={`Example notification: ${text.title}. ${text.body}`} accessible>
-          <Image source={require('../../assets/icon.png')} style={styles.appIcon} />
+          <AppIcon size={38} />
           <View style={{ flex: 1 }}>
             <Text style={styles.notifApp}>PANTRY POP · {label.toUpperCase()}</Text>
             <Text style={styles.notifTitle}>{text.title}</Text>
-            <Text style={styles.notifBody}>{noWidow(text.body)}</Text>
+            <Text style={styles.notifBody}>{text.body}</Text>
           </View>
         </View>
       ) : null}
@@ -700,7 +714,6 @@ function Building({ servings, onCompute, onDone }: { servings: number; onCompute
 const MAX_SHUFFLES = 5;
 
 function FirstPick({ name, servings, picks, onCook }: { name: string; servings: number; picks: Pick[]; onCook: (id: string | undefined) => void }) {
-  const insets = useSafeAreaInsets();
   const reduceMotion = useReducedMotion();
   const [i, setI] = useState(0);
   const pool = picks.slice(0, MAX_SHUFFLES);
@@ -731,12 +744,10 @@ function FirstPick({ name, servings, picks, onCook }: { name: string; servings: 
 
   const more = pick ? picks.filter((p) => p !== pick && p.needed > 0 && p.have / p.needed >= 0.5) : [];
   const thumbs = (more.length ? more : picks.filter((p) => p !== pick)).slice(0, 2);
-  // Same top as every other step's title, under the progress bar.
-  const top = Math.max(TITLE_TOP, insets.top + 8 + 47 + 18);
 
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={{ paddingTop: top, paddingHorizontal: 20, paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingTop: TITLE_GAP, paddingHorizontal: 20, paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
         <Text style={styles.small}>{name ? `All set, ${name}. Your kitchen is ready.` : 'All set. Your kitchen is ready.'}</Text>
         <Text style={[styles.title, { marginTop: 4 }]} accessibilityRole="header">
           Here’s tonight’s pick
@@ -775,10 +786,10 @@ function FirstPick({ name, servings, picks, onCook }: { name: string; servings: 
           </View>
         )}
       </ScrollView>
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16), gap: 12 }]}>
+      <BottomBar color={pop.sunshineTint} direction="column">
         <PopButton label="Cook this tonight" icon="play" onPress={() => onCook(pick?.recipe.id)} testID="ob-cook" />
         {pool.length > 1 && <PopButton label="Show me another" icon="shuffle" color={pop.white} size="small" onPress={another} haptic={null} testID="ob-another" />}
-      </View>
+      </BottomBar>
     </View>
   );
 }
@@ -795,13 +806,12 @@ function Tag({ icon, label, color }: { icon: IconName; label: string; color: str
 /* ------------------------------------------------------------------ */
 
 const styles = StyleSheet.create({
-  header: { position: 'absolute', left: 20, right: 20, zIndex: 10, flexDirection: 'row', alignItems: 'center', gap: 14 },
+  header: { paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', gap: 14 },
   bar: { flex: 1, flexDirection: 'row', gap: 4, height: 14 },
   segment: { flex: 1, borderRadius: 7, borderWidth: 2, borderColor: pop.ink },
   title: { fontFamily: fonts.heading, fontSize: 32, lineHeight: 38, color: pop.ink },
   subtitle: { fontFamily: fonts.body, fontSize: 16, lineHeight: 22, color: pop.inkMuted, marginTop: 8 },
   small: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 20, color: pop.inkMuted },
-  footer: { paddingHorizontal: 20, paddingTop: 12 },
   hint: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 20, color: pop.inkMuted, textAlign: 'center', paddingVertical: 6 },
   link: { minHeight: 44, alignItems: 'center', justifyContent: 'center', marginTop: 6 },
   linkText: { fontFamily: fonts.bold, fontSize: 16, color: pop.ink, textDecorationLine: 'underline' },
@@ -831,7 +841,6 @@ const styles = StyleSheet.create({
   chip: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, paddingHorizontal: 14, paddingVertical: 6 },
   chipText: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 21, color: pop.ink },
   notif: { flexDirection: 'row', gap: 12, backgroundColor: pop.white, borderWidth: stroke.thick, borderColor: pop.ink, borderRadius: 20, padding: 14, borderCurve: 'continuous' },
-  appIcon: { width: 38, height: 38, borderRadius: 9, borderWidth: 1.5, borderColor: pop.ink },
   notifApp: { fontFamily: fonts.black, fontSize: 12, lineHeight: 16, letterSpacing: 0.5, color: pop.inkMuted },
   notifTitle: { fontFamily: fonts.black, fontSize: 16, lineHeight: 21, color: pop.ink, marginTop: 2 },
   notifBody: { fontFamily: fonts.body, fontSize: 15, lineHeight: 20, color: pop.ink, marginTop: 2 },

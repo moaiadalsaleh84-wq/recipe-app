@@ -1,13 +1,12 @@
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Text } from '../Text';
 import Animated, { FadeIn } from 'react-native-reanimated';
-import { noWidow } from '../../lib/text';
 import { fonts, pop, stroke } from '../../theme';
 
 /**
- * Where the Pantry Pop character goes. While false, nothing of the character is drawn (no empty
- * dashed circle): only the speech bubble, where a screen has something to say. Set to true to see
- * the dashed placeholder while laying out a screen.
+ * Where the Pantry Pop character goes. While false, nothing is drawn: no dashed circle and no
+ * speech bubble (screens must read fine without them). Set to true to see the placeholder and its
+ * lines while laying out a screen.
  *
  * To drop the character in: render it in place of the dashed circle in `MascotSlot` below. Every
  * screen that shows the character uses this one component.
@@ -25,6 +24,8 @@ type Props = {
 };
 
 export function MascotSlot({ message, size = 64, layout = 'row', style }: Props) {
+  // While the character is off, nothing at all: no circle and no speech bubble.
+  if (!SHOW_MASCOT_PLACEHOLDER) return null;
   const row = layout === 'row';
   return (
     <View style={[row ? styles.row : styles.column, style]}>
@@ -39,7 +40,7 @@ export function MascotSlot({ message, size = 64, layout = 'row', style }: Props)
         // Keyed by the message, so each new line fades in.
         <Animated.View key={message} entering={FadeIn.duration(220)} style={[styles.bubble, row ? styles.bubbleRow : styles.bubbleColumn]} accessibilityLiveRegion="polite">
           {SHOW_MASCOT_PLACEHOLDER && <View style={[styles.tail, row ? styles.tailLeft : styles.tailTop]} />}
-          <Text style={styles.text}>{noWidow(message)}</Text>
+          <Text style={styles.text}>{message}</Text>
         </Animated.View>
       ) : null}
     </View>

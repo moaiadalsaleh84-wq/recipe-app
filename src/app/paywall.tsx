@@ -21,6 +21,7 @@ import { MascotSays } from '../components/mascot/MascotSays';
 import type { Line } from '../components/mascot/lines';
 import { Icon, type IconName } from '../components/Icon';
 import { PressableScale } from '../components/PressableScale';
+import { BottomBar } from '../components/BottomBar';
 import { useToast } from '../components/Toast';
 import { Button } from '../components/ui';
 import { PopChip, PopIconButton } from '../components/pop';
@@ -69,8 +70,6 @@ export default function Paywall() {
   }, []);
   // The top bar gets its ink line once the content scrolls under it; the scroll leaves room for both bars.
   const [scrolled, setScrolled] = useState(false);
-  const [topH, setTopH] = useState(0);
-  const [footH, setFootH] = useState(0);
   const [busy, setBusy] = useState<'buy' | 'restore' | null>(null);
   const [welcome, setWelcome] = useState(false);
 
@@ -132,17 +131,26 @@ export default function Paywall() {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.background }}>
+      {/* Top bar: in the layout above the scroll view, so nothing shows under it. An ink line once scrolled. */}
+      <View
+        style={[styles.top, { paddingTop: insets.top + 6, backgroundColor: t.colors.background, borderBottomColor: scrolled ? t.pop.ink : 'transparent' }]}
+      >
+        <PopIconButton icon="close" accessibilityLabel="Close" accessibilityHint={source === 'onboarding' ? 'Continue with the free version' : undefined} onPress={close} />
+        <PressableScale onPress={onRestore} style={styles.restore} accessibilityLabel="Restore purchases" disabled={!!busy}>
+          {busy === 'restore' ? <ActivityIndicator color={t.colors.tint} /> : <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.black }]}>Restore</Text>}
+        </PressableScale>
+      </View>
       <ScrollView
         onScroll={(e) => setScrolled(e.nativeEvent.contentOffset.y > 2)}
         scrollEventThrottle={32}
-        contentContainerStyle={[styles.content, { paddingTop: topH + 8, paddingBottom: footH + 24 }]}
+        contentContainerStyle={[styles.content, { paddingTop: 16, paddingBottom: 24 }]}
       >
         <MascotSays line={line} size={104} />
 
         <Animated.Text entering={FadeInDown.duration(320)} style={[t.type.largeTitle, { color: t.colors.label, marginTop: 14 }]} accessibilityRole="header" maxFontSizeMultiplier={1.3}>
           {noWidow(copy.title)}
         </Animated.Text>
-        <Text style={[t.type.body, { color: t.colors.secondaryLabel, marginTop: 6 }]}>{noWidow(copy.subtitle)}</Text>
+        <Text style={[t.type.body, { color: t.colors.secondaryLabel, marginTop: 6 }]}>{copy.subtitle}</Text>
 
         {/* Benefits, most relevant first */}
         <Lift radius={22} style={styles.cardLift}>
@@ -154,7 +162,7 @@ export default function Paywall() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[t.type.headline, { color: t.colors.label }]}>{noWidow(b.title)}</Text>
-                  <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 1 }]}>{noWidow(b.detail)}</Text>
+                  <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 1 }]}>{b.detail}</Text>
                 </View>
               </Animated.View>
             ))}
@@ -213,7 +221,7 @@ export default function Paywall() {
       </ScrollView>
 
       {/* Sticky purchase area: price and renewal terms are always visible next to the button */}
-      <View onLayout={(e) => setFootH(e.nativeEvent.layout.height)} style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: t.colors.background, borderTopColor: t.pop.ink }]}>
+      <BottomBar color={t.colors.background} border direction="column" style={{ gap: 0 }}>
         <Button
           label={busy === 'buy' ? 'One moment…' : trial ? `Start my ${trial}-day free trial` : `Subscribe for ${money(selected.price)}/${selected.period}`}
           accessibilityLabel={trial ? `Start my ${trial}-day free trial, then ${money(selected.price)} per ${selected.period}` : `Subscribe for ${money(selected.price)} per ${selected.period}`}
@@ -221,27 +229,14 @@ export default function Paywall() {
           disabled={!!busy}
         />
         <Text style={[t.type.caption1, { color: t.colors.secondaryLabel, textAlign: 'center', marginTop: 8 }]} testID="price-terms">
-          {noWidow(
-            trial
+          {trial
               ? `${nb(trial, 'days')} free, then ${money(selected.price)} per ${selected.period}. Renews automatically. Cancel anytime in Settings at least 24 hours before the trial ends.`
-              : `Renews ${selected.period === 'year' ? 'yearly' : 'monthly'}. Cancel anytime in Settings.`,
-          )}
+              : `Renews ${selected.period === 'year' ? 'yearly' : 'monthly'}. Cancel anytime in Settings.`}
         </Text>
         <PressableScale onPress={close} style={styles.free} accessibilityLabel={source === 'onboarding' ? 'Continue with the free version' : 'Not now'}>
           <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.semibold }]}>{source === 'onboarding' ? 'Continue with the free version' : 'Not now'}</Text>
         </PressableScale>
-      </View>
-
-      {/* Top bar: solid white, above the content (which scrolls under it, hidden). An ink line once scrolled. */}
-      <View
-        onLayout={(e) => setTopH(e.nativeEvent.layout.height)}
-        style={[styles.top, { paddingTop: insets.top + 6, backgroundColor: t.colors.background, borderBottomColor: scrolled ? t.pop.ink : 'transparent' }]}
-      >
-        <PopIconButton icon="close" accessibilityLabel="Close" accessibilityHint={source === 'onboarding' ? 'Continue with the free version' : undefined} onPress={close} />
-        <PressableScale onPress={onRestore} style={styles.restore} accessibilityLabel="Restore purchases" disabled={!!busy}>
-          {busy === 'restore' ? <ActivityIndicator color={t.colors.tint} /> : <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.black }]}>Restore</Text>}
-        </PressableScale>
-      </View>
+      </BottomBar>
     </View>
   );
 }
@@ -314,7 +309,7 @@ function PlanCard({ id, selected, onPress, title, price, note, badge }: { id: Pl
             {badge && <PopChip label={badge} color={t.pop.leaf} small />}
           </View>
           <Text style={[styles.planPrice, { color: t.colors.label }]}>{price}</Text>
-          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{noWidow(note)}</Text>
+          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{note}</Text>
         </View>
       </PressableScale>
     </Lift>
@@ -337,7 +332,7 @@ function TimelineRow({ icon, title, detail, first, last }: { icon: IconName; tit
       </View>
       <View style={{ flex: 1, paddingTop: 2, paddingBottom: last ? 0 : 18 }}>
         <Text style={[t.type.subhead, { color: t.colors.label, fontFamily: t.fonts.black }]}>{title}</Text>
-        <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 1 }]}>{noWidow(detail)}</Text>
+        <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 1 }]}>{detail}</Text>
       </View>
     </View>
   );
@@ -366,7 +361,7 @@ function Welcome({ onDone, trialEndsAt }: { onDone: () => void; trialEndsAt: str
 
 const styles = StyleSheet.create({
   // Above the scroll content, solid white, so nothing shows through it.
-  top: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8, borderBottomWidth: 2 },
+  top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8, borderBottomWidth: 2 },
   restore: { minHeight: 44, minWidth: 64, justifyContent: 'center', alignItems: 'flex-end', paddingHorizontal: 8 },
   content: { paddingHorizontal: 20, width: '100%', maxWidth: 560, alignSelf: 'center' },
   card: { borderRadius: 22, padding: 16, gap: 14, borderCurve: 'continuous' },
@@ -386,7 +381,6 @@ const styles = StyleSheet.create({
   tlLine: { position: 'absolute', top: 22, bottom: -22, width: 3, left: 20.5 },
   links: { flexDirection: 'row', justifyContent: 'center', gap: 4, marginTop: 16, flexWrap: 'wrap' },
   link: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
-  footer: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 2 },
   free: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   welcome: { flex: 1, paddingHorizontal: 20 },
 });

@@ -172,7 +172,7 @@ export default function PlanScreen() {
       </View>
       {isPro && plannedToday > 0 && (
         <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 10 }]}>
-          {dayTotals.protein >= goals.protein ? 'Protein goal covered.' : `${Math.round((dayTotals.protein / goals.protein) * 100)}% of your ${goals.protein} g protein goal.`}
+          {dayTotals.protein >= goals.protein ? 'Protein goal covered.' : `${Math.round((dayTotals.protein / goals.protein) * 100)}% of your ${nb(goals.protein, 'g')} protein goal.`}
         </Text>
       )}
 

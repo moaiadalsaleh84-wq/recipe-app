@@ -15,7 +15,10 @@ export function noWidow(text: string) {
 export const NBSP = ' ';
 
 /**
- * A number and its unit that never split across lines: nb(630, 'kcal') → "630 kcal",
+ * A number and its unit that never split across lines: nb(630, 'kcal') → "630 kcal", nb(2200, 'kcal') → "2,200 kcal",
  * nb(3, 'days') → "3 days". Use it everywhere a number is printed with a unit.
  */
-export const nb = (n: number | string, unit: string) => `${n}${NBSP}${unit}`;
+export const nb = (n: number | string, unit: string) => `${num(n)}${NBSP}${unit}`;
+
+/** Numbers from 1,000 up get a thousands separator: 2200 → "2,200". Strings pass through. */
+export const num = (n: number | string) => (typeof n === 'number' && Math.abs(n) >= 1000 ? n.toLocaleString('en-US') : String(n));

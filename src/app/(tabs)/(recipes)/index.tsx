@@ -22,7 +22,7 @@ import { streakOf } from '../../../lib/progress';
 import { MANAGE_SUBSCRIPTIONS_URL } from '../../../lib/purchases';
 import { useStore } from '../../../state/store';
 import { fonts, pop, useTheme } from '../../../theme';
-import { nb, noWidow } from '../../../lib/text';
+import { nb } from '../../../lib/text';
 
 const todayIndex = (new Date().getDay() + 6) % 7; // Monday = 0
 /** Days since 1970, so the recipe of the day really changes daily. */
@@ -228,7 +228,7 @@ export default function RecipesScreen() {
               <View style={[styles.tipIcon, { borderColor: t.pop.ink }]}>
                 <Icon name="link" size={18} color={t.pop.ink} weight="bold" />
               </View>
-              <Text style={[t.type.headline, { color: t.pop.ink, flex: 1 }]}>{noWidow('Got a recipe on TikTok or a blog? Paste the link and cook from it.')}</Text>
+              <Text style={[t.type.headline, { color: t.pop.ink, flex: 1 }]}>{'Got a recipe on TikTok or a blog? Paste the link and cook from it.'}</Text>
               <PopIconButton icon="close" size={44} iconSize={14} onPress={importTip.dismiss} accessibilityLabel="Dismiss tip" haptic={null} />
             </View>
             <PopButton label="Try an example" icon="sparkles" size="small" color={t.pop.white} onPress={tryExample} style={{ alignSelf: 'flex-start' }} testID="import-example" />
@@ -345,7 +345,7 @@ export default function RecipesScreen() {
             {books.length === 0 && (
               // No cookbooks yet: a hint beside the card, in the same row.
               <View style={[styles.bookHint, { width: railWidth }]}>
-                <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]}>{noWidow('Group recipes like ‘Weeknights’ or ‘Date night’')}</Text>
+                <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]}>{'Group recipes like ‘Weeknights’ or ‘Date night’'}</Text>
               </View>
             )}
           </ScrollView>

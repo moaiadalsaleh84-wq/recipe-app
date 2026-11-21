@@ -9,7 +9,7 @@ import { RecipePhoto } from '../../../components/RecipeCard';
 import { Lift, PopButton, PopCard, PopChip, PopIconButton } from '../../../components/pop';
 import { Image } from 'expo-image';
 import { photoUri } from '../../../lib/photos';
-import { nb } from '../../../lib/text';
+import { nb, num } from '../../../lib/text';
 import { weekDotSize } from '../../../lib/weekDots';
 import { useToast } from '../../../components/Toast';
 import { Button, ProgressBar, Section, SectionHeader, Separator, Stepper } from '../../../components/ui';
@@ -288,8 +288,8 @@ function GoalRow({ label, unit, eaten, goal, color, children }: { label: string;
       <View style={styles.row}>
         <View style={{ flex: 1 }}>
           <Text style={[t.type.headline, { color: t.colors.label }]}>{label}</Text>
-          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
-            {eaten} of {goal} {unit} today
+          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]} numberOfLines={1}>
+            {num(eaten)} of {nb(goal, unit)} today
           </Text>
         </View>
         {children}
