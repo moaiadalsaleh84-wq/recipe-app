@@ -91,3 +91,21 @@ test('weekId is the Monday of the week', () => {
   assert.equal(weekId(new Date(2026, 10, 16)), '2026-11-16'); // Monday
   assert.equal(weekId(new Date(2026, 10, 22)), '2026-11-16'); // Sunday
 });
+
+test('Crispy Beef Tacos: "Garlic" from the crema and the beef is one line, added then rounded once', async () => {
+  const { showAmount } = await import('../src/lib/scale.ts');
+  const list = mergeIngredients([], 'tacos', [
+    { id: 'gc', name: 'Garlic', quantity: 1, unit: 'clove', aisle: 'Produce' },
+    { id: 'gb', name: 'Garlic', quantity: 2, unit: 'clove', aisle: 'Produce' },
+    { id: 'scs', name: 'Salt', quantity: null, unit: 'pinch', aisle: 'Pantry' },
+    { id: 'salt', name: 'Salt', quantity: 1, unit: 'tsp', aisle: 'Pantry' },
+  ], 6 / 4);
+  const garlic = list.filter((i) => i.name === 'Garlic');
+  assert.equal(garlic.length, 1);
+  assert.equal(garlic[0].quantity, 4.5); // full precision: 1.5 + 3
+  assert.equal(showAmount(garlic[0].quantity, garlic[0].unit, 'Garlic').text, '5 cloves');
+  // The pinch of salt stays its own line, next to the 1½ tsp of salt.
+  const salt = list.filter((i) => i.name === 'Salt');
+  assert.equal(salt.length, 2);
+  assert.deepEqual(salt.map((i) => showAmount(i.quantity, i.unit, 'Salt').text).sort(), ['1½ tsp', 'pinch']);
+});

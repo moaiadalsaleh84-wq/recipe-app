@@ -3,16 +3,18 @@
  * (scripts/groceries.test.ts).
  *
  * - The same ingredient from different recipes adds up ("2 onions" + "3 onions" = 5). Items match
- *   by name (each word singular) and unit. Units are never converted, so "200 g flour" and
- *   "2 cups flour" stay separate lines.
+ *   by name (each word singular); amounts are converted to one unit of the same kind (g, ml, tsp or
+ *   the count) and added at full precision, then rounded once, when shown (src/lib/scale.ts).
+ *   Different kinds stay separate lines ("200 g flour" and "2 cups flour"), and a pinch or "to taste"
+ *   never adds onto a number.
  * - Adding the week's plan is safe to repeat: each planned meal is added once per week.
  */
-/** Same as roundQty in qty.ts: two decimals. Repeated here so this file has no imports. */
-const roundQty = (n: number) => Math.round(n * 100) / 100;
+import { combine, unitInfo } from './scale.ts';
 
 type Aisle = string;
 export type ListItem = { key: string; name: string; quantity: number; unit: string; aisle: Aisle; recipeIds: string[]; checked: boolean };
-export type ListIngredient = { id: string; name: string; quantity: number; unit: string; aisle: Aisle };
+/** quantity null = a pinch / to taste: goes on the list without a number. */
+export type ListIngredient = { id: string; name: string; quantity: number | null; unit: string; aisle: Aisle };
 
 /** An ingredient name for matching on the grocery list: lower case, each word singular. "Red Peppers" → "red pepper". */
 export const groceryName = (name: string) =>
@@ -28,21 +30,26 @@ export const groceryName = (name: string) =>
 export function mergeIngredients<T extends ListItem>(list: T[], recipeId: string, ingredients: ListIngredient[], scale = 1): T[] {
   const next = [...list];
   for (const ing of ingredients) {
-    const key = `${ing.id}|${ing.unit}`;
-    const qty = roundQty(ing.quantity * scale);
+    const noAmount = ing.quantity == null || unitInfo(ing.unit).family === 'none';
+    // Full precision: no rounding until the amount is shown.
+    const qty = noAmount ? 0 : (ing.quantity as number) * scale;
+    const unit = noAmount ? (ing.quantity == null ? 'pinch' : ing.unit) : ing.unit;
     const same = groceryName(ing.name);
-    const idx = next.findIndex((i) => i.key === key || (i.unit === ing.unit && groceryName(i.name) === same));
+    const isPinch = (i: ListItem) => !(i.quantity > 0) && unitInfo(i.unit).family === 'none';
+    const idx = next.findIndex((i) => groceryName(i.name) === same && (noAmount ? isPinch(i) : !isPinch(i) && combine({ quantity: i.quantity, unit: i.unit }, { quantity: qty, unit }) != null));
     if (idx >= 0) {
       const existing = next[idx];
+      const sum = noAmount ? { quantity: 0, unit: existing.unit } : combine({ quantity: existing.quantity, unit: existing.unit }, { quantity: qty, unit })!;
       next[idx] = {
         ...existing,
-        quantity: roundQty(existing.quantity + qty),
-        // More is needed now, so it's back on the list.
-        checked: false,
+        quantity: sum.quantity,
+        unit: sum.unit,
+        // More is needed now, so it's back on the list (a second pinch doesn't change anything).
+        checked: noAmount ? existing.checked : false,
         recipeIds: existing.recipeIds.includes(recipeId) ? existing.recipeIds : [...existing.recipeIds, recipeId],
       };
     } else {
-      next.push({ key, name: ing.name, quantity: qty, unit: ing.unit, aisle: ing.aisle, recipeIds: [recipeId], checked: false } as T);
+      next.push({ key: `${ing.id}|${unit}`, name: ing.name, quantity: qty, unit, aisle: ing.aisle, recipeIds: [recipeId], checked: false } as T);
     }
   }
   return next;

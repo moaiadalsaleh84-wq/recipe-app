@@ -19,7 +19,8 @@ import { nb } from '../../../lib/text';
 import { useTonightPick } from '../../../lib/tonightPick';
 import { plainFractions } from '../../../lib/qty';
 import { TabScreen } from '../../../components/TabScreen';
-import { formatQty, useStore } from '../../../state/store';
+import { useStore } from '../../../state/store';
+import { showAmount } from '../../../lib/scale';
 import { fonts, useTheme } from '../../../theme';
 
 /** How an aisle is named on screen. "Pantry" is shown as "Cupboard", so it doesn't clash with the Pantry tab (saved data keeps its name). */
@@ -28,7 +29,7 @@ const aisleName = (aisle: string) => (aisle === 'Pantry' ? 'Cupboard' : aisle);
 export default function GroceriesScreen() {
   const t = useTheme();
   const toast = useToast();
-  const { groceries, toggleGrocery, removeGrocery, clearCompleted, addCustomItem, undoGroceries, addIngredients, pantry, profile } = useStore();
+  const { groceries, toggleGrocery, removeGrocery, clearCompleted, addCustomItem, undoGroceries, addIngredients, pantry, profile, units } = useStore();
   const [draft, setDraft] = useState('');
   // Confetti once, when the last item goes in the basket.
   const [party, setParty] = useState(0);
@@ -50,7 +51,7 @@ export default function GroceriesScreen() {
   const shareList = useCallback(async () => {
     const lines = aisleOrder.flatMap((aisle) => {
       const items = groceries.filter((g) => g.aisle === aisle && !g.checked);
-      return items.length ? [aisleName(aisle), ...items.map((g) => `• ${g.name} (${formatQty(g.quantity, g.unit)})`), ''] : [];
+      return items.length ? [aisleName(aisle), ...items.map((g) => `• ${g.name} (${showAmount(g.quantity, g.unit, g.name, units).text})`), ''] : [];
     });
     if (lines.length === 0) {
       toast({ message: 'Nothing left to buy, nothing to share!', tone: 'info' });
@@ -61,7 +62,7 @@ export default function GroceriesScreen() {
     } catch {
       toast({ message: 'Sharing isn’t available on this device', tone: 'warning' });
     }
-  }, [groceries, toast]);
+  }, [groceries, toast, units]);
 
   const clearDone = () => {
     const n = clearCompleted();
@@ -233,7 +234,7 @@ export default function GroceriesScreen() {
 
 function GroceryRow({ item, onToggle, onDelete }: { item: GroceryItem; onToggle: () => void; onDelete: () => void }) {
   const t = useTheme();
-  const { getRecipe } = useStore();
+  const { getRecipe, units } = useStore();
   const names = item.recipeIds.map((id) => getRecipe(id)?.title).filter((n): n is string => !!n);
   // One recipe: its name. Several: "For 2 recipes", which opens the list of names.
   const [showSources, setShowSources] = useState(false);
@@ -273,7 +274,7 @@ function GroceryRow({ item, onToggle, onDelete }: { item: GroceryItem; onToggle:
           scaleTo={0.96}
           accessibilityRole="checkbox"
           aria-checked={item.checked}
-          accessibilityLabel={`${item.name}, ${formatQty(item.quantity, item.unit)}`}
+          accessibilityLabel={`${item.name}, ${showAmount(item.quantity, item.unit, item.name, units).text}`}
           accessibilityActions={[{ name: 'delete', label: 'Delete' }]}
           onAccessibilityAction={(e) => e.nativeEvent.actionName === 'delete' && onDelete()}
           style={styles.checkTap}
@@ -309,7 +310,7 @@ function GroceryRow({ item, onToggle, onDelete }: { item: GroceryItem; onToggle:
           </View>
           {/* The amount fades and is crossed out together with the name. */}
           <Text style={[t.type.subhead, { color: item.checked ? t.colors.secondaryLabel : t.colors.label, fontVariant: ['tabular-nums'] }, item.checked && styles.struck]}>
-            {plainFractions(formatQty(item.quantity, item.unit))}
+            {plainFractions(showAmount(item.quantity, item.unit, item.name, units).text)}
           </Text>
         </PressableScale>
       </View>

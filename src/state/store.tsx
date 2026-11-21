@@ -404,8 +404,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const addIngredients = useCallback(
     (recipeId: string, ingredients: Ingredient[], scale = 1) => {
-      // A pinch / to-taste item (no amount) goes on the list without a number.
-      setGroceries((prev) => mergeIngredients(prev, recipeId, ingredients.map((i) => ({ ...i, quantity: i.quantity ?? 0 })), scale));
+      setGroceries((prev) => mergeIngredients(prev, recipeId, ingredients, scale));
       return ingredients.length;
     },
     [setGroceries],
@@ -416,7 +415,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     let result = { meals: 0, items: 0 };
     setSaved((s) => {
       const all = [...s.customRecipes, ...builtInRecipes, ...pantryPopRecipes];
-      const out = addWeekToList(s.groceries, s.plan, s.planAdded ?? [], (id) => all.find((r) => r.id === id)?.ingredients.map((i) => ({ ...i, quantity: i.quantity ?? 0 })), weekId());
+      const out = addWeekToList(s.groceries, s.plan, s.planAdded ?? [], (id) => all.find((r) => r.id === id)?.ingredients, weekId());
       result = { meals: out.meals, items: out.items };
       if (out.meals === 0) return s;
       lastGroceries.current = s.groceries;

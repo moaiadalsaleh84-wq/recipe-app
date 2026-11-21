@@ -48,8 +48,9 @@ import { playSuccess } from '../../lib/sounds';
 import { nb } from '../../lib/text';
 import { ingredientsInStep, splitTip, warnStepProblems } from '../../lib/steps';
 import { durationLabel, findTimers } from '../../lib/timers';
-import { convertQty, convertStepText } from '../../lib/units';
-import { formatQty, nameFor, roundQty, useStore } from '../../state/store';
+import { convertStepText } from '../../lib/units';
+import { amountFor, ingredientLabel } from '../../lib/scale';
+import { useStore } from '../../state/store';
 import { useTimers } from '../../state/timers';
 import { fonts, pop, popCycle, useTheme } from '../../theme';
 
@@ -168,17 +169,16 @@ function CookSession({ recipe, servings }: { recipe: Recipe; servings: number })
   const close = () => (router.canGoBack() ? router.back() : router.replace({ pathname: '/recipe/[id]', params: { id: recipe.id } }));
   const goHome = () => (router.canDismiss() ? router.dismissTo('/') : router.replace('/'));
 
-  const scale = servings / recipe.servings;
   /** "300 g chicken breast", scaled and in your units. */
   const amountOf = (ing: Ingredient) => {
-    const c = convertQty(roundQty((ing.quantity ?? 0) * scale), ing.unit, units);
-    return `${formatQty(c.quantity, c.unit)} ${nameFor(c.quantity, c.unit, ing.name)}`.trim();
+    const shown = amountFor(ing, servings, recipe.servings, units);
+    return `${shown.text} ${ingredientLabel(ing.name, shown)}`.trim();
   };
   /** The tile's two lines: "Cooked rice" (sentence case, like the recipe) and "400 g". */
   const partsOf = (ing: Ingredient) => {
-    const c = convertQty(roundQty((ing.quantity ?? 0) * scale), ing.unit, units);
-    const name = nameFor(c.quantity, c.unit, ing.name);
-    return { name: name.charAt(0).toUpperCase() + name.slice(1), qty: formatQty(c.quantity, c.unit) };
+    const shown = amountFor(ing, servings, recipe.servings, units);
+    const name = ingredientLabel(ing.name, shown);
+    return { name: name.charAt(0).toUpperCase() + name.slice(1), qty: shown.text };
   };
   const toggleGathered = (key: string) => {
     const next = { ...gathered, [key]: !gathered[key] };

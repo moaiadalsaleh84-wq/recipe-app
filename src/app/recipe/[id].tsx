@@ -32,9 +32,9 @@ import { Lift, PopButton, PopCard, PopChip, PopIconButton } from '../../componen
 import { type DietTag, type Recipe, type Units } from '../../data/mock';
 import { haptics } from '../../lib/haptics';
 import { pickPhoto } from '../../lib/photos';
-import { convertQty, convertStepText } from '../../lib/units';
-import { formatQty, roundQty, useStore } from '../../state/store';
-import { ingredientText } from '../../lib/qty';
+import { convertStepText } from '../../lib/units';
+import { amountFor, ingredientLabel } from '../../lib/scale';
+import { useStore } from '../../state/store';
 import { macroPercents } from '../../lib/percent';
 import { fonts, pop, popCycle, useTheme } from '../../theme';
 import { nb } from '../../lib/text';
@@ -286,8 +286,10 @@ export default function RecipeScreen() {
           )}
           <PopCard style={{ marginTop: 12 }} radius={22} depth={4}>
             {recipe.ingredients.map((ing, i) => {
-              const c = convertQty(roundQty((ing.quantity ?? 0) * scale), ing.unit, units);
-              const { amount, text } = ingredientText(c.quantity, c.unit, ing.name);
+              // The shared scaling rules (lib/scale.ts): full precision, rounded only here, for display.
+              const shown = amountFor(ing, servings, recipe.servings, units);
+              const amount = shown.text;
+              const text = ingredientLabel(ing.name, shown, { lowercase: true });
               const got = have.has(ing.id);
               return (
                 <Animated.View key={`${ing.id}-${i}`} entering={enter(i, reduceMotion)}>
@@ -616,10 +618,9 @@ const hostOf = (url: string) => {
 };
 
 function shareText(r: Recipe, servings: number, units: Units) {
-  const scale = servings / r.servings;
   const ingredients = r.ingredients.map((i) => {
-    const c = convertQty(roundQty((i.quantity ?? 0) * scale), i.unit, units);
-    return `• ${formatQty(c.quantity, c.unit)} ${i.name}`.replace("•  ", "• ");
+    const shown = amountFor(i, servings, r.servings, units);
+    return `• ${shown.text} ${ingredientLabel(i.name, shown)}`.replace('•  ', '• ');
   });
   // Checked recipe text already gives °C and °F: left exactly as written.
   const steps = r.steps.map((s, i) => `${i + 1}. ${r.source === 'pantry-pop' ? s : convertStepText(s, units)}`);
