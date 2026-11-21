@@ -20,7 +20,18 @@ const ingredientText = (r: Recipe) => r.ingredients.map((i) => i.name).join(', '
 export function fitsDiet(r: Recipe, diets: readonly string[]): boolean {
   const text = ingredientText(r);
   const tags = r.tags as readonly string[];
+  const flags = r.diet;
   return diets.every((d) => {
+    // Checked recipe data carries its own diet flags and tags: used as given, never recalculated.
+    if (flags) {
+      if (d === 'Vegetarian') return flags.vegetarian;
+      if (d === 'Vegan') return flags.vegan;
+      if (d === 'Gluten free') return flags.glutenFree;
+      if (d === 'Dairy free') return flags.dairyFree;
+      if (d === 'No pork') return flags.porkFree;
+      if (d === 'High protein') return tags.includes('High protein');
+      // Pescatarian has no flag: no meat in the ingredients (fish is fine).
+    }
     switch (d) {
       case 'Vegetarian':
         return tags.includes('Vegetarian') || tags.includes('Vegan') || (!MEAT.test(text) && !FISH.test(text));

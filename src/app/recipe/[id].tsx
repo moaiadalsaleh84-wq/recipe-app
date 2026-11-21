@@ -101,6 +101,8 @@ export default function RecipeScreen() {
   // What you already have at home (from the Pantry tab), so you only buy the rest.
   const have = new Set(pantry.length ? recipe.ingredients.filter((i) => pantryHas(pantry, i.name)).map((i) => i.id) : []);
   const missing = recipe.ingredients.filter((i) => !have.has(i.id));
+  // Checked recipe text already gives °C and °F ("200°C (400°F)"): shown exactly as written.
+  const stepFor = (step: string) => (recipe.source === 'pantry-pop' ? step : convertStepText(step, units));
   const main = mainIngredient(recipe);
   const alsoLike = allRecipes
     .filter((r) => r.id !== recipe.id)
@@ -252,7 +254,7 @@ export default function RecipeScreen() {
           {recipe.tags.length > 0 && (
             <View style={styles.tags}>
               {recipe.tags.map((tag) => (
-                <PopChip key={tag} label={TAG_LOOK[tag]?.label ?? tag} color={TAG_LOOK[tag]?.color ?? t.pop.sunshineTint} small />
+                <PopChip key={tag} label={TAG_LOOK[tag as DietTag]?.label ?? tag} color={TAG_LOOK[tag as DietTag]?.color ?? t.pop.sunshineTint} small />
               ))}
             </View>
           )}
@@ -284,7 +286,7 @@ export default function RecipeScreen() {
           )}
           <PopCard style={{ marginTop: 12 }} radius={22} depth={4}>
             {recipe.ingredients.map((ing, i) => {
-              const c = convertQty(roundQty(ing.quantity * scale), ing.unit, units);
+              const c = convertQty(roundQty((ing.quantity ?? 0) * scale), ing.unit, units);
               const { amount, text } = ingredientText(c.quantity, c.unit, ing.name);
               const got = have.has(ing.id);
               return (
@@ -311,6 +313,7 @@ export default function RecipeScreen() {
                         ) : null}
                         {text}
                       </Text>
+                      {ing.note ? <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{ing.note}</Text> : null}
                       {got && <Text style={[t.type.caption1, { color: t.colors.label }]}>in pantry</Text>}
                     </View>
                   </View>
@@ -323,11 +326,11 @@ export default function RecipeScreen() {
             How to make it
           </Text>
           {recipe.steps.map((step, i) => (
-            <View key={i} style={styles.step} accessible accessibilityLabel={`Step ${i + 1}. ${convertStepText(step, units)}`}>
+            <View key={i} style={styles.step} accessible accessibilityLabel={`Step ${i + 1}. ${stepFor(step)}`}>
               <View style={[styles.stepNum, { backgroundColor: popCycle[i % popCycle.length].fill, borderColor: t.pop.ink }]}>
                 <Text style={[t.type.headline, { color: t.pop.ink, fontFamily: t.fonts.heading }]}>{i + 1}</Text>
               </View>
-              <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>{convertStepText(step, units)}</Text>
+              <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>{stepFor(step)}</Text>
             </View>
           ))}
 
@@ -615,10 +618,11 @@ const hostOf = (url: string) => {
 function shareText(r: Recipe, servings: number, units: Units) {
   const scale = servings / r.servings;
   const ingredients = r.ingredients.map((i) => {
-    const c = convertQty(roundQty(i.quantity * scale), i.unit, units);
+    const c = convertQty(roundQty((i.quantity ?? 0) * scale), i.unit, units);
     return `• ${formatQty(c.quantity, c.unit)} ${i.name}`.replace("•  ", "• ");
   });
-  const steps = r.steps.map((s, i) => `${i + 1}. ${convertStepText(s, units)}`);
+  // Checked recipe text already gives °C and °F: left exactly as written.
+  const steps = r.steps.map((s, i) => `${i + 1}. ${r.source === 'pantry-pop' ? s : convertStepText(s, units)}`);
   return [`${r.title} (serves ${servings})`, '', 'Ingredients', ...ingredients, '', 'Method', ...steps].join('\n');
 }
 

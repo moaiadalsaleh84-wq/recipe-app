@@ -3,10 +3,19 @@ export type Aisle = 'Produce' | 'Bakery' | 'Meat & Fish' | 'Dairy & Eggs' | 'Pan
 export type Ingredient = {
   id: string;
   name: string;
-  quantity: number;
+  /** null = "a pinch" / "to taste": never scaled, no number shown. */
+  quantity: number | null;
   unit: string; // '' for countable items, e.g. "2 eggs"
   aisle: Aisle;
+  /** "minced", "for the crema"… shown next to the name, never scaled. */
+  note?: string;
 };
+
+/** Diet flags as checked by hand in the recipe data (used as-is, never recalculated). */
+export type DietFlags = { vegetarian: boolean; vegan: boolean; glutenFree: boolean; dairyFree: boolean; porkFree: boolean };
+
+/** Per-step data from a checked recipe file: which ingredients the step uses, and its timer. */
+export type StepMeta = { ingredientIds: string[]; timerSeconds: number | null };
 
 export const categories = ['Breakfast', 'Lunch', 'Dinner', 'Snacks', 'Dessert'] as const;
 export type Category = (typeof categories)[number];
@@ -39,9 +48,19 @@ export type Recipe = {
    */
   nutrition: { protein: number; carbs: number; fat: number };
   difficulty: 'Easy' | 'Medium' | 'Hard';
-  tags: DietTag[];
+  /** Recipe tags. 'Quick' only comes from checked recipe data (see isQuick). */
+  tags: (DietTag | 'Quick')[];
   ingredients: Ingredient[];
   steps: string[];
+  /** Checked recipe data (data/pantry-pop-recipes.json) adds these. Older recipes don't have them. */
+  stepMeta?: StepMeta[];
+  mealType?: string;
+  cuisine?: string;
+  prepMinutes?: number;
+  cookMinutes?: number;
+  diet?: DietFlags;
+  /** Where a bundled recipe came from: 'pantry-pop' = data/pantry-pop-recipes.json. */
+  source?: 'pantry-pop';
   /** Link to where the recipe came from, for recipes you add yourself. */
   sourceUrl?: string;
   /** True for recipes the user created. */
@@ -383,6 +402,14 @@ export const recipes: Recipe[] = [
 export const getRecipe = (id: string | undefined) => recipes.find((r) => r.id === id);
 
 export const matchesFilter = (recipe: Recipe, tag: FilterTag) => {
+  // Checked recipe data says itself what's quick and what fits a diet: used as given.
+  if (recipe.source === 'pantry-pop') {
+    if (tag === QUICK_FILTER) return recipe.tags.includes('Quick');
+    if (tag === 'Vegetarian') return !!recipe.diet?.vegetarian;
+    if (tag === 'Vegan') return !!recipe.diet?.vegan;
+    if (tag === 'Gluten free') return !!recipe.diet?.glutenFree;
+    return recipe.tags.includes(tag);
+  }
   if (tag === QUICK_FILTER) return recipe.minutes <= 30;
   // Vegan recipes are vegetarian too.
   if (tag === 'Vegetarian') return recipe.tags.includes('Vegetarian') || recipe.tags.includes('Vegan');

@@ -10,7 +10,8 @@ export type Mood = 'quick' | 'pantry' | 'cozy';
 
 /** "Quick": ready in 30 minutes or less, in total. */
 export const QUICK_MINUTES = 30;
-export const isQuick = (r: Recipe) => r.minutes <= QUICK_MINUTES;
+/** Quick: checked recipe data marks it with a "Quick" tag; older recipes by their time. */
+export const isQuick = (r: Recipe) => (r.source === 'pantry-pop' ? r.tags.includes('Quick') : r.minutes <= QUICK_MINUTES);
 
 /** "Cozy": only recipes tagged as comfort food (or "cozy", for imported tags). */
 export const isCozy = (r: Recipe) => r.tags.some((tag) => /comfort|cozy|cosy/i.test(tag));

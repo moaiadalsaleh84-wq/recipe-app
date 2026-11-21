@@ -1,0 +1,3415 @@
+{
+  "version": 1,
+  "recipes": [
+    {
+      "id": "crispy-beef-tacos",
+      "title": "Crispy Beef Tacos",
+      "description": "Juicy spiced beef and melty cheese folded into tortillas and pan-fried until crackly. Dunk them in a zingy cilantro-lime crema.",
+      "mealType": "dinner",
+      "cuisine": "Mexican",
+      "tags": [
+        "Comfort"
+      ],
+      "difficulty": "Easy",
+      "prepMinutes": 10,
+      "cookMinutes": 25,
+      "totalMinutes": 35,
+      "baseServings": 4,
+      "diet": {
+        "vegetarian": false,
+        "vegan": false,
+        "glutenFree": false,
+        "dairyFree": false,
+        "porkFree": true
+      },
+      "nutritionPerServing": {
+        "kcal": 670,
+        "proteinG": 41,
+        "carbsG": 38,
+        "fatG": 39,
+        "estimated": true
+      },
+      "ingredients": [
+        {
+          "id": "sc",
+          "name": "Sour cream",
+          "quantity": 120,
+          "unit": "g"
+        },
+        {
+          "id": "cil",
+          "name": "Fresh cilantro",
+          "quantity": 15,
+          "unit": "g"
+        },
+        {
+          "id": "lj",
+          "name": "Lime",
+          "quantity": 1,
+          "unit": "piece",
+          "note": "juiced"
+        },
+        {
+          "id": "gc",
+          "name": "Garlic",
+          "quantity": 1,
+          "unit": "clove",
+          "note": "for the crema"
+        },
+        {
+          "id": "scs",
+          "name": "Salt",
+          "quantity": null,
+          "unit": "pinch",
+          "note": "for the crema"
+        },
+        {
+          "id": "beef",
+          "name": "Ground beef (10% fat)",
+          "quantity": 500,
+          "unit": "g"
+        },
+        {
+          "id": "on",
+          "name": "Onion",
+          "quantity": 80,
+          "unit": "g",
+          "note": "finely chopped (about 1 small)"
+        },
+        {
+          "id": "gb",
+          "name": "Garlic",
+          "quantity": 2,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "id": "chp",
+          "name": "Chili powder",
+          "quantity": 2,
+          "unit": "tsp"
+        },
+        {
+          "id": "cum",
+          "name": "Ground cumin",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "pap",
+          "name": "Smoked paprika",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "ore",
+          "name": "Dried oregano",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "salt",
+          "name": "Salt",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "pep",
+          "name": "Black pepper",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "id": "tp",
+          "name": "Tomato paste",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "id": "wat",
+          "name": "Water",
+          "quantity": 60,
+          "unit": "ml"
+        },
+        {
+          "id": "tor",
+          "name": "Small flour tortillas (15 cm)",
+          "quantity": 8,
+          "unit": "piece"
+        },
+        {
+          "id": "ched",
+          "name": "Grated cheddar",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "id": "oil",
+          "name": "Vegetable oil",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "id": "lw",
+          "name": "Lime",
+          "quantity": 1,
+          "unit": "piece",
+          "note": "cut into wedges, to serve"
+        }
+      ],
+      "steps": [
+        {
+          "n": 1,
+          "text": "Make the crema: blend the sour cream, cilantro, lime juice, garlic and a pinch of salt until smooth and green. Chill until serving.",
+          "ingredientIds": [
+            "sc",
+            "cil",
+            "lj",
+            "gc",
+            "scs"
+          ],
+          "timerSeconds": null
+        },
+        {
+          "n": 2,
+          "text": "Heat a large pan over medium-high heat. Add the beef and onion, break the meat up and cook until browned.",
+          "ingredientIds": [
+            "beef",
+            "on"
+          ],
+          "timerSeconds": 420
+        },
+        {
+          "n": 3,
+          "text": "Stir in the garlic, spices, salt, pepper and tomato paste and cook for 1 minute. Pour in the water and simmer until thick and saucy.",
+          "ingredientIds": [
+            "gb",
+            "chp",
+            "cum",
+            "pap",
+            "ore",
+            "salt",
+            "pep",
+            "tp",
+            "wat"
+          ],
+          "timerSeconds": 180
+        },
+        {
+          "n": 4,
+          "text": "Spoon the beef onto one half of each tortilla, top with cheese and fold over.",
+          "ingredientIds": [
+            "tor",
+            "ched"
+          ],
+          "timerSeconds": null
+        },
+        {
+          "n": 5,
+          "text": "Wipe the pan, add the oil and heat over medium. Fry the tacos in batches until golden and crispy, about 3 minutes per side.",
+          "ingredientIds": [
+            "oil"
+          ],
+          "timerSeconds": 180
+        },
+        {
+          "n": 6,
+          "text": "Serve hot with the crema for dipping and lime wedges.",
+          "ingredientIds": [
+            "lw"
+          ],
+          "timerSeconds": null
+        }
+      ],
+      "_check": {
+        "timerMinutesSum": 13.0
+      }
+    },
+    {
+      "id": "hot-honey-chicken-burger",
+      "title": "Hot Honey Crispy Chicken Burger",
+      "description": "Shatteringly crispy chicken thighs glazed in sweet-spicy hot honey, stacked with pickles and herby garlic mayo on a toasted brioche bun.",
+      "mealType": "dinner",
+      "cuisine": "American",
+      "tags": [
+        "Comfort"
+      ],
+      "difficulty": "Medium",
+      "prepMinutes": 25,
+      "cookMinutes": 25,
+      "totalMinutes": 50,
+      "baseServings": 4,
+      "diet": {
+        "vegetarian": false,
+        "vegan": false,
+        "glutenFree": false,
+        "dairyFree": false,
+        "porkFree": true
+      },
+      "nutritionPerServing": {
+        "kcal": 966,
+        "proteinG": 42,
+        "carbsG": 88,
+        "fatG": 49,
+        "estimated": true
+      },
+      "ingredients": [
+        {
+          "id": "ch",
+          "name": "Boneless skinless chicken thighs",
+          "quantity": 600,
+          "unit": "g",
+          "note": "about 4 thighs"
+        },
+        {
+          "id": "bm",
+          "name": "Buttermilk",
+          "quantity": 240,
+          "unit": "ml"
+        },
+        {
+          "id": "sm",
+          "name": "Salt",
+          "quantity": 1,
+          "unit": "tsp",
+          "note": "for the marinade"
+        },
+        {
+          "id": "mayo",
+          "name": "Mayonnaise",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "id": "dill",
+          "name": "Fresh dill",
+          "quantity": 1,
+          "unit": "tbsp",
+          "note": "chopped"
+        },
+        {
+          "id": "gm",
+          "name": "Garlic",
+          "quantity": 1,
+          "unit": "clove",
+          "note": "finely grated"
+        },
+        {
+          "id": "lem",
+          "name": "Lemon juice",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "fl",
+          "name": "All-purpose flour",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "id": "cs",
+          "name": "Cornstarch",
+          "quantity": 30,
+          "unit": "g"
+        },
+        {
+          "id": "pap",
+          "name": "Paprika",
+          "quantity": 2,
+          "unit": "tsp"
+        },
+        {
+          "id": "gp",
+          "name": "Garlic powder",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "pep",
+          "name": "Black pepper",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "sc",
+          "name": "Salt",
+          "quantity": 1,
+          "unit": "tsp",
+          "note": "for the coating"
+        },
+        {
+          "id": "oil",
+          "name": "Vegetable oil",
+          "quantity": 750,
+          "unit": "ml",
+          "note": "for frying"
+        },
+        {
+          "id": "hon",
+          "name": "Honey",
+          "quantity": 4,
+          "unit": "tbsp"
+        },
+        {
+          "id": "hs",
+          "name": "Hot sauce",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "id": "cf",
+          "name": "Chili flakes",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "id": "but",
+          "name": "Butter",
+          "quantity": 15,
+          "unit": "g"
+        },
+        {
+          "id": "bun",
+          "name": "Brioche buns",
+          "quantity": 4,
+          "unit": "piece",
+          "note": "halved"
+        },
+        {
+          "id": "let",
+          "name": "Lettuce leaves",
+          "quantity": 4,
+          "unit": "piece"
+        },
+        {
+          "id": "pick",
+          "name": "Dill pickle slices",
+          "quantity": 60,
+          "unit": "g"
+        }
+      ],
+      "steps": [
+        {
+          "n": 1,
+          "text": "Mix the buttermilk and salt in a bowl, add the chicken and marinate for at least 15 minutes (or overnight in the fridge).",
+          "ingredientIds": [
+            "ch",
+            "bm",
+            "sm"
+          ],
+          "timerSeconds": 900
+        },
+        {
+          "n": 2,
+          "text": "Make the mayo: stir together the mayonnaise, dill, garlic and lemon juice. Chill.",
+          "ingredientIds": [
+            "mayo",
+            "dill",
+            "gm",
+            "lem"
+          ],
+          "timerSeconds": null
+        },
+        {
+          "n": 3,
+          "text": "In a wide bowl, mix the flour, cornstarch, paprika, garlic powder, pepper and salt.",
+          "ingredientIds": [
+            "fl",
+            "cs",
+            "pap",
+            "gp",
+            "pep",
+            "sc"
+          ],
+          "timerSeconds": null
+        },
+        {
+          "n": 4,
+          "text": "Heat the oil in a deep, heavy pan to 175°C (350°F). It should be about 3 cm deep.",
+          "ingredientIds": [
+            "oil"
+          ],
+          "timerSeconds": null
+        },
+        {
+          "n": 5,
+          "text": "Lift each thigh out of the buttermilk and press it into the flour mix until fully coated.",
+          "ingredientIds": [],
+          "timerSeconds": null
+        },
+        {
+          "n": 6,
+          "text": "Fry 2 thighs at a time, turning once, until deep golden and cooked through (74°C / 165°F inside). Drain on a rack.",
+          "ingredientIds": [],
+          "timerSeconds": 420
+        },
+        {
+          "n": 7,
+          "text": "Make the hot honey: warm the honey, hot sauce, chili flakes and butter in a small pan until melted and glossy. Brush it all over the chicken.",
+          "ingredientIds": [
+            "hon",
+            "hs",
+            "cf",
+            "but"
+          ],
+          "timerSeconds": 60
+        },
+        {
+          "n": 8,
+          "text": "Toast the buns cut-side down in a dry pan until golden.",
+          "ingredientIds": [
+            "bun"
+          ],
+          "timerSeconds": 60
+        },
+        {
+          "n": 9,
+          "text": "Build: mayo on both bun halves, then lettuce, chicken and pickles.",
+          "ingredientIds": [
+            "let",
+            "pick"
+          ],
+          "timerSeconds": null
+        }
+      ],
+      "_check": {
+        "timerMinutesSum": 24.0
+      }
+    },
+    {
+      "id": "baked-feta-pasta",
+      "title": "Baked Feta Pasta",
+      "description": "A whole block of feta roasted with bursting cherry tomatoes, then stirred into a silky, tangy sauce. The internet favourite, made easy.",
+      "mealType": "dinner",
+      "cuisine": "Mediterranean",
+      "tags": [
+        "Comfort",
+        "One pan",
+        "Vegetarian"
+      ],
+      "difficulty": "Easy",
+      "prepMinutes": 10,
+      "cookMinutes": 35,
+      "totalMinutes": 45,
+      "baseServings": 4,
+      "diet": {
+        "vegetarian": true,
+        "vegan": false,
+        "glutenFree": false,
+        "dairyFree": false,
+        "porkFree": true
+      },
+      "nutritionPerServing": {
+        "kcal": 614,
+        "proteinG": 20,
+        "carbsG": 75,
+        "fatG": 26,
+        "estimated": true
+      },
+      "ingredients": [
+        {
+          "id": "tom",
+          "name": "Cherry tomatoes",
+          "quantity": 600,
+          "unit": "g"
+        },
+        {
+          "id": "feta",
+          "name": "Feta (one block)",
+          "quantity": 200,
+          "unit": "g"
+        },
+        {
+          "id": "oil",
+          "name": "Olive oil",
+          "quantity": 4,
+          "unit": "tbsp"
+        },
+        {
+          "id": "gar",
+          "name": "Garlic",
+          "quantity": 3,
+          "unit": "clove",
+          "note": "peeled and smashed"
+        },
+        {
+          "id": "ore",
+          "name": "Dried oregano",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "cf",
+          "name": "Chili flakes",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "id": "salt",
+          "name": "Salt",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "id": "pep",
+          "name": "Black pepper",
+          "quantity": 0.25,
+          "unit": "tsp"
+        },
+        {
+          "id": "pasta",
+          "name": "Short pasta (penne or rigatoni)",
+          "quantity": 350,
+          "unit": "g"
+        },
+        {
+          "id": "bas",
+          "name": "Fresh basil",
+          "quantity": 10,
+          "unit": "g",
+          "note": "torn"
+        }
+      ],
+      "steps": [
+        {
+          "n": 1,
+          "text": "Heat the oven to 200°C (400°F), or 180°C fan.",
+          "ingredientIds": [],
+          "timerSeconds": null
+        },
+        {
+          "n": 2,
+          "text": "Put the tomatoes and garlic in a baking dish, set the feta in the middle, drizzle with the oil and sprinkle with oregano, chili flakes, salt and pepper. Toss the tomatoes to coat.",
+          "ingredientIds": [
+            "tom",
+            "feta",
+            "oil",
+            "gar",
+            "ore",
+            "cf",
+            "salt",
+            "pep"
+          ],
+          "timerSeconds": null
+        },
+        {
+          "n": 3,
+          "text": "Bake until the tomatoes burst and the feta is soft and golden at the edges.",
+          "ingredientIds": [],
+          "timerSeconds": 2100
+        },
+        {
+          "n": 4,
+          "text": "Meanwhile, cook the pasta in salted water until al dente. Save a mug of pasta water before draining.",
+          "ingredientIds": [
+            "pasta"
+          ],
+          "timerSeconds": 600
+        },
+        {
+          "n": 5,
+          "text": "Mash the feta and tomatoes together into a creamy sauce. Stir in the pasta, adding splashes of pasta water until silky. Top with basil.",
+          "ingredientIds": [
+            "bas"
+          ],
+          "timerSeconds": null
+        }
+      ],
+      "_check": {
+        "timerMinutesSum": 45.0
+      }
+    },
+    {
+      "id": "marry-me-chicken",
+      "title": "Marry Me Chicken",
+      "description": "Golden chicken simmered in a creamy parmesan and sun-dried tomato sauce. Rich, cosy and very proposal-worthy.",
+      "mealType": "dinner",
+      "cuisine": "Italian-American",
+      "tags": [
+        "Comfort",
+        "High protein",
+        "One pan"
+      ],
+      "difficulty": "Easy",
+      "prepMinutes": 10,
+      "cookMinutes": 25,
+      "totalMinutes": 35,
+      "baseServings": 4,
+      "diet": {
+        "vegetarian": false,
+        "vegan": false,
+        "glutenFree": false,
+        "dairyFree": false,
+        "porkFree": true
+      },
+      "nutritionPerServing": {
+        "kcal": 504,
+        "proteinG": 41,
+        "carbsG": 10,
+        "fatG": 33,
+        "estimated": true
+      },
+      "ingredients": [
+        {
+          "id": "ch",
+          "name": "Chicken breasts",
+          "quantity": 600,
+          "unit": "g",
+          "note": "halved horizontally into thin fillets"
+        },
+        {
+          "id": "salt",
+          "name": "Salt",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "pep",
+          "name": "Black pepper",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "id": "fl",
+          "name": "All-purpose flour",
+          "quantity": 2,
+          "unit": "tbsp"
+        },
+        {
+          "id": "oil",
+          "name": "Olive oil",
+          "quantity": 2,
+          "unit": "tbsp"
+        },
+        {
+          "id": "but",
+          "name": "Butter",
+          "quantity": 15,
+          "unit": "g"
+        },
+        {
+          "id": "gar",
+          "name": "Garlic",
+          "quantity": 3,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "id": "sdt",
+          "name": "Sun-dried tomatoes in oil",
+          "quantity": 60,
+          "unit": "g",
+          "note": "drained and chopped"
+        },
+        {
+          "id": "stock",
+          "name": "Chicken stock",
+          "quantity": 180,
+          "unit": "ml"
+        },
+        {
+          "id": "cream",
+          "name": "Heavy cream",
+          "quantity": 180,
+          "unit": "ml"
+        },
+        {
+          "id": "herbs",
+          "name": "Dried Italian herbs",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "cf",
+          "name": "Chili flakes",
+          "quantity": 0.25,
+          "unit": "tsp"
+        },
+        {
+          "id": "parm",
+          "name": "Grated parmesan",
+          "quantity": 40,
+          "unit": "g"
+        },
+        {
+          "id": "bas",
+          "name": "Fresh basil",
+          "quantity": 8,
+          "unit": "g",
+          "note": "torn"
+        }
+      ],
+      "steps": [
+        {
+          "n": 1,
+          "text": "Season the chicken with salt and pepper, then dust both sides with flour.",
+          "ingredientIds": [
+            "ch",
+            "salt",
+            "pep",
+            "fl"
+          ],
+          "timerSeconds": null
+        },
+        {
+          "n": 2,
+          "text": "Heat the oil in a large pan over medium-high heat. Sear the chicken until golden, about 4 minutes per side. Move it to a plate (it finishes cooking later).",
+          "ingredientIds": [
+            "oil"
+          ],
+          "timerSeconds": 240
+        },
+        {
+          "n": 3,
+          "text": "Lower the heat to medium. Melt the butter, add the garlic and sun-dried tomatoes and cook for 1 minute.",
+          "ingredientIds": [
+            "but",
+            "gar",
+            "sdt"
+          ],
+          "timerSeconds": 60
+        },
+        {
+          "n": 4,
+          "text": "Pour in the stock and scrape up the browned bits. Add the cream, herbs and chili flakes and simmer.",
+          "ingredientIds": [
+            "stock",
+            "cream",
+            "herbs",
+            "cf"
+          ],
+          "timerSeconds": 180
+        },
+        {
+          "n": 5,
+          "text": "Stir in the parmesan until melted.",
+          "ingredientIds": [
+            "parm"
+          ],
+          "timerSeconds": null
+        },
+        {
+          "n": 6,
+          "text": "Return the chicken and simmer until cooked through (74°C / 165°F inside). Top with basil.",
+          "ingredientIds": [
+            "bas"
+          ],
+          "timerSeconds": 420
+        }
+      ],
+      "_check": {
+        "timerMinutesSum": 15.0
+      }
+    },
+    {
+      "id": "smash-burger-tacos",
+      "title": "Smash Burger Tacos",
+      "description": "Beef smashed straight onto tortillas and seared until crusty, then topped with cheese, pickles and burger sauce. A burger you can fold.",
+      "mealType": "dinner",
+      "cuisine": "American",
+      "tags": [
+        "Quick",
+        "Comfort"
+      ],
+      "difficulty": "Easy",
+      "prepMinutes": 10,
+      "cookMinutes": 20,
+      "totalMinutes": 30,
+      "baseServings": 4,
+      "diet": {
+        "vegetarian": false,
+        "vegan": false,
+        "glutenFree": false,
+        "dairyFree": false,
+        "porkFree": true
+      },
+      "nutritionPerServing": {
+        "kcal": 771,
+        "proteinG": 37,
+        "carbsG": 34,
+        "fatG": 54,
+        "estimated": true
+      },
+      "ingredients": [
+        {
+          "id": "mayo",
+          "name": "Mayonnaise",
+          "quantity": 60,
+          "unit": "g"
+        },
+        {
+          "id": "ket",
+          "name": "Ketchup",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "id": "mus",
+          "name": "Yellow mustard",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "pj",
+          "name": "Pickle juice",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "sp",
+          "name": "Smoked paprika",
+          "quantity": 0.25,
+          "unit": "tsp"
+        },
+        {
+          "id": "beef",
+          "name": "Ground beef (20% fat)",
+          "quantity": 500,
+          "unit": "g"
+        },
+        {
+          "id": "tor",
+          "name": "Small flour tortillas (15 cm)",
+          "quantity": 8,
+          "unit": "piece"
+        },
+        {
+          "id": "salt",
+          "name": "Salt",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "pep",
+          "name": "Black pepper",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "id": "ched",
+          "name": "Cheddar slices",
+          "quantity": 8,
+          "unit": "slice"
+        },
+        {
+          "id": "ice",
+          "name": "Shredded iceberg lettuce",
+          "quantity": 100,
+          "unit": "g"
+        },
+        {
+          "id": "pick",
+          "name": "Dill pickles",
+          "quantity": 60,
+          "unit": "g",
+          "note": "chopped"
+        },
+        {
+          "id": "on",
+          "name": "Onion",
+          "quantity": 40,
+          "unit": "g",
+          "note": "very thinly sliced"
+        }
+      ],
+      "steps": [
+        {
+          "n": 1,
+          "text": "Make the burger sauce: mix the mayonnaise, ketchup, mustard, pickle juice and smoked paprika.",
+          "ingredientIds": [
+            "mayo",
+            "ket",
+            "mus",
+            "pj",
+            "sp"
+          ],
+          "timerSeconds": null
+        },
+        {
+          "n": 2,
+          "text": "Divide the beef into 8 equal balls. Put one on each tortilla and press it out into a thin layer that reaches the edges. Season with salt and pepper.",
+          "ingredientIds": [
+            "beef",
+            "tor",
+            "salt",
+            "pep"
+          ],
+          "timerSeconds": null
+        },
+        {
+          "n": 3,
+          "text": "Heat a large dry pan over high heat. Cook the tacos beef-side down, 2 at a time, until deeply browned and crusty.",
+          "ingredientIds": [],
+          "timerSeconds": 180
+        },
+        {
+          "n": 4,
+          "text": "Flip, lay a cheese slice on the beef side and cook until the tortilla is crisp and the cheese melts.",
+          "ingredientIds": [
+            "ched"
+          ],
+          "timerSeconds": 90
+        },
+        {
+          "n": 5,
+          "text": "Top with lettuce, pickles, onion and burger sauce. Fold and eat right away.",
+          "ingredientIds": [
+            "ice",
+            "pick",
+            "on"
+          ],
+          "timerSeconds": null
+        }
+      ],
+      "_check": {
+        "timerMinutesSum": 4.5
+      }
+    },
+    {
+      "id": "crispy-rice-salmon-bites",
+      "title": "Crispy Rice Salmon Bites",
+      "description": "Golden, crunchy rice squares topped with spicy creamy salmon and avocado. Restaurant-style bites, made at home with cooked salmon.",
+      "mealType": "lunch",
+      "cuisine": "Japanese-inspired",
+      "tags": [],
+      "difficulty": "Medium",
+      "prepMinutes": 20,
+      "cookMinutes": 40,
+      "totalMinutes": 60,
+      "baseServings": 4,
+      "diet": {
+        "vegetarian": false,
+        "vegan": false,
+        "glutenFree": false,
+        "dairyFree": true,
+        "porkFree": true
+      },
+      "nutritionPerServing": {
+        "kcal": 520,
+        "proteinG": 19,
+        "carbsG": 34,
+        "fatG": 34,
+        "estimated": true
+      },
+      "ingredients": [
+        {
+          "id": "rice",
+          "name": "Cold cooked short-grain rice",
+          "quantity": 400,
+          "unit": "g"
+        },
+        {
+          "id": "vin",
+          "name": "Rice vinegar",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "id": "sug",
+          "name": "Sugar",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "sr",
+          "name": "Salt",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "id": "sal",
+          "name": "Salmon fillet",
+          "quantity": 300,
+          "unit": "g",
+          "note": "skinless"
+        },
+        {
+          "id": "soy",
+          "name": "Soy sauce",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "id": "mayo",
+          "name": "Mayonnaise",
+          "quantity": 3,
+          "unit": "tbsp"
+        },
+        {
+          "id": "sri",
+          "name": "Sriracha",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "id": "oil",
+          "name": "Vegetable oil",
+          "quantity": 3,
+          "unit": "tbsp"
+        },
+        {
+          "id": "avo",
+          "name": "Avocado",
+          "quantity": 1,
+          "unit": "piece",
+          "note": "thinly sliced"
+        },
+        {
+          "id": "go",
+          "name": "Green onions",
+          "quantity": 2,
+          "unit": "piece",
+          "note": "thinly sliced"
+        },
+        {
+          "id": "ses",
+          "name": "Sesame seeds",
+          "quantity": 1,
+          "unit": "tsp"
+        }
+      ],
+      "steps": [
+        {
+          "n": 1,
+          "text": "Mix the rice with the vinegar, sugar and salt. Press it firmly into a 20 × 20 cm dish lined with baking paper, about 2 cm thick. Chill until firm.",
+          "ingredientIds": [
+            "rice",
+            "vin",
+            "sug",
+            "sr"
+          ],
+          "timerSeconds": 1800
+        },
+        {
+          "n": 2,
+          "text": "Meanwhile, heat the oven to 200°C (400°F). Brush the salmon with soy sauce and bake until it flakes easily.",
+          "ingredientIds": [
+            "sal",
+            "soy"
+          ],
+          "timerSeconds": 720
+        },
+        {
+          "n": 3,
+          "text": "Flake the salmon and mix it with the mayonnaise and sriracha.",
+          "ingredientIds": [
+            "mayo",
+            "sri"
+          ],
+          "timerSeconds": null
+        },
+        {
+          "n": 4,
+          "text": "Lift out the rice and cut it into 16 squares. Heat the oil in a non-stick pan over medium-high heat and fry the squares until golden and crisp, about 3 minutes per side.",
+          "ingredientIds": [
+            "oil"
+          ],
+          "timerSeconds": 180
+        },
+        {
+          "n": 5,
+          "text": "Top each square with salmon, a slice of avocado, green onions and sesame seeds.",
+          "ingredientIds": [
+            "avo",
+            "go",
+            "ses"
+          ],
+          "timerSeconds": null
+        }
+      ],
+      "_check": {
+        "timerMinutesSum": 45.0
+      }
+    },
+    {
+      "id": "gochujang-butter-noodles",
+      "title": "Gochujang Butter Noodles",
+      "description": "Chewy noodles tossed in a glossy, garlicky gochujang butter sauce. Sweet, spicy, buttery and ready in 15 minutes.",
+      "mealType": "dinner",
+      "cuisine": "Korean-inspired",
+      "tags": [
+        "Quick",
+        "Vegetarian"
+      ],
+      "difficulty": "Easy",
+      "prepMinutes": 5,
+      "cookMinutes": 10,
+      "totalMinutes": 15,
+      "baseServings": 2,
+      "diet": {
+        "vegetarian": true,
+        "vegan": false,
+        "glutenFree": false,
+        "dairyFree": false,
+        "porkFree": true
+      },
+      "nutritionPerServing": {
+        "kcal": 530,
+        "proteinG": 13,
+        "carbsG": 87,
+        "fatG": 14,
+        "estimated": true
+      },
+      "ingredients": [
+        {
+          "id": "nod",
+          "name": "Dried ramen noodles",
+          "quantity": 200,
+          "unit": "g",
+          "note": "without the seasoning packet"
+        },
+        {
+          "id": "but",
+          "name": "Butter",
+          "quantity": 30,
+          "unit": "g"
+        },
+        {
+          "id": "gar",
+          "name": "Garlic",
+          "quantity": 2,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "id": "gch",
+          "name": "Gochujang",
+          "quantity": 1.5,
+          "unit": "tbsp"
+        },
+        {
+          "id": "soy",
+          "name": "Soy sauce",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "id": "hon",
+          "name": "Honey",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "go",
+          "name": "Green onions",
+          "quantity": 2,
+          "unit": "piece",
+          "note": "thinly sliced"
+        },
+        {
+          "id": "ses",
+          "name": "Sesame seeds",
+          "quantity": 1,
+          "unit": "tsp"
+        }
+      ],
+      "steps": [
+        {
+          "n": 1,
+          "text": "Cook the noodles according to the package. Save a small cup of the cooking water, then drain.",
+          "ingredientIds": [
+            "nod"
+          ],
+          "timerSeconds": 240
+        },
+        {
+          "n": 2,
+          "text": "In the same pot over low heat, melt the butter and cook the garlic until fragrant.",
+          "ingredientIds": [
+            "but",
+            "gar"
+          ],
+          "timerSeconds": 60
+        },
+        {
+          "n": 3,
+          "text": "Stir in the gochujang, soy sauce and honey until smooth.",
+          "ingredientIds": [
+            "gch",
+            "soy",
+            "hon"
+          ],
+          "timerSeconds": null
+        },
+        {
+          "n": 4,
+          "text": "Add the noodles and a splash of the cooking water and toss until glossy and coated.",
+          "ingredientIds": [],
+          "timerSeconds": 60
+        },
+        {
+          "n": 5,
+          "text": "Top with green onions and sesame seeds.",
+          "ingredientIds": [
+            "go",
+            "ses"
+          ],
+          "timerSeconds": null
+        }
+      ],
+      "_check": {
+        "timerMinutesSum": 6.0
+      }
+    },
+    {
+      "id": "hot-honey-salmon-bowl",
+      "title": "Hot Honey Salmon Rice Bowl",
+      "description": "Sticky, spicy-sweet glazed salmon over fluffy rice with avocado, cucumber and edamame. A bowl that tastes like a treat.",
+      "mealType": "dinner",
+      "cuisine": "Asian-inspired",
+      "tags": [
+        "High protein",
+        "Quick"
+      ],
+      "difficulty": "Easy",
+      "prepMinutes": 10,
+      "cookMinutes": 20,
+      "totalMinutes": 30,
+      "baseServings": 2,
+      "diet": {
+        "vegetarian": false,
+        "vegan": false,
+        "glutenFree": false,
+        "dairyFree": true,
+        "porkFree": true
+      },
+      "nutritionPerServing": {
+        "kcal": 880,
+        "proteinG": 44,
+        "carbsG": 93,
+        "fatG": 37,
+        "estimated": true
+      },
+      "ingredients": [
+        {
+          "id": "rice",
+          "name": "Jasmine rice",
+          "quantity": 150,
+          "unit": "g",
+          "note": "uncooked"
+        },
+        {
+          "id": "hon",
+          "name": "Honey",
+          "quantity": 2,
+          "unit": "tbsp"
+        },
+        {
+          "id": "hs",
+          "name": "Hot sauce",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "id": "soy",
+          "name": "Soy sauce",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "id": "gar",
+          "name": "Garlic",
+          "quantity": 1,
+          "unit": "clove",
+          "note": "finely grated"
+        },
+        {
+          "id": "sal",
+          "name": "Salmon fillets",
+          "quantity": 300,
+          "unit": "g",
+          "note": "about 2 fillets"
+        },
+        {
+          "id": "oil",
+          "name": "Olive oil",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "salt",
+          "name": "Salt",
+          "quantity": 0.25,
+          "unit": "tsp"
+        },
+        {
+          "id": "eda",
+          "name": "Frozen shelled edamame",
+          "quantity": 100,
+          "unit": "g"
+        },
+        {
+          "id": "cuc",
+          "name": "Cucumber",
+          "quantity": 150,
+          "unit": "g",
+          "note": "sliced"
+        },
+        {
+          "id": "avo",
+          "name": "Avocado",
+          "quantity": 1,
+          "unit": "piece",
+          "note": "sliced"
+        },
+        {
+          "id": "go",
+          "name": "Green onion",
+          "quantity": 1,
+          "unit": "piece",
+          "note": "sliced"
+        },
+        {
+          "id": "ses",
+          "name": "Sesame seeds",
+          "quantity": 1,
+          "unit": "tsp"
+        }
+      ],
+      "steps": [
+        {
+          "n": 1,
+          "text": "Rinse the rice and cook it with water according to the package, then let it rest covered.",
+          "ingredientIds": [
+            "rice"
+          ],
+          "timerSeconds": 900
+        },
+        {
+          "n": 2,
+          "text": "Heat the oven to 200°C (400°F). Mix the honey, hot sauce, soy sauce and garlic into a glaze.",
+          "ingredientIds": [
+            "hon",
+            "hs",
+            "soy",
+            "gar"
+          ],
+          "timerSeconds": null
+        },
+        {
+          "n": 3,
+          "text": "Put the salmon on a lined tray, rub with the oil and salt, and bake.",
+          "ingredientIds": [
+            "sal",
+            "oil",
+            "salt"
+          ],
+          "timerSeconds": 480
+        },
+        {
+          "n": 4,
+          "text": "Brush the salmon thickly with the glaze and bake until it flakes easily.",
+          "ingredientIds": [],
+          "timerSeconds": 240
+        },
+        {
+          "n": 5,
+          "text": "Meanwhile, boil the edamame until tender, then drain.",
+          "ingredientIds": [
+            "eda"
+          ],
+          "timerSeconds": 180
+        },
+        {
+          "n": 6,
+          "text": "Fill bowls with rice, then salmon, edamame, cucumber and avocado. Spoon over any leftover glaze and top with green onion and sesame seeds.",
+          "ingredientIds": [
+            "cuc",
+            "avo",
+            "go",
+            "ses"
+          ],
+          "timerSeconds": null
+        }
+      ],
+      "_check": {
+        "timerMinutesSum": 30.0
+      }
+    },
+    {
+      "id": "garlic-parmesan-smashed-potatoes",
+      "title": "Garlic Parmesan Smashed Potatoes",
+      "description": "Baby potatoes boiled until tender, smashed flat and roasted until the edges shatter, then finished with garlic and parmesan.",
+      "mealType": "side",
+      "cuisine": "International",
+      "tags": [
+        "Vegetarian",
+        "Comfort"
+      ],
+      "difficulty": "Easy",
+      "prepMinutes": 10,
+      "cookMinutes": 50,
+      "totalMinutes": 60,
+      "baseServings": 4,
+      "diet": {
+        "vegetarian": true,
+        "vegan": false,
+        "glutenFree": true,
+        "dairyFree": false,
+        "porkFree": true
+      },
+      "nutritionPerServing": {
+        "kcal": 344,
+        "proteinG": 9,
+        "carbsG": 40,
+        "fatG": 16,
+        "estimated": true
+      },
+      "ingredients": [
+        {
+          "id": "pot",
+          "name": "Baby potatoes",
+          "quantity": 1,
+          "unit": "kg"
+        },
+        {
+          "id": "oil",
+          "name": "Olive oil",
+          "quantity": 4,
+          "unit": "tbsp"
+        },
+        {
+          "id": "gar",
+          "name": "Garlic",
+          "quantity": 3,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "id": "salt",
+          "name": "Salt",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "pep",
+          "name": "Black pepper",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "id": "parm",
+          "name": "Grated parmesan",
+          "quantity": 40,
+          "unit": "g",
+          "note": "or a vegetarian hard cheese"
+        },
+        {
+          "id": "par",
+          "name": "Fresh parsley",
+          "quantity": 10,
+          "unit": "g",
+          "note": "chopped"
+        }
+      ],
+      "steps": [
+        {
+          "n": 1,
+          "text": "Boil the potatoes in well-salted water until a knife slides in easily.",
+          "ingredientIds": [
+            "pot"
+          ],
+          "timerSeconds": 1080
+        },
+        {
+          "n": 2,
+          "text": "Drain and let them steam-dry for a few minutes. Heat the oven to 220°C (425°F), or 200°C fan.",
+          "ingredientIds": [],
+          "timerSeconds": null
+        },
+        {
+          "n": 3,
+          "text": "Spread the potatoes on a lined tray and press each one flat with the bottom of a glass.",
+          "ingredientIds": [],
+          "timerSeconds": null
+        },
+        {
+          "n": 4,
+          "text": "Mix the oil and garlic and brush it over the potatoes. Season with salt and pepper and roast until golden and crisp.",
+          "ingredientIds": [
+            "oil",
+            "gar",
+            "salt",
+            "pep"
+          ],
+          "timerSeconds": 1500
+        },
+        {
+          "n": 5,
+          "text": "Sprinkle with parmesan and roast until melted and lacy.",
+          "ingredientIds": [
+            "parm"
+          ],
+          "timerSeconds": 300
+        },
+        {
+          "n": 6,
+          "text": "Top with parsley and serve hot.",
+          "ingredientIds": [
+            "par"
+          ],
+          "timerSeconds": null
+        }
+      ],
+      "_check": {
+        "timerMinutesSum": 48.0
+      }
+    },
+    {
+      "id": "oven-doner-kebab-wraps",
+      "title": "Oven Doner Kebab Wraps",
+      "description": "Spiced meat baked in a tight log and shaved thin like at the kebab shop, wrapped up with crunchy salad and garlic yogurt.",
+      "mealType": "dinner",
+      "cuisine": "Turkish-inspired",
+      "tags": [
+        "High protein"
+      ],
+      "difficulty": "Medium",
+      "prepMinutes": 15,
+      "cookMinutes": 45,
+      "totalMinutes": 60,
+      "baseServings": 4,
+      "diet": {
+        "vegetarian": false,
+        "vegan": false,
+        "glutenFree": false,
+        "dairyFree": false,
+        "porkFree": true
+      },
+      "nutritionPerServing": {
+        "kcal": 631,
+        "proteinG": 31,
+        "carbsG": 45,
+        "fatG": 36,
+        "estimated": true
+      },
+      "ingredients": [
+        {
+          "id": "lamb",
+          "name": "Ground lamb (or beef)",
+          "quantity": 500,
+          "unit": "g"
+        },
+        {
+          "id": "on",
+          "name": "Onion",
+          "quantity": 80,
+          "unit": "g",
+          "note": "finely grated"
+        },
+        {
+          "id": "gar",
+          "name": "Garlic",
+          "quantity": 2,
+          "unit": "clove",
+          "note": "grated"
+        },
+        {
+          "id": "cum",
+          "name": "Ground cumin",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "pap",
+          "name": "Paprika",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "cor",
+          "name": "Ground coriander",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "ore",
+          "name": "Dried oregano",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "salt",
+          "name": "Salt",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "pep",
+          "name": "Black pepper",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "id": "cf",
+          "name": "Chili flakes",
+          "quantity": 0.25,
+          "unit": "tsp"
+        },
+        {
+          "id": "yog",
+          "name": "Greek yogurt",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "id": "gy",
+          "name": "Garlic",
+          "quantity": 1,
+          "unit": "clove",
+          "note": "for the sauce, grated"
+        },
+        {
+          "id": "lem",
+          "name": "Lemon juice",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "ys",
+          "name": "Salt",
+          "quantity": null,
+          "unit": "pinch",
+          "note": "for the sauce"
+        },
+        {
+          "id": "wrap",
+          "name": "Large flatbreads or wraps",
+          "quantity": 4,
+          "unit": "piece"
+        },
+        {
+          "id": "cab",
+          "name": "Red cabbage",
+          "quantity": 100,
+          "unit": "g",
+          "note": "finely shredded"
+        },
+        {
+          "id": "tom",
+          "name": "Tomatoes",
+          "quantity": 2,
+          "unit": "piece",
+          "note": "sliced"
+        },
+        {
+          "id": "cuc",
+          "name": "Cucumber",
+          "quantity": 100,
+          "unit": "g",
+          "note": "sliced"
+        },
+        {
+          "id": "ro",
+          "name": "Red onion",
+          "quantity": 50,
+          "unit": "g",
+          "note": "thinly sliced"
+        }
+      ],
+      "steps": [
+        {
+          "n": 1,
+          "text": "Heat the oven to 200°C (400°F), or 180°C fan.",
+          "ingredientIds": [],
+          "timerSeconds": null
+        },
+        {
+          "n": 2,
+          "text": "Put the meat, grated onion, garlic, spices, salt, pepper and chili flakes in a bowl. Knead firmly until the mixture is sticky and smooth.",
+          "ingredientIds": [
+            "lamb",
+            "on",
+            "gar",
+            "cum",
+            "pap",
+            "cor",
+            "ore",
+            "salt",
+            "pep",
+            "cf"
+          ],
+          "timerSeconds": 120
+        },
+        {
+          "n": 3,
+          "text": "Shape it into a tight log on baking paper, roll it up and twist the ends like a candy wrapper. Bake on a tray until cooked through (71°C / 160°F inside).",
+          "ingredientIds": [],
+          "timerSeconds": 2100
+        },
+        {
+          "n": 4,
+          "text": "Meanwhile, stir the yogurt, garlic, lemon juice and a pinch of salt into a sauce.",
+          "ingredientIds": [
+            "yog",
+            "gy",
+            "lem",
+            "ys"
+          ],
+          "timerSeconds": null
+        },
+        {
+          "n": 5,
+          "text": "Rest the meat for 5 minutes, then slice it as thinly as you can. For crispy edges, sear the slices in a hot dry pan.",
+          "ingredientIds": [],
+          "timerSeconds": 300
+        },
+        {
+          "n": 6,
+          "text": "Warm the wraps, then fill with meat, cabbage, tomato, cucumber, red onion and garlic sauce. Roll up tightly.",
+          "ingredientIds": [
+            "wrap",
+            "cab",
+            "tom",
+            "cuc",
+            "ro"
+          ],
+          "timerSeconds": null
+        }
+      ],
+      "_check": {
+        "timerMinutesSum": 42.0
+      }
+    },
+    {
+      "id": "red-curry-dumpling-bake",
+      "title": "Coconut Red Curry Dumpling Bake",
+      "description": "Frozen dumplings baked straight in a creamy coconut red curry until golden on top. Almost no prep, all the flavour.",
+      "mealType": "dinner",
+      "cuisine": "Thai-inspired",
+      "tags": [
+        "Comfort",
+        "One pan",
+        "Quick"
+      ],
+      "difficulty": "Easy",
+      "prepMinutes": 5,
+      "cookMinutes": 25,
+      "totalMinutes": 30,
+      "baseServings": 4,
+      "diet": {
+        "vegetarian": false,
+        "vegan": false,
+        "glutenFree": false,
+        "dairyFree": true,
+        "porkFree": false
+      },
+      "nutritionPerServing": {
+        "kcal": 541,
+        "proteinG": 17,
+        "carbsG": 43,
+        "fatG": 34,
+        "estimated": true
+      },
+      "ingredients": [
+        {
+          "id": "cm",
+          "name": "Coconut milk",
+          "quantity": 400,
+          "unit": "ml",
+          "note": "1 can"
+        },
+        {
+          "id": "cp",
+          "name": "Thai red curry paste",
+          "quantity": 2,
+          "unit": "tbsp"
+        },
+        {
+          "id": "soy",
+          "name": "Soy sauce",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "id": "bs",
+          "name": "Brown sugar",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "spi",
+          "name": "Baby spinach",
+          "quantity": 100,
+          "unit": "g"
+        },
+        {
+          "id": "dum",
+          "name": "Frozen pork or chicken dumplings",
+          "quantity": 600,
+          "unit": "g",
+          "note": "about 24, no need to thaw"
+        },
+        {
+          "id": "lime",
+          "name": "Lime",
+          "quantity": 1,
+          "unit": "piece",
+          "note": "juiced"
+        },
+        {
+          "id": "go",
+          "name": "Green onions",
+          "quantity": 2,
+          "unit": "piece",
+          "note": "sliced"
+        }
+      ],
+      "steps": [
+        {
+          "n": 1,
+          "text": "Heat the oven to 200°C (400°F), or 180°C fan.",
+          "ingredientIds": [],
+          "timerSeconds": null
+        },
+        {
+          "n": 2,
+          "text": "Whisk the coconut milk, curry paste, soy sauce and brown sugar in a baking dish. Stir in the spinach.",
+          "ingredientIds": [
+            "cm",
+            "cp",
+            "soy",
+            "bs",
+            "spi"
+          ],
+          "timerSeconds": null
+        },
+        {
+          "n": 3,
+          "text": "Arrange the frozen dumplings on top in a single layer.",
+          "ingredientIds": [
+            "dum"
+          ],
+          "timerSeconds": null
+        },
+        {
+          "n": 4,
+          "text": "Bake uncovered until the dumplings are hot all the way through and golden on top.",
+          "ingredientIds": [],
+          "timerSeconds": 1500
+        },
+        {
+          "n": 5,
+          "text": "Squeeze over the lime juice and scatter with green onions.",
+          "ingredientIds": [
+            "lime",
+            "go"
+          ],
+          "timerSeconds": null
+        }
+      ],
+      "_check": {
+        "timerMinutesSum": 25.0
+      }
+    },
+    {
+      "id": "greek-chicken-bowls",
+      "title": "Greek Chicken Bowls",
+      "description": "Lemon-garlic chicken over rice with a crunchy Greek salad, feta and homemade tzatziki. Fresh, filling and packed with protein.",
+      "mealType": "dinner",
+      "cuisine": "Greek",
+      "tags": [
+        "High protein"
+      ],
+      "difficulty": "Easy",
+      "prepMinutes": 25,
+      "cookMinutes": 25,
+      "totalMinutes": 50,
+      "baseServings": 4,
+      "diet": {
+        "vegetarian": false,
+        "vegan": false,
+        "glutenFree": true,
+        "dairyFree": false,
+        "porkFree": true
+      },
+      "nutritionPerServing": {
+        "kcal": 678,
+        "proteinG": 57,
+        "carbsG": 65,
+        "fatG": 21,
+        "estimated": true
+      },
+      "ingredients": [
+        {
+          "id": "ch",
+          "name": "Chicken breasts",
+          "quantity": 700,
+          "unit": "g"
+        },
+        {
+          "id": "ym",
+          "name": "Greek yogurt",
+          "quantity": 100,
+          "unit": "g",
+          "note": "for the marinade"
+        },
+        {
+          "id": "lm",
+          "name": "Lemon juice",
+          "quantity": 2,
+          "unit": "tbsp"
+        },
+        {
+          "id": "gm",
+          "name": "Garlic",
+          "quantity": 3,
+          "unit": "clove",
+          "note": "grated"
+        },
+        {
+          "id": "ore",
+          "name": "Dried oregano",
+          "quantity": 2,
+          "unit": "tsp"
+        },
+        {
+          "id": "oil",
+          "name": "Olive oil",
+          "quantity": 2,
+          "unit": "tbsp"
+        },
+        {
+          "id": "salt",
+          "name": "Salt",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "pep",
+          "name": "Black pepper",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "id": "rice",
+          "name": "Long-grain rice",
+          "quantity": 250,
+          "unit": "g",
+          "note": "uncooked"
+        },
+        {
+          "id": "yt",
+          "name": "Greek yogurt",
+          "quantity": 200,
+          "unit": "g",
+          "note": "for the tzatziki"
+        },
+        {
+          "id": "ct",
+          "name": "Cucumber",
+          "quantity": 100,
+          "unit": "g",
+          "note": "grated, for the tzatziki"
+        },
+        {
+          "id": "gt",
+          "name": "Garlic",
+          "quantity": 1,
+          "unit": "clove",
+          "note": "for the tzatziki"
+        },
+        {
+          "id": "dill",
+          "name": "Fresh dill",
+          "quantity": 1,
+          "unit": "tbsp",
+          "note": "chopped"
+        },
+        {
+          "id": "lt",
+          "name": "Lemon juice",
+          "quantity": 1,
+          "unit": "tbsp",
+          "note": "for the tzatziki"
+        },
+        {
+          "id": "cuc",
+          "name": "Cucumber",
+          "quantity": 200,
+          "unit": "g",
+          "note": "diced"
+        },
+        {
+          "id": "tom",
+          "name": "Cherry tomatoes",
+          "quantity": 250,
+          "unit": "g",
+          "note": "halved"
+        },
+        {
+          "id": "ro",
+          "name": "Red onion",
+          "quantity": 50,
+          "unit": "g",
+          "note": "thinly sliced"
+        },
+        {
+          "id": "ol",
+          "name": "Kalamata olives",
+          "quantity": 60,
+          "unit": "g"
+        },
+        {
+          "id": "feta",
+          "name": "Feta",
+          "quantity": 100,
+          "unit": "g",
+          "note": "crumbled"
+        }
+      ],
+      "steps": [
+        {
+          "n": 1,
+          "text": "Mix the yogurt, lemon juice, garlic, oregano, oil, salt and pepper. Coat the chicken and marinate for at least 20 minutes.",
+          "ingredientIds": [
+            "ch",
+            "ym",
+            "lm",
+            "gm",
+            "ore",
+            "oil",
+            "salt",
+            "pep"
+          ],
+          "timerSeconds": 1200
+        },
+        {
+          "n": 2,
+          "text": "Cook the rice according to the package.",
+          "ingredientIds": [
+            "rice"
+          ],
+          "timerSeconds": 900
+        },
+        {
+          "n": 3,
+          "text": "Make the tzatziki: squeeze the grated cucumber dry, then stir it with the yogurt, garlic, dill and lemon juice.",
+          "ingredientIds": [
+            "yt",
+            "ct",
+            "gt",
+            "dill",
+            "lt"
+          ],
+          "timerSeconds": null
+        },
+        {
+          "n": 4,
+          "text": "Heat a large pan or grill pan over medium-high heat. Cook the chicken until golden and cooked through (74°C / 165°F inside), about 6 minutes per side.",
+          "ingredientIds": [],
+          "timerSeconds": 360
+        },
+        {
+          "n": 5,
+          "text": "Rest the chicken for 5 minutes, then slice.",
+          "ingredientIds": [],
+          "timerSeconds": 300
+        },
+        {
+          "n": 6,
+          "text": "Fill bowls with rice, chicken, cucumber, tomatoes, red onion, olives and feta. Add a big spoon of tzatziki.",
+          "ingredientIds": [
+            "cuc",
+            "tom",
+            "ro",
+            "ol",
+            "feta"
+          ],
+          "timerSeconds": null
+        }
+      ],
+      "_check": {
+        "timerMinutesSum": 46.0
+      }
+    },
+    {
+      "id": "cottage-cheese-flatbread",
+      "title": "Cottage Cheese Flatbread Wraps",
+      "description": "A 2-ingredient high-protein flatbread made from cottage cheese and eggs, baked thin and rolled up with fresh fillings.",
+      "mealType": "lunch",
+      "cuisine": "International",
+      "tags": [
+        "High protein",
+        "Vegetarian"
+      ],
+      "difficulty": "Easy",
+      "prepMinutes": 10,
+      "cookMinutes": 35,
+      "totalMinutes": 45,
+      "baseServings": 2,
+      "diet": {
+        "vegetarian": true,
+        "vegan": false,
+        "glutenFree": true,
+        "dairyFree": false,
+        "porkFree": true
+      },
+      "nutritionPerServing": {
+        "kcal": 327,
+        "proteinG": 27,
+        "carbsG": 15,
+        "fatG": 18,
+        "estimated": true
+      },
+      "ingredients": [
+        {
+          "id": "cc",
+          "name": "Cottage cheese",
+          "quantity": 250,
+          "unit": "g"
+        },
+        {
+          "id": "egg",
+          "name": "Eggs",
+          "quantity": 2,
+          "unit": "piece"
+        },
+        {
+          "id": "herbs",
+          "name": "Dried Italian herbs",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "gp",
+          "name": "Garlic powder",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "id": "salt",
+          "name": "Salt",
+          "quantity": 0.25,
+          "unit": "tsp"
+        },
+        {
+          "id": "hum",
+          "name": "Hummus",
+          "quantity": 60,
+          "unit": "g"
+        },
+        {
+          "id": "spi",
+          "name": "Baby spinach",
+          "quantity": 40,
+          "unit": "g"
+        },
+        {
+          "id": "tom",
+          "name": "Tomato",
+          "quantity": 1,
+          "unit": "piece",
+          "note": "sliced"
+        },
+        {
+          "id": "cuc",
+          "name": "Cucumber",
+          "quantity": 80,
+          "unit": "g",
+          "note": "cut into sticks"
+        },
+        {
+          "id": "feta",
+          "name": "Feta",
+          "quantity": 40,
+          "unit": "g",
+          "note": "crumbled"
+        }
+      ],
+      "steps": [
+        {
+          "n": 1,
+          "text": "Heat the oven to 180°C (350°F), or 160°C fan, and line a large tray with baking paper.",
+          "ingredientIds": [],
+          "timerSeconds": null
+        },
+        {
+          "n": 2,
+          "text": "Blend the cottage cheese, eggs, herbs, garlic powder and salt until completely smooth.",
+          "ingredientIds": [
+            "cc",
+            "egg",
+            "herbs",
+            "gp",
+            "salt"
+          ],
+          "timerSeconds": null
+        },
+        {
+          "n": 3,
+          "text": "Spread the mixture thinly and evenly over the paper, about 30 × 25 cm.",
+          "ingredientIds": [],
+          "timerSeconds": null
+        },
+        {
+          "n": 4,
+          "text": "Bake until golden and dry to the touch.",
+          "ingredientIds": [],
+          "timerSeconds": 2100
+        },
+        {
+          "n": 5,
+          "text": "Cool for 5 minutes, then peel off the paper and cut in half.",
+          "ingredientIds": [],
+          "timerSeconds": 300
+        },
+        {
+          "n": 6,
+          "text": "Spread each half with hummus, add spinach, tomato, cucumber and feta, then roll up tightly.",
+          "ingredientIds": [
+            "hum",
+            "spi",
+            "tom",
+            "cuc",
+            "feta"
+          ],
+          "timerSeconds": null
+        }
+      ],
+      "_check": {
+        "timerMinutesSum": 40.0
+      }
+    },
+    {
+      "id": "smash-falafel-pita",
+      "title": "Smash Falafel Pita",
+      "description": "Herby falafel smashed straight onto pita and fried until crisp, then piled with salad and creamy tahini sauce.",
+      "mealType": "lunch",
+      "cuisine": "Middle Eastern",
+      "tags": [
+        "Vegetarian",
+        "Quick"
+      ],
+      "difficulty": "Easy",
+      "prepMinutes": 10,
+      "cookMinutes": 15,
+      "totalMinutes": 25,
+      "baseServings": 4,
+      "diet": {
+        "vegetarian": true,
+        "vegan": true,
+        "glutenFree": false,
+        "dairyFree": true,
+        "porkFree": true
+      },
+      "nutritionPerServing": {
+        "kcal": 450,
+        "proteinG": 14,
+        "carbsG": 59,
+        "fatG": 18,
+        "estimated": true
+      },
+      "ingredients": [
+        {
+          "id": "chk",
+          "name": "Canned chickpeas",
+          "quantity": 240,
+          "unit": "g",
+          "note": "drained (1 can)"
+        },
+        {
+          "id": "on",
+          "name": "Onion",
+          "quantity": 40,
+          "unit": "g",
+          "note": "roughly chopped"
+        },
+        {
+          "id": "gar",
+          "name": "Garlic",
+          "quantity": 2,
+          "unit": "clove"
+        },
+        {
+          "id": "par",
+          "name": "Fresh parsley",
+          "quantity": 15,
+          "unit": "g"
+        },
+        {
+          "id": "cil",
+          "name": "Fresh cilantro",
+          "quantity": 15,
+          "unit": "g"
+        },
+        {
+          "id": "cum",
+          "name": "Ground cumin",
+          "quantity": 1.5,
+          "unit": "tsp"
+        },
+        {
+          "id": "cor",
+          "name": "Ground coriander",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "salt",
+          "name": "Salt",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "bp",
+          "name": "Baking powder",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "id": "fl",
+          "name": "All-purpose flour",
+          "quantity": 2,
+          "unit": "tbsp"
+        },
+        {
+          "id": "tah",
+          "name": "Tahini",
+          "quantity": 60,
+          "unit": "g"
+        },
+        {
+          "id": "lem",
+          "name": "Lemon juice",
+          "quantity": 2,
+          "unit": "tbsp"
+        },
+        {
+          "id": "wat",
+          "name": "Water",
+          "quantity": 45,
+          "unit": "ml",
+          "note": "cold"
+        },
+        {
+          "id": "ts",
+          "name": "Salt",
+          "quantity": null,
+          "unit": "pinch",
+          "note": "for the sauce"
+        },
+        {
+          "id": "pita",
+          "name": "Pita breads",
+          "quantity": 4,
+          "unit": "piece"
+        },
+        {
+          "id": "oil",
+          "name": "Olive oil",
+          "quantity": 2,
+          "unit": "tbsp"
+        },
+        {
+          "id": "tom",
+          "name": "Tomatoes",
+          "quantity": 2,
+          "unit": "piece",
+          "note": "diced"
+        },
+        {
+          "id": "cuc",
+          "name": "Cucumber",
+          "quantity": 100,
+          "unit": "g",
+          "note": "diced"
+        },
+        {
+          "id": "ro",
+          "name": "Red onion",
+          "quantity": 30,
+          "unit": "g",
+          "note": "thinly sliced"
+        },
+        {
+          "id": "pick",
+          "name": "Pickles",
+          "quantity": 40,
+          "unit": "g",
+          "note": "sliced"
+        }
+      ],
+      "steps": [
+        {
+          "n": 1,
+          "text": "Pulse the chickpeas, onion, garlic, parsley, cilantro, spices, salt, baking powder and flour in a food processor into a coarse, sticky paste.",
+          "ingredientIds": [
+            "chk",
+            "on",
+            "gar",
+            "par",
+            "cil",
+            "cum",
+            "cor",
+            "salt",
+            "bp",
+            "fl"
+          ],
+          "timerSeconds": null
+        },
+        {
+          "n": 2,
+          "text": "Whisk the tahini, lemon juice, water and a pinch of salt until smooth and creamy.",
+          "ingredientIds": [
+            "tah",
+            "lem",
+            "wat",
+            "ts"
+          ],
+          "timerSeconds": null
+        },
+        {
+          "n": 3,
+          "text": "Spread a quarter of the falafel mix over one side of each pita and press it flat.",
+          "ingredientIds": [
+            "pita"
+          ],
+          "timerSeconds": null
+        },
+        {
+          "n": 4,
+          "text": "Heat the oil in a large pan over medium heat. Fry the pitas falafel-side down until deep golden and crisp.",
+          "ingredientIds": [
+            "oil"
+          ],
+          "timerSeconds": 240
+        },
+        {
+          "n": 5,
+          "text": "Flip and toast the other side.",
+          "ingredientIds": [],
+          "timerSeconds": 90
+        },
+        {
+          "n": 6,
+          "text": "Top with tomatoes, cucumber, red onion, pickles and tahini sauce. Fold and serve.",
+          "ingredientIds": [
+            "tom",
+            "cuc",
+            "ro",
+            "pick"
+          ],
+          "timerSeconds": null
+        }
+      ],
+      "_check": {
+        "timerMinutesSum": 5.5
+      }
+    },
+    {
+      "id": "pesto-eggs-toast",
+      "title": "Pesto Eggs on Toast",
+      "description": "Eggs fried in sizzling pesto until crispy-edged and jammy, on toast with smashed avocado. Breakfast in 10 minutes.",
+      "mealType": "breakfast",
+      "cuisine": "International",
+      "tags": [
+        "Quick",
+        "Vegetarian"
+      ],
+      "difficulty": "Easy",
+      "prepMinutes": 3,
+      "cookMinutes": 7,
+      "totalMinutes": 10,
+      "baseServings": 2,
+      "diet": {
+        "vegetarian": true,
+        "vegan": false,
+        "glutenFree": false,
+        "dairyFree": false,
+        "porkFree": true
+      },
+      "nutritionPerServing": {
+        "kcal": 475,
+        "proteinG": 20,
+        "carbsG": 35,
+        "fatG": 29,
+        "estimated": true
+      },
+      "ingredients": [
+        {
+          "id": "bread",
+          "name": "Sourdough slices",
+          "quantity": 2,
+          "unit": "slice"
+        },
+        {
+          "id": "avo",
+          "name": "Avocado",
+          "quantity": 1,
+          "unit": "piece"
+        },
+        {
+          "id": "salt",
+          "name": "Salt",
+          "quantity": null,
+          "unit": "pinch"
+        },
+        {
+          "id": "pesto",
+          "name": "Basil pesto",
+          "quantity": 2,
+          "unit": "tbsp"
+        },
+        {
+          "id": "egg",
+          "name": "Eggs",
+          "quantity": 4,
+          "unit": "piece"
+        },
+        {
+          "id": "tom",
+          "name": "Cherry tomatoes",
+          "quantity": 100,
+          "unit": "g",
+          "note": "halved"
+        },
+        {
+          "id": "cf",
+          "name": "Chili flakes",
+          "quantity": null,
+          "unit": "pinch"
+        }
+      ],
+      "steps": [
+        {
+          "n": 1,
+          "text": "Toast the bread. Mash the avocado with a pinch of salt and spread it on the toast.",
+          "ingredientIds": [
+            "bread",
+            "avo",
+            "salt"
+          ],
+          "timerSeconds": null
+        },
+        {
+          "n": 2,
+          "text": "Heat the pesto in a non-stick pan over medium heat until it sizzles.",
+          "ingredientIds": [
+            "pesto"
+          ],
+          "timerSeconds": 60
+        },
+        {
+          "n": 3,
+          "text": "Crack the eggs into the pesto, cover and cook until the whites are set and the yolks still runny.",
+          "ingredientIds": [
+            "egg"
+          ],
+          "timerSeconds": 180
+        },
+        {
+          "n": 4,
+          "text": "Slide the eggs onto the toast and top with tomatoes and chili flakes.",
+          "ingredientIds": [
+            "tom",
+            "cf"
+          ],
+          "timerSeconds": null
+        }
+      ],
+      "_check": {
+        "timerMinutesSum": 4.0
+      }
+    },
+    {
+      "id": "creamy-tuscan-gnocchi",
+      "title": "Creamy Tuscan Gnocchi",
+      "description": "Pan-fried golden gnocchi in a creamy garlic, spinach and sun-dried tomato sauce. Cosy comfort in 20 minutes.",
+      "mealType": "dinner",
+      "cuisine": "Italian",
+      "tags": [
+        "Quick",
+        "Vegetarian",
+        "Comfort",
+        "One pan"
+      ],
+      "difficulty": "Easy",
+      "prepMinutes": 5,
+      "cookMinutes": 15,
+      "totalMinutes": 20,
+      "baseServings": 4,
+      "diet": {
+        "vegetarian": true,
+        "vegan": false,
+        "glutenFree": false,
+        "dairyFree": false,
+        "porkFree": true
+      },
+      "nutritionPerServing": {
+        "kcal": 518,
+        "proteinG": 13,
+        "carbsG": 48,
+        "fatG": 31,
+        "estimated": true
+      },
+      "ingredients": [
+        {
+          "id": "gn",
+          "name": "Potato gnocchi",
+          "quantity": 500,
+          "unit": "g"
+        },
+        {
+          "id": "oil",
+          "name": "Olive oil",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "id": "but",
+          "name": "Butter",
+          "quantity": 15,
+          "unit": "g"
+        },
+        {
+          "id": "gar",
+          "name": "Garlic",
+          "quantity": 3,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "id": "sdt",
+          "name": "Sun-dried tomatoes in oil",
+          "quantity": 60,
+          "unit": "g",
+          "note": "drained and chopped"
+        },
+        {
+          "id": "stock",
+          "name": "Vegetable stock",
+          "quantity": 120,
+          "unit": "ml"
+        },
+        {
+          "id": "cream",
+          "name": "Heavy cream",
+          "quantity": 200,
+          "unit": "ml"
+        },
+        {
+          "id": "herbs",
+          "name": "Dried Italian herbs",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "salt",
+          "name": "Salt",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "id": "pep",
+          "name": "Black pepper",
+          "quantity": 0.25,
+          "unit": "tsp"
+        },
+        {
+          "id": "parm",
+          "name": "Grated parmesan",
+          "quantity": 50,
+          "unit": "g",
+          "note": "or a vegetarian hard cheese"
+        },
+        {
+          "id": "spi",
+          "name": "Baby spinach",
+          "quantity": 100,
+          "unit": "g"
+        }
+      ],
+      "steps": [
+        {
+          "n": 1,
+          "text": "Heat the oil in a large pan over medium-high heat. Fry the gnocchi, stirring now and then, until golden. Move to a plate.",
+          "ingredientIds": [
+            "gn",
+            "oil"
+          ],
+          "timerSeconds": 360
+        },
+        {
+          "n": 2,
+          "text": "Lower the heat to medium. Melt the butter and cook the garlic and sun-dried tomatoes for 1 minute.",
+          "ingredientIds": [
+            "but",
+            "gar",
+            "sdt"
+          ],
+          "timerSeconds": 60
+        },
+        {
+          "n": 3,
+          "text": "Pour in the stock and cream, add the herbs, salt and pepper and simmer until slightly thickened.",
+          "ingredientIds": [
+            "stock",
+            "cream",
+            "herbs",
+            "salt",
+            "pep"
+          ],
+          "timerSeconds": 180
+        },
+        {
+          "n": 4,
+          "text": "Stir in the parmesan and spinach until the spinach wilts.",
+          "ingredientIds": [
+            "parm",
+            "spi"
+          ],
+          "timerSeconds": 60
+        },
+        {
+          "n": 5,
+          "text": "Return the gnocchi and toss until coated. Serve right away.",
+          "ingredientIds": [],
+          "timerSeconds": null
+        }
+      ],
+      "_check": {
+        "timerMinutesSum": 11.0
+      }
+    },
+    {
+      "id": "korean-beef-bowls",
+      "title": "Korean Beef Bowls",
+      "description": "Sweet, savoury and gingery ground beef over rice with cucumber and kimchi. A 25-minute weeknight favourite.",
+      "mealType": "dinner",
+      "cuisine": "Korean-inspired",
+      "tags": [
+        "Quick",
+        "High protein"
+      ],
+      "difficulty": "Easy",
+      "prepMinutes": 10,
+      "cookMinutes": 15,
+      "totalMinutes": 25,
+      "baseServings": 4,
+      "diet": {
+        "vegetarian": false,
+        "vegan": false,
+        "glutenFree": false,
+        "dairyFree": true,
+        "porkFree": true
+      },
+      "nutritionPerServing": {
+        "kcal": 573,
+        "proteinG": 33,
+        "carbsG": 72,
+        "fatG": 17,
+        "estimated": true
+      },
+      "ingredients": [
+        {
+          "id": "rice",
+          "name": "Jasmine rice",
+          "quantity": 300,
+          "unit": "g",
+          "note": "uncooked"
+        },
+        {
+          "id": "soy",
+          "name": "Soy sauce",
+          "quantity": 4,
+          "unit": "tbsp"
+        },
+        {
+          "id": "bs",
+          "name": "Brown sugar",
+          "quantity": 2,
+          "unit": "tbsp"
+        },
+        {
+          "id": "so",
+          "name": "Sesame oil",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "id": "cf",
+          "name": "Chili flakes",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "id": "beef",
+          "name": "Ground beef (10% fat)",
+          "quantity": 500,
+          "unit": "g"
+        },
+        {
+          "id": "gar",
+          "name": "Garlic",
+          "quantity": 3,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "id": "gin",
+          "name": "Fresh ginger",
+          "quantity": 1,
+          "unit": "tbsp",
+          "note": "grated"
+        },
+        {
+          "id": "go",
+          "name": "Green onions",
+          "quantity": 3,
+          "unit": "piece",
+          "note": "sliced"
+        },
+        {
+          "id": "cuc",
+          "name": "Cucumber",
+          "quantity": 150,
+          "unit": "g",
+          "note": "sliced"
+        },
+        {
+          "id": "kim",
+          "name": "Kimchi",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "id": "ses",
+          "name": "Sesame seeds",
+          "quantity": 1,
+          "unit": "tsp"
+        }
+      ],
+      "steps": [
+        {
+          "n": 1,
+          "text": "Cook the rice according to the package.",
+          "ingredientIds": [
+            "rice"
+          ],
+          "timerSeconds": 900
+        },
+        {
+          "n": 2,
+          "text": "Mix the soy sauce, brown sugar, sesame oil and chili flakes into a sauce.",
+          "ingredientIds": [
+            "soy",
+            "bs",
+            "so",
+            "cf"
+          ],
+          "timerSeconds": null
+        },
+        {
+          "n": 3,
+          "text": "Brown the beef in a large pan over medium-high heat, breaking it up.",
+          "ingredientIds": [
+            "beef"
+          ],
+          "timerSeconds": 360
+        },
+        {
+          "n": 4,
+          "text": "Add the garlic and ginger and cook until fragrant.",
+          "ingredientIds": [
+            "gar",
+            "gin"
+          ],
+          "timerSeconds": 60
+        },
+        {
+          "n": 5,
+          "text": "Pour in the sauce and simmer until the beef is glossy and the sauce has thickened. Stir in most of the green onions.",
+          "ingredientIds": [
+            "go"
+          ],
+          "timerSeconds": 120
+        },
+        {
+          "n": 6,
+          "text": "Serve over rice with cucumber and kimchi, topped with the rest of the green onions and sesame seeds.",
+          "ingredientIds": [
+            "cuc",
+            "kim",
+            "ses"
+          ],
+          "timerSeconds": null
+        }
+      ],
+      "_check": {
+        "timerMinutesSum": 24.0
+      }
+    },
+    {
+      "id": "chicken-birria-quesadillas",
+      "title": "Chicken Birria-Style Quesadillas",
+      "description": "Tender chicken simmered in a smoky chili broth, tucked into cheesy tortillas, fried crisp and dunked in the rich consommé.",
+      "mealType": "dinner",
+      "cuisine": "Mexican",
+      "tags": [
+        "Comfort"
+      ],
+      "difficulty": "Medium",
+      "prepMinutes": 15,
+      "cookMinutes": 50,
+      "totalMinutes": 65,
+      "baseServings": 4,
+      "diet": {
+        "vegetarian": false,
+        "vegan": false,
+        "glutenFree": false,
+        "dairyFree": false,
+        "porkFree": true
+      },
+      "nutritionPerServing": {
+        "kcal": 608,
+        "proteinG": 48,
+        "carbsG": 42,
+        "fatG": 28,
+        "estimated": true
+      },
+      "ingredients": [
+        {
+          "id": "oil",
+          "name": "Vegetable oil",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "id": "on",
+          "name": "Onion",
+          "quantity": 150,
+          "unit": "g",
+          "note": "sliced"
+        },
+        {
+          "id": "gar",
+          "name": "Garlic",
+          "quantity": 4,
+          "unit": "clove",
+          "note": "smashed"
+        },
+        {
+          "id": "cum",
+          "name": "Ground cumin",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "ore",
+          "name": "Dried oregano",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "pap",
+          "name": "Smoked paprika",
+          "quantity": 2,
+          "unit": "tsp"
+        },
+        {
+          "id": "cin",
+          "name": "Ground cinnamon",
+          "quantity": 0.25,
+          "unit": "tsp"
+        },
+        {
+          "id": "tom",
+          "name": "Canned chopped tomatoes",
+          "quantity": 200,
+          "unit": "g"
+        },
+        {
+          "id": "chip",
+          "name": "Chipotle paste",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "id": "stock",
+          "name": "Chicken stock",
+          "quantity": 500,
+          "unit": "ml"
+        },
+        {
+          "id": "vin",
+          "name": "Apple cider vinegar",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "id": "bay",
+          "name": "Bay leaf",
+          "quantity": 1,
+          "unit": "piece"
+        },
+        {
+          "id": "salt",
+          "name": "Salt",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "ch",
+          "name": "Boneless skinless chicken thighs",
+          "quantity": 600,
+          "unit": "g"
+        },
+        {
+          "id": "tor",
+          "name": "Small flour tortillas (15 cm)",
+          "quantity": 8,
+          "unit": "piece"
+        },
+        {
+          "id": "moz",
+          "name": "Grated mozzarella",
+          "quantity": 200,
+          "unit": "g"
+        },
+        {
+          "id": "cil",
+          "name": "Fresh cilantro",
+          "quantity": 10,
+          "unit": "g",
+          "note": "chopped"
+        },
+        {
+          "id": "wo",
+          "name": "Onion",
+          "quantity": 40,
+          "unit": "g",
+          "note": "finely chopped, to serve"
+        },
+        {
+          "id": "lime",
+          "name": "Lime",
+          "quantity": 1,
+          "unit": "piece",
+          "note": "cut into wedges"
+        }
+      ],
+      "steps": [
+        {
+          "n": 1,
+          "text": "Heat the oil in a pot over medium heat and cook the sliced onion until soft.",
+          "ingredientIds": [
+            "oil",
+            "on"
+          ],
+          "timerSeconds": 240
+        },
+        {
+          "n": 2,
+          "text": "Add the garlic and spices and cook for 1 minute.",
+          "ingredientIds": [
+            "gar",
+            "cum",
+            "ore",
+            "pap",
+            "cin"
+          ],
+          "timerSeconds": 60
+        },
+        {
+          "n": 3,
+          "text": "Add the tomatoes, chipotle paste, stock, vinegar, bay leaf, salt and chicken. Cover and simmer until the chicken is very tender.",
+          "ingredientIds": [
+            "tom",
+            "chip",
+            "stock",
+            "vin",
+            "bay",
+            "salt",
+            "ch"
+          ],
+          "timerSeconds": 1500
+        },
+        {
+          "n": 4,
+          "text": "Lift out the chicken and shred it with two forks. Remove the bay leaf and blend the broth until smooth. This is your consommé.",
+          "ingredientIds": [],
+          "timerSeconds": null
+        },
+        {
+          "n": 5,
+          "text": "Dip one side of a tortilla into the consommé and lay it dipped-side down in a hot pan. Cover half with cheese, chicken and cilantro, then fold.",
+          "ingredientIds": [
+            "tor",
+            "moz",
+            "cil"
+          ],
+          "timerSeconds": null
+        },
+        {
+          "n": 6,
+          "text": "Fry until crisp and the cheese melts, about 2½ minutes per side. Repeat with the rest.",
+          "ingredientIds": [],
+          "timerSeconds": 150
+        },
+        {
+          "n": 7,
+          "text": "Serve with cups of hot consommé for dipping, chopped onion and lime wedges.",
+          "ingredientIds": [
+            "wo",
+            "lime"
+          ],
+          "timerSeconds": null
+        }
+      ],
+      "_check": {
+        "timerMinutesSum": 32.5
+      }
+    },
+    {
+      "id": "protein-baked-oats",
+      "title": "Protein Baked Oats",
+      "description": "Blended oats baked into a soft, cake-like breakfast with bursting blueberries and a protein boost.",
+      "mealType": "breakfast",
+      "cuisine": "International",
+      "tags": [
+        "High protein",
+        "Vegetarian"
+      ],
+      "difficulty": "Easy",
+      "prepMinutes": 5,
+      "cookMinutes": 22,
+      "totalMinutes": 27,
+      "baseServings": 2,
+      "diet": {
+        "vegetarian": true,
+        "vegan": false,
+        "glutenFree": false,
+        "dairyFree": false,
+        "porkFree": true
+      },
+      "nutritionPerServing": {
+        "kcal": 359,
+        "proteinG": 23,
+        "carbsG": 50,
+        "fatG": 7,
+        "estimated": true
+      },
+      "ingredients": [
+        {
+          "id": "oats",
+          "name": "Rolled oats",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "id": "whey",
+          "name": "Vanilla protein powder",
+          "quantity": 30,
+          "unit": "g"
+        },
+        {
+          "id": "ban",
+          "name": "Ripe banana",
+          "quantity": 120,
+          "unit": "g",
+          "note": "about 1, peeled"
+        },
+        {
+          "id": "egg",
+          "name": "Egg",
+          "quantity": 1,
+          "unit": "piece"
+        },
+        {
+          "id": "milk",
+          "name": "Milk",
+          "quantity": 120,
+          "unit": "ml"
+        },
+        {
+          "id": "bp",
+          "name": "Baking powder",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "cin",
+          "name": "Ground cinnamon",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "id": "blue",
+          "name": "Blueberries",
+          "quantity": 60,
+          "unit": "g"
+        }
+      ],
+      "steps": [
+        {
+          "n": 1,
+          "text": "Heat the oven to 180°C (350°F), or 160°C fan.",
+          "ingredientIds": [],
+          "timerSeconds": null
+        },
+        {
+          "n": 2,
+          "text": "Blend the oats, protein powder, banana, egg, milk, baking powder and cinnamon until smooth.",
+          "ingredientIds": [
+            "oats",
+            "whey",
+            "ban",
+            "egg",
+            "milk",
+            "bp",
+            "cin"
+          ],
+          "timerSeconds": null
+        },
+        {
+          "n": 3,
+          "text": "Pour into 2 small oven dishes and scatter the blueberries on top.",
+          "ingredientIds": [
+            "blue"
+          ],
+          "timerSeconds": null
+        },
+        {
+          "n": 4,
+          "text": "Bake until risen and set in the middle.",
+          "ingredientIds": [],
+          "timerSeconds": 1260
+        },
+        {
+          "n": 5,
+          "text": "Cool for 3 minutes before eating.",
+          "ingredientIds": [],
+          "timerSeconds": 180
+        }
+      ],
+      "_check": {
+        "timerMinutesSum": 24.0
+      }
+    },
+    {
+      "id": "garlic-butter-steak-bites",
+      "title": "Garlic Butter Steak Bites",
+      "description": "Juicy cubes of steak seared hard in a screaming-hot pan and tossed in sizzling garlic butter. Ready in 20 minutes.",
+      "mealType": "dinner",
+      "cuisine": "American",
+      "tags": [
+        "Quick",
+        "High protein"
+      ],
+      "difficulty": "Easy",
+      "prepMinutes": 5,
+      "cookMinutes": 12,
+      "totalMinutes": 17,
+      "baseServings": 4,
+      "diet": {
+        "vegetarian": false,
+        "vegan": false,
+        "glutenFree": true,
+        "dairyFree": false,
+        "porkFree": true
+      },
+      "nutritionPerServing": {
+        "kcal": 355,
+        "proteinG": 37,
+        "carbsG": 2,
+        "fatG": 22,
+        "estimated": true
+      },
+      "ingredients": [
+        {
+          "id": "st",
+          "name": "Sirloin steak",
+          "quantity": 700,
+          "unit": "g",
+          "note": "cut into 2.5 cm cubes"
+        },
+        {
+          "id": "salt",
+          "name": "Salt",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": "pep",
+          "name": "Black pepper",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "id": "oil",
+          "name": "Vegetable oil",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "id": "but",
+          "name": "Butter",
+          "quantity": 40,
+          "unit": "g"
+        },
+        {
+          "id": "gar",
+          "name": "Garlic",
+          "quantity": 4,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "id": "cf",
+          "name": "Chili flakes",
+          "quantity": 0.25,
+          "unit": "tsp"
+        },
+        {
+          "id": "par",
+          "name": "Fresh parsley",
+          "quantity": 8,
+          "unit": "g",
+          "note": "chopped"
+        }
+      ],
+      "steps": [
+        {
+          "n": 1,
+          "text": "Pat the steak dry and season with salt and pepper.",
+          "ingredientIds": [
+            "st",
+            "salt",
+            "pep"
+          ],
+          "timerSeconds": null
+        },
+        {
+          "n": 2,
+          "text": "Heat the oil in a large pan over high heat until smoking. Sear the steak in 2 batches in a single layer, turning once, until browned outside and pink inside.",
+          "ingredientIds": [
+            "oil"
+          ],
+          "timerSeconds": 180
+        },
+        {
+          "n": 3,
+          "text": "Lower the heat to medium. Melt the butter with the garlic and chili flakes.",
+          "ingredientIds": [
+            "but",
+            "gar",
+            "cf"
+          ],
+          "timerSeconds": 60
+        },
+        {
+          "n": 4,
+          "text": "Return all the steak and toss in the garlic butter for 30 seconds. Sprinkle with parsley.",
+          "ingredientIds": [
+            "par"
+          ],
+          "timerSeconds": null
+        }
+      ],
+      "_check": {
+        "timerMinutesSum": 4.0
+      }
+    }
+  ]
+}

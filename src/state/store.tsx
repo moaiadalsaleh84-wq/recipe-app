@@ -24,6 +24,8 @@ import {
   type Units,
   type WeekPlan,
 } from '../data/mock';
+import { pantryPopRecipes } from '../data/pantryPop';
+import { withoutDuplicates } from '../lib/pantryPopImport';
 
 /** Everything that survives an app restart. */
 type Saved = {
@@ -231,7 +233,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
 
   /* ---------- recipes ---------- */
-  const allRecipes = useMemo(() => [...saved.customRecipes, ...builtInRecipes], [saved.customRecipes]);
+  // Built-in recipes, then the checked recipes from data/pantry-pop-recipes.json. An imported recipe
+  // whose title is already used is skipped: the existing one wins.
+  const allRecipes = useMemo(() => {
+    const existing = [...saved.customRecipes, ...builtInRecipes];
+    return [...existing, ...withoutDuplicates(pantryPopRecipes, existing).kept];
+  }, [saved.customRecipes]);
   const getRecipe = useCallback((id: string | undefined) => allRecipes.find((r) => r.id === id), [allRecipes]);
 
   const addRecipe = useCallback(
@@ -397,7 +404,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const addIngredients = useCallback(
     (recipeId: string, ingredients: Ingredient[], scale = 1) => {
-      setGroceries((prev) => mergeIngredients(prev, recipeId, ingredients, scale));
+      // A pinch / to-taste item (no amount) goes on the list without a number.
+      setGroceries((prev) => mergeIngredients(prev, recipeId, ingredients.map((i) => ({ ...i, quantity: i.quantity ?? 0 })), scale));
       return ingredients.length;
     },
     [setGroceries],
@@ -407,8 +415,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const addWeekToGroceries = useCallback(() => {
     let result = { meals: 0, items: 0 };
     setSaved((s) => {
-      const all = [...s.customRecipes, ...builtInRecipes];
-      const out = addWeekToList(s.groceries, s.plan, s.planAdded ?? [], (id) => all.find((r) => r.id === id)?.ingredients, weekId());
+      const all = [...s.customRecipes, ...builtInRecipes, ...pantryPopRecipes];
+      const out = addWeekToList(s.groceries, s.plan, s.planAdded ?? [], (id) => all.find((r) => r.id === id)?.ingredients.map((i) => ({ ...i, quantity: i.quantity ?? 0 })), weekId());
       result = { meals: out.meals, items: out.items };
       if (out.meals === 0) return s;
       lastGroceries.current = s.groceries;

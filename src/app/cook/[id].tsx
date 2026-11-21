@@ -95,7 +95,8 @@ function CookSession({ recipe, servings }: { recipe: Recipe; servings: number })
 
   // In development: point out recipe text Cook Mode can't link to its ingredients.
   useEffect(() => {
-    if (recipe) warnStepProblems(recipe.title, recipe.steps, recipe.ingredients);
+    // Checked recipes list step ingredients by id, so the text-matching warnings don't apply.
+    if (recipe && recipe.source !== 'pantry-pop') warnStepProblems(recipe.title, recipe.steps, recipe.ingredients);
   }, [recipe]);
 
   // Swipe the step card: left = next step, right = previous (as well as the buttons). Horizontal only,
@@ -170,12 +171,12 @@ function CookSession({ recipe, servings }: { recipe: Recipe; servings: number })
   const scale = servings / recipe.servings;
   /** "300 g chicken breast", scaled and in your units. */
   const amountOf = (ing: Ingredient) => {
-    const c = convertQty(roundQty(ing.quantity * scale), ing.unit, units);
+    const c = convertQty(roundQty((ing.quantity ?? 0) * scale), ing.unit, units);
     return `${formatQty(c.quantity, c.unit)} ${nameFor(c.quantity, c.unit, ing.name)}`.trim();
   };
   /** The tile's two lines: "Cooked rice" (sentence case, like the recipe) and "400 g". */
   const partsOf = (ing: Ingredient) => {
-    const c = convertQty(roundQty(ing.quantity * scale), ing.unit, units);
+    const c = convertQty(roundQty((ing.quantity ?? 0) * scale), ing.unit, units);
     const name = nameFor(c.quantity, c.unit, ing.name);
     return { name: name.charAt(0).toUpperCase() + name.slice(1), qty: formatQty(c.quantity, c.unit) };
   };
@@ -188,10 +189,14 @@ function CookSession({ recipe, servings }: { recipe: Recipe; servings: number })
   const setOut = recipe.ingredients.filter((ing, i) => gathered[`${ing.id}-${i}`]).length;
 
   const onStep = page >= 1 && page <= steps.length;
-  const stepText = onStep ? convertStepText(steps[page - 1], units) : '';
+  // Checked recipe text already gives °C and °F: shown exactly as written.
+  const stepText = onStep ? (recipe.source === 'pantry-pop' ? steps[page - 1] : convertStepText(steps[page - 1], units)) : '';
   const { main, tip } = splitTip(stepText);
-  const inStep = onStep ? ingredientsInStep(steps[page - 1], recipe.ingredients) : [];
-  const stepTimers = onStep ? uniqueTimers(findTimers(stepText)) : [];
+  // Checked recipe data lists each step's ingredients and timer itself (its step text has no amounts,
+  // on purpose); older recipes find them in the step text.
+  const meta = onStep ? recipe.stepMeta?.[page - 1] : undefined;
+  const inStep = !onStep ? [] : meta ? meta.ingredientIds.map((id) => recipe.ingredients.find((i) => i.id === id)).filter((i): i is Ingredient => !!i) : ingredientsInStep(steps[page - 1], recipe.ingredients);
+  const stepTimers = !onStep ? [] : meta ? (meta.timerSeconds ? [{ label: durationLabel(meta.timerSeconds), seconds: meta.timerSeconds }] : []) : uniqueTimers(findTimers(stepText));
   const timerFor = (label: string) => timers.find((tm) => tm.recipeId === recipe.id && tm.step === page && tm.label === label);
   // Timers that aren't on this step float as small pills, so you never lose them.
   const floating = timers.filter((tm) => !(tm.recipeId === recipe.id && tm.step === page && stepTimers.some((s) => s.label === tm.label)));
