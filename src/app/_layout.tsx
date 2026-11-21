@@ -7,6 +7,7 @@ import { useEffect, useMemo, type ReactNode } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { EntitlementSync } from '../components/EntitlementSync';
 import { ProgressWatcher } from '../components/ProgressWatcher';
+import { ReminderSync } from '../components/ReminderSync';
 import { ToastProvider } from '../components/Toast';
 import { StoreProvider, useStore } from '../state/store';
 import { TimersProvider } from '../state/timers';
@@ -77,6 +78,7 @@ export default function RootLayout() {
             <Hydrated>
               <TimersProvider>
               <ProgressWatcher />
+              <ReminderSync />
               <EntitlementSync />
               <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: t.colors.background } }}>
                 <Stack.Screen name="(tabs)" />
