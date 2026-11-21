@@ -727,7 +727,8 @@ function Finish({
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={[t.type.caption1, { color: pop.inkMuted }]}>Tomorrow</Text>
-                <Text style={[t.type.headline, { color: pop.ink }]} numberOfLines={2}>
+                {/* Up to 3 lines: long names never get cut mid-word beside the button. */}
+                <Text style={[t.type.headline, { color: pop.ink }]} numberOfLines={3}>
                   {tomorrow.recipe.title}
                 </Text>
               </View>
