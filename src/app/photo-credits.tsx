@@ -3,7 +3,7 @@ import { PageHeader } from '../components/PageHeader';
 import { PressableScale } from '../components/PressableScale';
 import { Text } from '../components/Text';
 import { useToast } from '../components/Toast';
-import { bundledPhotoNote, photoCredits } from '../data/photoCredits';
+import { photoCredits } from '../data/photoCredits';
 import { useStore } from '../state/store';
 import { useTheme } from '../theme';
 
@@ -32,7 +32,6 @@ export default function PhotoCredits() {
             </PressableScale>
           ))
         )}
-        <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, marginTop: 20 }]}>{bundledPhotoNote}</Text>
       </ScrollView>
     </View>
   );

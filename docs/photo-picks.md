@@ -1,6 +1,6 @@
 # Photo picks
 
-One photo per recipe, **chosen by the owner**. Nothing is picked yet: mark your choice with ✅ in the last column.
+One photo per recipe, **chosen by the owner**. Picked (by Claude, at the owner’s request): Tacos 1, Hot Honey 1, Feta Pasta 2, Marry Me 3, Smash Tacos 1, Salmon Bites 1, Gochujang 1, Salmon Bowl 1, Potatoes 2, Doner 1, Curry Dumplings 1, Greek Bowls 1, Flatbread 1, Falafel 3, Pesto Eggs 2, Gnocchi 1, Korean Beef 2, Quesadillas 1, Baked Oats 1, Steak Bites 2, Penne 3, Dosa 2, Fried Rice 1, Butter Chicken 2, Crunchy Burger 3, Turnovers 1, Mushroom 1, Pizza 3, Samosas 1, Biryani 1, Cake 1, Strawberry 2.
 
 **Only** Unsplash or Pexels (free for commercial use). Never TikTok, YouTube, Instagram, Google Images or recipe blogs.
 All candidates below are from **Unsplash** (Unsplash License: free for commercial use, no permission needed; credit appreciated, and the app credits every photo under Settings → Photo credits).

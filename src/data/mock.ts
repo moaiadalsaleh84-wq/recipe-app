@@ -77,7 +77,7 @@ export const recipes: Recipe[] = [
   {
     id: 'pepper-feta-penne',
     title: 'Roasted Pepper & Feta Penne',
-    image: require('../../assets/recipes/pepper-feta-penne.jpg'),
+    image: require('../../assets/recipes/pepper-feta-penne.webp'),
     description: 'Sweet roasted peppers, salty feta and basil tossed through penne. Weeknight dinner in 25 minutes.',
     category: 'Dinner',
     minutes: 25,
@@ -104,7 +104,7 @@ export const recipes: Recipe[] = [
   {
     id: 'masala-dosa',
     title: 'Crispy Masala Dosa',
-    image: require('../../assets/recipes/masala-dosa.jpg'),
+    image: require('../../assets/recipes/masala-dosa.webp'),
     description: 'Golden, paper-thin crêpes filled with spiced potato, served with tomato chutney.',
     category: 'Breakfast',
     minutes: 40,
@@ -132,7 +132,7 @@ export const recipes: Recipe[] = [
   {
     id: 'chicken-fried-rice',
     title: 'Chicken Fried Rice',
-    image: require('../../assets/recipes/chicken-fried-rice.jpg'),
+    image: require('../../assets/recipes/chicken-fried-rice.webp'),
     description: 'Smoky, savory and packed with peas and egg. Better than takeaway and done in 20.',
     category: 'Lunch',
     minutes: 20,
@@ -159,7 +159,7 @@ export const recipes: Recipe[] = [
   {
     id: 'butter-chicken',
     title: 'Butter Chicken',
-    image: require('../../assets/recipes/butter-chicken.jpg'),
+    image: require('../../assets/recipes/butter-chicken.webp'),
     description: 'Tender chicken in a silky, gently spiced tomato and butter sauce.',
     category: 'Dinner',
     minutes: 45,
@@ -186,7 +186,7 @@ export const recipes: Recipe[] = [
   {
     id: 'crispy-chicken-burger',
     title: 'Crunchy Chicken Burger',
-    image: require('../../assets/recipes/crispy-chicken-burger.jpg'),
+    image: require('../../assets/recipes/crispy-chicken-burger.webp'),
     description: 'Juicy chicken patties, melted cheese and a crisp, tangy slaw in a toasted bun.',
     category: 'Lunch',
     minutes: 35,
@@ -213,7 +213,7 @@ export const recipes: Recipe[] = [
   {
     id: 'apple-turnovers',
     title: 'Flaky Apple Turnovers',
-    image: require('../../assets/recipes/apple-turnovers.jpg'),
+    image: require('../../assets/recipes/apple-turnovers.webp'),
     description: 'Buttery puff pastry wrapped around cinnamon apples. A weekend breakfast treat.',
     category: 'Breakfast',
     minutes: 35,
@@ -239,7 +239,7 @@ export const recipes: Recipe[] = [
   {
     id: 'mushroom-spaghetti',
     title: 'Creamy Mushroom Spaghetti',
-    image: require('../../assets/recipes/mushroom-spaghetti.jpg'),
+    image: require('../../assets/recipes/mushroom-spaghetti.webp'),
     description: 'Garlicky mushrooms and parmesan in a glossy sauce that clings to every strand.',
     category: 'Dinner',
     minutes: 30,
@@ -266,7 +266,7 @@ export const recipes: Recipe[] = [
   {
     id: 'margherita-pizza',
     title: 'Margherita Pizza',
-    image: require('../../assets/recipes/margherita-pizza.jpg'),
+    image: require('../../assets/recipes/margherita-pizza.webp'),
     description: 'A blistered, chewy crust with bright tomato, creamy mozzarella and fresh basil.',
     category: 'Dinner',
     minutes: 50,
@@ -293,7 +293,7 @@ export const recipes: Recipe[] = [
   {
     id: 'crispy-samosas',
     title: 'Crispy Vegetable Samosas',
-    image: require('../../assets/recipes/crispy-samosas.jpg'),
+    image: require('../../assets/recipes/crispy-samosas.webp'),
     description: 'Shatteringly crisp pastry around a spiced potato and pea filling.',
     category: 'Snacks',
     minutes: 60,
@@ -319,7 +319,7 @@ export const recipes: Recipe[] = [
   {
     id: 'chicken-biryani',
     title: 'Chicken Biryani',
-    image: require('../../assets/recipes/chicken-biryani.jpg'),
+    image: require('../../assets/recipes/chicken-biryani.webp'),
     description: 'Fragrant layered rice and spiced chicken, slow-cooked in one pot.',
     category: 'Dinner',
     minutes: 75,
@@ -347,7 +347,7 @@ export const recipes: Recipe[] = [
   {
     id: 'chocolate-raspberry-cake',
     title: 'Chocolate Raspberry Cake',
-    image: require('../../assets/recipes/chocolate-raspberry-cake.jpg'),
+    image: require('../../assets/recipes/chocolate-raspberry-cake.webp'),
     description: 'A deep, fudgy bundt cake finished with fresh raspberries and a dusting of sugar.',
     category: 'Dessert',
     minutes: 70,
@@ -374,7 +374,7 @@ export const recipes: Recipe[] = [
   {
     id: 'strawberry-cream-squares',
     title: 'Strawberry Cream Squares',
-    image: require('../../assets/recipes/strawberry-cream-squares.jpg'),
+    image: require('../../assets/recipes/strawberry-cream-squares.webp'),
     description: 'Light sponge layered with vanilla cream and summer strawberries.',
     category: 'Dessert',
     minutes: 30,

@@ -266,7 +266,7 @@ function MealCard({ meal, recipe, onChange, onRemove }: { meal: string; recipe: 
     <PopCard radius={22} depth={4} contentStyle={styles.meal}>
       <PressableScale onPress={() => openRecipe(recipe.id)} scaleTo={0.98} accessibilityLabel={`${meal}: ${recipe.title}, ${recipe.minutes} min, ${recipe.calories} kcal`} accessibilityHint="Opens the recipe" style={styles.mealMain}>
         <View style={[styles.mealPhoto, { backgroundColor: t.colors.imagePlaceholder, borderColor: t.pop.ink }]}>
-          <RecipePhoto recipe={recipe} iconSize={24} radius={13.5} />
+          <RecipePhoto recipe={recipe} iconSize={24} radius={13.5} square />
         </View>
         <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
           <PopChip label={meal} color={MEAL_TINT[meal] ?? t.pop.sunshineTint} small />

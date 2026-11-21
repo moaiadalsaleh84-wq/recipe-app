@@ -651,7 +651,7 @@ function Finish({
               3pt smaller all round. With the character on, it says "Chef's kiss!" beside it. */}
           <Lift radius={100}>
             <View style={styles.finishPhoto}>
-              {photo ? <Image source={{ uri: photoUri(photo) }} style={[StyleSheet.absoluteFill, { borderRadius: 97 }]} contentFit="cover" accessibilityLabel="Your photo of the dish" /> : <RecipePhoto recipe={recipe} iconSize={56} radius={97} />}
+              {photo ? <Image source={{ uri: photoUri(photo) }} style={[StyleSheet.absoluteFill, { borderRadius: 97 }]} contentFit="cover" accessibilityLabel="Your photo of the dish" /> : <RecipePhoto recipe={recipe} iconSize={56} radius={97} square />}
             </View>
           </Lift>
           {SHOW_MASCOT_PLACEHOLDER && <MascotSlot message="Chef’s kiss!" size={56} />}
@@ -736,7 +736,7 @@ function Finish({
           <Animated.View entering={enter(7, reduceMotion)} style={{ alignSelf: 'stretch' }}>
             <PopCard color={pop.white} radius={20} contentStyle={styles.tomorrow} testID="finish-tomorrow">
               <View style={styles.tomorrowThumb}>
-                <RecipePhoto recipe={tomorrow.recipe} radius={12} iconSize={20} />
+                <RecipePhoto recipe={tomorrow.recipe} radius={12} iconSize={20} square />
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={[t.type.caption1, { color: pop.inkMuted }]}>Tomorrow</Text>

@@ -233,7 +233,7 @@ function MatchCard({ match, onAddMissing }: { match: PantryMatch; onAddMissing: 
     <PopCard style={styles.match} contentStyle={styles.card}>
       <PressableScale onPress={() => openRecipe(recipe.id)} scaleTo={0.98} accessibilityLabel={`${recipe.title}, you have ${have.length} of ${needed}`} style={styles.matchTop}>
         <View style={[styles.thumb, { backgroundColor: t.colors.imagePlaceholder, borderColor: t.pop.ink }]}>
-          <RecipePhoto recipe={recipe} iconSize={22} radius={13.5} />
+          <RecipePhoto recipe={recipe} iconSize={22} radius={13.5} square />
         </View>
         <View style={{ flex: 1, gap: 6, minWidth: 0 }}>
           <Text style={[t.type.title3, { color: t.colors.label }]}>{recipe.title}</Text>

@@ -5,6 +5,7 @@ import { Text } from './Text';
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import { useState } from 'react';
 import type { Recipe, RecipeImage } from '../data/mock';
+import { recipePhotos } from '../data/recipePhotos';
 import { photoUri } from '../lib/photos';
 import { useStore } from '../state/store';
 import { haptics } from '../lib/haptics';
@@ -26,20 +27,38 @@ const TINTS = [pop.sunshineTint, pop.skyTint, pop.berryTint, pop.leafTint, pop.l
 const placeholderTint = (id: string) => TINTS[[...id].reduce((n, c) => (n * 31 + c.charCodeAt(0)) >>> 0, 7) % TINTS.length];
 
 /** The recipe's photo, or a cozy placeholder for recipes added without one. */
-export function RecipePhoto({ recipe, iconSize = 36, radius = 0 }: { recipe: Recipe; iconSize?: number; /** Corner radius of the photo itself: the frame's radius minus its border (2.5). */ radius?: number }) {
+export function RecipePhoto({
+  recipe,
+  iconSize = 36,
+  radius = 0,
+  square = false,
+}: {
+  recipe: Recipe;
+  iconSize?: number;
+  /** Corner radius of the photo itself: the frame's radius minus its border (2.5). */
+  radius?: number;
+  /** A square spot (thumbnails, circles): uses the 1:1 crop when the recipe has one. */
+  square?: boolean;
+}) {
   const t = useTheme();
   // Remembers which image failed (an expired link), so a new photo gets a fresh try.
   const [failed, setFailed] = useState<RecipeImage>(null);
   const [loaded, setLoaded] = useState<RecipeImage>(null);
   const image = recipe.image;
   if (image && image !== failed) {
-    const source = typeof image === 'number' ? image : { uri: photoUri(image.uri) };
-    // While it loads: a shimmering placeholder; then the photo fades in (250ms). Cached on disk and in memory.
+    // The app's own photos have a 1:1 crop and a blurhash; a photo you added doesn't.
+    const set = recipePhotos[recipe.id];
+    const own = set && image === set.card ? set : undefined;
+    const source = own ? (square ? own.square : own.card) : typeof image === 'number' ? image : { uri: photoUri(image.uri) };
+    // While it loads: the blurred photo (or a shimmer for your own photos); then the photo fades in
+    // (250ms). Cached on disk and in memory.
     return (
       <>
-        {loaded !== image && <Skeleton style={[StyleSheet.absoluteFill, { borderRadius: radius }]} />}
+        {!own && loaded !== image && <Skeleton style={[StyleSheet.absoluteFill, { borderRadius: radius }]} />}
         <Image
           source={source}
+          placeholder={own ? { blurhash: square ? own.squareBlurhash : own.blurhash } : undefined}
+          placeholderContentFit="cover"
           style={[StyleSheet.absoluteFill, { borderRadius: radius }]}
           contentFit="cover"
           transition={250}
@@ -270,7 +289,7 @@ export function RecipeRow({
     <View style={styles.row}>
       <PressableScale onPress={onPress ?? (() => openRecipe(recipe.id))} scaleTo={0.98} accessibilityLabel={`${recipe.title}, ${metaLines ? metaLines.join(', ') : (subtitle ?? meta(recipe))}`} accessibilityHint={accessibilityHint} style={styles.rowMain}>
         <View style={[styles.thumb, { backgroundColor: t.colors.imagePlaceholder, borderColor: t.pop.ink }]}>
-          <RecipePhoto recipe={recipe} iconSize={24} radius={13.5} />
+          <RecipePhoto recipe={recipe} iconSize={24} radius={13.5} square />
         </View>
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={[t.type.title3, { color: t.colors.label, fontSize: 18, lineHeight: 22 }]}>{recipe.title}</Text>

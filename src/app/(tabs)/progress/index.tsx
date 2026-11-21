@@ -317,7 +317,7 @@ export default function ProgressScreen() {
               <PopCard key={c.recipeId} radius={20} depth={4} contentStyle={styles.historyRow}>
                 <PressableScale onPress={() => router.push({ pathname: '/recipe/[id]', params: { id: r.id } })} scaleTo={0.98} accessibilityLabel={`${r.title}, last cooked ${old ? when.toDateString() : day}${said}. Opens the recipe`} style={styles.historyMain}>
                   <View style={[styles.historyThumb, { borderColor: t.pop.ink, backgroundColor: t.colors.imagePlaceholder }]}>
-                    {c.photo ? <Image source={{ uri: photoUri(c.photo) }} style={[StyleSheet.absoluteFill, { borderRadius: 11.5 }]} contentFit="cover" /> : <RecipePhoto recipe={r} iconSize={20} radius={11.5} />}
+                    {c.photo ? <Image source={{ uri: photoUri(c.photo) }} style={[StyleSheet.absoluteFill, { borderRadius: 11.5 }]} contentFit="cover" /> : <RecipePhoto recipe={r} iconSize={20} radius={11.5} square />}
                   </View>
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={[t.type.title3, { color: t.colors.label, fontSize: 17, lineHeight: 21 }]}>{r.title}</Text>

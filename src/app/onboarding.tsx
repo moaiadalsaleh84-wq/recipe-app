@@ -361,7 +361,7 @@ function PhotoTile({ recipe, size }: { recipe: Recipe | undefined; size: number 
     <View style={{ width: size, height: size + 4 }}>
       <View style={{ position: 'absolute', top: 4, left: 0, width: size, height: size, borderRadius: r, backgroundColor: pop.ink }} />
       <View style={{ width: size, height: size, borderRadius: r, borderWidth: 3, borderColor: pop.ink, overflow: 'hidden', backgroundColor: pop.white }}>
-        {recipe ? <RecipePhoto recipe={recipe} radius={r - 3} /> : null}
+        {recipe ? <RecipePhoto recipe={recipe} radius={r - 3} square /> : null}
       </View>
     </View>
   );
@@ -767,7 +767,7 @@ function FirstPick({ name, servings, picks, onCook }: { name: string; servings: 
             <View style={{ width: 44 + (thumbs.length - 1) * 22, height: 44 }}>
               {thumbs.map((p, k) => (
                 <View key={p.recipe.id} style={[styles.thumb, { left: k * 22, zIndex: 2 - k }]}>
-                  <RecipePhoto recipe={p.recipe} radius={10} iconSize={18} />
+                  <RecipePhoto recipe={p.recipe} radius={10} iconSize={18} square />
                 </View>
               ))}
             </View>
