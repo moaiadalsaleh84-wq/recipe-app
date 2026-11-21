@@ -62,10 +62,49 @@ async function getInstallId() {
 
 export const importIsConfigured = () => !!IMPORT_URL;
 
+/** The built-in example ("Try an example" on Home): imports in one tap, with no network. */
+export const EXAMPLE_URL = 'https://example.com/pantry-pop/garlic-tomato-pasta';
+const ing = (amount: number | null, unit: string, name: string): ImportedIngredient => ({ amount, unit, name, original: [amount, unit, name].filter(Boolean).join(' ') });
+const EXAMPLE: ImportSuccess = {
+  ok: true,
+  status: 'complete',
+  recipe: {
+    title: '15-Minute Garlic Tomato Pasta',
+    servings: 2,
+    minutes: 15,
+    ingredients: [
+      ing(200, 'g', 'Spaghetti'),
+      ing(3, '', 'Garlic cloves'),
+      ing(400, 'g', 'Tomatoes'),
+      ing(2, 'tbsp', 'Olive oil'),
+      ing(30, 'g', 'Parmesan'),
+      ing(1, 'handful', 'Basil'),
+    ],
+    steps: [
+      'Boil the spaghetti in well-salted water until just tender, about 9 minutes. Save a mug of the pasta water.',
+      'Meanwhile, warm the olive oil in a big pan and gently fry the sliced garlic for 1 minute.',
+      'Add the chopped tomatoes with a pinch of salt and cook for 5 minutes until saucy.',
+      'Toss in the spaghetti with a splash of pasta water. Finish with parmesan and torn basil.',
+    ],
+    category: 'Dinner',
+    tags: ['Vegetarian'],
+    nutrition: { calories: 560, protein: 19, carbs: 82, fat: 17, estimated: true, basis: 'ai' },
+    imageUrl: null,
+    sourceUrl: EXAMPLE_URL,
+  },
+  missing: [],
+  warnings: [],
+  source: { kind: 'website', host: 'example.com', usedStructuredData: true, usedAi: false },
+};
+
 const TIMEOUT_MS = 75_000;
 
 /** Never throws: every outcome is an ImportResponse the UI can show. */
 export async function importRecipe(input: { url?: string; text?: string }, signal?: AbortSignal): Promise<ImportResponse> {
+  if (input.url === EXAMPLE_URL) {
+    await new Promise((r) => setTimeout(r, 700)); // a short beat, so it feels like it read something
+    return EXAMPLE;
+  }
   if (!IMPORT_URL) {
     return { ok: false, code: 'not_configured', message: 'Recipe import isn’t connected in this build yet. You can still write the recipe yourself.' };
   }

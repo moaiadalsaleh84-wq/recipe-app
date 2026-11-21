@@ -16,6 +16,7 @@ import { haptics } from '../lib/haptics';
 import {
   draftFromFailure,
   draftFromImport,
+  EXAMPLE_URL,
   importIsConfigured,
   importRecipe,
   ingredientLine,
@@ -41,7 +42,7 @@ export default function ImportScreen() {
   const toast = useToast();
   const params = useLocalSearchParams<{ url?: string; from?: string; auto?: string }>();
   const fromOnboarding = params.from === 'onboarding';
-  const { addRecipe, countImport, setDraft } = useStore();
+  const { addRecipe, countImport, setDraft, importsUsed } = useStore();
   const { canImport, importsLeft } = useProGate();
   const [input, setInput] = useState(typeof params.url === 'string' ? params.url : '');
   const [phase, setPhase] = useState<Phase>({ name: 'input' });
@@ -85,7 +86,9 @@ export default function ImportScreen() {
   const run = async () => {
     const value = input.trim();
     if (!value) return;
-    if (!canImport) {
+    // The built-in example is free: it never counts towards the 3 free imports.
+    const isExample = value === EXAMPLE_URL;
+    if (!canImport && !isExample) {
       showPaywall('imports');
       return;
     }
@@ -95,7 +98,7 @@ export default function ImportScreen() {
     abort.current = new AbortController();
     const res = await importRecipe(isLink ? { url: value } : { text: value }, abort.current.signal);
     if (res.ok) {
-      countImport();
+      if (!isExample) countImport();
       haptics.success();
       if (res.status === 'partial') {
         openForm(draftFromImport(res.recipe, [missingMessage(res.missing), ...res.warnings].filter(Boolean).join(' ')));
@@ -143,7 +146,7 @@ export default function ImportScreen() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: t.colors.groupedBackground }}>
       <PageHeader
-        title={fromOnboarding ? 'Your first recipe' : 'Import recipe'}
+        title="Import a recipe"
         mode={fromOnboarding ? 'none' : 'cancel'}
         inSheet={isIOS && !fromOnboarding}
         onBack={() => {
@@ -168,7 +171,7 @@ export default function ImportScreen() {
                 Got a recipe saved somewhere? A TikTok, a YouTube video or a food blog? Paste the link and see it turn into a recipe you can cook from.
               </Text>
             )}
-            {!importIsConfigured() && (
+            {!importIsConfigured() && input.trim() !== EXAMPLE_URL && (
               <View style={[styles.notice, { backgroundColor: t.colors.cell, borderColor: t.colors.warning }]} testID="import-not-configured">
                 <Icon name="warning" size={18} color={t.colors.warning} />
                 <Text style={[t.type.footnote, { color: t.colors.label, flex: 1 }]}>Import isn’t connected in this build yet, so trying it will show an error. You can still write recipes yourself.</Text>
@@ -213,7 +216,8 @@ export default function ImportScreen() {
               </Animated.View>
             )}
             <Button label="Import recipe" icon="arrowRight" onPress={run} disabled={!input.trim()} style={{ marginTop: 16 }} />
-            {importsLeft !== null && (
+            {/* Shown once you've used one, not before. */}
+            {importsLeft !== null && importsUsed > 0 && (
               <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, textAlign: 'center', marginTop: 10 }]} testID="imports-left">
                 {importsLeft > 0 ? `${importsLeft} of ${FREE_LIMITS.imports} free imports left` : `You’ve used your ${FREE_LIMITS.imports} free imports. Pro imports without limits.`}
               </Text>

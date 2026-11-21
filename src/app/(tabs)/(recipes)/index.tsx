@@ -5,7 +5,7 @@ import { Text } from '../../../components/Text';
 import Animated, { FadeIn, FadeInDown, FadeInRight, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { Icon, type IconName } from '../../../components/Icon';
 import { Menu } from '../../../components/Menu';
-import { PopCard, PopChip, PopIconButton } from '../../../components/pop';
+import { PopButton, PopCard, PopChip, PopIconButton } from '../../../components/pop';
 import { PressableScale } from '../../../components/PressableScale';
 import { Reveal } from '../../../components/Reveal';
 import { RecipeCard, RecipePhoto, TonightCard } from '../../../components/RecipeCard';
@@ -13,7 +13,9 @@ import { TabScreen } from '../../../components/TabScreen';
 import { useToast } from '../../../components/Toast';
 import { Chip, EmptyState, IconButton, SearchField, SectionHeader } from '../../../components/ui';
 import { FAVORITES_ID, QUICK_FILTER, categories, filterTags, matchesFilter, type Recipe } from '../../../data/mock';
+import { useImportTip } from '../../../lib/appOpens';
 import { haptics } from '../../../lib/haptics';
+import { EXAMPLE_URL } from '../../../lib/importApi';
 import { byPantryMatch, pantryMatch, recipesForMood, type Mood } from '../../../lib/moods';
 import { showPaywall, useProGate } from '../../../lib/pro';
 import { streakOf } from '../../../lib/progress';
@@ -145,6 +147,13 @@ export default function RecipesScreen() {
   // Favorites only shows up once you've hearted something, so it never opens to an empty page.
   const books = favorites.length ? [{ id: FAVORITES_ID, name: 'Favorites', recipeIds: favorites }, ...cookbooks] : cookbooks;
 
+  // First 3 opens: show how importing works, with a one-tap example.
+  const importTip = useImportTip();
+  const tryExample = () => {
+    importTip.dismiss();
+    router.push({ pathname: '/import', params: { url: EXAMPLE_URL, auto: '1' } });
+  };
+
   const startImport = () => {
     if (!canImport) {
       showPaywall('imports');
@@ -210,6 +219,21 @@ export default function RecipesScreen() {
           </PressableScale>
           <IconButton icon="close" accessibilityLabel="Dismiss trial reminder" iconSize={13} color={t.colors.secondaryLabel} onPress={() => setReminderHidden(true)} />
         </View>
+      )}
+
+      {importTip.show && (
+        <Animated.View exiting={FadeOut.duration(160)} style={{ marginBottom: t.spacing.lg }}>
+          <PopCard color={t.pop.skyTint} contentStyle={styles.tip} testID="import-tip">
+            <View style={styles.tipTop}>
+              <View style={[styles.tipIcon, { borderColor: t.pop.ink }]}>
+                <Icon name="link" size={18} color={t.pop.ink} weight="bold" />
+              </View>
+              <Text style={[t.type.headline, { color: t.pop.ink, flex: 1 }]}>{noWidow('Got a recipe on TikTok or a blog? Paste the link and cook from it.')}</Text>
+              <PopIconButton icon="close" size={44} iconSize={14} onPress={importTip.dismiss} accessibilityLabel="Dismiss tip" haptic={null} />
+            </View>
+            <PopButton label="Try an example" icon="sparkles" size="small" color={t.pop.white} onPress={tryExample} style={{ alignSelf: 'flex-start' }} testID="import-example" />
+          </PopCard>
+        </Animated.View>
       )}
 
       {/* 1. Mood tiles: a 2x2 grid of bold color blocks. */}
@@ -539,6 +563,9 @@ const POPULAR_SEARCHES = ['Chicken', 'Pasta', 'Rice', 'Cheese', 'Potato', 'Mushr
 const COVER_H = 120;
 
 const styles = StyleSheet.create({
+  tip: { padding: 14, gap: 12 },
+  tipTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  tipIcon: { width: 40, height: 40, borderRadius: 20, borderWidth: 2, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
   header: { marginBottom: 20 },
   topRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   avatar: { width: 44, height: 44, borderRadius: 22, borderWidth: 2.5, borderColor: pop.ink, alignItems: 'center', justifyContent: 'center' },
