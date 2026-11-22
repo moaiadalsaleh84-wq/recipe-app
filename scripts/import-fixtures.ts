@@ -52,3 +52,27 @@ export const FIXTURE_ROUTES: Record<string, { status: number; body: string; head
   'https://falafel.example.com/smash-falafel': sitePage('https://images.unsplash.com/photo-1788795567489-22430aa94402?w=1600'),
   'https://falafel.example.com/no-picture': sitePage(null),
 };
+
+/* More cases for the import test report (docs/import-test.md). */
+const tiktok = (id: string, user: string, caption: string, image: string) => {
+  const full = `https://www.tiktok.com/@${user}/video/${id}`;
+  return {
+    [full]: { status: 403, body: 'blocked', headers: { 'content-type': 'text/html' } },
+    [`https://www.tiktok.com/oembed?url=${encodeURIComponent(full)}`]: json({ title: caption, author_name: user, author_url: `https://www.tiktok.com/@${user}`, thumbnail_url: image }),
+  };
+};
+Object.assign(
+  FIXTURE_ROUTES,
+  // Hot honey crispy chicken burger: ingredients in the caption, no method (like the owner's test).
+  tiktok('7400000000000000101', 'crispychef', 'Hot honey crispy chicken burger 🍔🔥 4 boneless chicken thighs, 2 cups buttermilk, 2 cups flour, 1 tbsp paprika, 1 tsp garlic powder, 4 brioche buns, 4 tbsp hot honey, pickles, mayo #hothoney #burger #fyp', 'https://images.unsplash.com/photo-1690749127581-c9351d7d0abc?w=720&h=1280&fit=crop'),
+  // The full recipe in the caption.
+  tiktok('7400000000000000102', 'quickeats', 'Garlic butter shrimp pasta in 15 minutes 🦐 Serves 2. 200g spaghetti, 250g shrimp, 3 tbsp butter, 4 cloves garlic, 1 lemon, parsley. 1. Boil the spaghetti for 10 minutes. 2. Melt the butter and fry the garlic for 1 minute. 3. Add the shrimp and cook for 3 minutes. 4. Toss with the pasta, lemon juice and parsley. #pasta', 'https://images.unsplash.com/photo-1565805403925-fe49242d1892?w=720&h=1280&fit=crop'),
+  // No recipe in the caption.
+  tiktok('7400000000000000103', 'foodvibes', 'Best burger ever 😍🍔 #foodtok', 'https://images.unsplash.com/photo-1648437595587-e6a8b0cdf1f9?w=720&h=1280&fit=crop'),
+  {
+    // A recipe site without JSON-LD: page text and og:image.
+    'https://plainrecipes.example.com/tomato-soup': page(`<!doctype html><html><head><title>Easy Tomato Soup</title><meta property="og:site_name" content="Plain Recipes"><meta property="og:image" content="https://images.unsplash.com/photo-1565805403925-fe49242d1892?w=1600"></head><body><main><h1>Easy Tomato Soup</h1>
+<p>A cosy weeknight soup. Serves 4.</p><h2>Ingredients</h2><ul><li>800 g tomatoes</li><li>1 onion</li><li>2 cloves garlic</li><li>500 ml vegetable stock</li><li>2 tbsp olive oil</li></ul>
+<h2>Method</h2><p>Soften the onion and garlic in the olive oil for 5 minutes.</p><p>Add the tomatoes and stock and simmer for 20 minutes.</p><p>Blend until smooth and season to taste.</p></main></body></html>`),
+  },
+);

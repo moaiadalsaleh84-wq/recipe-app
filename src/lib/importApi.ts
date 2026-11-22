@@ -340,11 +340,22 @@ export function draftFromImport(r: ImportedRecipe, notice: string | null, origin
   };
 }
 
+/** A caption or page title as a recipe title: no hashtags, emojis or trailing punctuation. */
+export function cleanTitle(raw: string) {
+  return raw
+    .replace(/#[\p{L}\p{N}_]+/gu, ' ')
+    .replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/[\s:;,.!|-]+$/, '');
+}
+
 export function draftFromFailure(f: ImportFailure, input: string): RecipeDraft {
   const link = f.partial?.sourceUrl ?? (/^https?:\/\//i.test(input.trim()) ? input.trim() : '');
   return {
     origin: f.source && link ? { kind: f.source.kind, host: f.source.host, credit: f.partial?.credit ?? null } : null,
-    title: f.partial?.title?.slice(0, 120) ?? '',
+    // A caption isn't a title: no hashtags or emojis ("Best burger ever 😍🍔 #foodtok" → "Best burger ever").
+    title: cleanTitle(f.partial?.title ?? '').slice(0, 120),
     link,
     photoUrl: f.partial?.imageUrl ?? null,
     category: 'Dinner',

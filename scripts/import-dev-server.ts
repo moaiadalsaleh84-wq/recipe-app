@@ -29,15 +29,18 @@ if (process.env.NO_LIMITS) Object.assign(LIMITS, { devicePer10Min: 10_000, devic
  * app's screens only: the real model's results are far better.
  */
 const fakeAi: AiCaller = async (m) => {
+  const VERB = /^(boil|melt|add|toss|bake|fry|mix|stir|cook|soften|simmer|blend|brown|fill|blitz|smash|drizzle|season|serve|whisk|heat|roast|chop|marinate|dredge|place|pour|preheat)\b/i;
   const body = m.text.replace(/^(TikTok caption( by [^:]*)?|YouTube video title:[^\n]*\nDescription):?\s*/i, '');
   const lines = body.split(/\n|(?<=\.)\s+|,\s*/).map((l) => l.replace(/^[-•*]\s*|^\d+[.)]\s*/, '').replace(/#\S+/g, '').trim()).filter(Boolean);
-  const ingredientLines = lines.filter((l) => /^(\d|[½¼¾])/.test(l) && l.length < 80 && !/\b(min|minutes|hours?)\b/i.test(l));
-  const sourceSteps = m.structured?.steps.length ? m.structured.steps : lines.filter((l) => l.length > 25 && /[a-z]/.test(l) && !/^(\d|[½¼¾])/.test(l) && !/^(title|servings|total time|category|keywords|ingredients|method|steps|tiktok|instagram|youtube)/i.test(l));
+  // Ingredient lines start with an amount; the first line can carry one after the dish name.
+  const ingredientLines = lines.map((l) => l.replace(/^[^\d]*?\s(?=\d+\s*(g|kg|ml|tbsp|tsp|cups?|cloves?)?\s+[a-z])/i, '')).filter((l) => /^(\d|[½¼¾])/.test(l) && l.length < 80 && !/\b(min|minutes|hours?|serves)\b/i.test(l) && !VERB.test(l.replace(/^\d+\.\s*/, '')));
+  const sourceSteps = m.structured?.steps.length ? m.structured.steps : lines.filter((l) => VERB.test(l));
   const ingredients = ingredientLines.map((l) => {
     const p = parseLine(l);
     return { original: l, quantity: p.amount ?? 0, unit: p.unit.replace(/s$/, ''), name: p.name, note: '', estimated: false, added_basic: false };
   });
-  const title = (m.structured?.title ?? m.title ?? lines[0] ?? '').slice(0, 60);
+  // The dish name: the first line up to its first amount ("Hot honey burger 🍔 4 thighs…" → "Hot honey burger").
+  const title = (m.structured?.title ?? m.title ?? lines[0] ?? '').split(/\s\d/)[0].replace(/\s(in|for)$/i, '').slice(0, 60);
   const written = !sourceSteps.length;
   const steps = written
     ? [
