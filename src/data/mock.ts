@@ -29,6 +29,16 @@ export const QUICK_FILTER = 'Under 30 min';
 export type FilterTag = DietTag | typeof QUICK_FILTER;
 export const filterTags: FilterTag[] = [QUICK_FILTER, ...dietTags];
 
+/** Where an imported recipe came from. */
+export type ImportSource = 'tiktok' | 'youtube' | 'web';
+
+/**
+ * An imported recipe's picture, stored on the phone: the original as downloaded, a 4:3 crop for
+ * cards and a 1:1 crop for thumbnails (WebP, centered), and a blurhash shown while they load.
+ * `card` and `square` fall back to the original when cropping wasn't possible.
+ */
+export type ImportedPicture = { original: string; card: string; square: string; blurhash?: string };
+
 /** A bundled photo (require), a picked photo ({ uri }), or none. */
 export type RecipeImage = number | { uri: string } | null;
 
@@ -59,10 +69,24 @@ export type Recipe = {
   prepMinutes?: number;
   cookMinutes?: number;
   diet?: DietFlags;
-  /** Where a bundled recipe came from: 'pantry-pop' = data/pantry-pop-recipes.json. */
-  source?: 'pantry-pop';
-  /** Link to where the recipe came from, for recipes you add yourself. */
+  /**
+   * Where the recipe came from: 'pantry-pop' = data/pantry-pop-recipes.json; 'tiktok' / 'youtube' /
+   * 'web' = imported from a link by this user.
+   */
+  source?: 'pantry-pop' | ImportSource;
+  /** Link to where the recipe came from: the original video or page. */
   sourceUrl?: string;
+  /**
+   * Imported recipes only, and only on this user's phone. The credit is always shown and can't be
+   * removed; the picture is never used for built-in recipes, marketing, notifications or the paywall.
+   */
+  creatorHandle?: string;
+  /** The creator's profile page (videos). */
+  creatorUrl?: string;
+  /** "From TikTok", "From YouTube" or the site's name: the sticker on the picture. */
+  imageCreditText?: string;
+  /** The imported picture, downloaded once (links expire): kept so the user can switch back to it. */
+  importedImage?: ImportedPicture;
   /** True for recipes the user created. */
   custom?: boolean;
   /** How a custom recipe got here. Older saved recipes have none: treat as 'manual'. */

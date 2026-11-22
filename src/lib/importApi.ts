@@ -4,12 +4,14 @@
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { IMPORT_URL } from '../config';
-import { categories, dietTags, type Category, type DietTag, type Ingredient, type Recipe } from '../data/mock';
+import { categories, dietTags, type Category, type DietTag, type ImportSource, type Ingredient, type Recipe } from '../data/mock';
 import { aisleFor } from './parseIngredient';
 
 /* Same shapes as supabase/functions/import-recipe/lib/types.ts. Keep in sync. */
 export type MissingField = 'title' | 'ingredients' | 'steps' | 'amounts' | 'servings' | 'minutes';
 export type SourceKind = 'website' | 'tiktok' | 'instagram' | 'youtube' | 'text';
+/** Who made the recipe (from oEmbed, or the website's name). See supabase/.../types.ts. */
+export type SourceCredit = { handle: string | null; profileUrl: string | null; siteName: string | null };
 export type ImportedIngredient = { amount: number | null; unit: string; name: string; original: string };
 export type ImportedRecipe = {
   title: string;
@@ -29,14 +31,14 @@ export type ImportSuccess = {
   recipe: ImportedRecipe;
   missing: MissingField[];
   warnings: string[];
-  source: { kind: SourceKind; host: string | null; usedStructuredData: boolean; usedAi: boolean };
+  source: { kind: SourceKind; host: string | null; usedStructuredData: boolean; usedAi: boolean; credit?: SourceCredit | null };
 };
 export type ImportFailure = {
   ok: false;
   code: 'invalid_input' | 'rate_limited' | 'daily_cap' | 'fetch_failed' | 'blocked' | 'no_text' | 'not_a_recipe' | 'ai_unavailable' | 'server_error' | 'offline' | 'timeout' | 'not_configured' | 'cancelled';
   message: string;
   retryAfter?: number;
-  partial?: { title?: string; sourceUrl?: string; text?: string; imageUrl?: string };
+  partial?: { title?: string; sourceUrl?: string; text?: string; imageUrl?: string; credit?: SourceCredit };
   source?: { kind: SourceKind; host: string | null };
 };
 export type ImportResponse = ImportSuccess | ImportFailure;
@@ -94,7 +96,7 @@ const EXAMPLE: ImportSuccess = {
   },
   missing: [],
   warnings: [],
-  source: { kind: 'website', host: 'example.com', usedStructuredData: true, usedAi: false },
+  source: { kind: 'website', host: 'example.com', usedStructuredData: true, usedAi: false, credit: { handle: null, profileUrl: null, siteName: 'Pantry Pop example' } },
 };
 
 const TIMEOUT_MS = 75_000;
@@ -169,8 +171,43 @@ export function ingredientLine(i: ImportedIngredient) {
   return `${amount}${unit ? ` ${unit}` : ''} ${i.name}`;
 }
 
-export function toRecipe(r: ImportedRecipe): Omit<Recipe, 'id' | 'custom'> {
+/** Where an import came from, for the recipe's credit. */
+export type ImportOrigin = { kind: SourceKind; host: string | null; credit?: SourceCredit | null };
+
+const SOURCE_OF: Partial<Record<SourceKind, ImportSource>> = { tiktok: 'tiktok', youtube: 'youtube', website: 'web', instagram: 'web' };
+
+/**
+ * The credit an imported recipe always carries: the creator's @handle (videos) or the site's name,
+ * the link back, and the sticker text ("From TikTok" / "From YouTube" / the site name).
+ * Pasted text has no source and no credit.
+ */
+export function creditFields(origin: ImportOrigin | null | undefined, sourceUrl: string | null | undefined): Pick<Recipe, 'source' | 'creatorHandle' | 'creatorUrl' | 'imageCreditText'> {
+  const source = origin ? SOURCE_OF[origin.kind] : undefined;
+  if (!origin || !source) return {};
+  const c = origin.credit;
+  const host = (origin.host ?? (sourceUrl ? safeHost(sourceUrl) : null))?.replace(/^www\./, '') ?? null;
+  const site = c?.siteName?.trim() || (origin.kind === 'instagram' ? 'Instagram' : host) || undefined;
+  const sticker = source === 'tiktok' ? 'From TikTok' : source === 'youtube' ? 'From YouTube' : site;
+  const handle = source === 'web' ? (c?.handle?.trim() || site) : c?.handle?.trim() || undefined;
   return {
+    source,
+    ...(handle ? { creatorHandle: handle } : {}),
+    ...(c?.profileUrl ? { creatorUrl: c.profileUrl } : {}),
+    ...(sticker ? { imageCreditText: sticker } : {}),
+  };
+}
+
+function safeHost(url: string) {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return null;
+  }
+}
+
+export function toRecipe(r: ImportedRecipe, origin?: ImportOrigin | null): Omit<Recipe, 'id' | 'custom'> {
+  return {
+    ...creditFields(origin, r.sourceUrl),
     title: r.title.trim() || 'Imported recipe',
     image: r.imageUrl ? { uri: r.imageUrl } : null,
     description: '',
@@ -225,10 +262,13 @@ export type RecipeDraft = {
   fromImport: boolean;
   /** Full nutrition from the import, kept when the user doesn't change calories/protein. */
   importedNutrition: ImportedRecipe['nutrition'];
+  /** Where it was imported from, so the saved recipe keeps its credit. */
+  origin?: ImportOrigin | null;
 };
 
-export function draftFromImport(r: ImportedRecipe, notice: string | null): RecipeDraft {
+export function draftFromImport(r: ImportedRecipe, notice: string | null, origin?: ImportOrigin | null): RecipeDraft {
   return {
+    origin: origin ?? null,
     title: r.title,
     link: r.sourceUrl ?? '',
     photoUrl: r.imageUrl,
@@ -249,6 +289,7 @@ export function draftFromImport(r: ImportedRecipe, notice: string | null): Recip
 export function draftFromFailure(f: ImportFailure, input: string): RecipeDraft {
   const link = f.partial?.sourceUrl ?? (/^https?:\/\//i.test(input.trim()) ? input.trim() : '');
   return {
+    origin: f.source && link ? { kind: f.source.kind, host: f.source.host, credit: f.partial?.credit ?? null } : null,
     title: f.partial?.title?.slice(0, 120) ?? '',
     link,
     photoUrl: f.partial?.imageUrl ?? null,

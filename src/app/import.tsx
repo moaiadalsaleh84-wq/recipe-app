@@ -26,7 +26,7 @@ import {
   type ImportFailure,
   type ImportSuccess,
 } from '../lib/importApi';
-import { downloadPhoto } from '../lib/photos';
+import { saveImportedPicture } from '../lib/photos';
 import { showPaywall, useProGate } from '../lib/pro';
 import { isIOS } from '../navigation/screenOptions';
 import { FREE_LIMITS, useStore } from '../state/store';
@@ -101,7 +101,7 @@ export default function ImportScreen() {
       if (!isExample) countImport();
       haptics.success();
       if (res.status === 'partial') {
-        openForm(draftFromImport(res.recipe, [missingMessage(res.missing), ...res.warnings].filter(Boolean).join(' ')));
+        openForm(draftFromImport(res.recipe, [missingMessage(res.missing), ...res.warnings].filter(Boolean).join(' '), res.source));
         return;
       }
       setPhase({ name: 'review', result: res });
@@ -123,12 +123,13 @@ export default function ImportScreen() {
   }, []);
 
   const save = async (result: ImportSuccess) => {
-    const recipe = toRecipe(result.recipe);
-    // Covers are web links that can expire (TikTok's do within hours): keep a copy on the phone.
-    if (result.recipe.imageUrl) {
-      const local = await downloadPhoto(result.recipe.imageUrl);
-      if (local) recipe.image = { uri: local };
-    }
+    const recipe = toRecipe(result.recipe, result.source);
+    // Covers are web links that can expire (TikTok's do within hours): download once and keep the
+    // original plus card and thumbnail crops. No picture (none, offline, broken): the recipe is
+    // still saved, with the tinted placeholder.
+    const picture = await saveImportedPicture(result.recipe.imageUrl);
+    recipe.image = picture ? { uri: picture.card } : null;
+    if (picture) recipe.importedImage = picture;
     const id = addRecipe(recipe);
     toast({ message: `${result.recipe.title} saved to your recipes`, icon: 'book' });
     finish(id);
@@ -271,7 +272,7 @@ export default function ImportScreen() {
           </Animated.View>
         )}
 
-        {phase.name === 'review' && <Review result={phase.result} onSave={() => save(phase.result)} onEdit={() => openForm(draftFromImport(phase.result.recipe, phase.result.warnings.join(' ') || null))} onDiscard={() => setPhase({ name: 'input' })} />}
+        {phase.name === 'review' && <Review result={phase.result} onSave={() => save(phase.result)} onEdit={() => openForm(draftFromImport(phase.result.recipe, phase.result.warnings.join(' ') || null, phase.result.source))} onDiscard={() => setPhase({ name: 'input' })} />}
       </ScrollView>
     </KeyboardAvoidingView>
   );

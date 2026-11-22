@@ -28,6 +28,7 @@ import { pantryMatch } from '../../lib/moods';
 import { useToast } from '../../components/Toast';
 import { Button, EmptyState, IconButton, Segmented } from '../../components/ui';
 import { BottomBar } from '../../components/BottomBar';
+import { ImportHint, ImportedPhotoOverlay, RecipeByRow, chooseOwnPhoto, isImported, useOpenLink } from '../../components/ImportCredit';
 import { Lift, PopButton, PopCard, PopChip, PopIconButton } from '../../components/pop';
 import { type DietTag, type Recipe, type Units } from '../../data/mock';
 import { haptics } from '../../lib/haptics';
@@ -48,9 +49,18 @@ export default function RecipeScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const {
     getRecipe, isFavorite, toggleFavorite, addIngredients, units, setUnits, notes, setNote,
-    cookbooks, favorites, deleteRecipe, setRecipeImage, goals, profile, isPro, pantry, allRecipes,
+    cookbooks, favorites, deleteRecipe, setRecipeImage, goals, profile, isPro, pantry, allRecipes, fun, markImportHintSeen,
   } = useStore();
   const recipe = getRecipe(id);
+  const openLink = useOpenLink();
+  // Recipes this user imported from a link carry their creator's credit, always shown.
+  const imported = !!recipe && isImported(recipe);
+  // The first time an imported recipe opens: a hint at the "Recipe by" row, once, ever.
+  const [showHint, setShowHint] = useState(() => imported && !fun.seenImportHint && !!recipe?.sourceUrl);
+  useEffect(() => {
+    if (showHint) markImportHintSeen();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Opens sized for your household (from onboarding), or the recipe's own servings.
   const [servings, setServings] = useState(profile.household ?? recipe?.servings ?? 2);
@@ -155,6 +165,22 @@ export default function RecipeScreen() {
     toast({ message: `Deleted ${recipe.title}`, icon: 'trash', tone: 'info' });
   };
 
+  // Imported recipes: your own photo replaces the imported one; the original is kept (⋯ menu).
+  const onOwnPhoto = async () => {
+    try {
+      const uri = await chooseOwnPhoto();
+      if (uri) {
+        setRecipeImage(recipe.id, { uri });
+        haptics.success();
+        toast({ message: 'Your photo is on this recipe', icon: 'camera' });
+      }
+    } catch {
+      toast({ message: 'Couldn’t open your photos', tone: 'warning' });
+    }
+  };
+  // A photo the user chose (not the imported one): no source sticker on it, and the ⋯ menu offers the imported one back.
+  const usingOwnPhoto = !!recipe.image && !(recipe.importedImage && typeof recipe.image === 'object' && recipe.image.uri === recipe.importedImage.card);
+
   const level = recipe.difficulty === 'Easy' ? 1 : recipe.difficulty === 'Medium' ? 2 : 3;
   // Full content width (20pt margins), 4:3.
   const photoWidth = Math.min(width - 40, 560);
@@ -184,9 +210,10 @@ export default function RecipeScreen() {
           <Lift radius={24}>
             <View style={[styles.photoFrame, { width: photoWidth, height: Math.round(photoWidth * 0.75), backgroundColor: t.colors.imagePlaceholder }]}>
               <RecipePhoto recipe={recipe} iconSize={64} radius={21.5} />
+              {imported && <ImportedPhotoOverlay recipe={recipe} onOwnPhoto={onOwnPhoto} ownPhoto={usingOwnPhoto} />}
             </View>
           </Lift>
-          {recipe.custom && (
+          {recipe.custom && !imported && (
             <PopButton
               label={recipe.image ? 'Change photo' : 'Add a photo'}
               icon="camera"
@@ -227,7 +254,19 @@ export default function RecipeScreen() {
               {recipe.description}
             </Text>
           )}
-          {!!recipe.sourceUrl && (
+          {imported && (
+            <>
+              {showHint && <ImportHint video={recipe.source !== 'web'} onClose={() => setShowHint(false)} />}
+              <RecipeByRow
+                recipe={recipe}
+                onPress={() => {
+                  setShowHint(false);
+                  openLink(recipe.sourceUrl);
+                }}
+              />
+            </>
+          )}
+          {!!recipe.sourceUrl && !imported && (
             <PressableScale
               onPress={() => Linking.openURL(recipe.sourceUrl!).catch(() => toast({ message: 'Couldn’t open that link', tone: 'warning' }))}
               accessibilityRole="link"
@@ -391,6 +430,10 @@ export default function RecipeScreen() {
         rows={[
           { label: 'Share recipe', icon: 'share', onPress: onShare },
           { label: inCookbooks > 0 ? 'Saved to a cookbook' : 'Save to a cookbook', icon: inCookbooks > 0 ? 'bookmarkFill' : 'bookmark', onPress: () => router.push({ pathname: '/save-to-cookbook', params: { id: recipe.id } }) },
+          ...(imported && recipe.creatorUrl ? [{ label: 'Open creator’s profile', icon: 'people' as const, onPress: () => openLink(recipe.creatorUrl) }] : []),
+          ...(usingOwnPhoto && recipe.importedImage
+            ? [{ label: 'Use the imported photo', icon: 'undo' as const, onPress: () => setRecipeImage(recipe.id, { uri: recipe.importedImage!.card }) }]
+            : []),
         ]}
       />
 

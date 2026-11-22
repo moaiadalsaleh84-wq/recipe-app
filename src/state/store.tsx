@@ -47,7 +47,7 @@ type Saved = {
   pro: Entitlement | null;
   /** Fun stuff: counters behind XP, levels and badges. */
   /** bonusXp and stickers are newer, optional fields (older saves don't have them). */
-  fun: { pets: number; listsDone: number; badges: string[]; lastLevel: number; bonusXp?: number; stickers?: string[] };
+  fun: { pets: number; listsDone: number; badges: string[]; lastLevel: number; bonusXp?: number; stickers?: string[]; /** The "Tap to watch the original video" hint was shown once. */ seenImportHint?: boolean };
   /** Successful imports so far (the free version includes FREE_LIMITS.imports). */
   importsUsed: number;
   /** Ingredients the user has at home, as typed. */
@@ -101,6 +101,7 @@ type Store = Saved & {
   addListDone: () => void;
   unlockBadges: (ids: string[]) => void;
   setLastLevel: (n: number) => void;
+  markImportHintSeen: () => void;
   isPro: boolean;
 
   // Import
@@ -309,6 +310,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [update],
   );
   const setLastLevel = useCallback((n: number) => update((s) => ({ fun: { ...s.fun, lastLevel: n } })), [update]);
+  const markImportHintSeen = useCallback(() => update((s) => (s.fun.seenImportHint ? {} : { fun: { ...s.fun, seenImportHint: true } })), [update]);
   const logCooked = useCallback(
     (recipeId: string, servings: number) => {
       const date = new Date().toISOString();
@@ -463,6 +465,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addListDone,
       unlockBadges,
       setLastLevel,
+      markImportHintSeen,
       isPro: !!saved.pro,
       countImport,
       draft,
@@ -505,7 +508,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       undoGroceries,
     }),
     [
-      saved, hydrated, setBuddy, setProfile, completeOnboarding, setPro, addPet, claimBonus, addListDone, unlockBadges, setLastLevel, countImport, draft, addPantry, removePantry, restorePantry, allRecipes, getRecipe, addRecipe, manualRecipeCount, deleteRecipe, setRecipeImage, setNote, setUnits, setGoals, logCooked, rateCooked, setCookedPhoto,
+      saved, hydrated, setBuddy, setProfile, completeOnboarding, setPro, addPet, claimBonus, addListDone, unlockBadges, setLastLevel, markImportHintSeen, countImport, draft, addPantry, removePantry, restorePantry, allRecipes, getRecipe, addRecipe, manualRecipeCount, deleteRecipe, setRecipeImage, setNote, setUnits, setGoals, logCooked, rateCooked, setCookedPhoto,
       category, tags, toggleTag, showOnlyTag, clearFilters, isFavorite, toggleFavorite, addCookbook, renameCookbook,
       deleteCookbook, restoreCookbook, toggleInCookbook, setMeal, toggleGrocery, addIngredients, addWeekToGroceries, addCustomItem,
       removeGrocery, clearCompleted, undoGroceries,

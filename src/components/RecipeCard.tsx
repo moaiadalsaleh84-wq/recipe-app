@@ -46,18 +46,27 @@ export function RecipePhoto({
   const [loaded, setLoaded] = useState<RecipeImage>(null);
   const image = recipe.image;
   if (image && image !== failed) {
-    // The app's own photos have a 1:1 crop and a blurhash; a photo you added doesn't.
+    // The app's own photos have a 1:1 crop and a blurhash; a photo you picked yourself doesn't.
     const set = recipePhotos[recipe.id];
     const own = set && image === set.card ? set : undefined;
-    const source = own ? (square ? own.square : own.card) : typeof image === 'number' ? image : { uri: photoUri(image.uri) };
+    // An imported picture has its own card and thumbnail crops (and maybe a blurhash).
+    const imp = recipe.importedImage && typeof image === 'object' && image.uri === recipe.importedImage.card ? recipe.importedImage : undefined;
+    const source = own
+      ? square
+        ? own.square
+        : own.card
+      : typeof image === 'number'
+        ? image
+        : { uri: photoUri(imp && square ? imp.square : image.uri) };
+    const blurhash = own ? (square ? own.squareBlurhash : own.blurhash) : imp?.blurhash;
     // While it loads: the blurred photo (or a shimmer for your own photos); then the photo fades in
     // (250ms). Cached on disk and in memory.
     return (
       <>
-        {!own && loaded !== image && <Skeleton style={[StyleSheet.absoluteFill, { borderRadius: radius }]} />}
+        {!blurhash && loaded !== image && <Skeleton style={[StyleSheet.absoluteFill, { borderRadius: radius }]} />}
         <Image
           source={source}
-          placeholder={own ? { blurhash: square ? own.squareBlurhash : own.blurhash } : undefined}
+          placeholder={blurhash ? { blurhash } : undefined}
           placeholderContentFit="cover"
           style={[StyleSheet.absoluteFill, { borderRadius: radius }]}
           contentFit="cover"
@@ -74,6 +83,22 @@ export function RecipePhoto({
   return (
     <View style={[StyleSheet.absoluteFill, styles.noPhoto, { backgroundColor: placeholderTint(recipe.id), borderRadius: radius }]} testID="photo-placeholder">
       <Icon name="pot" size={iconSize} color={t.pop.inkMuted} />
+    </View>
+  );
+}
+
+/** Imported from a link: a tiny source mark in the picture's corner (a play button for videos). */
+function SourceMark({ recipe }: { recipe: Recipe }) {
+  const t = useTheme();
+  if (recipe.source !== 'tiktok' && recipe.source !== 'youtube' && recipe.source !== 'web') return null;
+  return (
+    <View
+      style={[styles.sourceMark, { backgroundColor: t.pop.white, borderColor: t.pop.ink }]}
+      accessible
+      accessibilityLabel={recipe.source === 'web' ? 'Imported from a website' : `Imported from ${recipe.source === 'tiktok' ? 'TikTok' : 'YouTube'}`}
+      testID="source-mark"
+    >
+      <Icon name={recipe.source === 'web' ? 'link' : 'play'} size={11} color={t.pop.ink} weight="bold" />
     </View>
   );
 }
@@ -170,6 +195,7 @@ export function RecipeCard({ recipe, width, color }: { recipe: Recipe; width: nu
       >
         <View style={[styles.imageWrap, { backgroundColor: t.colors.imagePlaceholder }]}>
           <RecipePhoto recipe={recipe} />
+          <SourceMark recipe={recipe} />
         </View>
         <View style={styles.cardBody}>
           <Text style={[t.type.title3, styles.cardTitle, t.noWidows.balanced, { color: t.colors.label }]} {...t.noWidows.props}>{recipe.title}</Text>
@@ -232,6 +258,7 @@ export function TonightCard({
         <PressableScale onPress={() => openRecipe(recipe.id)} scaleTo={0.99} accessibilityLabel={`${label}: ${recipe.title}, ${recipe.minutes} minutes`} accessibilityHint="Opens the recipe">
           <View style={[styles.tonightPhoto, { backgroundColor: t.colors.imagePlaceholder }]}>
             <RecipePhoto recipe={recipe} iconSize={48} />
+            <SourceMark recipe={recipe} />
           </View>
           <View style={styles.tonightText}>
             <Text style={[t.type.title1, { color: t.colors.label, fontSize: 24, lineHeight: 29 }]}>
@@ -313,6 +340,7 @@ export function RecipeRow({
 const styles = StyleSheet.create({
   // Photos (4:3) with a thick ink line underneath.
   // Flush with the card's top border (no gap): the photo's top corners follow the card's inner curve (24 − 2.5).
+  sourceMark: { position: 'absolute', left: 8, bottom: 8, width: 24, height: 24, borderRadius: 12, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   imageWrap: { width: '100%', aspectRatio: 4 / 3, overflow: 'hidden', borderTopLeftRadius: 21.5, borderTopRightRadius: 21.5, borderBottomWidth: 2.5, borderBottomColor: pop.ink },
   // 14pt inside on every side; the meta sits at the bottom so cards in a row line up.
   cardBody: { flexGrow: 1, padding: 14, gap: 10, justifyContent: 'space-between' },

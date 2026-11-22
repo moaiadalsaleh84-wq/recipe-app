@@ -18,7 +18,7 @@ import { claudeCaller, type AiCaller } from '../supabase/functions/import-recipe
 import { handle } from '../supabase/functions/import-recipe/lib/handler.ts';
 import { parseLine } from '../supabase/functions/import-recipe/lib/ingredients.ts';
 import { LIMITS, MemoryCache, MemoryLimiter } from '../supabase/functions/import-recipe/lib/limits.ts';
-import { FIXTURE_PAGES } from './import-fixtures.ts';
+import { FIXTURE_PAGES, FIXTURE_ROUTES } from './import-fixtures.ts';
 
 const port = Number(process.env.PORT ?? 8787);
 if (process.env.NO_LIMITS) Object.assign(LIMITS, { devicePer10Min: 10_000, devicePerDay: 10_000, ipPerDay: 10_000, globalAiPerDay: 10_000 });
@@ -51,6 +51,9 @@ const fakeAi: AiCaller = async (m) => {
 const realFetch = globalThis.fetch;
 const fixtureFetch: typeof fetch = async (input, init) => {
   const url = String(input instanceof Request ? input.url : input);
+  const route = FIXTURE_ROUTES[url] ?? FIXTURE_ROUTES[url.split('?')[0]];
+  if (route) return new Response(route.status >= 300 && route.status < 400 ? null : route.body, { status: route.status, headers: route.headers });
+  if (/^https:\/\/(www\.|vm\.)?(tiktok|youtube)\.com\/|^https:\/\/falafel\.example\.com\//.test(url)) return new Response('not found', { status: 404 });
   const page = FIXTURE_PAGES[url.split('?')[0]];
   if (page) return new Response(page, { status: 200, headers: { 'content-type': 'text/html' } });
   if (url.startsWith('https://recipes.example.com/')) return new Response('not found', { status: 404 });

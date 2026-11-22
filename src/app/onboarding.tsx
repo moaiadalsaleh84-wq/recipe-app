@@ -20,6 +20,7 @@ import { AnimatedNumber } from '../components/ui';
 import { Icon, type IconName } from '../components/Icon';
 import { PopButton, PopCard, PopIconButton, Sticker } from '../components/pop';
 import { RecipePhoto } from '../components/RecipeCard';
+import { isImported } from '../components/ImportCredit';
 import { Text } from '../components/Text';
 import { useToast } from '../components/Toast';
 import { recipes as builtInRecipes, type Recipe } from '../data/mock';
@@ -99,7 +100,8 @@ export default function Onboarding() {
   const servings = profile.household ?? 2;
   const dinnerTime = profile.dinnerTime ?? profile.reminder?.time ?? '18:00';
 
-  const computePicks = () => rankPicks({ recipes: allRecipes, pantry, diets: profile.diets, goal });
+  // Imported recipes (and their pictures and credits) are never used in onboarding.
+  const computePicks = () => rankPicks({ recipes: allRecipes.filter((r) => !isImported(r)), pantry, diets: profile.diets, goal });
 
   const finish = async (recipeId: string | undefined) => {
     track('onboarding_step_completed', { step: 'pick' });

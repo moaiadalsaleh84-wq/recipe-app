@@ -11,9 +11,10 @@ import { PressableScale } from '../../components/PressableScale';
 import { useToast } from '../../components/Toast';
 import { Button, Chip, Stepper } from '../../components/ui';
 import { categories, dietTags, type Category, type DietTag } from '../../data/mock';
+import { creditFields } from '../../lib/importApi';
 import { haptics } from '../../lib/haptics';
 import { parseIngredient } from '../../lib/parseIngredient';
-import { downloadPhoto, photoUri, pickPhoto as pickLibraryPhoto } from '../../lib/photos';
+import { photoUri, pickPhoto as pickLibraryPhoto, saveImportedPicture } from '../../lib/photos';
 import { showPaywall, useProGate } from '../../lib/pro';
 import { useStore } from '../../state/store';
 import { useTheme } from '../../theme';
@@ -72,8 +73,11 @@ export default function NewRecipe() {
       return;
     }
     const url = link.trim();
-    // An imported cover is a web link that may expire (TikTok's do): keep a copy on the phone.
-    const image = photo && /^https?:\/\//i.test(photo) ? ((await downloadPhoto(photo)) ?? photo) : photo;
+    // An imported cover is a web link that may expire (TikTok's do): keep a copy on the phone, with
+    // its card and thumbnail crops. If it can't be saved, the recipe keeps the tinted placeholder.
+    const fromWeb = !!photo && /^https?:\/\//i.test(photo);
+    const picture = fromWeb ? await saveImportedPicture(photo) : null;
+    const image = fromWeb ? (picture?.card ?? null) : photo;
     const kept = draft?.importedNutrition;
     // Keep the imported carbs and fat unless the user changed the numbers they can see.
     const keepNutrition = kept && String(kept.calories) === calories && String(kept.protein) === protein;
@@ -92,6 +96,9 @@ export default function NewRecipe() {
       steps,
       sourceUrl: url ? (/^https?:\/\//i.test(url) ? url : `https://${url}`) : undefined,
       origin: fromImport ? 'import' : 'manual',
+      // The creator credit stays with an imported recipe, always.
+      ...(fromImport ? creditFields(draft?.origin, url) : {}),
+      ...(picture ? { importedImage: picture } : {}),
     });
     setDraft(null);
     toast({ message: `${title.trim()} saved to your recipes`, icon: 'book' });
