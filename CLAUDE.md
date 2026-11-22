@@ -2,6 +2,8 @@
 
 1. **Always read [DESIGN.md](DESIGN.md) first**, before any change. Also follow [AGENTS.md](AGENTS.md)
    (Expo and EAS rules).
+   Then read [notes/README.md](notes/README.md) and the owner's notes it lists: ideas and research for the
+   app (inspiration only; these rules and DESIGN.md come first).
 2. **Make only the change that was requested.** Nothing extra.
 3. **Keep changes small.** One thing at a time, in small commits.
 4. **Never redesign anything that wasn't asked for.** No new colors, fonts, layouts, or
