@@ -276,7 +276,7 @@ export const recipes: Recipe[] = [
     difficulty: 'Medium',
     tags: ['Vegetarian', 'Kid friendly', 'Comfort food'],
     ingredients: [
-      { id: 'pizza-dough', name: 'Pizza dough (200 g balls)', quantity: 2, unit: 'balls', aisle: 'Bakery' },
+      { id: 'pizza-dough', name: 'Pizza dough balls', quantity: 2, unit: 'piece', aisle: 'Bakery', note: '200 g each' },
       { id: 'passata', name: 'Passata', quantity: 200, unit: 'g', aisle: 'Pantry' },
       { id: 'mozzarella', name: 'Mozzarella', quantity: 250, unit: 'g', aisle: 'Dairy & Eggs' },
       { id: 'cherry-tomato', name: 'Cherry tomatoes', quantity: 200, unit: 'g', aisle: 'Produce' },

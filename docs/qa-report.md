@@ -30,7 +30,7 @@ Severity: **High** = breaks something · **Medium** = looks wrong · **Low** = p
 16. **Settings** — the two switch rows have no top/bottom padding: "Daily dinner idea" touches the card's top edge, and "cook" sits alone on the last line. · **Medium** · `375-n-settings.jpg` · **✅ Fixed**
 17. **Home, search** — typing a search keeps Favorites/cookbooks above the results. DESIGN.md: "Searching or filtering hides everything except the results." · **Medium** · `375-n-home-search.jpg` · **✅ Fixed**
 18. **Tap targets under 44pt** — the Home tip's ✕ (36×36), "Clear" on a mood filter (57×35), the recipe page servings − / + (39×39) and the Metric / US switch (34pt high, recipe page and Settings). · **Medium** · `375-n-home.jpg`, `375-n-recipe~1.jpg` · **✅ Fixed: the Metric/US switch and the small "Clear" chip now reach 44pt; the tip ✕ and servings −/+ already did through their touch margin (the browser measures only the drawn size)**
-19. **Ingredient names that hold an amount that doesn't scale** — "Feta (one block)" (Baked Feta Pasta) and "Pizza dough (200 g balls)" (Margherita Pizza): at 8 people the list reads "400 g feta (one block)". Changing them is recipe content, so it's on the decision list. · **Medium** · `430-n-pantry-items~3.jpg` · **⏸ Needs your decision (recipe content)**
+19. **Ingredient names that hold an amount that doesn't scale** — "Feta (one block)" (Baked Feta Pasta) and "Pizza dough (200 g balls)" (Margherita Pizza): at 8 people the list reads "400 g feta (one block)". Changing them is recipe content, so it's on the decision list. · **Medium** · `430-n-pantry-items~3.jpg` · **✅ Fixed (owner's decision): renamed to "Feta" and "Pizza dough balls" (unit piece, note "200 g each"); amounts unchanged**
 20. **Cook Mode** — on a step with many ingredients, the timer's buttons sit half behind the bottom bar until you scroll. · **Low** · `375-n-cook-step2-timer-running.jpg`
 21. **Cook Mode step bar** — each step dot is 43×44 (a hair under 44). · **Low** · `375-n-cook-step1.jpg`
 22. **Settings switches** — 40×20 in the browser (on iPhone the system switch is 51×31, still under 44pt tall). · **Low** · `375-n-settings.jpg`
@@ -46,10 +46,9 @@ Severity: **High** = breaks something · **Medium** = looks wrong · **Low** = p
 
 ## After the fixes
 
-All High and Medium problems were fixed except #19, then every screen was checked again in the same 4 setups. One new Low problem came from a fix and was fixed too: the Pantry subtitle's last word ("kitchen") sat alone after "8 of 10 free" was added.
+All High and Medium problems were fixed (#19 after the owner's decision), then every screen was checked again in the same 4 setups. One new Low problem came from a fix and was fixed too: the Pantry subtitle's last word ("kitchen") sat alone after "8 of 10 free" was added.
 
-**Needs your decision**
-- #19 "Feta (one block)" and "Pizza dough (200 g balls)": change the names to "Feta" and "Pizza dough" (the amounts are already in the quantity and unit), or leave them?
+**Decided by the owner:** #19 renamed to "Feta" and "Pizza dough balls" (piece, note "200 g each"), amounts unchanged.
 
 ## Checked and fine
 

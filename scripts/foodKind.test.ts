@@ -15,7 +15,7 @@ test('known ingredients get their own picture', () => {
     'Red cabbage': 'cabbage', Eggs: 'egg', Milk: 'milk', 'Double cream': 'cream', 'Greek yogurt': 'yogurt', Yogurt: 'yogurt', Butter: 'butter',
     Feta: 'cheese', Mozzarella: 'cheese', Parmesan: 'cheese', 'Cheddar slices': 'cheese', Cheese: 'cheese', 'Chicken thighs': 'chicken',
     'Chicken breast': 'chicken', Chicken: 'chicken', 'Chicken mince': 'mince', Penne: 'penne', Pasta: 'penne', Spaghetti: 'spaghetti',
-    'Basmati rice': 'rice', 'Cooked rice': 'rice', Rice: 'rice', 'Plain flour': 'flour', Flour: 'flour', 'Pizza dough (200 g balls)': 'dough',
+    'Basmati rice': 'rice', 'Cooked rice': 'rice', Rice: 'rice', 'Plain flour': 'flour', Flour: 'flour', 'Pizza dough balls': 'dough',
     'Dosa batter': 'batter', 'Brown sugar': 'sugar', 'Caster sugar': 'sugar', 'Icing sugar': 'sugar', Sugar: 'sugar', 'Cocoa powder': 'cocoa',
     'Olive oil': 'oil', 'Vegetable oil': 'oil', 'Soy sauce': 'soy', 'Vanilla extract': 'vanilla', Cinnamon: 'cinnamon', 'Garam masala': 'spice',
     'Biryani masala': 'spice', Turmeric: 'spice', Saffron: 'spice', 'Cumin seeds': 'spice', 'Mustard seeds': 'spice', 'Brioche buns': 'bun',
