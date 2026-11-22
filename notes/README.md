@@ -11,3 +11,6 @@ there and read here.
 
 - [The Secret Behind Addictive Apps](The%20Secret%20Behind%20Addictive%20Apps.md): emotional design
   in Duolingo, Phantom and Revolut (delight, feedback, mascots, polish builds trust, first impressions).
+- [How to Design an App So Addictive That People Can't Stop Using It](How%20to%20Design%20an%20App%20So%20Addictive%20That%20People%20Can't%20Stop%20Using%20It.md):
+  the habit framework (trigger, one-step core action, defaults, rewards, no dead ends, personal
+  investment), with what fits Pantry Pop's honesty rules and what doesn't.
