@@ -6,7 +6,7 @@
  */
 import { AiError, fromAi, fromStructured, type AiCaller } from './extract.ts';
 import { LIMITS, sha256, type Limiter, type ResultCache } from './limits.ts';
-import { SourceError, gatherSource } from './sources.ts';
+import { SourceError, gatherSource, previewSource } from './sources.ts';
 import type { ImportFailure, ImportResponse, ImportSuccess, ImportedRecipe, MissingField, SourceMaterial } from './types.ts';
 
 export type Deps = {
@@ -57,7 +57,7 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
   if (!/^[A-Za-z0-9-]{16,64}$/.test(installId)) return fail({ ok: false, code: 'invalid_input', message: 'Please update the app and try again.' });
   const raw = await req.text();
   if (raw.length > MAX_BODY) return fail({ ok: false, code: 'invalid_input', message: 'That’s too much text to import at once.' });
-  let body: { url?: unknown; text?: unknown };
+  let body: { url?: unknown; text?: unknown; preview?: unknown };
   try {
     body = JSON.parse(raw) as typeof body;
   } catch {
@@ -67,8 +67,22 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
   const text = typeof body.text === 'string' ? body.text : undefined;
   if (!url?.trim() && !text?.trim()) return fail({ ok: false, code: 'invalid_input', message: 'Paste a link or recipe text.' });
 
-  /* ---------- rate limits (before any work) ---------- */
   const ip = (req.headers.get('cf-connecting-ip') ?? req.headers.get('x-forwarded-for')?.split(',')[0] ?? 'unknown').trim();
+
+  /* ---------- preview: picture + creator right away (no AI, not counted as an import) ---------- */
+  if (body.preview === true) {
+    try {
+      const device = await sha256(`${deps.salt}|device|${installId}`);
+      const hit = await deps.limiter.hit(`prev10:${device}`, 600, LIMITS.previewsPer10Min);
+      if (!hit.allowed) return fail({ ok: false, code: 'rate_limited', retryAfter: hit.resetIn, message: 'Too many links in a row. Try again in a few minutes.' });
+    } catch {
+      return fail({ ok: false, code: 'server_error', message: 'Import is temporarily unavailable. Try again soon.' });
+    }
+    const preview = url ? await previewSource(url, deps.fetchImpl) : null;
+    return new Response(JSON.stringify({ ok: true, preview }), { status: 200, headers: { ...CORS, 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
+  }
+
+  /* ---------- rate limits (before any work) ---------- */
   try {
     const [device, ipKey] = await Promise.all([sha256(`${deps.salt}|device|${installId}`), sha256(`${deps.salt}|ip|${ip}`)]);
     const checks = await Promise.all([

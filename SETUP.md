@@ -111,7 +111,7 @@ links your users share.
   `IMPORT_MODEL=claude-haiku-5-5` is far cheaper ($0.10 / $0.50 per million). Run the test script
   with both and compare the results before deciding.
 - **Limits on the server** (`supabase/functions/import-recipe/lib/limits.ts`):
-  - 6 imports per device per 10 minutes, and 30 per day
+  - 6 imports per device per 10 minutes, and 20 per day (previews of the picture and creator are separate and need no AI)
   - 60 per IP address per day
   - `IMPORT_DAILY_CAP` AI imports per day for everyone together
 - **Request limits:** request size 64 KB, page size 3 MB, 12-second page timeout, private

@@ -388,3 +388,33 @@ test('Websites: credited by og:site_name, else the host; og:image is the picture
   const b = await post(d, { url: 'https://plain.example.org/soup' });
   assert.ok(b.json.ok && b.json.source.credit?.siteName === 'plain.example.org' && b.json.recipe.imageUrl === null);
 });
+
+test('preview: picture, creator and full link right away, without AI and without using an import', async () => {
+  const full = 'https://www.tiktok.com/@pastaqueen/video/7300000000000000003';
+  let aiCalls = 0;
+  const d = deps({
+    ai: async (m) => {
+      aiCalls++;
+      return fakeAi({ ingredients: [] })(m);
+    },
+    fetchImpl: fakeFetch({
+      'https://vm.tiktok.com/ZMprev/': { status: 301, body: '', headers: { location: full } },
+      [full]: { status: 403, body: 'no' },
+      'https://www.tiktok.com/oembed': { body: JSON.stringify({ title: 'Feta pasta', author_name: 'Pasta Queen', author_url: 'https://www.tiktok.com/@pastaqueen', thumbnail_url: 'https://p16.example.com/t.jpg' }), headers: { 'content-type': 'application/json' } },
+    }),
+  });
+  for (let i = 0; i < 25; i++) {
+    const res = await handle(new Request('http://localhost/import-recipe', { method: 'POST', body: JSON.stringify({ url: 'https://vm.tiktok.com/ZMprev/', preview: true }), headers: { 'content-type': 'application/json', 'x-install-id': 'test-install-0000000009' } }), d);
+    const j = (await res.json()) as { ok: boolean; preview: { sourceUrl: string; imageUrl: string; credit: { handle: string } } };
+    assert.equal(res.status, 200);
+    assert.equal(j.preview.sourceUrl, full);
+    assert.equal(j.preview.imageUrl, 'https://p16.example.com/t.jpg');
+    assert.equal(j.preview.credit.handle, '@pastaqueen');
+  }
+  assert.equal(aiCalls, 0);
+});
+
+test('20 imports a day per device', async () => {
+  const { LIMITS } = await import('../supabase/functions/import-recipe/lib/limits.ts');
+  assert.equal(LIMITS.devicePerDay, 20);
+});

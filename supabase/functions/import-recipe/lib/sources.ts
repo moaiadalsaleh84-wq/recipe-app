@@ -296,3 +296,55 @@ async function getJson(url: string, fetchImpl: Fetcher | undefined): Promise<Rec
     return null;
   }
 }
+
+/* ---------------- preview (no AI) ---------------- */
+
+export type SourcePreview = { kind: SourceKind; sourceUrl: string; title: string | null; imageUrl: string | null; credit: SourceCredit | null };
+
+/**
+ * What the loading screen shows right away, before the recipe is read: the picture, the creator
+ * and the full link. Public metadata only (oEmbed, og: tags); no AI, no video.
+ */
+export async function previewSource(input: string, fetchImpl?: Fetcher): Promise<SourcePreview | null> {
+  const raw = findUrl(input);
+  if (!raw) return null;
+  let url: URL;
+  try {
+    url = assertPublicUrl(raw);
+  } catch {
+    return null;
+  }
+  const kind = kindOf(url.hostname);
+  try {
+    if (kind === 'tiktok') {
+      let landed = url.toString();
+      try {
+        landed = (await safeFetch(url.toString(), { fetchImpl })).url;
+      } catch (e) {
+        if (e instanceof FetchError && e.finalUrl) landed = e.finalUrl;
+      }
+      const videoUrl = /\/video\/|\/photo\//.test(landed) ? landed.split('?')[0] : url.toString();
+      const o = await getJson(`https://www.tiktok.com/oembed?url=${encodeURIComponent(videoUrl)}`, fetchImpl);
+      return { kind, sourceUrl: videoUrl, title: typeof o?.title === 'string' ? o.title : null, imageUrl: typeof o?.thumbnail_url === 'string' ? o.thumbnail_url : null, credit: videoCredit(o) ?? null };
+    }
+    if (kind === 'youtube') {
+      const id = youTubeId(url);
+      if (!id) return null;
+      const watch = `https://www.youtube.com/watch?v=${id}`;
+      const o = await getJson(`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(watch)}`, fetchImpl);
+      return { kind, sourceUrl: watch, title: typeof o?.title === 'string' ? o.title : null, imageUrl: typeof o?.thumbnail_url === 'string' ? o.thumbnail_url : null, credit: videoCredit(o) ?? null };
+    }
+    const page = await safeFetch(url.toString(), { fetchImpl });
+    const host = new URL(page.url).hostname;
+    const structured = recipeFromHtml(page.body);
+    return {
+      kind,
+      sourceUrl: page.url,
+      title: structured?.title ?? metaContent(page.body, ['og:title']) ?? pageTitle(page.body),
+      imageUrl: structured?.imageUrl ?? metaContent(page.body, ['og:image', 'twitter:image']),
+      credit: siteCredit(page.body, host),
+    };
+  } catch {
+    return null;
+  }
+}
