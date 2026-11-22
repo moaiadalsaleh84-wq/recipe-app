@@ -12,25 +12,25 @@ Severity: **High** = breaks something · **Medium** = looks wrong · **Low** = p
 
 ## Problems
 
-1. **Cook Mode (from Home, You, a reminder or a timer banner)** — opens at the recipe's own servings, not your household: Home "Cook it!" on a 4-serving recipe with a household of 2 shows double the amounts (600 g chicken where the recipe page shows 300 g). Only "Let's cook!" on the recipe page passes the servings. · **High** · `375-n-cook0-getready.jpg`
-2. **Settings** — there is no way to change your diet after onboarding. Home now filters every recipe by it, and the empty search tells you to change it in Settings, which isn't possible: a dead end. · **High** · `375-n-settings.jpg`
-3. **Get ready** — long ingredient names are cut off: "Boneless skinless chick…", "Small flour tortillas (15 …", "Canned chopped …". · **Medium** · `375-n-cook0-getready.jpg`, `375-n-cook0-getready~1.jpg`
-4. **Cook Mode steps** — a number is split from its unit across lines ("cook for 1 / minute."), and the last word sits alone on its line. · **Medium** · `375-n-cook-step2.jpg`
-5. **Finish screen** — when scrolled, the content slides under the status bar ("You made it!" behind the clock). · **Medium** · `375-n-finish~1.jpg`
-6. **Finish screen, "Tomorrow" card** — the name is squeezed beside the button into one word per line ("Chicken / Fried / Rice"); at the largest text it breaks inside words ("Tom/orro/w", "Chi/cke/n…"). · **Medium** · `375-n-finish~1.jpg`, `375-L-finish~1.jpg`
-7. **Paywall (largest text)** — the title splits a word ("everything unlo / cked"). · **Medium** · `375-L-paywall-yearly.jpg`
-8. **Paywall (largest text)** — the main button text is cut off: "Start my 7-day free tr…", "Subscribe for $4.99/m…". · **Medium** · `375-L-paywall-yearly.jpg`, `375-L-paywall-monthly.jpg`
-9. **Onboarding titles** — a single word alone on the last line: "What should we call / you?", "Tap what's in your / kitchen". · **Medium** · `375-n-ob2-name.jpg`, `375-n-ob8-pantry.jpg`
-10. **Recipe cards (Home grid and rows, Plan ideas, You might also like)** — the last word of the name often sits alone ("Flaky Apple / Turnovers", "Chocolate Raspberry / Cake"). · **Medium** · `375-n-home~5.jpg`
-11. **Pantry, "What can I cook"** — an ingredient used twice in a recipe is listed twice and counted twice: "Missing: greek yogurt, lemon juice, dried oregano, greek yogurt +7 more", "6 of 17". · **Medium** · `375-n-pantry-items~4.jpg`
-12. **Pantry** — "8 of 10" next to "In your pantry" has no explanation (it's the free limit). · **Medium** · `375-n-pantry-items.jpg`
-13. **Pantry, Tap to add** — suggests "Onions" when "Onion" is already in the pantry (only exact names are skipped). · **Medium** · `375-n-pantry-items.jpg`
-14. **Pantry** — "+4 / more" splits across lines. · **Medium** · `375-n-pantry-items~5.jpg`
-15. **You** — the XP line reads "125 XP· 125 XP to Line Cook" (no space before the dot). · **Medium** · `375-n-you.jpg`
-16. **Settings** — the two switch rows have no top/bottom padding: "Daily dinner idea" touches the card's top edge, and "cook" sits alone on the last line. · **Medium** · `375-n-settings.jpg`
-17. **Home, search** — typing a search keeps Favorites/cookbooks above the results. DESIGN.md: "Searching or filtering hides everything except the results." · **Medium** · `375-n-home-search.jpg`
-18. **Tap targets under 44pt** — the Home tip's ✕ (36×36), "Clear" on a mood filter (57×35), the recipe page servings − / + (39×39) and the Metric / US switch (34pt high, recipe page and Settings). · **Medium** · `375-n-home.jpg`, `375-n-recipe~1.jpg`
-19. **Ingredient names that hold an amount that doesn't scale** — "Feta (one block)" (Baked Feta Pasta) and "Pizza dough (200 g balls)" (Margherita Pizza): at 8 people the list reads "400 g feta (one block)". Changing them is recipe content, so it's on the decision list. · **Medium** · `430-n-pantry-items~3.jpg`
+1. **Cook Mode (from Home, You, a reminder or a timer banner)** — opens at the recipe's own servings, not your household: Home "Cook it!" on a 4-serving recipe with a household of 2 shows double the amounts (600 g chicken where the recipe page shows 300 g). Only "Let's cook!" on the recipe page passes the servings. · **High** · `375-n-cook0-getready.jpg` · **✅ Fixed**
+2. **Settings** — there is no way to change your diet after onboarding. Home now filters every recipe by it, and the empty search tells you to change it in Settings, which isn't possible: a dead end. · **High** · `375-n-settings.jpg` · **✅ Fixed: Settings has a Diet section**
+3. **Get ready** — long ingredient names are cut off: "Boneless skinless chick…", "Small flour tortillas (15 …", "Canned chopped …". · **Medium** · `375-n-cook0-getready.jpg`, `375-n-cook0-getready~1.jpg` · **✅ Fixed**
+4. **Cook Mode steps** — a number is split from its unit across lines ("cook for 1 / minute."), and the last word sits alone on its line. · **Medium** · `375-n-cook-step2.jpg` · **✅ Fixed**
+5. **Finish screen** — when scrolled, the content slides under the status bar ("You made it!" behind the clock). · **Medium** · `375-n-finish~1.jpg` · **✅ Fixed**
+6. **Finish screen, "Tomorrow" card** — the name is squeezed beside the button into one word per line ("Chicken / Fried / Rice"); at the largest text it breaks inside words ("Tom/orro/w", "Chi/cke/n…"). · **Medium** · `375-n-finish~1.jpg`, `375-L-finish~1.jpg` · **✅ Fixed**
+7. **Paywall (largest text)** — the title splits a word ("everything unlo / cked"). · **Medium** · `375-L-paywall-yearly.jpg` · **✅ Fixed**
+8. **Paywall (largest text)** — the main button text is cut off: "Start my 7-day free tr…", "Subscribe for $4.99/m…". · **Medium** · `375-L-paywall-yearly.jpg`, `375-L-paywall-monthly.jpg` · **✅ Fixed on iPhone (the label shrinks to fit; the browser can't shrink text, so it still shows "…" there)**
+9. **Onboarding titles** — a single word alone on the last line: "What should we call / you?", "Tap what's in your / kitchen". · **Medium** · `375-n-ob2-name.jpg`, `375-n-ob8-pantry.jpg` · **✅ Fixed**
+10. **Recipe cards (Home grid and rows, Plan ideas, You might also like)** — the last word of the name often sits alone ("Flaky Apple / Turnovers", "Chocolate Raspberry / Cake"). · **Medium** · `375-n-home~5.jpg` · **✅ Fixed on iPhone (iOS line breaking moves a word down to avoid a lone last word; the browser ignores it)**
+11. **Pantry, "What can I cook"** — an ingredient used twice in a recipe is listed twice and counted twice: "Missing: greek yogurt, lemon juice, dried oregano, greek yogurt +7 more", "6 of 17". · **Medium** · `375-n-pantry-items~4.jpg` · **✅ Fixed**
+12. **Pantry** — "8 of 10" next to "In your pantry" has no explanation (it's the free limit). · **Medium** · `375-n-pantry-items.jpg` · **✅ Fixed: "8 of 10 free"**
+13. **Pantry, Tap to add** — suggests "Onions" when "Onion" is already in the pantry (only exact names are skipped). · **Medium** · `375-n-pantry-items.jpg` · **✅ Fixed**
+14. **Pantry** — "+4 / more" splits across lines. · **Medium** · `375-n-pantry-items~5.jpg` · **✅ Fixed**
+15. **You** — the XP line reads "125 XP· 125 XP to Line Cook" (no space before the dot). · **Medium** · `375-n-you.jpg` · **✅ Fixed**
+16. **Settings** — the two switch rows have no top/bottom padding: "Daily dinner idea" touches the card's top edge, and "cook" sits alone on the last line. · **Medium** · `375-n-settings.jpg` · **✅ Fixed**
+17. **Home, search** — typing a search keeps Favorites/cookbooks above the results. DESIGN.md: "Searching or filtering hides everything except the results." · **Medium** · `375-n-home-search.jpg` · **✅ Fixed**
+18. **Tap targets under 44pt** — the Home tip's ✕ (36×36), "Clear" on a mood filter (57×35), the recipe page servings − / + (39×39) and the Metric / US switch (34pt high, recipe page and Settings). · **Medium** · `375-n-home.jpg`, `375-n-recipe~1.jpg` · **✅ Fixed: the Metric/US switch and the small "Clear" chip now reach 44pt; the tip ✕ and servings −/+ already did through their touch margin (the browser measures only the drawn size)**
+19. **Ingredient names that hold an amount that doesn't scale** — "Feta (one block)" (Baked Feta Pasta) and "Pizza dough (200 g balls)" (Margherita Pizza): at 8 people the list reads "400 g feta (one block)". Changing them is recipe content, so it's on the decision list. · **Medium** · `430-n-pantry-items~3.jpg` · **⏸ Needs your decision (recipe content)**
 20. **Cook Mode** — on a step with many ingredients, the timer's buttons sit half behind the bottom bar until you scroll. · **Low** · `375-n-cook-step2-timer-running.jpg`
 21. **Cook Mode step bar** — each step dot is 43×44 (a hair under 44). · **Low** · `375-n-cook-step1.jpg`
 22. **Settings switches** — 40×20 in the browser (on iPhone the system switch is 51×31, still under 44pt tall). · **Low** · `375-n-settings.jpg`
@@ -43,6 +43,13 @@ Severity: **High** = breaks something · **Medium** = looks wrong · **Low** = p
 29. **Photo credits** — the intro says "Unsplash and Pexels"; every photo is from Unsplash. · **Low** · `375-n-credits.jpg`
 30. **Paywall** — the skip link says "Not now", but "Continue with the free version" after onboarding. · **Low** · `375-n-ob11-after.jpg`
 31. **Home, Cookbooks** — the subtitle says "1 collection" under the title "Cookbooks". · **Low** · `375-n-home~3.jpg`
+
+## After the fixes
+
+All High and Medium problems were fixed except #19, then every screen was checked again in the same 4 setups. One new Low problem came from a fix and was fixed too: the Pantry subtitle's last word ("kitchen") sat alone after "8 of 10 free" was added.
+
+**Needs your decision**
+- #19 "Feta (one block)" and "Pizza dough (200 g balls)": change the names to "Feta" and "Pizza dough" (the amounts are already in the quantity and unit), or leave them?
 
 ## Checked and fine
 
@@ -58,3 +65,4 @@ Severity: **High** = breaks something · **Medium** = looks wrong · **Low** = p
 - **The real iPhone text-size setting and Expo Go:** checked in the browser; text was scaled 1.3× by script. Things that shrink to fit on iPhone (`adjustsFontSizeToFit`) can't shrink in the browser, so a few large-text "cut off" flags (the recipe stat tiles) are browser-only and not listed.
 - **Real purchases, notifications, the camera ("Snap your plate"), haptics, and importing a link** (import isn't connected in this build).
 - **Dark mode:** the app is light only.
+- **Fixes that only take effect on iPhone:** #8 (button text shrinking to fit at the largest text) and #10 (iOS line breaking for recipe names) use iPhone text settings the browser doesn't support, so they were checked in code, not on screen. Worth a look in Expo Go at the largest text size.

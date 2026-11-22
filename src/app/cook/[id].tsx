@@ -45,7 +45,7 @@ import { haptics } from '../../lib/haptics';
 import { photoUri, takePhoto } from '../../lib/photos';
 import { levelFor, streakOf, xpFor } from '../../lib/progress';
 import { playSuccess } from '../../lib/sounds';
-import { nb } from '../../lib/text';
+import { keepTogether, nb } from '../../lib/text';
 import { ingredientsInStep, splitTip, warnStepProblems } from '../../lib/steps';
 import { durationLabel, findTimers } from '../../lib/timers';
 import { convertStepText } from '../../lib/units';
@@ -59,7 +59,7 @@ type FinishEntry = { date: string; xpBefore: number; levelBefore: number; bonus:
 export default function CookMode() {
   const t = useTheme();
   const params = useLocalSearchParams<{ id: string; servings?: string }>();
-  const { getRecipe } = useStore();
+  const { getRecipe, profile } = useStore();
   const recipe = getRecipe(params.id);
   if (!recipe) {
     return (
@@ -68,7 +68,9 @@ export default function CookMode() {
       </View>
     );
   }
-  return <CookSession key={recipe.id} recipe={recipe} servings={Number(params.servings) || recipe.servings || 1} />;
+  // Opened from the recipe page with its servings; from anywhere else (Home, You, a reminder), sized
+  // for your household like the recipe page.
+  return <CookSession key={recipe.id} recipe={recipe} servings={Number(params.servings) || profile.household || recipe.servings || 1} />;
 }
 
 function CookSession({ recipe, servings }: { recipe: Recipe; servings: number }) {
@@ -312,7 +314,7 @@ function CookSession({ recipe, servings }: { recipe: Recipe; servings: number })
                     <Text style={[t.type.title2, { color: pop.ink }]}>{page}</Text>
                   </View>
                   <Text style={[styles.stepText, main.length > 120 && styles.stepTextLong, t.noWidows.style, { color: pop.ink }]} {...t.noWidows.props} testID="cook-step" accessibilityRole="header">
-                    {main}
+                    {keepTogether(main)}
                   </Text>
                   {inStep.length > 0 && (
                     <View style={styles.stepChips} testID="in-step" accessibilityLabel={`In this step: ${inStep.map(amountOf).join(', ')}`}>
@@ -462,7 +464,8 @@ function GatherTile({ name, qty, checked, onPress }: { name: string; qty: string
           <View style={styles.tileEmpty} />
         )}
         <View style={{ gap: 2 }}>
-          <Text style={styles.tileName} numberOfLines={2}>
+          {/* Full names, never cut ("Boneless skinless chicken thighs" takes 3 lines). */}
+          <Text style={styles.tileName} numberOfLines={5}>
             {name}
           </Text>
           {qty ? (
@@ -738,9 +741,9 @@ function Finish({
               <View style={styles.tomorrowThumb}>
                 <RecipePhoto recipe={tomorrow.recipe} radius={12} iconSize={20} square />
               </View>
-              <View style={{ flex: 1, minWidth: 0 }}>
+              {/* The name needs room: when the button doesn't fit beside it, it moves underneath. */}
+              <View style={styles.tomorrowText}>
                 <Text style={[t.type.caption1, { color: pop.inkMuted }]}>Tomorrow</Text>
-                {/* Up to 3 lines: long names never get cut mid-word beside the button. */}
                 <Text style={[t.type.headline, { color: pop.ink }]} numberOfLines={3}>
                   {tomorrow.recipe.title}
                 </Text>
@@ -762,6 +765,8 @@ function Finish({
           </Animated.View>
         )}
       </ScrollView>
+      {/* The status bar keeps the screen's color: scrolled content slides under it, not over the clock. */}
+      <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: insets.top, backgroundColor: pop.sunshine }} />
     </View>
   );
 }
@@ -882,7 +887,8 @@ const styles = StyleSheet.create({
   segment: { height: 12, borderRadius: 6, borderWidth: 2, borderColor: pop.ink },
   bonus: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
   bonusIcon: { width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: pop.ink, alignItems: 'center', justifyContent: 'center' },
-  tomorrow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12 },
+  tomorrow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 12, padding: 12 },
+  tomorrowText: { flexGrow: 1, flexShrink: 1, flexBasis: 160, minWidth: 0 },
   tomorrowThumb: { width: 52, height: 52, borderRadius: 14, borderWidth: 2, borderColor: pop.ink, overflow: 'hidden' },
   drainTrack: { height: 10, borderRadius: 5, borderWidth: 2, borderColor: pop.ink, backgroundColor: pop.tomatoTint, overflow: 'hidden', marginVertical: 6 },
   drainFill: { flex: 1, backgroundColor: pop.white, transformOrigin: 'left' },

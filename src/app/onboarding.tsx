@@ -29,10 +29,10 @@ import { askReminderPermission, reminderText } from '../lib/dinnerReminders';
 import { haptics } from '../lib/haptics';
 import { cookableCount, rankPicks, type Pick } from '../lib/onboardingPicks';
 import { restore } from '../lib/purchases';
-import { nb } from '../lib/text';
+import { nb, noWidow } from '../lib/text';
 import { duration, uiEase } from '../motion';
 import { useStore } from '../state/store';
-import { fonts, pop, stroke } from '../theme';
+import { fonts, noWidows, pop, stroke } from '../theme';
 
 const SCREENS = ['welcome', 'name', 'goal', 'household', 'diet', 'dinner', 'reminder', 'pantry', 'building', 'pick'] as const;
 type Screen = (typeof SCREENS)[number];
@@ -274,8 +274,8 @@ function Step({ title, subtitle, children, footer, contentStyle }: { title: stri
   return (
     <View style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={[{ paddingTop: TITLE_GAP, paddingHorizontal: 20, paddingBottom: footer ? 24 : insets.bottom + 24 }, contentStyle]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-        <Text style={styles.title} accessibilityRole="header">
-          {title}
+        <Text style={[styles.title, noWidows.style]} {...noWidows.props} accessibilityRole="header">
+          {noWidow(title)}
         </Text>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
         <View style={{ marginTop: 24 }}>{children}</View>

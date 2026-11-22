@@ -13,7 +13,8 @@ import { useToast } from '../../../components/Toast';
 import { Button, Chip, EmptyState, IconButton, ProgressBar, Section, SectionHeader, Separator } from '../../../components/ui';
 import { Lift, PopCard } from '../../../components/pop';
 import { haptics } from '../../../lib/haptics';
-import { COMMON_ITEMS, PANTRY_CATEGORIES, pantryCategory, smartSuggestions, suggestionsFor, whatCanICook, type PantryMatch } from '../../../lib/pantry';
+import { noWidow } from '../../../lib/text';
+import { COMMON_ITEMS, PANTRY_CATEGORIES, pantryCategory, pantryHas, smartSuggestions, suggestionsFor, whatCanICook, type PantryMatch } from '../../../lib/pantry';
 import { showPaywall, useProGate } from '../../../lib/pro';
 import { TabScreen } from '../../../components/TabScreen';
 import { FREE_LIMITS, useStore } from '../../../state/store';
@@ -31,7 +32,8 @@ export default function PantryScreen() {
   const matches = useMemo(() => whatCanICook(allRecipes, pantry), [allRecipes, pantry]);
   const suggestions = useMemo(() => smartSuggestions(matches), [matches]);
   const typed = useMemo(() => suggestionsFor(query, allRecipes, pantry), [query, allRecipes, pantry]);
-  const common = COMMON_ITEMS.filter((c) => !pantry.some((p) => p.toLowerCase() === c.toLowerCase())).slice(0, 8);
+  // Skips what you already have, also by another name ("Onions" when "Onion" is in).
+  const common = COMMON_ITEMS.filter((c) => !pantryHas(pantry, c)).slice(0, 8);
   const ready = matches.filter((m) => m.missing.length === 0).length;
 
   const add = (name: string) => {
@@ -114,12 +116,12 @@ export default function PantryScreen() {
       {/* Your items */}
       <SectionHeader
         title="In your pantry"
-        subtitle={pantry.length ? 'Grouped by where it lives in the kitchen' : undefined}
+        subtitle={pantry.length ? noWidow('Grouped by where it lives in the kitchen') : undefined}
         right={
           // The count only matters near the free limit.
           !isPro && pantry.length >= FREE_LIMITS.pantry - 3 ? (
             <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, marginBottom: 4 }]} testID="pantry-count">
-              {pantry.length} of {FREE_LIMITS.pantry}
+              {`${pantry.length} of ${FREE_LIMITS.pantry}\u00A0free`}
             </Text>
           ) : undefined
         }
@@ -247,7 +249,7 @@ function MatchCard({ match, onAddMissing }: { match: PantryMatch; onAddMissing: 
           </View>
           {missing.length > 0 && (
             <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]} testID="missing">
-              {`Missing: ${shown.join(', ')}${more > 0 ? ` +${more} more` : ''}`}
+              {`Missing: ${shown.join(', ')}${more > 0 ? ` +${more}\u00A0more` : ''}`}
             </Text>
           )}
         </View>

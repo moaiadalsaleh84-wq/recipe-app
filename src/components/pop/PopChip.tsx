@@ -75,8 +75,8 @@ export function PopChip({ label, color = pop.white, icon, leading, trailing, sel
       accessibilityRole={toggle ? 'togglebutton' : 'button'}
       aria-selected={toggle ? selected : undefined}
       accessibilityLabel={accessibilityLabel ?? label}
-      // The chip is 40 tall; the hit slop makes the tap area 44.
-      hitSlop={{ top: 2, bottom: 4, left: 2, right: 2 }}
+      // The chip is 40 tall (small: 32 + its 3pt lip); the hit slop makes the tap area 44.
+      hitSlop={small ? { top: 4, bottom: 5, left: 4, right: 4 } : { top: 2, bottom: 4, left: 2, right: 2 }}
       style={[styles.wrap, style]}
     >
       <View style={styles.shadow} />

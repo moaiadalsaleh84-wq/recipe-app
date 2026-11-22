@@ -110,7 +110,8 @@ export default function RecipesScreen() {
   const moodRecipes = useMemo(() => (mood ? recipesForMood(mood, allRecipes, pantry) : []), [mood, allRecipes, pantry]);
 
   const hasFilters = !!category || tags.length > 0;
-  const showExtras = !hasFilters && !mood;
+  // Searching or filtering shows only the results (DESIGN.md).
+  const showExtras = !hasFilters && !mood && !q;
   // Tonight's dinner from the plan, otherwise the day's pick: fits your diet and goal, 45 minutes or
   // less, best pantry match (the same pick as onboarding, the reminder and the empty states).
   const { tonight: dayPick, picks } = useTonightPick();

@@ -574,7 +574,7 @@ export function Segmented<T extends string>({
             accessibilityRole="radio"
             aria-checked={selected}
             accessibilityLabel={o.label}
-            hitSlop={small ? { top: 8, bottom: 8 } : { top: 4, bottom: 4 }}
+            hitSlop={small ? { top: 8, bottom: 8 } : { top: 5, bottom: 5 }}
             style={[segStyles.item, small && segStyles.itemSmall, selected && { backgroundColor: t.pop.sunshine, borderColor: t.pop.ink, borderWidth: t.stroke.thin }]}
           >
             <Text style={[t.type.footnote, { color: selected ? t.colors.label : t.colors.secondaryLabel, fontFamily: selected ? t.fonts.black : t.fonts.bold, fontSize: small ? 13 : 14 }]}>{o.label}</Text>

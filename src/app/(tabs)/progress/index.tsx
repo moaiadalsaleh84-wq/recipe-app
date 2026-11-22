@@ -109,7 +109,7 @@ export default function ProgressScreen() {
         <View style={{ flexDirection: 'row', alignItems: 'center' }} testID="xp-label">
           <AnimatedNumber value={xp} suffix={'\u00A0XP'} style={[t.type.caption1, { color: t.colors.secondaryLabel }]} />
           <Text style={[t.type.caption1, { color: t.colors.secondaryLabel, flexShrink: 1 }]} numberOfLines={1}>
-            {lvl.next ? ` · ${nb(lvl.toNext, 'XP')} to ${lvl.next.title}` : ' · Top level!'}
+            {lvl.next ? `\u00A0·\u00A0${nb(lvl.toNext, 'XP')} to ${lvl.next.title}` : '\u00A0·\u00A0Top level!'}
           </Text>
         </View>
       </View>

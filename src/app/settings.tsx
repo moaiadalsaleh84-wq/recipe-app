@@ -5,13 +5,14 @@ import { Icon } from '../components/Icon';
 import { PageHeader } from '../components/PageHeader';
 import { PressableScale } from '../components/PressableScale';
 import { useToast } from '../components/Toast';
-import { Section, Segmented } from '../components/ui';
+import { Chip, Section, Segmented } from '../components/ui';
 import { PopIconButton } from '../components/pop';
 import type { Units } from '../data/mock';
-import { timeLabel } from '../data/onboarding';
+import { dietOptions, timeLabel } from '../data/onboarding';
 import { askReminderPermission } from '../lib/dinnerReminders';
 import { showPaywall, useProGate } from '../lib/pro';
 import { MANAGE_SUBSCRIPTIONS_URL } from '../lib/purchases';
+import { noWidow } from '../lib/text';
 import { useStore } from '../state/store';
 import { pop, useTheme } from '../theme';
 
@@ -72,12 +73,31 @@ export default function Settings() {
             <Segmented label="Units" value={units} onChange={(u: Units) => setUnits(u)} options={[{ label: 'Metric', value: 'metric' }, { label: 'US', value: 'us' }]} />
           </View>
         </Section>
+        {/* Your diet from onboarding: Home and every pick only show recipes that fit it. */}
+        <Section>
+          <View style={styles.dietRow} testID="diet-setting">
+            <Text style={[t.type.body, { color: t.colors.label }]}>Diet</Text>
+            <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
+              {profile.diets.length ? 'Only recipes that fit are shown.' : 'No preference: every recipe is shown.'}
+            </Text>
+            <View style={styles.chips}>
+              {dietOptions.map((d) => (
+                <Chip
+                  key={d}
+                  label={d}
+                  selected={profile.diets.includes(d)}
+                  onPress={() => setProfile({ diets: profile.diets.includes(d) ? profile.diets.filter((x) => x !== d) : [...profile.diets, d] })}
+                />
+              ))}
+            </View>
+          </View>
+        </Section>
         <Section>
           <View style={styles.row}>
             <Icon name="clock" size={18} color={t.colors.label} />
             <View style={{ flex: 1 }}>
               <Text style={[t.type.body, { color: t.colors.label }]}>Daily dinner idea</Text>
-              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>One nudge a day, skipped on days you cooked</Text>
+              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{noWidow('One nudge a day, skipped on days you cooked')}</Text>
             </View>
             <Switch
               value={reminder.enabled}
@@ -103,7 +123,7 @@ export default function Settings() {
             <Icon name="flameFill" size={18} color={t.pop.tomato} />
             <View style={{ flex: 1 }}>
               <Text style={[t.type.body, { color: t.colors.label }]}>Streak saver</Text>
-              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{'At 8\u00A0pm, a quick idea when a 3\u2011day streak hasn’t had today’s cook'}</Text>
+              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{noWidow('At 8\u00A0pm, a quick idea when a 3\u2011day streak hasn’t had today’s cook')}</Text>
             </View>
             <Switch
               value={!!profile.streakSaver}
@@ -137,5 +157,7 @@ export default function Settings() {
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, minHeight: 60, gap: 12 },
+  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, minHeight: 60, gap: 12 },
+  dietRow: { paddingHorizontal: 16, paddingVertical: 14, gap: 2 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
 });

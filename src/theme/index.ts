@@ -198,6 +198,8 @@ const title = (fontSize: number, lineHeight: number, family: string = fonts.head
 export const noWidows = {
   style: (Platform.OS === 'web' ? { textWrap: 'pretty' } : {}) as TextStyle,
   props: { lineBreakStrategyIOS: 'push-out', textBreakStrategy: 'balanced' } as const,
+  /** For short titles in narrow places (recipe cards): lines of even length, so the last word isn't alone. */
+  balanced: (Platform.OS === 'web' ? { textWrap: 'balance' } : {}) as TextStyle,
 };
 
 export const type = {

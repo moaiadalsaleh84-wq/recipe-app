@@ -62,7 +62,14 @@ export function whatCanICook(recipes: Recipe[], pantry: string[]): PantryMatch[]
   if (!pantry.length) return [];
   return recipes
     .map((recipe) => {
-      const needed = recipe.ingredients.filter((i) => !isStaple(i.name));
+      // An ingredient used twice (Greek yogurt in the marinade and the sauce) counts once.
+      const seen = new Set<string>();
+      const needed = recipe.ingredients.filter((i) => {
+        const key = words(i.name).join(' ');
+        if (isStaple(i.name) || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
       const have = needed.filter((i) => pantryHas(pantry, i.name));
       const missing = needed.filter((i) => !pantryHas(pantry, i.name));
       return { recipe, have, missing, needed: needed.length };

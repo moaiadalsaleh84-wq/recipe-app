@@ -172,7 +172,7 @@ export function RecipeCard({ recipe, width, color }: { recipe: Recipe; width: nu
           <RecipePhoto recipe={recipe} />
         </View>
         <View style={styles.cardBody}>
-          <Text style={[t.type.title3, styles.cardTitle, { color: t.colors.label }]}>{recipe.title}</Text>
+          <Text style={[t.type.title3, styles.cardTitle, t.noWidows.balanced, { color: t.colors.label }]} {...t.noWidows.props}>{recipe.title}</Text>
           <View style={styles.cardMeta}>
             <View style={styles.meta}>
               <Icon name="clock" size={14} color={t.colors.label} weight="bold" />
@@ -292,7 +292,7 @@ export function RecipeRow({
           <RecipePhoto recipe={recipe} iconSize={24} radius={13.5} square />
         </View>
         <View style={{ flex: 1, gap: 2 }}>
-          <Text style={[t.type.title3, { color: t.colors.label, fontSize: 18, lineHeight: 22 }]}>{recipe.title}</Text>
+          <Text style={[t.type.title3, t.noWidows.balanced, { color: t.colors.label, fontSize: 18, lineHeight: 22 }]} {...t.noWidows.props}>{recipe.title}</Text>
           {metaLines ? (
             metaLines.map((line) => (
               <Text key={line} style={[styles.metaLine, { color: t.colors.secondaryLabel }]}>

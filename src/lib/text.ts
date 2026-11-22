@@ -7,8 +7,12 @@ export function noWidow(text: string) {
   const i = text.trimEnd().lastIndexOf(' ');
   if (i <= 0) return text;
   const last = text.slice(i + 1);
-  // Long last words can wrap on their own without looking lonely.
-  return last.length > 14 ? text : `${text.slice(0, i)} ${last}`;
+  const before = text.slice(0, i).trimEnd();
+  const prev = before.slice(before.lastIndexOf(' ') + 1);
+  // Long last words can wrap on their own without looking lonely. And a joined pair longer than
+  // 16 letters could be wider than a narrow line at large text, which would split a word
+  // ("everything unlo / cked"), so it isn't joined.
+  return last.length > 14 || prev.length + 1 + last.length > 16 ? text : `${before}\u00A0${last}`;
 }
 
 /** A non-breaking space: the two sides always stay on the same line. */
@@ -30,4 +34,15 @@ export function duration(minutes: number) {
   const h = Math.floor(m / 60);
   const rest = m % 60;
   return rest ? `${nb(h, 'h')}${NBSP}${nb(rest, 'min')}` : nb(h, 'h');
+}
+
+/** Units that must stay on the same line as the number before them ("1 minute", "200 °C"). */
+const UNIT_AFTER_NUMBER = /(\d[\d.,/½¼¾⅓⅔]*) (minutes?|mins?|seconds?|secs?|hours?|hrs?|h|g|kg|ml|l|cm|mm|°[CF]|degrees|tbsp|tsp|cups?|oz|lb|pieces?|cloves?|slices?)(?=[\s.,;:!?)]|$)/g;
+
+/**
+ * Sentence text for display: a number never ends a line apart from its unit ("cook for 1 /
+ * minute" can't happen), and the last word never sits alone (see noWidow).
+ */
+export function keepTogether(text: string) {
+  return noWidow(text.replace(UNIT_AFTER_NUMBER, `$1${NBSP}$2`));
 }

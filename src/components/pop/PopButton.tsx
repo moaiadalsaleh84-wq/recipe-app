@@ -103,7 +103,7 @@ export function PopButton({
           <>
             {icon && <Icon name={icon} size={large ? 20 : 17} color={disabled ? pop.inkMuted : textColor} weight="bold" />}
             {label ? (
-              <Text style={[large ? typeScale.buttonLarge : typeScale.button, { color: disabled ? pop.inkMuted : textColor, textAlign: 'center', flexShrink: 1 }]} numberOfLines={1}>
+              <Text style={[large ? typeScale.buttonLarge : typeScale.button, { color: disabled ? pop.inkMuted : textColor, textAlign: 'center', flexShrink: 1 }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
                 {label}
               </Text>
             ) : null}

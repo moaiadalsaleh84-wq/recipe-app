@@ -37,7 +37,7 @@ import { amountFor, ingredientLabel } from '../../lib/scale';
 import { useStore } from '../../state/store';
 import { macroPercents } from '../../lib/percent';
 import { fonts, pop, popCycle, useTheme } from '../../theme';
-import { duration, nb } from '../../lib/text';
+import { duration, keepTogether, nb } from '../../lib/text';
 
 export default function RecipeScreen() {
   const reduceMotion = useReducedMotion();
@@ -333,7 +333,7 @@ export default function RecipeScreen() {
               <View style={[styles.stepNum, { backgroundColor: popCycle[i % popCycle.length].fill, borderColor: t.pop.ink }]}>
                 <Text style={[t.type.headline, { color: t.pop.ink, fontFamily: t.fonts.heading }]}>{i + 1}</Text>
               </View>
-              <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>{stepFor(step)}</Text>
+              <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>{keepTogether(stepFor(step))}</Text>
             </View>
           ))}
 
