@@ -5,7 +5,7 @@
  *   ANTHROPIC_API_KEY   required for AI extraction
  *   RATE_LIMIT_SALT     random string used to hash device ids and IPs
  *   IMPORT_DAILY_CAP    optional, default 500 AI imports per day for the whole app
- *   IMPORT_MODEL        optional, default claude-opus-5-5
+ *   IMPORT_MODEL        optional, default claude-haiku-5-5 (claude-sonnet-5-5 for better steps)
  * SUPABASE_URL and the server key (SUPABASE_SECRET_KEYS, or the legacy SUPABASE_SERVICE_ROLE_KEY)
  * are provided by Supabase automatically.
  */

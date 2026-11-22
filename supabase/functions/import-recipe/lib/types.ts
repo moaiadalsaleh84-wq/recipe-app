@@ -35,7 +35,24 @@ export type ImportedIngredient = {
   name: string;
   /** The ingredient line as written in the source, for the review screen. */
   original: string;
+  /** Stable id within the recipe ("i1"), used by steps. */
+  id?: string;
+  /** "finely chopped", "drained". No amounts (they wouldn't scale). */
+  note?: string;
+  /** The amount (or the whole ingredient, for basics like oil and salt) was suggested, not in the source. */
+  estimated?: boolean;
 };
+
+export const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack', 'dessert'] as const;
+export type MealType = (typeof MEAL_TYPES)[number];
+
+/** Per step: which ingredients it uses, its timer, and whether the step was written by the AI. */
+export type ImportedStepMeta = { ingredientIds: string[]; timerSeconds: number | null; estimated: boolean };
+
+export type DietFlags = { vegetarian: boolean; vegan: boolean; glutenFree: boolean; dairyFree: boolean; porkFree: boolean };
+
+/** What the AI had to suggest because the source didn't say. The app marks these "est.". */
+export type EstimatedParts = { servings: boolean; time: boolean; steps: boolean; amounts: boolean; ingredients: boolean };
 
 export type ImportedRecipe = {
   title: string;
@@ -51,6 +68,15 @@ export type ImportedRecipe = {
   /** Photo URL from the source page, if it had one. */
   imageUrl: string | null;
   sourceUrl: string | null;
+  /* Added in import v2 (older apps ignore them). */
+  description?: string;
+  mealType?: MealType | null;
+  prepMinutes?: number | null;
+  cookMinutes?: number | null;
+  /** One entry per step, same order as `steps`. */
+  stepMeta?: ImportedStepMeta[];
+  diet?: DietFlags | null;
+  estimated?: EstimatedParts;
 };
 
 export type ImportSuccess = {
@@ -62,6 +88,8 @@ export type ImportSuccess = {
   /** Plain-language notes for the user, e.g. "2 ingredients were left out because they weren't in the source". */
   warnings: string[];
   source: { kind: SourceKind; host: string | null; usedStructuredData: boolean; usedAi: boolean; credit: SourceCredit | null };
+  /** What the recipe checks fixed or couldn't fix (for logs and tests; not shown to people). */
+  checks?: string[];
 };
 
 export type ImportErrorCode =

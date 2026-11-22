@@ -7,6 +7,7 @@
 import { AiError, fromAi, fromStructured, type AiCaller } from './extract.ts';
 import { LIMITS, sha256, type Limiter, type ResultCache } from './limits.ts';
 import { SourceError, gatherSource, previewSource } from './sources.ts';
+import { validateRecipe } from './validate.ts';
 import type { ImportFailure, ImportResponse, ImportSuccess, ImportedRecipe, MissingField, SourceMaterial } from './types.ts';
 
 export type Deps = {
@@ -116,7 +117,7 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
     return fail({ ok: false, code: 'server_error', message: 'Something went wrong reading that link.' });
   }
 
-  const cacheKey = material.url ? await sha256(`v2|${material.url}|${(text ?? '').trim()}`) : null;
+  const cacheKey = material.url ? await sha256(`v3|${material.url}|${(text ?? '').trim()}`) : null;
   if (cacheKey && deps.cache) {
     const hit = (await deps.cache.get(cacheKey).catch(() => null)) as ImportSuccess | null;
     if (hit?.ok) {
@@ -177,7 +178,11 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
     }
   }
 
-  const result = assemble(recipe!, material, warnings, usedAi);
+  // The same checks as the app's built-in recipes: fix what can be fixed, report the rest.
+  const checked = validateRecipe(recipe!);
+  if (checked.problems.length) log({ event: 'checks', problems: checked.problems.length });
+  const result = assemble(checked.recipe, material, warnings, usedAi);
+  result.checks = checked.problems;
   log({ event: 'import', kind: material.kind, status: result.status, structured: !!s, usedAi, ingredients: result.recipe.ingredients.length });
   if (cacheKey && deps.cache && result.status === 'complete') await deps.cache.set(cacheKey, result).catch(() => {});
   return json(200, result);
@@ -193,10 +198,13 @@ export function assemble(recipe: ImportedRecipe, material: SourceMaterial, warni
   if (recipe.ingredients.length && withoutAmount > recipe.ingredients.length / 3) missing.push('amounts');
   if (!recipe.servings) missing.push('servings');
   if (!recipe.minutes) missing.push('minutes');
+  // Ingredients and steps are what you need to cook. Servings and times the AI estimates when the
+  // source is silent; missing ones (structured data without AI) are filled in by the app.
+  const essential = missing.filter((m) => m === 'title' || m === 'ingredients' || m === 'steps');
   if (!recipe.nutrition) warnings.push('Nutrition couldn’t be estimated for this recipe.');
   return {
     ok: true,
-    status: missing.length ? 'partial' : 'complete',
+    status: essential.length ? 'partial' : 'complete',
     recipe,
     missing,
     warnings,

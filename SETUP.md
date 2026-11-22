@@ -70,7 +70,7 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-PASTE-YOUR-KEY RATE_LIMIT_SALT=$(o
 | `ANTHROPIC_API_KEY` | yes | Claude reads the recipe text |
 | `RATE_LIMIT_SALT` | yes | random string used to hash device ids and IP addresses |
 | `IMPORT_DAILY_CAP` | no (default 500) | most AI imports per day for the whole app |
-| `IMPORT_MODEL` | no (default `claude-opus-5-5`) | which Claude model reads recipes |
+| `IMPORT_MODEL` | no (default `claude-haiku-5-5`) | which Claude model reads recipes (`claude-sonnet-5-5` if Haiku's steps aren't good enough) |
 
 5. Deploy the function:
 
@@ -106,12 +106,12 @@ links your users share.
 
 ### Cost and abuse protection
 
-- **Per import:** a recipe page is roughly 3,000–8,000 tokens in and 1,000–2,000 out. With
-  `claude-opus-5-5` ($4 in / $20 out per million tokens) that's about **$0.03–0.08 per import**.
-  `IMPORT_MODEL=claude-haiku-5-5` is far cheaper ($0.10 / $0.50 per million). Run the test script
-  with both and compare the results before deciding.
+- **Per import:** a recipe is roughly 3,000–8,000 tokens in and 1,500–4,000 out (thinking
+  included). With the default `claude-haiku-5-5` ($0.10 in / $0.50 out per million tokens) that's
+  about **$0.001–0.003 per import**. If its steps or ingredients aren't good enough, set
+  `IMPORT_MODEL=claude-sonnet-5-5` ($2 / $10 per million: about $0.02–0.06 per import).
 - **Limits on the server** (`supabase/functions/import-recipe/lib/limits.ts`):
-  - 6 imports per device per 10 minutes, and 20 per day (previews of the picture and creator are separate and need no AI)
+  - 6 imports per device per 10 minutes, and 10 per day (previews of the picture and creator are separate and need no AI)
   - 60 per IP address per day
   - `IMPORT_DAILY_CAP` AI imports per day for everyone together
 - **Request limits:** request size 64 KB, page size 3 MB, 12-second page timeout, private

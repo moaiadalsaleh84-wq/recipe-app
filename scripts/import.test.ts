@@ -151,16 +151,24 @@ test('grounding keeps source ingredients and drops invented ones', () => {
 
 /* ---------------- handler ---------------- */
 
+/** Old-style test ingredient ({ amount }) or v2 ({ quantity }) → the v2 AI shape. */
+const v2Ing = (i: Record<string, unknown>) => ({ original: '', quantity: 0, unit: '', name: '', note: '', estimated: false, added_basic: false, ...i, ...(i.amount !== undefined ? { quantity: i.amount } : {}) });
+const v2Step = (st: unknown) => (typeof st === 'string' ? { text: st, ingredient_indexes: [], timer_seconds: 0, estimated: false } : st);
+
 const fakeAi = (over: Record<string, unknown> = {}): AiCaller => async (m) => {
   // A tiny "model": reads ingredient lines from the text, and also invents "secret sauce".
   const lines = m.text.split('\n').filter((l) => /^- /.test(l)).map((l) => l.slice(2));
+  const ingredients = (over.ingredients as Record<string, unknown>[] | undefined) ?? [...lines.map((l) => ({ original: l, amount: 1, unit: '', name: l.replace(/^[\d½¼¾\s]+(g|tablespoons|cloves|cups?)?\s*/, '') })), { original: '1 tbsp secret sauce', amount: 1, unit: 'tbsp', name: 'secret sauce' }];
+  const steps = (over.steps as unknown[] | undefined) ?? ['Cook.', 'Eat.'];
   return {
-    is_recipe: true, title: m.structured?.title ?? 'Something', servings: 4, total_minutes: 25, category: 'Dinner', tags: [],
-    ingredients: [...lines.map((l) => ({ original: l, amount: 1, unit: '', name: l.replace(/^[\d½¼¾\s]+(g|tablespoons|cloves|cups?)?\s*/, '') })), { original: '1 tbsp secret sauce', amount: 1, unit: 'tbsp', name: 'secret sauce' }],
-    steps: ['Cook.', 'Eat.'],
+    is_recipe: true, title: m.structured?.title ?? 'Something', description: '', meal_type: 'dinner', category: 'Dinner',
+    servings: 4, servings_estimated: false, prep_minutes: 10, cook_minutes: 15, time_estimated: false, tags: [],
+    diet: { vegetarian: false, vegan: false, gluten_free: false, dairy_free: false, pork_free: true },
     nutrition_per_serving: { available: true, calories: 500, protein_g: 20, carbs_g: 60, fat_g: 15, from_source: true },
     ...over,
-  };
+    ingredients: ingredients.map(v2Ing),
+    steps: steps.map(v2Step),
+  } as Awaited<ReturnType<AiCaller>>;
 };
 
 test('website with JSON-LD + AI: complete, invented ingredient dropped with a warning, cached', async () => {
@@ -414,7 +422,82 @@ test('preview: picture, creator and full link right away, without AI and without
   assert.equal(aiCalls, 0);
 });
 
-test('20 imports a day per device', async () => {
+test('10 imports a day per device', async () => {
   const { LIMITS } = await import('../supabase/functions/import-recipe/lib/limits.ts');
-  assert.equal(LIMITS.devicePerDay, 20);
+  assert.equal(LIMITS.devicePerDay, 10);
+});
+
+test('v2: no method in the caption → AI-written steps marked estimated; ingredient ids, timers and estimates flow through', async () => {
+  const caption = 'Hot honey crispy chicken burger 🍔🔥 4 chicken thighs, 2 cups buttermilk, 2 cups flour, 4 brioche buns, hot honey, pickles #fyp #burger';
+  const d = deps({
+    ai: async (m) => ({
+      ...(await fakeAi()(m)),
+      title: 'hot honey crispy chicken burger 🍔',
+      servings: 4, servings_estimated: true, time_estimated: true,
+      ingredients: [
+        v2Ing({ original: '4 chicken thighs', quantity: 4, name: 'Chicken thighs' }),
+        v2Ing({ original: '2 cups buttermilk', quantity: 2, unit: 'cup', name: 'Buttermilk' }),
+        v2Ing({ original: '2 cups flour', quantity: 2, unit: 'cup', name: 'Flour' }),
+        v2Ing({ original: '4 brioche buns', quantity: 4, name: 'Brioche buns' }),
+        v2Ing({ original: 'hot honey', quantity: 3, unit: 'tbsp', name: 'Hot honey', estimated: true }),
+        v2Ing({ original: 'pickles', quantity: 8, unit: 'slice', name: 'Pickles', estimated: true }),
+        v2Ing({ original: '', quantity: 500, unit: 'ml', name: 'Vegetable oil', note: 'for frying', added_basic: true }),
+        v2Ing({ original: '', quantity: 30, unit: 'g', name: 'Parmesan', added_basic: true }),
+      ],
+      steps: [
+        { text: 'Soak the chicken in buttermilk for 30 minutes.', ingredient_indexes: [0, 1], timer_seconds: 1800, estimated: true },
+        { text: 'Dredge in flour and fry in hot oil for 6 minutes.', ingredient_indexes: [2, 6], timer_seconds: 0, estimated: true },
+        { text: 'Toss in hot honey and build the burgers with pickles in the buns.', ingredient_indexes: [4, 5, 3], timer_seconds: 0, estimated: true },
+      ],
+    }),
+  });
+  const material = { kind: 'text' as const, url: null, host: null, title: null, text: caption, imageUrl: null, structured: null };
+  const { gatherSource } = await import('../supabase/functions/import-recipe/lib/sources.ts');
+  void gatherSource;
+  const { json } = await post(d, { text: caption });
+  void material;
+  assert.ok(json.ok, JSON.stringify(json));
+  if (!json.ok) return;
+  const r = json.recipe;
+  assert.equal(json.status, 'complete');
+  assert.equal(r.title, 'Hot Honey Crispy Chicken Burger');
+  // The added basic (oil) stays, estimated; parmesan is not a basic and not in the source: dropped.
+  assert.deepEqual(r.ingredients.map((i) => i.name), ['Chicken thighs', 'Buttermilk', 'Flour', 'Brioche buns', 'Hot honey', 'Pickles', 'Vegetable oil']);
+  assert.equal(r.ingredients[6].estimated, true);
+  assert.equal(r.ingredients[1].unit, 'cup');
+  assert.deepEqual(r.stepMeta?.map((m) => m.ingredientIds), [['i1', 'i2'], ['i3', 'i7'], ['i5', 'i6', 'i4']]);
+  assert.deepEqual(r.stepMeta?.map((m) => m.timerSeconds), [1800, 360, null]);
+  assert.ok(r.stepMeta?.every((m) => m.estimated));
+  assert.deepEqual(r.estimated, { servings: true, time: true, steps: true, amounts: true, ingredients: true });
+});
+
+test('v2 checks: Title Case, combined lines split, units fixed, amounts out of notes, every ingredient in a step', async () => {
+  const { titleCase, splitCombined, normalizeUnit, timerFromText, validateRecipe } = await import('../supabase/functions/import-recipe/lib/validate.ts');
+  assert.equal(titleCase('EASY one-pan chicken with rice 🍗 #dinner'), 'Easy One-Pan Chicken with Rice');
+  assert.equal(titleCase('the BBQ ribs'), 'The BBQ Ribs');
+  assert.deepEqual(splitCombined([{ amount: null, unit: '', name: 'salt, black pepper', original: 'salt, black pepper' }]).map((i) => i.name), ['Salt', 'Black pepper']);
+  assert.equal(normalizeUnit('Cups'), 'cup');
+  assert.equal(normalizeUnit('tablespoons'), 'tbsp');
+  assert.equal(normalizeUnit('handful'), null);
+  assert.equal(timerFromText('Simmer for 8–10 minutes'), 600);
+  assert.equal(timerFromText('Bake 1 hour'), 3600);
+  const { recipe, problems } = validateRecipe({
+    title: 'soup', servings: 2, minutes: 20, category: null, tags: [], nutrition: null, imageUrl: null, sourceUrl: null,
+    ingredients: [
+      { amount: 1, unit: 'cans', name: 'chickpeas', original: '1 can chickpeas', note: 'drained (1 can)' },
+      { amount: 1, unit: 'handful', name: 'basil', original: 'a handful of basil' },
+      { amount: 2, unit: 'cloves', name: 'garlic', original: '2 garlic cloves' },
+    ],
+    steps: ['Warm the chickpeas.', 'Serve.'],
+    stepMeta: [{ ingredientIds: ['i1', 'i9'], timerSeconds: null, estimated: false }],
+  });
+  assert.equal(recipe.title, 'Soup');
+  assert.equal(recipe.ingredients[0].unit, 'can');
+  assert.equal(recipe.ingredients[0].note, 'drained');
+  assert.equal(recipe.ingredients[1].unit, '');
+  assert.equal(recipe.ingredients[1].note, 'handful');
+  assert.equal(recipe.ingredients[2].unit, 'clove');
+  assert.deepEqual(recipe.stepMeta?.map((m) => m.ingredientIds), [['i1', 'i2', 'i3'], []]);
+  assert.ok(problems.some((p) => /handful/.test(p)));
+  assert.ok(problems.some((p) => /Garlic/.test(p)));
 });

@@ -21,8 +21,8 @@ export interface ResultCache {
 
 export const LIMITS = {
   devicePer10Min: 6,
-  /** 20 imports a day per device, so nobody can run up the AI bill. */
-  devicePerDay: 20,
+  /** 10 imports a day per device, so nobody can run up the AI bill. */
+  devicePerDay: 10,
   /** Previews (thumbnail + creator, no AI) are cheap; still limited. */
   previewsPer10Min: 40,
   ipPerDay: 60,

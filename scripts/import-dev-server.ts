@@ -21,26 +21,46 @@ import { LIMITS, MemoryCache, MemoryLimiter } from '../supabase/functions/import
 import { FIXTURE_PAGES, FIXTURE_ROUTES } from './import-fixtures.ts';
 
 const port = Number(process.env.PORT ?? 8787);
-if (process.env.NO_LIMITS) Object.assign(LIMITS, { devicePer10Min: 10_000, devicePerDay: 10_000, ipPerDay: 10_000, globalAiPerDay: 10_000 });
+if (process.env.NO_LIMITS) Object.assign(LIMITS, { devicePer10Min: 10_000, devicePerDay: 10_000, ipPerDay: 10_000, globalAiPerDay: 10_000, previewsPer10Min: 10_000 });
 
-/** Dev-only stand-in for Claude: keeps lines that look like ingredients or steps. */
+/**
+ * Dev-only stand-in for Claude (FAKE_AI=1): keeps lines that look like ingredients or steps and,
+ * like the real prompt, writes simple "estimated" steps when the source has none. For testing the
+ * app's screens only: the real model's results are far better.
+ */
 const fakeAi: AiCaller = async (m) => {
-  const lines = m.text.split(/\n|(?<=\.)\s+|,\s*/).map((l) => l.replace(/^[-•*]\s*|^\d+[.)]\s*/, '').trim()).filter(Boolean);
-  const ingredientLines = lines.filter((l) => /^(\d|[½¼¾])/.test(l) && l.length < 80);
-  const steps = lines.filter((l) => l.length > 25 && /[a-z]/.test(l) && !/^(\d|[½¼¾])/.test(l) && !/^(title|servings|total time|category|keywords|ingredients|steps|tiktok|instagram|youtube)/i.test(l));
-  const title = m.structured?.title ?? m.title ?? lines[0]?.slice(0, 60) ?? '';
+  const body = m.text.replace(/^(TikTok caption( by [^:]*)?|YouTube video title:[^\n]*\nDescription):?\s*/i, '');
+  const lines = body.split(/\n|(?<=\.)\s+|,\s*/).map((l) => l.replace(/^[-•*]\s*|^\d+[.)]\s*/, '').replace(/#\S+/g, '').trim()).filter(Boolean);
+  const ingredientLines = lines.filter((l) => /^(\d|[½¼¾])/.test(l) && l.length < 80 && !/\b(min|minutes|hours?)\b/i.test(l));
+  const sourceSteps = m.structured?.steps.length ? m.structured.steps : lines.filter((l) => l.length > 25 && /[a-z]/.test(l) && !/^(\d|[½¼¾])/.test(l) && !/^(title|servings|total time|category|keywords|ingredients|method|steps|tiktok|instagram|youtube)/i.test(l));
+  const ingredients = ingredientLines.map((l) => {
+    const p = parseLine(l);
+    return { original: l, quantity: p.amount ?? 0, unit: p.unit.replace(/s$/, ''), name: p.name, note: '', estimated: false, added_basic: false };
+  });
+  const title = (m.structured?.title ?? m.title ?? lines[0] ?? '').slice(0, 60);
+  const written = !sourceSteps.length;
+  const steps = written
+    ? [
+        { text: `Get all the ingredients ready: ${ingredients.slice(0, 3).map((i) => i.name).join(', ')}.`, ingredient_indexes: ingredients.map((_, k) => k).slice(0, 3), timer_seconds: 0, estimated: true },
+        { text: 'Cook everything together over medium heat for 10 minutes, stirring now and then.', ingredient_indexes: ingredients.map((_, k) => k).slice(3), timer_seconds: 600, estimated: true },
+        { text: 'Taste, adjust and serve.', ingredient_indexes: [], timer_seconds: 0, estimated: true },
+      ]
+    : sourceSteps.map((text) => ({ text, ingredient_indexes: [], timer_seconds: 0, estimated: false }));
   return {
     is_recipe: ingredientLines.length > 0,
     title,
-    servings: m.structured?.servings ?? 0,
-    total_minutes: m.structured?.minutes ?? 0,
-    category: 'Unknown',
+    description: '',
+    meal_type: 'dinner',
+    category: 'Dinner',
+    servings: m.structured?.servings ?? 2,
+    servings_estimated: !m.structured?.servings,
+    prep_minutes: m.structured?.minutes ? Math.round(m.structured.minutes / 3) : 10,
+    cook_minutes: m.structured?.minutes ? m.structured.minutes - Math.round(m.structured.minutes / 3) : 20,
+    time_estimated: !m.structured?.minutes,
     tags: [],
-    ingredients: ingredientLines.map((l) => {
-      const p = parseLine(l);
-      return { original: l, amount: p.amount ?? 0, unit: p.unit, name: p.name };
-    }),
-    steps: m.structured?.steps.length ? m.structured.steps : steps,
+    diet: { vegetarian: false, vegan: false, gluten_free: false, dairy_free: false, pork_free: true },
+    ingredients,
+    steps,
     // Like the real prompt: copy the site's nutrition when it gives some.
     nutrition_per_serving: m.structured?.nutrition?.calories
       ? { available: true, calories: m.structured.nutrition.calories, protein_g: m.structured.nutrition.protein ?? 0, carbs_g: m.structured.nutrition.carbs ?? 0, fat_g: m.structured.nutrition.fat ?? 0, from_source: true }
