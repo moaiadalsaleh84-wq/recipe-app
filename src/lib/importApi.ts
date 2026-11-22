@@ -4,7 +4,7 @@
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { IMPORT_URL } from '../config';
-import { categories, dietTags, type Category, type DietTag, type ImportSource, type Ingredient, type Recipe } from '../data/mock';
+import { categories, dietTags, type Category, type DietFlags, type DietTag, type ImportSource, type Ingredient, type Recipe } from '../data/mock';
 import { aisleFor } from './parseIngredient';
 
 /* Same shapes as supabase/functions/import-recipe/lib/types.ts. Keep in sync. */
@@ -12,7 +12,19 @@ export type MissingField = 'title' | 'ingredients' | 'steps' | 'amounts' | 'serv
 export type SourceKind = 'website' | 'tiktok' | 'instagram' | 'youtube' | 'text';
 /** Who made the recipe (from oEmbed, or the website's name). See supabase/.../types.ts. */
 export type SourceCredit = { handle: string | null; profileUrl: string | null; siteName: string | null };
-export type ImportedIngredient = { amount: number | null; unit: string; name: string; original: string };
+export type ImportedIngredient = {
+  amount: number | null;
+  unit: string;
+  name: string;
+  original: string;
+  /** "i1", used by stepMeta (import v2). */
+  id?: string;
+  note?: string;
+  /** Amount (or the whole basic) suggested, not in the source. */
+  estimated?: boolean;
+};
+export type ImportedStepMeta = { ingredientIds: string[]; timerSeconds: number | null; estimated: boolean };
+export type EstimatedParts = { servings: boolean; time: boolean; steps: boolean; amounts: boolean; ingredients: boolean };
 export type ImportedRecipe = {
   title: string;
   servings: number | null;
@@ -24,6 +36,14 @@ export type ImportedRecipe = {
   nutrition: { calories: number; protein: number; carbs: number; fat: number; estimated: true; basis: 'source' | 'ai' } | null;
   imageUrl: string | null;
   sourceUrl: string | null;
+  /* Import v2 (the server may be older: all optional). */
+  description?: string;
+  mealType?: string | null;
+  prepMinutes?: number | null;
+  cookMinutes?: number | null;
+  stepMeta?: ImportedStepMeta[];
+  diet?: DietFlags | null;
+  estimated?: EstimatedParts;
 };
 export type ImportSuccess = {
   ok: true;
@@ -137,6 +157,26 @@ export async function importRecipe(input: { url?: string; text?: string }, signa
   }
 }
 
+/** The picture, creator and full link of a link, right away (no AI, not counted as an import). */
+export type ImportPreview = { kind: SourceKind; sourceUrl: string; title: string | null; imageUrl: string | null; credit: SourceCredit | null };
+
+/** Never throws: null when there's no preview (no server, offline, not a link). */
+export async function importPreview(url: string, signal?: AbortSignal): Promise<ImportPreview | null> {
+  if (!IMPORT_URL || url === EXAMPLE_URL) return null;
+  try {
+    const res = await fetch(IMPORT_URL, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-install-id': await getInstallId() },
+      body: JSON.stringify({ url, preview: true }),
+      signal,
+    });
+    const body = (await res.json().catch(() => null)) as { ok?: boolean; preview?: ImportPreview | null } | null;
+    return body?.ok && body.preview ? body.preview : null;
+  } catch {
+    return null;
+  }
+}
+
 /* ---------------- imported → app recipe ---------------- */
 
 const UNIT_MAP: Record<string, { unit: string; factor: number }> = {
@@ -145,6 +185,7 @@ const UNIT_MAP: Record<string, { unit: string; factor: number }> = {
   dl: { unit: 'ml', factor: 100 },
   cl: { unit: 'ml', factor: 10 },
   cup: { unit: 'cups', factor: 1 },
+  pinch: { unit: 'pinch', factor: 1 },
   clove: { unit: 'cloves', factor: 1 },
   can: { unit: 'cans', factor: 1 },
   slice: { unit: 'slices', factor: 1 },
@@ -154,11 +195,15 @@ export function toIngredient(i: ImportedIngredient, index: number): Ingredient {
   const m = UNIT_MAP[i.unit] ?? { unit: i.unit, factor: 1 };
   const name = i.name.charAt(0).toUpperCase() + i.name.slice(1);
   return {
-    id: `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'item'}-${index}`,
+    // Steps refer to the server's ids (i1, i2…); older servers send none.
+    id: i.id ?? `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'item'}-${index}`,
     name,
-    quantity: i.amount ? Math.round(i.amount * m.factor * 100) / 100 : 0,
-    unit: i.amount ? m.unit : '',
+    // No amount: "to taste" (null, shown as "pinch") for pinches, else 0 (a plain item).
+    quantity: i.amount ? Math.round(i.amount * m.factor * 100) / 100 : i.unit === 'pinch' ? null : 0,
+    unit: i.amount ? m.unit : i.unit === 'pinch' ? 'pinch' : '',
     aisle: aisleFor(name),
+    ...(i.note ? { note: i.note } : {}),
+    ...(i.estimated ? { estimated: true } : {}),
   };
 }
 
@@ -187,7 +232,9 @@ export function creditFields(origin: ImportOrigin | null | undefined, sourceUrl:
   const c = origin.credit;
   const host = (origin.host ?? (sourceUrl ? safeHost(sourceUrl) : null))?.replace(/^www\./, '') ?? null;
   const site = c?.siteName?.trim() || (origin.kind === 'instagram' ? 'Instagram' : host) || undefined;
-  const sticker = source === 'tiktok' ? 'From TikTok' : source === 'youtube' ? 'From YouTube' : site;
+  const platform = source === 'tiktok' ? 'TikTok' : source === 'youtube' ? 'YouTube' : null;
+  // "From @pastaqueen on TikTok"; "From TikTok" when there's no handle; the site's name for websites.
+  const sticker = platform ? (c?.handle?.trim() ? `From ${c.handle.trim()} on ${platform}` : `From ${platform}`) : site;
   const handle = source === 'web' ? (c?.handle?.trim() || site) : c?.handle?.trim() || undefined;
   return {
     source,
@@ -210,7 +257,7 @@ export function toRecipe(r: ImportedRecipe, origin?: ImportOrigin | null): Omit<
     ...creditFields(origin, r.sourceUrl),
     title: r.title.trim() || 'Imported recipe',
     image: r.imageUrl ? { uri: r.imageUrl } : null,
-    description: '',
+    description: r.description ?? '',
     category: r.category && (categories as readonly string[]).includes(r.category) ? r.category : 'Dinner',
     minutes: r.minutes ?? 30,
     servings: r.servings ?? 2,
@@ -222,6 +269,13 @@ export function toRecipe(r: ImportedRecipe, origin?: ImportOrigin | null): Omit<
     steps: r.steps,
     sourceUrl: r.sourceUrl ?? undefined,
     origin: 'import',
+    ...(r.description ? { description: r.description } : {}),
+    ...(r.mealType ? { mealType: r.mealType } : {}),
+    ...(r.prepMinutes ? { prepMinutes: r.prepMinutes } : {}),
+    ...(r.cookMinutes ? { cookMinutes: r.cookMinutes } : {}),
+    ...(r.diet ? { diet: r.diet } : {}),
+    ...(r.stepMeta?.length === r.steps.length ? { stepMeta: r.stepMeta.map((m) => ({ ingredientIds: m.ingredientIds, timerSeconds: m.timerSeconds, ...(m.estimated ? { estimated: true } : {}) })) } : {}),
+    ...(r.estimated && (r.estimated.servings || r.estimated.time) ? { estimated: { servings: r.estimated.servings, time: r.estimated.time } } : {}),
   };
 }
 

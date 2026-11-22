@@ -2,7 +2,7 @@ import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { Text } from '../components/Text';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { MascotSays } from '../components/mascot/MascotSays';
@@ -18,12 +18,12 @@ import {
   draftFromImport,
   EXAMPLE_URL,
   importIsConfigured,
+  importPreview,
   importRecipe,
-  ingredientLine,
   missingMessage,
-  sourceLabel,
   toRecipe,
   type ImportFailure,
+  type ImportPreview,
   type ImportSuccess,
 } from '../lib/importApi';
 import { saveImportedPicture } from '../lib/photos';
@@ -32,11 +32,35 @@ import { isIOS } from '../navigation/screenOptions';
 import { FREE_LIMITS, useStore } from '../state/store';
 import { useTheme } from '../theme';
 import { Lift } from '../components/pop/Lift';
-import { nb } from '../lib/text';
+import { noWidow } from '../lib/text';
 
-type Phase = { name: 'input' } | { name: 'loading' } | { name: 'failed'; failure: ImportFailure } | { name: 'review'; result: ImportSuccess };
+type Phase = { name: 'input' } | { name: 'loading' } | { name: 'failed'; failure: ImportFailure };
 
-/** Paste a link or a caption, the server reads it, you check it, you save it. */
+/** The three things the loading screen ticks off, in order. */
+const STAGES = ['Reading the recipe', 'Finding ingredients', 'Writing the steps'] as const;
+
+const isLinkText = (value: string) => /^(https?:\/\/|www\.)\S+$/i.test(value) || (/https?:\/\//i.test(value) && value.length < 400);
+
+/** "Import this TikTok?" / "Import this YouTube video?" / "Import this recipe from bbcgoodfood.com?" */
+function offerFor(text: string | null) {
+  const m = text?.match(/https?:\/\/[^\s]+/i);
+  if (!m) return 'Import the link you copied?';
+  try {
+    const host = new URL(m[0]).hostname.replace(/^www\.|^m\./, '');
+    if (/(^|\.)tiktok\.com$/.test(host)) return 'Import this TikTok?';
+    if (/(^|\.)youtube\.com$|^youtu\.be$/.test(host)) return 'Import this YouTube video?';
+    if (/(^|\.)instagram\.com$/.test(host)) return 'Import this Instagram post?';
+    return `Import this recipe from ${host}?`;
+  } catch {
+    return 'Import the link you copied?';
+  }
+}
+
+/**
+ * Paste or share a link → a few seconds → the finished recipe, ready to cook. The server reads the
+ * source and writes the recipe; this screen shows the picture right away while it works, then
+ * opens the recipe page. What you pasted is never lost.
+ */
 export default function ImportScreen() {
   const t = useTheme();
   const toast = useToast();
@@ -46,17 +70,38 @@ export default function ImportScreen() {
   const { canImport, importsLeft } = useProGate();
   const [input, setInput] = useState(typeof params.url === 'string' ? params.url : '');
   const [phase, setPhase] = useState<Phase>({ name: 'input' });
-  const [elapsed, setElapsed] = useState(0);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [preview, setPreview] = useState<ImportPreview | null>(null);
+  const [previewFailed, setPreviewFailed] = useState(false);
+  const [stage, setStage] = useState(0);
+  // A link on the clipboard: offered as one tap ("Import this TikTok?").
+  const [offer, setOffer] = useState<{ label: string; text: string | null } | null>(null);
   const abort = useRef<AbortController | null>(null);
 
-  useEffect(() => {
-    if (phase.name !== 'loading') return;
-    const id = setInterval(() => setElapsed((s) => s + 1), 1000);
-    return () => clearInterval(id);
-  }, [phase.name]);
-
   useEffect(() => () => abort.current?.abort(), []);
+
+  // Look for a copied link. On iPhone, only whether there is one (reading it would ask for
+  // permission): the text is read when the offer is tapped. Elsewhere it can be read right away.
+  useEffect(() => {
+    if (input.trim() || params.auto === '1') return;
+    let alive = true;
+    (async () => {
+      try {
+        if (Platform.OS === 'ios') {
+          if (await Clipboard.hasUrlAsync()) alive && setOffer({ label: 'Import the link you copied?', text: null });
+          return;
+        }
+        const text = (await Clipboard.getStringAsync()).trim();
+        if (alive && text && isLinkText(text)) setOffer({ label: offerFor(text), text });
+      } catch {
+        // No clipboard access: the Paste button still works.
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /** Where to go when this flow is over. */
   const finish = (recipeId?: string) => {
@@ -83,45 +128,6 @@ export default function ImportScreen() {
     }
   };
 
-  const run = async () => {
-    const value = input.trim();
-    if (!value) return;
-    // The built-in example is free: it never counts towards the 3 free imports.
-    const isExample = value === EXAMPLE_URL;
-    if (!canImport && !isExample) {
-      showPaywall('imports');
-      return;
-    }
-    const isLink = /^(https?:\/\/|www\.)\S+$/i.test(value) || (/https?:\/\//i.test(value) && value.length < 400);
-    setElapsed(0);
-    setPhase({ name: 'loading' });
-    abort.current = new AbortController();
-    const res = await importRecipe(isLink ? { url: value } : { text: value }, abort.current.signal);
-    if (res.ok) {
-      if (!isExample) countImport();
-      haptics.success();
-      if (res.status === 'partial') {
-        openForm(draftFromImport(res.recipe, [missingMessage(res.missing), ...res.warnings].filter(Boolean).join(' '), res.source));
-        return;
-      }
-      setPhase({ name: 'review', result: res });
-    } else if (res.code === 'cancelled') {
-      setPhase({ name: 'input' });
-    } else {
-      haptics.warning();
-      setPhase({ name: 'failed', failure: res });
-    }
-  };
-
-  // A link pasted on the Recipes screen starts reading right away (once).
-  const autoStarted = useRef(false);
-  useEffect(() => {
-    if (params.auto !== '1' || autoStarted.current || !input.trim()) return;
-    autoStarted.current = true;
-    void run();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const save = async (result: ImportSuccess) => {
     const recipe = toRecipe(result.recipe, result.source);
     // Covers are web links that can expire (TikTok's do within hours): download once and keep the
@@ -131,8 +137,76 @@ export default function ImportScreen() {
     recipe.image = picture ? { uri: picture.card } : null;
     if (picture) recipe.importedImage = picture;
     const id = addRecipe(recipe);
-    toast({ message: `${result.recipe.title} saved to your recipes`, icon: 'book' });
+    haptics.success();
     finish(id);
+  };
+
+  const run = async (override?: string) => {
+    const value = (override ?? input).trim();
+    if (!value) return;
+    if (override !== undefined) setInput(value);
+    // The built-in example is free: it never counts towards the free imports.
+    const isExample = value === EXAMPLE_URL;
+    if (!canImport && !isExample) {
+      showPaywall('imports');
+      return;
+    }
+    const isLink = isLinkText(value);
+    setOffer(null);
+    setPreview(null);
+    setPreviewFailed(false);
+    setStage(0);
+    setPhase({ name: 'loading' });
+    abort.current = new AbortController();
+    const signal = abort.current.signal;
+    // The picture and creator come first (a second or two); the recipe follows.
+    if (isLink) {
+      void importPreview(value, signal).then((p) => {
+        if (signal.aborted) return;
+        if (p) setPreview(p);
+        setStage((s) => Math.max(s, 1));
+      });
+    }
+    const res = await importRecipe(isLink ? { url: value } : { text: value }, signal);
+    if (res.ok) {
+      if (!isExample) countImport();
+      // Nothing to cook from without ingredients: finish it in the form instead.
+      if (res.recipe.ingredients.length === 0) {
+        openForm(draftFromImport(res.recipe, [missingMessage(res.missing), ...res.warnings].filter(Boolean).join(' '), res.source));
+        return;
+      }
+      // Tick off what's done, then open the finished recipe.
+      setStage(2);
+      await new Promise((r) => setTimeout(r, 300));
+      setStage(3);
+      await new Promise((r) => setTimeout(r, 350));
+      await save(res);
+    } else if (res.code === 'cancelled') {
+      setPhase({ name: 'input' });
+    } else {
+      haptics.warning();
+      setPhase({ name: 'failed', failure: res });
+    }
+  };
+
+  // A link shared to the app or pasted on Home starts reading right away (once).
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (params.auto !== '1' || autoStarted.current || !input.trim()) return;
+    autoStarted.current = true;
+    void run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const takeOffer = async () => {
+    try {
+      const text = offer?.text ?? (await Clipboard.getUrlAsync()) ?? (await Clipboard.getStringAsync());
+      if (text?.trim()) void run(text.trim());
+      else setOffer(null);
+    } catch {
+      setOffer(null);
+      toast({ message: 'Couldn’t read the clipboard. Long-press the box to paste.', tone: 'warning' });
+    }
   };
 
   const line: Line =
@@ -140,9 +214,9 @@ export default function ImportScreen() {
       ? { text: 'Ooh, let me read this one…', mood: 'thinking' }
       : phase.name === 'failed'
         ? { text: 'Oops, that one slipped away!', mood: 'oops' }
-        : phase.name === 'review'
-          ? { text: 'Got it! Have a look.', mood: 'happy' }
-          : { text: 'Paste a link. I’ll fetch the recipe!', mood: 'excited' };
+        : { text: 'Paste a link. I’ll fetch the recipe!', mood: 'excited' };
+  const failure = phase.name === 'failed' ? phase.failure : null;
+  const network = !!failure && ['offline', 'timeout', 'server_error', 'fetch_failed', 'ai_unavailable'].includes(failure.code);
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: t.colors.groupedBackground }}>
@@ -163,7 +237,7 @@ export default function ImportScreen() {
         }
       />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <MascotSays line={line} size={96} style={{ marginBottom: 16 }} />
+        {phase.name !== 'loading' && <MascotSays line={line} size={96} style={{ marginBottom: 16 }} />}
 
         {phase.name === 'input' && (
           <Animated.View entering={FadeIn.duration(200)}>
@@ -177,6 +251,15 @@ export default function ImportScreen() {
                 <Icon name="warning" size={18} color={t.colors.warning} />
                 <Text style={[t.type.footnote, { color: t.colors.label, flex: 1 }]}>Import isn’t connected in this build yet, so trying it will show an error. You can still write recipes yourself.</Text>
               </View>
+            )}
+            {offer && !input.trim() && (
+              <Lift radius={18} style={{ marginBottom: 14 }}>
+                <View style={[styles.offer, { backgroundColor: t.pop.sunshineTint, borderColor: t.pop.ink }]} testID="clipboard-offer">
+                  <Icon name="paste" size={20} color={t.pop.ink} />
+                  <Text style={[t.type.headline, { color: t.pop.ink, flex: 1 }]}>{offer.label}</Text>
+                  <Button label="Import" size="medium" onPress={takeOffer} accessibilityLabel={offer.label} />
+                </View>
+              </Lift>
             )}
             <View style={[styles.inputWrap, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
               <TextInput maxFontSizeMultiplier={1.3}
@@ -204,7 +287,7 @@ export default function ImportScreen() {
             </View>
             {/* One line of help; the details open on tap. */}
             <View style={styles.helpRow}>
-              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, flex: 1 }]}>{'Websites, TikTok, YouTube and Instagram.'}</Text>
+              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, flex: 1 }]}>{noWidow('TikTok, YouTube, Instagram and recipe websites.')}</Text>
               <PressableScale onPress={() => setHelpOpen((v) => !v)} accessibilityLabel="What works?" aria-expanded={helpOpen} style={styles.helpLink}>
                 <Text style={[t.type.footnote, { color: t.colors.tint, fontFamily: t.fonts.bold }]}>What works?</Text>
               </PressableScale>
@@ -212,11 +295,11 @@ export default function ImportScreen() {
             {helpOpen && (
               <Animated.View entering={FadeIn.duration(180)} style={[styles.help, { backgroundColor: t.colors.fill }]} testID="import-help">
                 <Text style={[t.type.footnote, { color: t.colors.label, lineHeight: 19 }]}>
-                  Recipe websites work best. TikTok, YouTube and Instagram work when the recipe is written in the caption or description. We can’t watch videos, so a video without the recipe in its text can’t be imported.
+                  We read the caption, the video description or the page, never the video itself. When something isn’t written there (an amount, the steps, the time), we suggest it and mark it “est.”, so check it before cooking.
                 </Text>
               </Animated.View>
             )}
-            <Button label="Import recipe" icon="arrowRight" onPress={run} disabled={!input.trim()} style={{ marginTop: 16 }} />
+            <Button label="Import recipe" icon="arrowRight" onPress={() => run()} disabled={!input.trim()} style={{ marginTop: 16 }} />
             {/* Shown once you've used one, not before. */}
             {importsLeft !== null && importsUsed > 0 && (
               <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, textAlign: 'center', marginTop: 10 }]} testID="imports-left">
@@ -230,49 +313,62 @@ export default function ImportScreen() {
         )}
 
         {phase.name === 'loading' && (
-          <Animated.View entering={FadeIn.duration(200)} style={styles.center} accessibilityLiveRegion="polite" testID="import-loading">
-            <Text style={[t.type.headline, { color: t.colors.label }]}>Reading the recipe…</Text>
-            <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, textAlign: 'center' }]}>This usually takes 5 to 30 seconds. {elapsed > 3 ? `(${elapsed} s)` : ''}</Text>
-            <Button label="Cancel" variant="tinted" size="medium" onPress={() => abort.current?.abort()} style={{ marginTop: 16, alignSelf: 'center' }} accessibilityLabel="Cancel import" />
+          <Animated.View entering={FadeIn.duration(200)} accessibilityLiveRegion="polite" testID="import-loading">
+            {/* The picture as soon as we have it; the tinted card until then. */}
+            <Lift radius={22}>
+              <View style={[styles.loadPhoto, { backgroundColor: t.pop.tomatoTint, borderColor: t.pop.ink }]}>
+                {preview?.imageUrl && !previewFailed ? (
+                  <Image source={{ uri: preview.imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} onError={() => setPreviewFailed(true)} accessibilityIgnoresInvertColors testID="loading-thumb" />
+                ) : (
+                  <Icon name="pot" size={56} color={t.pop.inkMuted} />
+                )}
+              </View>
+            </Lift>
+            {preview?.credit?.handle || preview?.credit?.siteName ? (
+              <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, marginTop: 10 }]} numberOfLines={1} testID="loading-credit">
+                {preview.credit.handle ? `From ${preview.credit.handle} on ${preview.kind === 'youtube' ? 'YouTube' : preview.kind === 'tiktok' ? 'TikTok' : (preview.credit.siteName ?? 'the web')}` : `From ${preview.credit.siteName}`}
+              </Text>
+            ) : null}
+            <View style={styles.stages}>
+              {STAGES.map((label, k) => {
+                const done = stage > k;
+                const active = !done && stage === k;
+                return (
+                  <View key={label} style={styles.stage} testID={`stage-${k}`} accessibilityLabel={`${label}${done ? ', done' : active ? ', working' : ''}`}>
+                    <View style={[styles.stageDot, { borderColor: t.pop.ink, backgroundColor: done ? t.pop.leaf : t.pop.white }]}>
+                      {done ? <Icon name="check" size={14} color={t.pop.ink} weight="bold" /> : active ? <ActivityIndicator size="small" color={t.pop.ink} /> : null}
+                    </View>
+                    <Text style={[t.type.headline, { color: done || active ? t.colors.label : t.colors.tertiaryLabel }]}>{label}</Text>
+                  </View>
+                );
+              })}
+            </View>
+            <Button label="Cancel" variant="plain" size="medium" onPress={() => abort.current?.abort()} style={{ marginTop: 12, alignSelf: 'center' }} accessibilityLabel="Cancel import" />
           </Animated.View>
         )}
 
-        {phase.name === 'failed' && (
+        {failure && (
           <Animated.View entering={FadeIn.duration(200)} testID="import-failed">
             <Lift radius={18}>
-              <Lift radius={18}>
-                <Lift radius={18}>
-                  <View style={[styles.card, styles.lifted, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
-                    <Text style={[t.type.headline, { color: t.colors.label }]}>{failureTitle(phase.failure)}</Text>
-                    <Text style={[t.type.body, { color: t.colors.secondaryLabel, marginTop: 4 }]} testID="import-error">
-                      {phase.failure.message}
-                    </Text>
-                  </View>
-                </Lift>
-              </Lift>
+              <View style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
+                <Text style={[t.type.headline, { color: t.colors.label }]}>{failureTitle(failure)}</Text>
+                <Text style={[t.type.body, { color: t.colors.secondaryLabel, marginTop: 4 }]} testID="import-error">
+                  {failure.message}
+                </Text>
+              </View>
             </Lift>
             <View style={{ gap: 10, marginTop: 16 }}>
-              {phase.failure.code === 'rate_limited' || phase.failure.code === 'daily_cap' ? null : (
-                <Button label="Try again" icon="restart" onPress={run} />
+              {/* A network problem: try the same link again. */}
+              {network && <Button label="Try again" icon="restart" onPress={() => run()} />}
+              {/* No recipe found: write it yourself, with the title, photo and link already filled in. */}
+              {!network && failure.code !== 'rate_limited' && failure.code !== 'daily_cap' && (
+                <Button label="Type it yourself" icon="edit" onPress={() => openForm(draftFromFailure(failure, input))} />
               )}
-              {(phase.failure.code === 'no_text' || phase.failure.code === 'blocked' || phase.failure.code === 'fetch_failed') && (
-                <Button
-                  label="Paste the text instead"
-                  icon="notes"
-                  variant="tinted"
-                  onPress={() => {
-                    setInput('');
-                    setPhase({ name: 'input' });
-                  }}
-                />
-              )}
-              <Button label="Write it myself" icon="edit" variant="tinted" onPress={() => openForm(draftFromFailure(phase.failure, input))} />
+              {network && <Button label="Type it yourself" icon="edit" variant="tinted" onPress={() => openForm(draftFromFailure(failure, input))} />}
               <Button label="Back" variant="plain" onPress={() => setPhase({ name: 'input' })} accessibilityLabel="Back to the link" />
             </View>
           </Animated.View>
         )}
-
-        {phase.name === 'review' && <Review result={phase.result} onSave={() => save(phase.result)} onEdit={() => openForm(draftFromImport(phase.result.recipe, phase.result.warnings.join(' ') || null, phase.result.source))} onDiscard={() => setPhase({ name: 'input' })} />}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -298,80 +394,6 @@ function failureTitle(f: ImportFailure) {
   }
 }
 
-function Review({ result, onSave, onEdit, onDiscard }: { result: ImportSuccess; onSave: () => void; onEdit: () => void; onDiscard: () => void }) {
-  const t = useTheme();
-  const r = result.recipe;
-  const n = r.nutrition;
-  const [photoFailed, setPhotoFailed] = useState(false);
-  return (
-    <Animated.View entering={FadeIn.duration(220)} testID="import-review">
-      <Lift radius={18}>
-        <View style={[styles.card, styles.lifted, { backgroundColor: t.colors.cell, ...t.chunky.card, padding: 0, overflow: 'hidden' }]}>
-          {r.imageUrl && !photoFailed ? <Image source={{ uri: r.imageUrl }} style={styles.photo} contentFit="cover" onError={() => setPhotoFailed(true)} accessibilityIgnoresInvertColors /> : null}
-          <View style={{ padding: 16, gap: 4 }}>
-            <Text style={[t.type.title2, { color: t.colors.label }]} testID="review-title">
-              {r.title}
-            </Text>
-            <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
-              {[r.servings && `Serves ${r.servings}`, r.minutes && nb(r.minutes, 'min'), `From ${result.source.host ?? sourceLabel[result.source.kind]}`].filter(Boolean).join(' · ')}
-            </Text>
-          </View>
-        </View>
-      </Lift>
-
-      {result.warnings.length > 0 && (
-        <View style={[styles.notice, { backgroundColor: t.colors.cell, borderColor: t.colors.warning, marginTop: 12 }]} testID="review-warnings">
-          <Icon name="info" size={18} color={t.colors.warning} />
-          <Text style={[t.type.footnote, { color: t.colors.label, flex: 1 }]}>{result.warnings.join(' ')}</Text>
-        </View>
-      )}
-
-      <Text style={[t.type.title3, styles.h, { color: t.colors.label }]}>Ingredients · {r.ingredients.length}</Text>
-      <View style={[styles.card, styles.lifted, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
-        {r.ingredients.map((i, k) => (
-          <Text key={k} style={[t.type.body, { color: t.colors.label, paddingVertical: 4 }]}>
-            • {ingredientLine(i)}
-          </Text>
-        ))}
-      </View>
-
-      <Text style={[t.type.title3, styles.h, { color: t.colors.label }]}>Steps · {r.steps.length}</Text>
-      <Lift radius={18}>
-        <View style={[styles.card, styles.lifted, { backgroundColor: t.colors.cell, ...t.chunky.card, gap: 10 }]}>
-          {r.steps.map((s, k) => (
-            <Text key={k} style={[t.type.body, { color: t.colors.label }]}>
-              <Text style={{ fontFamily: t.fonts.bold, color: t.colors.tint }}>{k + 1}. </Text>
-              {s}
-            </Text>
-          ))}
-        </View>
-      </Lift>
-
-      <Text style={[t.type.title3, styles.h, { color: t.colors.label }]}>Nutrition</Text>
-      <View style={[styles.card, styles.lifted, { backgroundColor: t.colors.cell, ...t.chunky.card }]} testID="review-nutrition">
-        {n ? (
-          <>
-            <Text style={[t.type.body, { color: t.colors.label }]}>
-              {nb(n.calories, 'kcal')} · {nb(n.protein, 'g')} protein · {nb(n.carbs, 'g')} carbs · {nb(n.fat, 'g')} fat
-            </Text>
-            <Text style={[t.type.caption1, { color: t.colors.secondaryLabel, marginTop: 4 }]}>
-              Estimated per serving{n.basis === 'source' ? ', as given by the source' : ', worked out from the ingredients'}. Real values depend on brands and portions.
-            </Text>
-          </>
-        ) : (
-          <Text style={[t.type.body, { color: t.colors.secondaryLabel }]}>Not enough detail to estimate. You can add it when editing.</Text>
-        )}
-      </View>
-
-      <View style={{ gap: 10, marginTop: 20 }}>
-        <Button label="Save recipe" icon="check" onPress={onSave} accessibilityLabel="Save imported recipe" />
-        <Button label="Edit before saving" icon="edit" variant="tinted" onPress={onEdit} />
-        <Button label="Discard" variant="plain" onPress={onDiscard} accessibilityLabel="Discard import" />
-      </View>
-    </Animated.View>
-  );
-}
-
 const styles = StyleSheet.create({
   helpRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
   helpLink: { minHeight: 44, justifyContent: 'center', paddingLeft: 12 },
@@ -387,6 +409,10 @@ const styles = StyleSheet.create({
   center: { alignItems: 'center', gap: 6, paddingTop: 8 },
   card: { borderRadius: 18, padding: 16, borderCurve: 'continuous' },
   lifted: {},
-  photo: { height: 200, width: '100%' },
+  offer: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, paddingLeft: 16, borderRadius: 18, borderWidth: 2.5, borderCurve: 'continuous' },
+  loadPhoto: { width: '100%', aspectRatio: 4 / 3, borderRadius: 22, borderWidth: 2.5, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
+  stages: { gap: 14, marginTop: 20, alignSelf: 'stretch' },
+  stage: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 32 },
+  stageDot: { width: 28, height: 28, borderRadius: 14, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
   h: { marginTop: 22, marginBottom: 8 },
 });

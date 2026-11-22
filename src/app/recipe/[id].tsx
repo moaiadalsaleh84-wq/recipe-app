@@ -181,6 +181,14 @@ export default function RecipeScreen() {
   // A photo the user chose (not the imported one): no source sticker on it, and the ⋯ menu offers the imported one back.
   const usingOwnPhoto = !!recipe.image && !(recipe.importedImage && typeof recipe.image === 'object' && recipe.image.uri === recipe.importedImage.card);
 
+  // Imported recipes: what the AI had to suggest. Only shown when something was.
+  const estAmounts = recipe.ingredients.some((i) => i.estimated);
+  const estSteps = !!recipe.stepMeta?.some((m) => m.estimated);
+  const estOther = !!recipe.estimated?.servings || !!recipe.estimated?.time;
+  const estParts = [estAmounts && 'amounts', estSteps && 'steps'].filter(Boolean) as string[];
+  // "Some amounts and steps were estimated…"; servings or time alone: "Some details…".
+  const estimatedNote = estParts.length || estOther ? `Some ${estParts.length ? estParts.join(' and ') : 'details'} were estimated. Check before cooking.` : null;
+
   const level = recipe.difficulty === 'Easy' ? 1 : recipe.difficulty === 'Medium' ? 2 : 3;
   // Full content width (20pt margins), 4:3.
   const photoWidth = Math.min(width - 40, 560);
@@ -266,7 +274,13 @@ export default function RecipeScreen() {
               />
             </>
           )}
-          {!!recipe.sourceUrl && !imported && (
+          {estimatedNote && (
+            <View style={[styles.estBanner, { backgroundColor: t.pop.sunshineTint, borderColor: t.pop.ink }]} testID="estimated-banner" accessibilityRole="alert">
+              <Icon name="info" size={18} color={t.pop.ink} />
+              <Text style={[t.type.subhead, { color: t.pop.ink, flex: 1, fontFamily: t.fonts.semibold }]}>{estimatedNote}</Text>
+            </View>
+          )}
+                    {!!recipe.sourceUrl && !imported && (
             <PressableScale
               onPress={() => Linking.openURL(recipe.sourceUrl!).catch(() => toast({ message: 'Couldn’t open that link', tone: 'warning' }))}
               accessibilityRole="link"
@@ -283,7 +297,7 @@ export default function RecipeScreen() {
           {/* Three colored stat tiles: time, difficulty + steps, kcal */}
           <Reveal index={1}>
             <View style={styles.stats}>
-              <StatTile color={t.pop.sunshine} icon="clock" value={duration(recipe.minutes)} label="total" a11y={`${recipe.minutes} minutes total`} />
+              <StatTile color={t.pop.sunshine} icon="clock" value={duration(recipe.minutes)} label={recipe.estimated?.time ? 'total, est.' : 'total'} a11y={`${recipe.minutes} minutes total${recipe.estimated?.time ? ', estimated' : ''}`} />
               <StatTile color={t.pop.leaf} hats={level} value={recipe.difficulty} label={nb(recipe.steps.length, recipe.steps.length === 1 ? 'step' : 'steps')} a11y={`${recipe.difficulty}, ${recipe.steps.length} steps`} />
               <StatTile color={t.pop.sky} icon="flame" value={`${recipe.calories}`} label={'kcal\u00A0each'} a11y={`${recipe.calories} calories per serving`} />
             </View>
@@ -355,7 +369,12 @@ export default function RecipeScreen() {
                         ) : null}
                         {text}
                       </Text>
-                      {ing.note ? <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{ing.note}</Text> : null}
+                      {ing.note || ing.estimated ? (
+                        <View style={styles.noteRow}>
+                          {ing.estimated && <EstTag />}
+                          {ing.note ? <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, flexShrink: 1 }]}>{ing.note}</Text> : null}
+                        </View>
+                      ) : null}
                       {got && <Text style={[t.type.caption1, { color: t.colors.label }]}>in pantry</Text>}
                     </View>
                   </View>
@@ -372,7 +391,10 @@ export default function RecipeScreen() {
               <View style={[styles.stepNum, { backgroundColor: popCycle[i % popCycle.length].fill, borderColor: t.pop.ink }]}>
                 <Text style={[t.type.headline, { color: t.pop.ink, fontFamily: t.fonts.heading }]}>{i + 1}</Text>
               </View>
-              <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>{keepTogether(stepFor(step))}</Text>
+              <View style={{ flex: 1, gap: 4 }}>
+                <Text style={[t.type.body, { color: t.colors.label }]}>{keepTogether(stepFor(step))}</Text>
+                {recipe.stepMeta?.[i]?.estimated && <EstTag />}
+              </View>
             </View>
           ))}
 
@@ -430,6 +452,7 @@ export default function RecipeScreen() {
         rows={[
           { label: 'Share recipe', icon: 'share', onPress: onShare },
           { label: inCookbooks > 0 ? 'Saved to a cookbook' : 'Save to a cookbook', icon: inCookbooks > 0 ? 'bookmarkFill' : 'bookmark', onPress: () => router.push({ pathname: '/save-to-cookbook', params: { id: recipe.id } }) },
+          ...(recipe.custom ? [{ label: 'Edit recipe', icon: 'edit' as const, onPress: () => router.push({ pathname: '/recipe/new', params: { edit: recipe.id } }) }] : []),
           ...(imported && recipe.creatorUrl ? [{ label: 'Open creator’s profile', icon: 'people' as const, onPress: () => openLink(recipe.creatorUrl) }] : []),
           ...(usingOwnPhoto && recipe.importedImage
             ? [{ label: 'Use the imported photo', icon: 'undo' as const, onPress: () => setRecipeImage(recipe.id, { uri: recipe.importedImage!.card }) }]
@@ -473,6 +496,18 @@ const TAG_LOOK: Partial<Record<DietTag, { label: string; color: string }>> = {
   'Gluten free': { label: 'Gluten free', color: pop.skyTint },
   'Comfort food': { label: 'Cozy', color: pop.lilacTint },
 };
+
+/** A small "est." tag: this was suggested, not in the source. */
+function EstTag() {
+  const t = useTheme();
+  return (
+    <View style={[styles.est, { backgroundColor: t.pop.sunshineTint, borderColor: t.pop.ink }]} accessible accessibilityLabel="Estimated">
+      <Text style={[styles.estText, { color: t.pop.ink }]} maxFontSizeMultiplier={1.2}>
+        est.
+      </Text>
+    </View>
+  );
+}
 
 /** One colored stat tile: an icon (or chef hats), the value and a label. All three are the same height and size. */
 function StatTile({ color, icon, hats, value, label, a11y }: { color: string; icon?: IconName; hats?: number; value: string; label: string; a11y?: string }) {
@@ -691,6 +726,10 @@ const styles = StyleSheet.create({
   source: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, alignSelf: 'flex-start' },
   stats: { flexDirection: 'row', marginTop: 18, gap: 10 },
   statLift: { flex: 1 },
+  noteRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
+  est: { alignSelf: 'flex-start', borderWidth: 1.5, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 1 },
+  estText: { fontFamily: fonts.black, fontSize: 11, lineHeight: 15 },
+  estBanner: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginTop: 12, padding: 12, borderRadius: 16, borderWidth: 2, borderCurve: 'continuous' },
   stat: { flex: 1, alignItems: 'flex-start', gap: 2, paddingHorizontal: 10, paddingVertical: 10, borderRadius: 20, borderCurve: 'continuous' },
   statValue: { fontFamily: fonts.heading, fontSize: 22, lineHeight: 27 },
   statIcon: { height: 20, justifyContent: 'center' },

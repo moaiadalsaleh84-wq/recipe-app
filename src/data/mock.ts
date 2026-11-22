@@ -9,13 +9,20 @@ export type Ingredient = {
   aisle: Aisle;
   /** "minced", "for the crema"… shown next to the name, never scaled. */
   note?: string;
+  /** Imported recipes: the amount (or the ingredient, for basics like oil) was suggested, not in the source. Shown as "est.". */
+  estimated?: boolean;
 };
 
 /** Diet flags as checked by hand in the recipe data (used as-is, never recalculated). */
 export type DietFlags = { vegetarian: boolean; vegan: boolean; glutenFree: boolean; dairyFree: boolean; porkFree: boolean };
 
 /** Per-step data from a checked recipe file: which ingredients the step uses, and its timer. */
-export type StepMeta = { ingredientIds: string[]; timerSeconds: number | null };
+export type StepMeta = {
+  ingredientIds: string[];
+  timerSeconds: number | null;
+  /** Imported recipes: the step was written by the AI (the source had no method). Shown as "est.". */
+  estimated?: boolean;
+};
 
 export const categories = ['Breakfast', 'Lunch', 'Dinner', 'Snacks', 'Dessert'] as const;
 export type Category = (typeof categories)[number];
@@ -87,6 +94,8 @@ export type Recipe = {
   imageCreditText?: string;
   /** The imported picture, downloaded once (links expire): kept so the user can switch back to it. */
   importedImage?: ImportedPicture;
+  /** Imported recipes: servings / time the source didn't give, estimated (shown as "est."). */
+  estimated?: { servings?: boolean; time?: boolean };
   /** True for recipes the user created. */
   custom?: boolean;
   /** How a custom recipe got here. Older saved recipes have none: treat as 'manual'. */

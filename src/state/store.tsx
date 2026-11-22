@@ -119,6 +119,7 @@ type Store = Saved & {
   allRecipes: Recipe[];
   getRecipe: (id: string | undefined) => Recipe | undefined;
   addRecipe: (r: Omit<Recipe, 'id' | 'custom'>) => string;
+  updateRecipe: (id: string, patch: Partial<Omit<Recipe, 'id' | 'custom'>>) => void;
   /** Hand-written recipes, the ones the free limit counts. */
   manualRecipeCount: number;
   deleteRecipe: (id: string) => void;
@@ -283,6 +284,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [update],
   );
 
+  /** Saves edits to one of your own recipes (imported or written). */
+  const updateRecipe = useCallback(
+    (id: string, patch: Partial<Omit<Recipe, 'id' | 'custom'>>) => update((s) => ({ customRecipes: s.customRecipes.map((r) => (r.id === id ? { ...r, ...patch } : r)) })),
+    [update],
+  );
   const setRecipeImage = useCallback(
     (id: string, image: Recipe['image']) => update((s) => ({ customRecipes: s.customRecipes.map((r) => (r.id === id ? { ...r, image } : r)) })),
     [update],
@@ -476,6 +482,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       allRecipes,
       getRecipe,
       addRecipe,
+      updateRecipe,
       manualRecipeCount,
       deleteRecipe,
       setRecipeImage,
@@ -508,7 +515,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       undoGroceries,
     }),
     [
-      saved, hydrated, setBuddy, setProfile, completeOnboarding, setPro, addPet, claimBonus, addListDone, unlockBadges, setLastLevel, markImportHintSeen, countImport, draft, addPantry, removePantry, restorePantry, allRecipes, getRecipe, addRecipe, manualRecipeCount, deleteRecipe, setRecipeImage, setNote, setUnits, setGoals, logCooked, rateCooked, setCookedPhoto,
+      saved, hydrated, setBuddy, setProfile, completeOnboarding, setPro, addPet, claimBonus, addListDone, unlockBadges, setLastLevel, markImportHintSeen, countImport, draft, addPantry, removePantry, restorePantry, allRecipes, getRecipe, addRecipe, updateRecipe, manualRecipeCount, deleteRecipe, setRecipeImage, setNote, setUnits, setGoals, logCooked, rateCooked, setCookedPhoto,
       category, tags, toggleTag, showOnlyTag, clearFilters, isFavorite, toggleFavorite, addCookbook, renameCookbook,
       deleteCookbook, restoreCookbook, toggleInCookbook, setMeal, toggleGrocery, addIngredients, addWeekToGroceries, addCustomItem,
       removeGrocery, clearCompleted, undoGroceries,
