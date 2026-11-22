@@ -102,7 +102,7 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
     return fail({ ok: false, code: 'server_error', message: 'Something went wrong reading that link.' });
   }
 
-  const cacheKey = material.url ? await sha256(`v1|${material.url}|${(text ?? '').trim()}`) : null;
+  const cacheKey = material.url ? await sha256(`v2|${material.url}|${(text ?? '').trim()}`) : null;
   if (cacheKey && deps.cache) {
     const hit = (await deps.cache.get(cacheKey).catch(() => null)) as ImportSuccess | null;
     if (hit?.ok) {
@@ -122,7 +122,7 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
       warnings.push(`${reason} The recipe was read from the page’s structured data instead, and nutrition may be missing.`);
       return fromStructured(s!, material);
     }
-    return { ok: false, code: 'ai_unavailable', message: `${reason} Try again later, or type the recipe yourself.`, partial: { title: material.title ?? undefined, sourceUrl: material.url ?? undefined, text: material.text.slice(0, 4000), imageUrl: material.imageUrl ?? undefined } };
+    return { ok: false, code: 'ai_unavailable', message: `${reason} Try again later, or type the recipe yourself.`, partial: { title: material.title ?? undefined, sourceUrl: material.url ?? undefined, text: material.text.slice(0, 4000), imageUrl: material.imageUrl ?? undefined, credit: material.credit ?? undefined } };
   };
 
   if (!deps.ai) {
@@ -186,6 +186,6 @@ export function assemble(recipe: ImportedRecipe, material: SourceMaterial, warni
     recipe,
     missing,
     warnings,
-    source: { kind: material.kind, host: material.host, usedStructuredData: !!material.structured, usedAi },
+    source: { kind: material.kind, host: material.host, usedStructuredData: !!material.structured, usedAi, credit: material.credit ?? null },
   };
 }

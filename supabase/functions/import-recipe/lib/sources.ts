@@ -10,14 +10,14 @@
  */
 import { FetchError, assertPublicUrl, mainText, metaContent, pageTitle, safeFetch } from './http.ts';
 import { recipeFromHtml, structuredAsText } from './jsonld.ts';
-import type { SourceKind, SourceMaterial } from './types.ts';
+import type { SourceCredit, SourceKind, SourceMaterial } from './types.ts';
 
 export const MAX_TEXT_CHARS = 24_000;
 export const MAX_PASTED_CHARS = 20_000;
 
 export class SourceError extends Error {
   readonly code: 'invalid_input' | 'fetch_failed' | 'blocked' | 'no_text';
-  readonly partial?: { title?: string; sourceUrl?: string; imageUrl?: string };
+  readonly partial?: { title?: string; sourceUrl?: string; imageUrl?: string; credit?: SourceCredit };
   readonly kind?: SourceKind;
   constructor(message: string, code: SourceError['code'], partial?: SourceError['partial'], kind?: SourceKind) {
     super(message);
@@ -44,6 +44,35 @@ export function findUrl(input: string): string | null {
 }
 
 type Fetcher = typeof fetch;
+
+/**
+ * A video creator's credit from oEmbed: the handle from the profile link ("/@pastaqueen" →
+ * "@pastaqueen"), else the author name as given. Only public oEmbed fields: no profile pictures.
+ */
+export function videoCredit(oembed: Record<string, unknown> | null): SourceCredit | undefined {
+  const name = typeof oembed?.author_name === 'string' ? oembed.author_name.trim() : '';
+  const raw = typeof oembed?.author_url === 'string' ? oembed.author_url.trim() : '';
+  let profileUrl: string | null = null;
+  let handle: string | null = null;
+  try {
+    const u = new URL(raw);
+    if (u.protocol === 'https:' || u.protocol === 'http:') {
+      profileUrl = u.toString();
+      const m = u.pathname.match(/^\/(@[\w.-]+)/);
+      if (m) handle = decodeURIComponent(m[1]);
+    }
+  } catch {
+    // no profile link
+  }
+  handle = handle ?? (name || null);
+  return handle || profileUrl ? { handle, profileUrl, siteName: null } : undefined;
+}
+
+/** A website's credit: its og:site_name, else the host without "www.". */
+export function siteCredit(html: string, host: string): SourceCredit {
+  const name = metaContent(html, ['og:site_name', 'application-name'])?.trim();
+  return { handle: null, profileUrl: null, siteName: name || host.replace(/^www\./, '') };
+}
 
 export async function gatherSource(input: { url?: string; text?: string }, fetchImpl?: Fetcher): Promise<{ material: SourceMaterial; warnings: string[] }> {
   const warnings: string[] = [];
@@ -107,8 +136,9 @@ async function fromWebsite(url: URL, fetchImpl: Fetcher | undefined, warnings: s
   const structured = recipeFromHtml(page.body);
   const imageUrl = structured?.imageUrl ?? metaContent(page.body, ['og:image', 'twitter:image']);
   const title = structured?.title ?? metaContent(page.body, ['og:title']) ?? pageTitle(page.body);
+  const credit = siteCredit(page.body, host);
   if (structured && structured.ingredients.length && structured.steps.length) {
-    return { kind: 'website', url: page.url, host, title, text: structuredAsText(structured), imageUrl, structured };
+    return { kind: 'website', url: page.url, host, title, text: structuredAsText(structured), imageUrl, structured, credit };
   }
   // No (complete) structured data: read the page itself.
   let text = mainText(page.body);
@@ -120,9 +150,9 @@ async function fromWebsite(url: URL, fetchImpl: Fetcher | undefined, warnings: s
   }
   if (structured) text = `${structuredAsText(structured)}\n\nPage text:\n${text}`;
   if (text.replace(/\s/g, '').length < 80) {
-    throw new SourceError('That page has almost no readable text. It may need a login or load the recipe with scripts.', 'no_text', { title: title ?? undefined, sourceUrl: page.url, imageUrl: imageUrl ?? undefined }, 'website');
+    throw new SourceError('That page has almost no readable text. It may need a login or load the recipe with scripts.', 'no_text', { title: title ?? undefined, sourceUrl: page.url, imageUrl: imageUrl ?? undefined, credit }, 'website');
   }
-  return { kind: 'website', url: page.url, host, title, text, imageUrl, structured };
+  return { kind: 'website', url: page.url, host, title, text, imageUrl, structured, credit };
 }
 
 /* ---------------- TikTok ---------------- */
@@ -156,29 +186,35 @@ async function fromTikTok(url: URL, fetchImpl: Fetcher | undefined): Promise<Sou
   // Open the page too: it resolves share links (tiktok.com/t/…, vm.tiktok.com/…) to the real
   // video address, and usually carries the full description, which oEmbed may shorten.
   let page: { url: string; body: string } | null = null;
+  let landed = url.toString();
   try {
     page = await safeFetch(url.toString(), { fetchImpl });
-  } catch {
-    // TikTok sometimes refuses servers; oEmbed alone may still work
+    landed = page.url;
+  } catch (e) {
+    // TikTok sometimes refuses servers; the redirect still tells us the full video link, and
+    // oEmbed alone may still work.
+    if (e instanceof FetchError && e.finalUrl) landed = e.finalUrl;
   }
-  const videoUrl = page && /\/video\/|\/photo\//.test(page.url) ? page.url.split('?')[0] : url.toString();
+  // oEmbed needs the full video link (tiktok.com/@user/video/123), not a vm.tiktok.com share link.
+  const videoUrl = /\/video\/|\/photo\//.test(landed) ? landed.split('?')[0] : url.toString();
   const oembed = await getJson(`https://www.tiktok.com/oembed?url=${encodeURIComponent(videoUrl)}`, fetchImpl);
   const fromOembed = typeof oembed?.title === 'string' ? oembed.title.trim() : '';
   const fromPage = page ? (tikTokDescription(page.body) ?? metaContent(page.body, ['og:description', 'description']) ?? '') : '';
   // Whichever source has more of the caption.
   const caption = fromPage.length > fromOembed.length ? fromPage : fromOembed;
   const author = typeof oembed?.author_name === 'string' ? oembed.author_name : null;
+  const credit = videoCredit(oembed);
   const imageUrl = (typeof oembed?.thumbnail_url === 'string' ? oembed.thumbnail_url : null) ?? (page ? metaContent(page.body, ['og:image']) : null);
   if (!oembed && !caption) throw new SourceError('TikTok didn’t share this video’s details. It may be private or deleted.', 'fetch_failed', { sourceUrl: videoUrl }, 'tiktok');
   if (caption.length < 40) {
     throw new SourceError(
       'We couldn’t read a recipe in this TikTok’s caption, and we can’t watch videos. If the recipe is in the caption, copy it in TikTok and paste it here.',
       'no_text',
-      { title: caption || undefined, sourceUrl: videoUrl, imageUrl: imageUrl ?? undefined },
+      { title: caption || undefined, sourceUrl: videoUrl, imageUrl: imageUrl ?? undefined, credit },
       'tiktok',
     );
   }
-  return { kind: 'tiktok', url: videoUrl, host: 'tiktok.com', title: null, text: `TikTok caption${author ? ` by ${author}` : ''}:\n${caption}`, imageUrl, structured: null };
+  return { kind: 'tiktok', url: videoUrl, host: 'tiktok.com', title: null, text: `TikTok caption${author ? ` by ${author}` : ''}:\n${caption}`, imageUrl, structured: null, credit };
 }
 
 /* ---------------- YouTube ---------------- */
@@ -209,6 +245,7 @@ async function fromYouTube(url: URL, fetchImpl: Fetcher | undefined): Promise<So
   const oembed = await getJson(`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(watch)}`, fetchImpl);
   const title = typeof oembed?.title === 'string' ? oembed.title : null;
   const imageUrl = typeof oembed?.thumbnail_url === 'string' ? oembed.thumbnail_url : null;
+  const credit = videoCredit(oembed);
   let description: string | null = null;
   try {
     const page = await safeFetch(watch, { fetchImpl });
@@ -221,11 +258,11 @@ async function fromYouTube(url: URL, fetchImpl: Fetcher | undefined): Promise<So
     throw new SourceError(
       'This video’s description doesn’t include the recipe, and we can’t watch videos. If the creator links a recipe page, import that link instead.',
       'no_text',
-      { title: title ?? undefined, sourceUrl: watch, imageUrl: imageUrl ?? undefined },
+      { title: title ?? undefined, sourceUrl: watch, imageUrl: imageUrl ?? undefined, credit },
       'youtube',
     );
   }
-  return { kind: 'youtube', url: watch, host: 'youtube.com', title, text: `YouTube video title: ${title ?? 'unknown'}\nDescription:\n${description}`, imageUrl, structured: null };
+  return { kind: 'youtube', url: watch, host: 'youtube.com', title, text: `YouTube video title: ${title ?? 'unknown'}\nDescription:\n${description}`, imageUrl, structured: null, credit };
 }
 
 /* ---------------- Instagram ---------------- */

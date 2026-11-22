@@ -338,3 +338,53 @@ test('TikTok page blocked: oEmbed caption alone still works', async () => {
   const r = await post(d, { url: 'https://www.tiktok.com/@a/video/9' });
   assert.ok(r.json.ok, JSON.stringify(r.json));
 });
+
+test('vm.tiktok.com short link: resolved to the full video link even when TikTok refuses the page; creator credited', async () => {
+  const full = 'https://www.tiktok.com/@pastaqueen/video/7300000000000000002';
+  const asked: string[] = [];
+  const routes = fakeFetch({
+    'https://vm.tiktok.com/ZMabc/': { status: 301, body: '', headers: { location: full } },
+    [full]: { status: 403, body: 'no bots' },
+    [`https://www.tiktok.com/oembed?url=${encodeURIComponent(full)}`]: {
+      body: JSON.stringify({ ...JSON.parse(TIKTOK_OEMBED), author_name: 'Pasta Queen', author_url: 'https://www.tiktok.com/@pastaqueen' }),
+      headers: { 'content-type': 'application/json' },
+    },
+  });
+  const fetchImpl = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    asked.push(String(input));
+    return routes(input, init);
+  }) as typeof fetch;
+  const ai = fakeAi({ ingredients: [{ original: '1 block feta', amount: 1, unit: '', name: 'feta' }] });
+  const { json } = await post(deps({ ai, fetchImpl }), { url: 'https://vm.tiktok.com/ZMabc/' });
+  assert.ok(json.ok, JSON.stringify(json));
+  assert.ok(asked.some((u) => u === `https://www.tiktok.com/oembed?url=${encodeURIComponent(full)}`));
+  if (json.ok) {
+    assert.equal(json.recipe.sourceUrl, full);
+    assert.equal(json.recipe.imageUrl, 'https://p16.example.com/t.jpg');
+    assert.deepEqual(json.source.credit, { handle: '@pastaqueen', profileUrl: 'https://www.tiktok.com/@pastaqueen', siteName: null });
+  }
+});
+
+test('YouTube Shorts: creator credit from oEmbed (channel name when there is no @handle)', async () => {
+  const ai = fakeAi({ ingredients: [{ original: '500g beef mince', amount: 500, unit: 'g', name: 'beef mince' }], title: 'Chili' });
+  const oembed = (author_url: string) => ({ body: JSON.stringify({ title: 'Best chili', author_name: 'Chili Kitchen', author_url, thumbnail_url: 'https://i.ytimg.com/x.jpg' }), headers: { 'content-type': 'application/json' } });
+  const page = { body: YT_PAGE };
+  const a = await post(deps({ ai, fetchImpl: fakeFetch({ 'https://www.youtube.com/oembed': oembed('https://www.youtube.com/@chilikitchen'), 'https://www.youtube.com/watch?v=abc123def45': page }) }), { url: 'https://www.youtube.com/shorts/abc123def45' });
+  assert.ok(a.json.ok && a.json.source.credit?.handle === '@chilikitchen' && a.json.recipe.sourceUrl === 'https://www.youtube.com/watch?v=abc123def45');
+  const b = await post(deps({ ai, fetchImpl: fakeFetch({ 'https://www.youtube.com/oembed': oembed('https://www.youtube.com/channel/UC123'), 'https://www.youtube.com/watch?v=abc123def45': page }) }), { url: 'https://youtu.be/abc123def45' });
+  assert.ok(b.json.ok && b.json.source.credit?.handle === 'Chili Kitchen' && b.json.source.credit?.profileUrl === 'https://www.youtube.com/channel/UC123');
+});
+
+test('Websites: credited by og:site_name, else the host; og:image is the picture', async () => {
+  const page = (meta: string) => `<html><head>${meta}<script type="application/ld+json">${JSON.stringify({ '@type': 'Recipe', name: 'Soup', recipeYield: '2', totalTime: 'PT20M', recipeIngredient: ['1 onion', '500 ml stock'], recipeInstructions: ['Cook the onion.', 'Add stock and simmer.'] })}</script></head><body></body></html>`;
+  const d = deps({
+    fetchImpl: fakeFetch({
+      'https://www.soupsite.com/soup': { body: page('<meta property="og:site_name" content="Soup Site"><meta property="og:image" content="https://www.soupsite.com/soup.jpg">') },
+      'https://plain.example.org/soup': { body: page('') },
+    }),
+  });
+  const a = await post(d, { url: 'https://www.soupsite.com/soup' });
+  assert.ok(a.json.ok && a.json.source.credit?.siteName === 'Soup Site' && a.json.recipe.imageUrl === 'https://www.soupsite.com/soup.jpg');
+  const b = await post(d, { url: 'https://plain.example.org/soup' });
+  assert.ok(b.json.ok && b.json.source.credit?.siteName === 'plain.example.org' && b.json.recipe.imageUrl === null);
+});

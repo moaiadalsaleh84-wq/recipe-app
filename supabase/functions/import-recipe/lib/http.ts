@@ -17,10 +17,13 @@ export const BROWSER_UA =
 export class FetchError extends Error {
   readonly kind: 'invalid_url' | 'blocked_host' | 'timeout' | 'http' | 'too_large' | 'network';
   readonly status?: number;
-  constructor(message: string, kind: FetchError['kind'], status?: number) {
+  /** Where the redirects led before the error (share links resolve even when the page refuses us). */
+  readonly finalUrl?: string;
+  constructor(message: string, kind: FetchError['kind'], status?: number, finalUrl?: string) {
     super(message);
     this.kind = kind;
     this.status = status;
+    this.finalUrl = finalUrl;
   }
 }
 
@@ -80,7 +83,7 @@ export async function safeFetch(raw: string, init: { accept?: string; fetchImpl?
       continue;
     }
     try {
-      if (!res.ok) throw new FetchError(`The site answered with an error (${res.status}).`, 'http', res.status);
+      if (!res.ok) throw new FetchError(`The site answered with an error (${res.status}).`, 'http', res.status, url.toString());
       const declared = Number(res.headers.get('content-length') ?? 0);
       if (declared > MAX_PAGE_BYTES) throw new FetchError('That page is too large to import.', 'too_large');
       const body = await readCapped(res, MAX_PAGE_BYTES);

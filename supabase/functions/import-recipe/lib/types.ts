@@ -14,6 +14,19 @@ export type MissingField = (typeof MISSING_FIELDS)[number];
 
 export type SourceKind = 'website' | 'tiktok' | 'instagram' | 'youtube' | 'text';
 
+/**
+ * Who made the recipe, so the app can always credit them. From TikTok's / YouTube's oEmbed
+ * (author_name, author_url) or a website's og:site_name. Never a scraped profile picture.
+ */
+export type SourceCredit = {
+  /** "@pastaqueen" for videos (from the profile link, else the author name). */
+  handle: string | null;
+  /** The creator's profile page. */
+  profileUrl: string | null;
+  /** "BBC Good Food" for websites (og:site_name, else the host). */
+  siteName: string | null;
+};
+
 export type ImportedIngredient = {
   /** null when the source gives no amount ("salt to taste"). */
   amount: number | null;
@@ -48,7 +61,7 @@ export type ImportSuccess = {
   missing: MissingField[];
   /** Plain-language notes for the user, e.g. "2 ingredients were left out because they weren't in the source". */
   warnings: string[];
-  source: { kind: SourceKind; host: string | null; usedStructuredData: boolean; usedAi: boolean };
+  source: { kind: SourceKind; host: string | null; usedStructuredData: boolean; usedAi: boolean; credit: SourceCredit | null };
 };
 
 export type ImportErrorCode =
@@ -70,7 +83,7 @@ export type ImportFailure = {
   /** Seconds until trying again makes sense (rate limits). */
   retryAfter?: number;
   /** Whatever we did find (a video title, the link), so the app can still pre-fill the form. */
-  partial?: { title?: string; sourceUrl?: string; text?: string; imageUrl?: string };
+  partial?: { title?: string; sourceUrl?: string; text?: string; imageUrl?: string; credit?: SourceCredit };
   source?: { kind: SourceKind; host: string | null };
 };
 
@@ -87,6 +100,8 @@ export type SourceMaterial = {
   /** The text we have: structured data rendered as text, a caption, or page text. */
   text: string;
   imageUrl: string | null;
+  /** Who to credit (videos: the creator; websites: the site). */
+  credit?: SourceCredit | null;
   /** A schema.org Recipe found on the page, already normalized. */
   structured: StructuredRecipe | null;
 };
