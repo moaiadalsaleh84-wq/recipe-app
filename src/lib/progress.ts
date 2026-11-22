@@ -6,7 +6,7 @@ import type { IconName } from '../components/Icon';
 import { MASCOT_ON } from '../components/mascot/config.ts';
 import type { CookedEntry, Recipe, WeekPlan } from '../data/mock';
 
-export const XP = { cooked: 50, ownRecipe: 30, listDone: 20, badge: 25, pet: 2, petCap: 25 } as const;
+export const XP = { cooked: 50, ownRecipe: 30, imported: 5, importsPerDay: 3, listDone: 20, badge: 25, pet: 2, petCap: 25 } as const;
 
 export const LEVELS = [
   { at: 0, title: 'Kitchen Kitten' },
@@ -84,10 +84,37 @@ export function nextBadge(p: ProgressInput, earnedIds: string[]) {
   return best;
 }
 
+/** When a saved recipe was added: its addedAt, or the time in its id ("my-<base36 time>-xxxx"). */
+export function addedTime(r: { id: string; addedAt?: string }): number | null {
+  if (r.addedAt) return Date.parse(r.addedAt);
+  const m = r.id.match(/^my-([0-9a-z]+)-/);
+  const t = m ? parseInt(m[1], 36) : NaN;
+  return Number.isFinite(t) && t > 1e12 ? t : null;
+}
+
+/** Imports earn 5 XP each, for at most 3 imports a (local) day; a recipe you write earns 30. */
+export function recipeXp(recipes: { id: string; origin?: string; addedAt?: string }[]) {
+  const perDay = new Map<string, number>();
+  let xp = 0;
+  for (const r of recipes) {
+    if (r.origin !== 'import') {
+      xp += XP.ownRecipe;
+      continue;
+    }
+    const t = addedTime(r);
+    const d = t === null ? 'unknown' : new Date(t);
+    const day = typeof d === 'string' ? d : `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    const n = perDay.get(day) ?? 0;
+    if (n < XP.importsPerDay) xp += XP.imported;
+    perDay.set(day, n + 1);
+  }
+  return xp;
+}
+
 export function xpFor(p: ProgressInput) {
   return (
     p.cooked.length * XP.cooked +
-    p.customRecipes.length * XP.ownRecipe +
+    recipeXp(p.customRecipes) +
     p.fun.listsDone * XP.listDone +
     p.fun.badges.length * XP.badge +
     Math.min(p.fun.pets, XP.petCap) * XP.pet +

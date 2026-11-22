@@ -246,7 +246,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const addRecipe = useCallback(
     (r: Omit<Recipe, 'id' | 'custom'>) => {
       const id = uid('my');
-      update((s) => ({ customRecipes: [{ ...r, origin: r.origin ?? 'manual', id, custom: true }, ...s.customRecipes] }));
+      update((s) => ({ customRecipes: [{ ...r, origin: r.origin ?? 'manual', id, custom: true, addedAt: new Date().toISOString() }, ...s.customRecipes] }));
       return id;
     },
     [update],

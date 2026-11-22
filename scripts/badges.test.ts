@@ -18,3 +18,18 @@ test('Recipe Writer: not earned by imports alone', () => {
   assert.equal(writer.earned(input(['import', 'import', 'import'])), false);
   assert.equal(writer.earned(input(['import', 'manual'])), true);
 });
+
+test('XP: a written recipe 30; an import 5, for at most 3 imports a day', async () => {
+  const { recipeXp } = await import('../src/lib/progress.ts');
+  const day = (d: number, h: number) => new Date(2026, 10, d, h).toISOString();
+  const imp = (d: number, h: number) => ({ id: `my-x${d}${h}-a`, origin: 'import', addedAt: day(d, h) });
+  // 5 imports on one day: only 3 count.
+  assert.equal(recipeXp([imp(20, 9), imp(20, 10), imp(20, 11), imp(20, 12), imp(20, 13)]), 15);
+  // Another day starts a new count.
+  assert.equal(recipeXp([imp(20, 9), imp(20, 10), imp(20, 11), imp(21, 9)]), 20);
+  // Written recipes keep 30 each, and don't use up the import allowance.
+  assert.equal(recipeXp([{ id: 'my-a-b', origin: 'manual' }, { id: 'old-recipe' }, imp(20, 9)]), 65);
+  // Older imports without addedAt: the time in the id.
+  const t = new Date(2026, 10, 22, 12).getTime().toString(36);
+  assert.equal(recipeXp([1, 2, 3, 4].map((k) => ({ id: `my-${t}-${k}`, origin: 'import' }))), 15);
+});

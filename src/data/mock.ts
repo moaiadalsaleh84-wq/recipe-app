@@ -98,6 +98,8 @@ export type Recipe = {
   estimated?: { servings?: boolean; time?: boolean };
   /** True for recipes the user created. */
   custom?: boolean;
+  /** When a recipe of yours was saved (ISO). Older ones carry the time in their id. */
+  addedAt?: string;
   /** How a custom recipe got here. Older saved recipes have none: treat as 'manual'. */
   origin?: 'manual' | 'import';
 };
