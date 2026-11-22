@@ -54,7 +54,8 @@ export const BADGES: Badge[] = [
   badge('on-a-roll', 'On a Roll', 'Cook 3 days in a row', 'flame', (p) => [p.streak, 3]),
   badge('ten-club', 'Ten Meal Club', 'Cook 10 meals', 'crown', (p) => [p.cooked.length, 10]),
   badge('explorer', 'Explorer', 'Cook 5 different recipes', 'shuffle', (p) => [new Set(p.cooked.map((c) => c.recipeId)).size, 5]),
-  badge('writer', 'Recipe Writer', 'Add a recipe of your own', 'edit', (p) => [p.customRecipes.length, 1]),
+  // Only recipes you wrote yourself: imported ones don't count (older saved recipes have no origin: written).
+  badge('writer', 'Recipe Writer', 'Add a recipe of your own', 'edit', (p) => [p.customRecipes.filter((r) => r.origin !== 'import').length, 1]),
   badge('planner', 'Week Planner', 'Plan 7 meals in one week', 'calendar', (p) => [Object.values(p.plan).reduce((n, d) => n + Object.keys(d).length, 0), 7]),
   badge('shopper', 'Shopping Champ', 'Tick off a whole grocery list', 'cart', (p) => [p.fun.listsDone, 1]),
   badge('collector', 'Collector', 'Save 5 favorite recipes', 'heartFill', (p) => [p.favorites.length, 5]),
