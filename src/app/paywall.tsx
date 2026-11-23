@@ -14,7 +14,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../components/Text';
-import Animated, { FadeIn, FadeInDown, ZoomIn, useReducedMotion } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import { ConfettiBurst } from '../components/ConfettiBurst';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MascotSays } from '../components/mascot/MascotSays';
@@ -344,14 +344,15 @@ function Welcome({ onDone, trialEndsAt, name, benefits }: { onDone: () => void; 
   const insets = useSafeAreaInsets();
   const reduceMotion = useReducedMotion();
   const ends = trialEndsAt ? new Date(trialEndsAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) : null;
-  // Peak-end: a sunshine page, a confetti burst, the crown pops in, then what's now unlocked.
-  const pop_ = (delay: number) => (reduceMotion ? FadeIn.duration(200) : ZoomIn.springify().damping(12).delay(delay));
+  // Peak-end: a sunshine page, a confetti burst, the crown drops in once (a soft spring that
+  // settles without bouncing) and stays still, then what's now unlocked.
+  const crownIn = reduceMotion ? FadeIn.duration(200) : FadeInDown.springify(600).dampingRatio(1).delay(120);
   const row = (i: number) => (reduceMotion ? FadeIn.duration(200) : FadeInDown.duration(320).delay(500 + i * 120));
   return (
     <View style={{ flex: 1, backgroundColor: t.pop.sunshine }}>
       {!reduceMotion && <ConfettiBurst count={36} />}
       <ScrollView contentContainerStyle={{ paddingTop: insets.top + 48, paddingHorizontal: t.layout.screen, paddingBottom: 24, alignItems: 'center' }}>
-        <Animated.View entering={pop_(120)}>
+        <Animated.View entering={crownIn}>
           <Lift radius={56}>
             <View style={[styles.crown, { backgroundColor: t.pop.white, borderColor: t.pop.ink }]}>
               <Icon name="crown" size={54} color={t.pop.ink} weight="bold" />
