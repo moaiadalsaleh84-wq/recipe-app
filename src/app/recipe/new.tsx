@@ -11,7 +11,7 @@ import { PressableScale } from '../../components/PressableScale';
 import { useToast } from '../../components/Toast';
 import { Button, Chip, Stepper } from '../../components/ui';
 import { categories, dietTags, type Category, type DietTag } from '../../data/mock';
-import { creditFields } from '../../lib/importApi';
+import { creditFields, nutritionExtras } from '../../lib/importApi';
 import { haptics } from '../../lib/haptics';
 import { parseIngredient } from '../../lib/parseIngredient';
 import { photoUri, pickPhoto as pickLibraryPhoto, saveImportedPicture } from '../../lib/photos';
@@ -163,6 +163,7 @@ export default function NewRecipe() {
       servings,
       calories: Number(calories) || 0,
       nutrition: { protein: Number(protein) || 0, carbs: keepNutrition ? kept.carbs : 0, fat: keepNutrition ? kept.fat : 0 },
+      ...(keepNutrition ? nutritionExtras(kept) : {}),
       difficulty: 'Easy',
       tags,
       ingredients,

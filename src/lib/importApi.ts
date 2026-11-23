@@ -33,7 +33,16 @@ export type ImportedRecipe = {
   steps: string[];
   category: Category | null;
   tags: DietTag[];
-  nutrition: { calories: number; protein: number; carbs: number; fat: number; estimated: true; basis: 'source' | 'ai' } | null;
+  nutrition: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    estimated: true;
+    basis: 'source' | 'ai';
+    servingSize?: string;
+    breakdown?: { name: string; calories: number }[];
+  } | null;
   imageUrl: string | null;
   sourceUrl: string | null;
   /* Import v2 (the server may be older: all optional). */
@@ -172,6 +181,51 @@ export async function importPreview(url: string, signal?: AbortSignal): Promise<
     });
     const body = (await res.json().catch(() => null)) as { ok?: boolean; preview?: ImportPreview | null } | null;
     return body?.ok && body.preview ? body.preview : null;
+  } catch {
+    return null;
+  }
+}
+
+/* ---------------- nutrition, counted again ---------------- */
+
+/** Serving size and breakdown from the server's nutrition, as recipe fields. */
+export function nutritionExtras(n: ImportedRecipe['nutrition'] | null | undefined): Pick<Recipe, 'servingSize' | 'nutritionBreakdown'> {
+  return {
+    ...(n?.servingSize ? { servingSize: n.servingSize } : {}),
+    ...(n?.breakdown?.length ? { nutritionBreakdown: n.breakdown } : {}),
+  };
+}
+
+/**
+ * A saved import's nutrition worked out again with the current counting rules (frying oil only
+ * what's absorbed, dips counted and listed). Returns the fields to save, or null.
+ */
+export async function recountNutrition(recipe: Recipe, signal?: AbortSignal): Promise<Partial<Recipe> | null> {
+  if (!IMPORT_URL || !recipe.ingredients.length) return null;
+  try {
+    const res = await fetch(IMPORT_URL, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-install-id': await getInstallId() },
+      body: JSON.stringify({
+        nutrition: {
+          title: recipe.title,
+          servings: recipe.servings,
+          ingredients: recipe.ingredients.map((i) => [i.quantity ?? '', i.unit, i.name, i.note ? `(${i.note})` : ''].filter((x) => x !== '').join(' ')),
+          steps: recipe.steps,
+          source: recipe.description ?? '',
+        },
+      }),
+      signal,
+    });
+    const body = (await res.json().catch(() => null)) as { ok?: boolean; nutrition?: ImportedRecipe['nutrition'] } | null;
+    const n = body?.ok ? body.nutrition : null;
+    if (!n) return null;
+    return {
+      calories: n.calories,
+      nutrition: { protein: n.protein, carbs: n.carbs, fat: n.fat },
+      servingSize: n.servingSize,
+      nutritionBreakdown: n.breakdown,
+    };
   } catch {
     return null;
   }
@@ -324,6 +378,7 @@ export function toRecipe(r: ImportedRecipe, origin?: ImportOrigin | null): Omit<
     servings: r.servings ?? 2,
     calories: r.nutrition?.calories ?? 0,
     nutrition: { protein: r.nutrition?.protein ?? 0, carbs: r.nutrition?.carbs ?? 0, fat: r.nutrition?.fat ?? 0 },
+    ...nutritionExtras(r.nutrition),
     difficulty: 'Easy',
     tags: r.tags.filter((t) => (dietTags as readonly string[]).includes(t)),
     ingredients: r.ingredients.map(toIngredient),

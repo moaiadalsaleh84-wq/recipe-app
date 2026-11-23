@@ -8,7 +8,7 @@
  */
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { fromAi, type AiCaller } from '../supabase/functions/import-recipe/lib/extract.ts';
+import { NUTRITION_RULES, fromAi, nutritionFromAi, type AiCaller } from '../supabase/functions/import-recipe/lib/extract.ts';
 import { handle, type Deps } from '../supabase/functions/import-recipe/lib/handler.ts';
 import { assertPublicUrl } from '../supabase/functions/import-recipe/lib/http.ts';
 import { isGrounded, normalize, parseLine } from '../supabase/functions/import-recipe/lib/ingredients.ts';
@@ -523,4 +523,35 @@ test('TikTok refuses oEmbed to the server: creator from the link, cover from the
     assert.equal(json.source.credit?.handle, '@crispykitchen');
     assert.equal(json.recipe.imageUrl, 'https://p16.example.com/cover.jpg');
   }
+});
+
+test('nutrition rules: frying oil absorbed only, dips counted and listed, serving size', () => {
+  assert.match(NUTRITION_RULES, /absorbs/);
+  assert.match(NUTRITION_RULES, /Never the whole amount of oil/);
+  assert.match(NUTRITION_RULES, /greasing/);
+  assert.match(NUTRITION_RULES, /Dipping sauces[^.]*count fully/);
+  const n = nutritionFromAi({
+    available: true, calories: 520, protein_g: 34, carbs_g: 40, fat_g: 20, from_source: false,
+    serving_size: '1 serving = 3 tenders',
+    breakdown: [{ name: 'Hot honey (dip)', calories: 60 }, { name: '', calories: 10 }, { name: 'Too big', calories: 900 }],
+  });
+  assert.equal(n?.servingSize, '3 tenders');
+  assert.deepEqual(n?.breakdown, [{ name: 'Hot honey (dip)', calories: 60 }]);
+  assert.equal(nutritionFromAi({ available: true, calories: 400, protein_g: 1, carbs_g: 1, fat_g: 1, from_source: false, serving_size: '', breakdown: [] })?.servingSize, undefined);
+});
+
+test('nutrition only: a saved import is counted again (limited, needs the AI)', async () => {
+  const seen: string[] = [];
+  const d = { ...deps({ ai: fakeAi() }), nutritionAi: async (input: { ingredients: string[] }) => {
+    seen.push(...input.ingredients);
+    return { available: true, calories: 450, protein_g: 30, carbs_g: 40, fat_g: 15, from_source: false, serving_size: '3 tenders', breakdown: [{ name: 'Frying oil (absorbed)', calories: 120 }] };
+  } };
+  const { json } = await post(d, { nutrition: { title: 'Tenders', servings: 4, ingredients: ['600 g chicken', '1 l oil (for frying)'], steps: ['Fry.'] } });
+  const body = json as unknown as { ok: boolean; nutrition: { calories: number; servingSize: string; breakdown: unknown[] } };
+  assert.equal(body.ok, true);
+  assert.equal(body.nutrition.calories, 450);
+  assert.equal(body.nutrition.servingSize, '3 tenders');
+  assert.deepEqual(seen, ['600 g chicken', '1 l oil (for frying)']);
+  const none = await post({ ...deps({ ai: fakeAi() }), nutritionAi: null }, { nutrition: { ingredients: ['x'] } });
+  assert.equal((none.json as { ok: boolean }).ok, false);
 });

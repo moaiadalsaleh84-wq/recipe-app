@@ -94,6 +94,10 @@ export type Recipe = {
   imageCreditText?: string;
   /** The imported picture, downloaded once (links expire): kept so the user can switch back to it. */
   importedImage?: ImportedPicture;
+  /** What one serving is, when the source says it ("3 tenders"): shown under the stats. */
+  servingSize?: string;
+  /** Parts of the calories worth seeing (dips, sauces, absorbed frying oil), per serving. Already in `calories`. */
+  nutritionBreakdown?: { name: string; calories: number }[];
   /** Imported recipes: servings / time the source didn't give, estimated (shown as "est."). */
   estimated?: { servings?: boolean; time?: boolean };
   /** True for recipes the user created. */

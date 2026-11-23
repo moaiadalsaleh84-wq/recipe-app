@@ -14,7 +14,7 @@
  * Limits and the cache are kept in memory and reset when you restart.
  */
 import { createServer } from 'node:http';
-import { claudeCaller, type AiCaller } from '../supabase/functions/import-recipe/lib/extract.ts';
+import { claudeCaller, claudeNutritionCaller, type AiCaller, type AiNutrition, type NutritionCaller } from '../supabase/functions/import-recipe/lib/extract.ts';
 import { handle } from '../supabase/functions/import-recipe/lib/handler.ts';
 import { parseLine } from '../supabase/functions/import-recipe/lib/ingredients.ts';
 import { LIMITS, MemoryCache, MemoryLimiter } from '../supabase/functions/import-recipe/lib/limits.ts';
@@ -28,6 +28,26 @@ if (process.env.NO_LIMITS) Object.assign(LIMITS, { devicePer10Min: 10_000, devic
  * like the real prompt, writes simple "estimated" steps when the source has none. For testing the
  * app's screens only: the real model's results are far better.
  */
+/**
+ * The stand-in's nutrition, following the counting rules in simple code: serving size from
+ * "makes 12 …, serves 4", dips listed, frying oil counted as 1 tbsp absorbed per serving. Its
+ * base number is made up; only the real AI's numbers mean anything.
+ */
+function fakeNutrition(text: string, servings: number): AiNutrition {
+  const each = text.match(/\((\d+)\s+([a-z]+)\s+each\)/i);
+  const makes = text.match(/makes\s+(\d+)\s+([a-z]+)/i);
+  const serving_size = each ? `${each[1]} ${each[2]}` : makes && servings ? `${Math.round(Number(makes[1]) / servings)} ${makes[2]}` : '';
+  const breakdown: { name: string; calories: number }[] = [];
+  for (const m of text.matchAll(/(\d+)\s*tbsp\s+([a-z ]+?)\s+for dipping/gi)) {
+    breakdown.push({ name: `${m[2].replace(/^./, (c) => c.toUpperCase())} (dip)`, calories: Math.round((Number(m[1]) * 60) / (servings || 1)) });
+  }
+  if (/for (deep[- ])?frying/i.test(text)) breakdown.push({ name: 'Frying oil (absorbed)', calories: 120 });
+  const calories = 330 + breakdown.reduce((a, b) => a + b.calories, 0);
+  return { available: true, calories, protein_g: 34, carbs_g: 38, fat_g: 18, from_source: false, serving_size, breakdown };
+}
+
+const fakeNutritionAi: NutritionCaller = async (input) => fakeNutrition([input.source, ...input.ingredients].join('\n'), input.servings ?? 2);
+
 const fakeAi: AiCaller = async (m) => {
   const VERB = /^(boil|melt|add|toss|bake|fry|mix|stir|cook|soften|simmer|blend|brown|fill|blitz|smash|drizzle|season|serve|whisk|heat|roast|chop|marinate|dredge|place|pour|preheat)\b/i;
   const body = m.text.replace(/^(TikTok caption( by [^:]*)?|YouTube video title:[^\n]*\nDescription):?\s*/i, '');
@@ -55,8 +75,8 @@ const fakeAi: AiCaller = async (m) => {
     description: '',
     meal_type: 'dinner',
     category: 'Dinner',
-    servings: m.structured?.servings ?? 2,
-    servings_estimated: !m.structured?.servings,
+    servings: m.structured?.servings ?? servingsOf(body) ?? 2,
+    servings_estimated: !m.structured?.servings && !servingsOf(body),
     prep_minutes: m.structured?.minutes ? Math.round(m.structured.minutes / 3) : 10,
     cook_minutes: m.structured?.minutes ? m.structured.minutes - Math.round(m.structured.minutes / 3) : 20,
     time_estimated: !m.structured?.minutes,
@@ -67,9 +87,14 @@ const fakeAi: AiCaller = async (m) => {
     // Like the real prompt: copy the site's nutrition when it gives some.
     nutrition_per_serving: m.structured?.nutrition?.calories
       ? { available: true, calories: m.structured.nutrition.calories, protein_g: m.structured.nutrition.protein ?? 0, carbs_g: m.structured.nutrition.carbs ?? 0, fat_g: m.structured.nutrition.fat ?? 0, from_source: true }
-      : { available: ingredientLines.length >= 3, calories: 450, protein_g: 20, carbs_g: 50, fat_g: 15, from_source: false },
+      : { ...fakeNutrition(body, servingsOf(body) ?? m.structured?.servings ?? 2), available: ingredientLines.length >= 3 },
   };
 };
+
+function servingsOf(text: string) {
+  const m = text.match(/serves\s+(\d+)/i);
+  return m ? Number(m[1]) : null;
+}
 
 const realFetch = globalThis.fetch;
 const fixtureFetch: typeof fetch = async (input, init) => {
@@ -87,6 +112,7 @@ const key = process.env.ANTHROPIC_API_KEY;
 const ai = process.env.FAKE_AI ? fakeAi : key ? claudeCaller(key, process.env.IMPORT_MODEL || undefined) : null;
 const deps = {
   ai,
+  nutritionAi: process.env.FAKE_AI ? fakeNutritionAi : key ? claudeNutritionCaller(key, process.env.IMPORT_MODEL || undefined) : null,
   limiter: new MemoryLimiter(),
   cache: new MemoryCache(),
   salt: 'dev',

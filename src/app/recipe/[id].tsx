@@ -310,6 +310,12 @@ export default function RecipeScreen() {
               <StatTile color={t.pop.leaf} hats={level} value={recipe.difficulty} label={nb(recipe.steps.length, recipe.steps.length === 1 ? 'step' : 'steps')} a11y={`${recipe.difficulty}, ${recipe.steps.length} steps`} />
               <StatTile color={t.pop.sky} icon="flame" value={`${recipe.calories}`} label={'kcal\u00A0each'} a11y={`${recipe.calories} calories per serving`} />
             </View>
+            {/* What one serving is, when the source says it. */}
+            {!!recipe.servingSize && (
+              <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, marginTop: 8 }]} testID="serving-size">
+                {`1\u00A0serving ≈ ${keepTogether(recipe.servingSize)}`}
+              </Text>
+            )}
           </Reveal>
 
           {/* Tags: plain labels, colored by kind */}
@@ -651,6 +657,18 @@ function Nutrition({ recipe, proteinGoal }: { recipe: Recipe; proteinGoal?: numb
                 {Math.round((protein / proteinGoal) * 100)}% of your {nb(proteinGoal, 'g')} daily protein goal
               </Text>
             ) : null}
+            {/* Dips, sauces and absorbed frying oil: already in the total, listed so it's clear. */}
+            {!!recipe.nutritionBreakdown?.length && (
+              <View style={{ gap: 4 }} testID="nutrition-breakdown">
+                <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, fontFamily: t.fonts.semibold }]}>Included in the kcal</Text>
+                {recipe.nutritionBreakdown.map((b) => (
+                  <View key={b.name} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
+                    <Text style={[t.type.footnote, { color: t.colors.label, flex: 1 }]}>{b.name}</Text>
+                    <Text style={[t.type.footnote, { color: t.colors.label, fontVariant: ['tabular-nums'] }]}>{nb(b.calories, 'kcal')}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
             <Text style={[t.type.caption1, { color: t.colors.tertiaryLabel }]}>{'Estimated from the ingredients. Not medical\u00A0advice.'}</Text>
           </Animated.View>
         )}

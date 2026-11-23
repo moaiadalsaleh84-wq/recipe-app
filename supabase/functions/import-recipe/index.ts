@@ -9,7 +9,7 @@
  * SUPABASE_URL and the server key (SUPABASE_SECRET_KEYS, or the legacy SUPABASE_SERVICE_ROLE_KEY)
  * are provided by Supabase automatically.
  */
-import { claudeCaller } from './lib/extract.ts';
+import { claudeCaller, claudeNutritionCaller } from './lib/extract.ts';
 import { handle } from './lib/handler.ts';
 import { SupabaseCache, SupabaseLimiter, pickServerKey } from './lib/limits.ts';
 
@@ -25,6 +25,7 @@ if (!salt) console.warn('RATE_LIMIT_SALT is not set; set it so hashed ids cannot
 
 const deps = {
   ai: key ? claudeCaller(key, env('IMPORT_MODEL') || undefined) : null,
+  nutritionAi: key ? claudeNutritionCaller(key, env('IMPORT_MODEL') || undefined) : null,
   limiter: new SupabaseLimiter(supabaseUrl, serviceKey),
   cache: new SupabaseCache(supabaseUrl, serviceKey),
   salt: salt || 'unset-salt',

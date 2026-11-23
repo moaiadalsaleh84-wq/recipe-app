@@ -25,6 +25,8 @@ export const LIMITS = {
   devicePerDay: 10,
   /** Previews (thumbnail + creator, no AI) are cheap; still limited. */
   previewsPer10Min: 40,
+  /** Nutrition counted again for saved imports (once after an update, or by hand). Very cheap. */
+  nutritionPerDay: 60,
   ipPerDay: 60,
   /** Override with the IMPORT_DAILY_CAP secret. */
   globalAiPerDay: 500,

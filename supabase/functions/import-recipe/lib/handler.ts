@@ -4,7 +4,7 @@
  * Runtime-neutral: takes a standard Request and returns a Response, so the same code runs
  * on Supabase (Deno) and in the local Node dev server and tests.
  */
-import { AiError, fromAi, fromStructured, type AiCaller } from './extract.ts';
+import { AiError, fromAi, fromStructured, nutritionFromAi, type AiCaller, type NutritionCaller } from './extract.ts';
 import { LIMITS, sha256, type Limiter, type ResultCache } from './limits.ts';
 import { SourceError, gatherSource, previewSource } from './sources.ts';
 import { validateRecipe } from './validate.ts';
@@ -13,6 +13,8 @@ import type { ImportFailure, ImportResponse, ImportSuccess, ImportedRecipe, Miss
 export type Deps = {
   /** null when no ANTHROPIC_API_KEY is configured: only structured-data imports work then. */
   ai: AiCaller | null;
+  /** Nutrition only, for re-running saved imports with the current rules. null without a key. */
+  nutritionAi?: NutritionCaller | null;
   limiter: Limiter;
   cache: ResultCache | null;
   salt: string;
@@ -58,12 +60,15 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
   if (!/^[A-Za-z0-9-]{16,64}$/.test(installId)) return fail({ ok: false, code: 'invalid_input', message: 'Please update the app and try again.' });
   const raw = await req.text();
   if (raw.length > MAX_BODY) return fail({ ok: false, code: 'invalid_input', message: 'That’s too much text to import at once.' });
-  let body: { url?: unknown; text?: unknown; preview?: unknown };
+  let body: { url?: unknown; text?: unknown; preview?: unknown; nutrition?: unknown };
   try {
     body = JSON.parse(raw) as typeof body;
   } catch {
     return fail({ ok: false, code: 'invalid_input', message: 'Paste a link or recipe text.' });
   }
+  /* ---------- nutrition only: a saved import, counted again with the current rules ---------- */
+  if (body.nutrition && typeof body.nutrition === 'object') return nutritionOnly(body.nutrition as Record<string, unknown>, installId, deps);
+
   const url = typeof body.url === 'string' ? body.url.slice(0, 2048) : undefined;
   const text = typeof body.text === 'string' ? body.text : undefined;
   if (!url?.trim() && !text?.trim()) return fail({ ok: false, code: 'invalid_input', message: 'Paste a link or recipe text.' });
@@ -117,7 +122,7 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
     return fail({ ok: false, code: 'server_error', message: 'Something went wrong reading that link.' });
   }
 
-  const cacheKey = material.url ? await sha256(`v3|${material.url}|${(text ?? '').trim()}`) : null;
+  const cacheKey = material.url ? await sha256(`v4|${material.url}|${(text ?? '').trim()}`) : null;
   if (cacheKey && deps.cache) {
     const hit = (await deps.cache.get(cacheKey).catch(() => null)) as ImportSuccess | null;
     if (hit?.ok) {
@@ -186,6 +191,42 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
   log({ event: 'import', kind: material.kind, status: result.status, structured: !!s, usedAi, ingredients: result.recipe.ingredients.length });
   if (cacheKey && deps.cache && result.status === 'complete') await deps.cache.set(cacheKey, result).catch(() => {});
   return json(200, result);
+}
+
+/**
+ * POST { nutrition: { title, servings, ingredients: string[], steps: string[], source? } }
+ * → { ok: true, nutrition }. Cheap (no recipe to write), limited per device, and counted in the
+ * daily AI cap like an import.
+ */
+async function nutritionOnly(raw: Record<string, unknown>, installId: string, deps: Deps): Promise<Response> {
+  const reply = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { ...CORS, 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
+  const strings = (v: unknown, max: number) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string').map((x) => x.slice(0, 300)).slice(0, max) : []);
+  const input = {
+    title: typeof raw.title === 'string' ? raw.title.slice(0, 200) : '',
+    servings: typeof raw.servings === 'number' && raw.servings > 0 && raw.servings < 100 ? Math.round(raw.servings) : null,
+    ingredients: strings(raw.ingredients, 60),
+    steps: strings(raw.steps, 40),
+    source: typeof raw.source === 'string' ? raw.source.slice(0, 300) : '',
+  };
+  if (!input.ingredients.length) return fail({ ok: false, code: 'invalid_input', message: 'No ingredients to count.' });
+  if (!deps.nutritionAi) return fail({ ok: false, code: 'ai_unavailable', message: 'AI reading isn’t set up on the server yet.' });
+  try {
+    const device = await sha256(`${deps.salt}|device|${installId}`);
+    const hit = await deps.limiter.hit(`nutday:${device}`, 86400, LIMITS.nutritionPerDay);
+    if (!hit.allowed) return fail({ ok: false, code: 'rate_limited', retryAfter: hit.resetIn, message: 'Try again tomorrow.' });
+    const cap = await deps.limiter.hit('global-ai-day', 86400, deps.dailyAiCap ?? LIMITS.globalAiPerDay);
+    if (!cap.allowed) return fail({ ok: false, code: 'daily_cap', retryAfter: cap.resetIn, message: 'Try again tomorrow.' });
+  } catch {
+    return fail({ ok: false, code: 'server_error', message: 'Try again soon.' });
+  }
+  try {
+    const nutrition = nutritionFromAi(await deps.nutritionAi(input));
+    deps.log?.({ event: 'nutrition', ok: !!nutrition });
+    return reply(200, { ok: true, nutrition });
+  } catch (e) {
+    deps.log?.({ event: 'ai_error', reason: e instanceof AiError ? e.reason : 'unknown', what: 'nutrition' });
+    return fail({ ok: false, code: 'ai_unavailable', message: 'Couldn’t work out the nutrition right now.' });
+  }
 }
 
 /** Works out what is missing, so the app can say so and open the edit form. */

@@ -64,7 +64,18 @@ export type ImportedRecipe = {
   category: Category | null;
   tags: Tag[];
   /** Always an estimate. null if it couldn't be estimated. */
-  nutrition: { calories: number; protein: number; carbs: number; fat: number; estimated: true; basis: 'source' | 'ai' } | null;
+  nutrition: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    estimated: true;
+    basis: 'source' | 'ai';
+    /** What one serving is, when the source says it: "3 tenders". */
+    servingSize?: string;
+    /** Dips, sauces and absorbed frying oil, with their calories per serving (already in the total). */
+    breakdown?: { name: string; calories: number }[];
+  } | null;
   /** Photo URL from the source page, if it had one. */
   imageUrl: string | null;
   sourceUrl: string | null;
