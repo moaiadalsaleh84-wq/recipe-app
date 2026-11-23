@@ -177,6 +177,67 @@ export async function importPreview(url: string, signal?: AbortSignal): Promise<
   }
 }
 
+/* ---------------- TikTok, asked from the phone ---------------- */
+
+export type PhoneOembed = { sourceUrl: string; imageUrl: string | null; credit: SourceCredit | null };
+
+/** "@crispykitchen" from a TikTok profile or video link, else null. */
+export function tikTokHandle(link: string | null | undefined): string | null {
+  if (!link) return null;
+  try {
+    const m = new URL(link).pathname.match(/^\/(@[\w.-]+)(?:\/|$)/);
+    return m ? decodeURIComponent(m[1]) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The creator from a TikTok oEmbed answer (or the video link), never an empty name. */
+export function creditFromOembed(o: Record<string, unknown> | null, videoUrl: string): SourceCredit | null {
+  const authorUrl = typeof o?.author_url === 'string' && /^https:\/\//.test(o.author_url) ? o.author_url : null;
+  const handle = tikTokHandle(authorUrl) ?? tikTokHandle(videoUrl);
+  if (!handle) return null;
+  return { handle, profileUrl: authorUrl ?? `https://www.tiktok.com/${handle}`, siteName: null };
+}
+
+/**
+ * TikTok often refuses its oEmbed to servers but answers phones. When the server got no picture or
+ * creator, the app asks TikTok itself: https://www.tiktok.com/oembed?url=<full video link>.
+ * Share links (vm.tiktok.com/…) are first followed to the full link. null when TikTok says nothing.
+ */
+export async function phoneOembed(link: string, signal?: AbortSignal): Promise<PhoneOembed | null> {
+  try {
+    let videoUrl = link.trim();
+    if (!/\/(video|photo)\//.test(videoUrl)) {
+      const res = await fetch(videoUrl, { signal });
+      if (res.url) videoUrl = res.url;
+    }
+    videoUrl = videoUrl.split('?')[0];
+    const res = await fetch(`https://www.tiktok.com/oembed?url=${encodeURIComponent(videoUrl)}`, { signal });
+    if (!res.ok) return null;
+    const o = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+    if (!o) return null;
+    const imageUrl = typeof o.thumbnail_url === 'string' && /^https:\/\//.test(o.thumbnail_url) ? o.thumbnail_url : null;
+    const credit = creditFromOembed(o, videoUrl);
+    return imageUrl || credit ? { sourceUrl: videoUrl, imageUrl, credit } : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Is this a TikTok link (tiktok.com, vm.tiktok.com, …)? */
+export const isTikTokLink = (text: string | null | undefined) => !!text && /(^|\/\/|\.)tiktok\.com\//i.test(text);
+
+/** Fills a missing picture or creator in an import with what the phone got from TikTok. */
+export function withPhoneDetails(result: ImportSuccess, phone: PhoneOembed | null): ImportSuccess {
+  if (!phone) return result;
+  return {
+    ...result,
+    recipe: { ...result.recipe, imageUrl: result.recipe.imageUrl ?? phone.imageUrl },
+    source: { ...result.source, credit: result.source.credit?.handle ? result.source.credit : (phone.credit ?? result.source.credit) },
+  };
+}
+
 /* ---------------- imported → app recipe ---------------- */
 
 const UNIT_MAP: Record<string, { unit: string; factor: number }> = {

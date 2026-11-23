@@ -8,6 +8,7 @@
 import { ActionSheetIOS, Linking, Platform, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeOut, useReducedMotion } from 'react-native-reanimated';
 import type { Recipe } from '../data/mock';
+import { tikTokHandle } from '../lib/importApi';
 import { pickPhoto, takePhoto } from '../lib/photos';
 import { duration } from '../motion';
 import { fonts, pop, stroke, useTheme } from '../theme';
@@ -67,9 +68,25 @@ export function ImportedPhotoOverlay({ recipe, onOwnPhoto, ownPhoto }: { recipe:
  */
 export function RecipeByRow({ recipe, onPress }: { recipe: Recipe; onPress: () => void }) {
   const t = useTheme();
-  const name = recipe.creatorHandle ?? recipe.imageCreditText ?? 'the original';
-  const letter = (name.replace(/^@/, '').match(/[\p{L}\p{N}]/u)?.[0] ?? '?').toUpperCase();
+  // Only a real creator name ("@crispykitchen", a site's name): never "From TikTok", never empty.
+  // A TikTok link carries the handle itself (tiktok.com/@name/video/…).
+  const name = recipe.creatorHandle?.trim() || (recipe.source === 'tiktok' ? tikTokHandle(recipe.sourceUrl) : null) || null;
   const video = recipe.source === 'tiktok' || recipe.source === 'youtube';
+  const watch = (
+    <View style={[styles.watch, { borderColor: t.pop.ink, backgroundColor: t.pop.sunshine }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <Icon name={video ? 'play' : 'link'} size={12} color={t.pop.ink} weight="bold" />
+      <Text style={styles.watchText}>{video ? 'Watch' : 'Open'}</Text>
+    </View>
+  );
+  // No name found: no "Recipe by", just the Watch button.
+  if (!name) {
+    return (
+      <PressableScale onPress={onPress} accessibilityRole="link" accessibilityLabel={video ? 'Watch the original video' : 'Open the original page'} style={styles.byRow} scaleTo={0.98} testID="recipe-by">
+        {watch}
+      </PressableScale>
+    );
+  }
+  const letter = (name.replace(/^@/, '').match(/[\p{L}\p{N}]/u)?.[0] ?? '?').toUpperCase();
   return (
     <PressableScale
       onPress={onPress}
@@ -93,10 +110,7 @@ export function RecipeByRow({ recipe, onPress }: { recipe: Recipe; onPress: () =
           {name}
         </Text>
       </View>
-      <View style={[styles.watch, { borderColor: t.pop.ink, backgroundColor: t.pop.sunshine }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-        <Icon name={video ? 'play' : 'link'} size={12} color={t.pop.ink} weight="bold" />
-        <Text style={styles.watchText}>{video ? 'Watch' : 'Open'}</Text>
-      </View>
+      {watch}
     </PressableScale>
   );
 }

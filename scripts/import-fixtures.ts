@@ -76,3 +76,22 @@ Object.assign(
 <h2>Method</h2><p>Soften the onion and garlic in the olive oil for 5 minutes.</p><p>Add the tomatoes and stock and simmer for 20 minutes.</p><p>Blend until smooth and season to taste.</p></main></body></html>`),
   },
 );
+
+/*
+ * Cornflake Hot Honey Chicken Tenders: TikTok refuses the server everything (page AND oEmbed), like
+ * the owner's real import. The phone can still reach oEmbed (tests answer it in the browser).
+ */
+export const CORNFLAKE_URL = 'https://www.tiktok.com/@crispykitchen/video/7400000000000000201';
+export const CORNFLAKE_CAPTION =
+  'Cornflake hot honey chicken tenders 🍯🔥 Makes 12 tenders, serves 4 (3 tenders each). 600g chicken tenders, 1 tsp kosher salt for the chicken, 250ml buttermilk, 100g cornflakes, 60g flour, ½ tsp kosher salt for the flour, 1 tsp paprika, 1 litre vegetable oil for frying, 4 tbsp hot honey for dipping. 1. Soak the chicken in buttermilk with the salt for 20 minutes. 2. Crush the cornflakes and mix with the flour, salt and paprika. 3. Coat the chicken and fry in the oil for 6 minutes. 4. Serve with the hot honey for dipping. #hothoney #chickentenders';
+export const CORNFLAKE_OEMBED = {
+  title: CORNFLAKE_CAPTION,
+  author_name: 'Crispy Kitchen',
+  author_url: 'https://www.tiktok.com/@crispykitchen',
+  thumbnail_url: 'https://images.unsplash.com/photo-1690749127581-c9351d7d0abc?w=720&h=1280&fit=crop',
+};
+Object.assign(FIXTURE_ROUTES, {
+  // The page loads (with the caption in its data) but has no picture tag; oEmbed is refused.
+  [CORNFLAKE_URL]: page(`<html><head><title>TikTok</title></head><body><script id="__UNIVERSAL_DATA_FOR_REHYDRATION__">{"itemStruct":{"desc":${JSON.stringify(CORNFLAKE_CAPTION)}}}</script></body></html>`),
+  [`https://www.tiktok.com/oembed?url=${encodeURIComponent(CORNFLAKE_URL)}`]: { status: 403, body: 'blocked', headers: { 'content-type': 'text/html' } },
+});

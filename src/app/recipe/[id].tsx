@@ -29,6 +29,7 @@ import { useToast } from '../../components/Toast';
 import { Button, EmptyState, IconButton, Segmented } from '../../components/ui';
 import { BottomBar } from '../../components/BottomBar';
 import { ImportHint, ImportedPhotoOverlay, RecipeByRow, chooseOwnPhoto, isImported, useOpenLink } from '../../components/ImportCredit';
+import { needsPhotoRetry, retryImportDetails } from '../../lib/importRetry';
 import { Lift, PopButton, PopCard, PopChip, PopIconButton } from '../../components/pop';
 import { type DietTag, type Recipe, type Units } from '../../data/mock';
 import { haptics } from '../../lib/haptics';
@@ -49,7 +50,7 @@ export default function RecipeScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const {
     getRecipe, isFavorite, toggleFavorite, addIngredients, units, setUnits, notes, setNote,
-    cookbooks, favorites, deleteRecipe, setRecipeImage, goals, profile, isPro, pantry, allRecipes, fun, markImportHintSeen,
+    cookbooks, favorites, deleteRecipe, setRecipeImage, goals, profile, isPro, pantry, allRecipes, fun, markImportHintSeen, updateRecipe,
   } = useStore();
   const recipe = getRecipe(id);
   const openLink = useOpenLink();
@@ -179,6 +180,14 @@ export default function RecipeScreen() {
     }
   };
   // A photo the user chose (not the imported one): no source sticker on it, and the ⋯ menu offers the imported one back.
+  // "Retry photo": ask the source (and TikTok from the phone) for the picture and creator again.
+  const retryPhoto = async () => {
+    const patch = await retryImportDetails(recipe);
+    if (patch) {
+      updateRecipe(recipe.id, patch);
+      toast({ message: patch.importedImage ? 'Got the photo.' : 'Found the creator. Still no photo.', icon: 'check' });
+    } else toast({ message: 'Still no photo. Try again later.', tone: 'warning' });
+  };
   const usingOwnPhoto = !!recipe.image && !(recipe.importedImage && typeof recipe.image === 'object' && recipe.image.uri === recipe.importedImage.card);
 
   // Imported recipes: what the AI had to suggest. Only shown when something was.
@@ -454,6 +463,7 @@ export default function RecipeScreen() {
           { label: inCookbooks > 0 ? 'Saved to a cookbook' : 'Save to a cookbook', icon: inCookbooks > 0 ? 'bookmarkFill' : 'bookmark', onPress: () => router.push({ pathname: '/save-to-cookbook', params: { id: recipe.id } }) },
           ...(recipe.custom ? [{ label: 'Edit recipe', icon: 'edit' as const, onPress: () => router.push({ pathname: '/recipe/new', params: { edit: recipe.id } }) }] : []),
           ...(imported && recipe.creatorUrl ? [{ label: 'Open creator’s profile', icon: 'people' as const, onPress: () => openLink(recipe.creatorUrl) }] : []),
+          ...(needsPhotoRetry(recipe) ? [{ label: 'Retry photo', icon: 'camera' as const, onPress: () => void retryPhoto() }] : []),
           ...(usingOwnPhoto && recipe.importedImage
             ? [{ label: 'Use the imported photo', icon: 'undo' as const, onPress: () => setRecipeImage(recipe.id, { uri: recipe.importedImage!.card }) }]
             : []),

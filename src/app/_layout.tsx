@@ -10,6 +10,7 @@ import { ProgressWatcher } from '../components/ProgressWatcher';
 import { ReminderSync } from '../components/ReminderSync';
 import { NotificationTaps } from '../components/NotificationTaps';
 import { ToastProvider } from '../components/Toast';
+import { ImportUpkeep } from '../components/ImportUpkeep';
 import { StoreProvider, useStore } from '../state/store';
 import { TimersProvider } from '../state/timers';
 import { DevDevice } from '../components/DevDevice';
@@ -82,6 +83,7 @@ export default function RootLayout() {
               <ReminderSync />
               <NotificationTaps />
               <EntitlementSync />
+              <ImportUpkeep />
               <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: t.colors.background } }}>
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="onboarding" options={{ gestureEnabled: false, animation: 'fade' }} />

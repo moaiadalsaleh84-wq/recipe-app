@@ -31,8 +31,12 @@ import {
   importIsConfigured,
   importPreview,
   importRecipe,
+  isTikTokLink,
   missingMessage,
+  phoneOembed,
   toRecipe,
+  withPhoneDetails,
+  type PhoneOembed,
   type ImportFailure,
   type ImportPreview,
   type ImportSuccess,
@@ -191,15 +195,35 @@ export default function ImportScreen() {
     setPhase({ name: 'loading' });
     abort.current = new AbortController();
     const signal = abort.current.signal;
+    // TikTok often refuses its details to our server but not to the phone: when the server has no
+    // picture or creator, the app asks TikTok itself (once per import).
+    let phone: Promise<PhoneOembed | null> | null = null;
+    const askPhone = (link: string) => (phone ??= phoneOembed(link, signal));
     // The picture and creator come first (a second or two); the recipe follows.
     if (isLink) {
       void importPreview(value, signal).then((p) => {
         if (signal.aborted) return;
         if (p) setPreview(p);
         setStage((s) => Math.max(s, 1));
+        if (isTikTokLink(p?.sourceUrl ?? value) && (!p?.imageUrl || !p.credit?.handle)) {
+          void askPhone(p?.sourceUrl ?? value).then((ph) => {
+            if (signal.aborted || !ph) return;
+            // The thumbnail shows as soon as the phone has it.
+            setPreview((cur) => ({
+              kind: 'tiktok',
+              sourceUrl: cur?.sourceUrl ?? ph.sourceUrl,
+              title: cur?.title ?? null,
+              imageUrl: cur?.imageUrl ?? ph.imageUrl,
+              credit: cur?.credit?.handle ? cur.credit : ph.credit,
+            }));
+          });
+        }
       });
     }
-    const res = await importRecipe(isLink ? { url: value } : { text: value }, signal);
+    let res = await importRecipe(isLink ? { url: value } : { text: value }, signal);
+    if (res.ok && res.source.kind === 'tiktok' && (!res.recipe.imageUrl || !res.source.credit?.handle)) {
+      res = withPhoneDetails(res, await askPhone(res.recipe.sourceUrl ?? value));
+    }
     if (res.ok) {
       if (!isExample) countImport();
       // Nothing to cook from without ingredients: finish it in the form instead.

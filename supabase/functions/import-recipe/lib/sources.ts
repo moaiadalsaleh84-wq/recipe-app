@@ -182,6 +182,39 @@ export function tikTokDescription(html: string): string | null {
   return null;
 }
 
+/**
+ * When TikTok refuses oEmbed to the server: the creator from the video link itself
+ * (tiktok.com/@handle/video/…) or the page's data ("uniqueId"), and the cover picture from the
+ * page's data. Either may be missing; the app then asks TikTok from the phone.
+ */
+export function tikTokFallback(videoUrl: string, html: string | null): { credit?: SourceCredit; imageUrl: string | null } {
+  const str = (key: string, from: number) => {
+    if (!html || from < 0) return null;
+    const m = html.slice(from).match(new RegExp(`"${key}":"((?:[^"\\\\]|\\\\.)*)"`));
+    if (!m) return null;
+    try {
+      return (JSON.parse(`"${m[1]}"`) as string).trim() || null;
+    } catch {
+      return null;
+    }
+  };
+  const item = html ? Math.max(html.indexOf('"itemStruct"'), html.indexOf('"ItemModule"')) : -1;
+  let handle: string | null = null;
+  try {
+    const m = new URL(videoUrl).pathname.match(/^\/(@[\w.-]+)\//);
+    if (m) handle = decodeURIComponent(m[1]);
+  } catch {
+    // not a full video link
+  }
+  if (!handle) {
+    const id = str('uniqueId', item);
+    if (id && /^[\w.-]+$/.test(id)) handle = `@${id}`;
+  }
+  let imageUrl = str('cover', item) ?? str('originCover', item) ?? str('dynamicCover', item);
+  if (imageUrl && !/^https:\/\//.test(imageUrl)) imageUrl = null;
+  return { credit: handle ? { handle, profileUrl: `https://www.tiktok.com/${handle}`, siteName: null } : undefined, imageUrl };
+}
+
 async function fromTikTok(url: URL, fetchImpl: Fetcher | undefined): Promise<SourceMaterial> {
   // Open the page too: it resolves share links (tiktok.com/t/…, vm.tiktok.com/…) to the real
   // video address, and usually carries the full description, which oEmbed may shorten.
@@ -203,8 +236,10 @@ async function fromTikTok(url: URL, fetchImpl: Fetcher | undefined): Promise<Sou
   // Whichever source has more of the caption.
   const caption = fromPage.length > fromOembed.length ? fromPage : fromOembed;
   const author = typeof oembed?.author_name === 'string' ? oembed.author_name : null;
-  const credit = videoCredit(oembed);
-  const imageUrl = (typeof oembed?.thumbnail_url === 'string' ? oembed.thumbnail_url : null) ?? (page ? metaContent(page.body, ['og:image']) : null);
+  // TikTok often refuses oEmbed to servers: fall back to the link and the page's own data.
+  const fallback = tikTokFallback(videoUrl, page?.body ?? null);
+  const credit = videoCredit(oembed) ?? fallback.credit;
+  const imageUrl = (typeof oembed?.thumbnail_url === 'string' ? oembed.thumbnail_url : null) ?? (page ? metaContent(page.body, ['og:image']) : null) ?? fallback.imageUrl;
   if (!oembed && !caption) throw new SourceError('TikTok didn’t share this video’s details. It may be private or deleted.', 'fetch_failed', { sourceUrl: videoUrl }, 'tiktok');
   if (caption.length < 40) {
     throw new SourceError(
@@ -318,14 +353,24 @@ export async function previewSource(input: string, fetchImpl?: Fetcher): Promise
   try {
     if (kind === 'tiktok') {
       let landed = url.toString();
+      let body: string | null = null;
       try {
-        landed = (await safeFetch(url.toString(), { fetchImpl })).url;
+        const page = await safeFetch(url.toString(), { fetchImpl });
+        landed = page.url;
+        body = page.body;
       } catch (e) {
         if (e instanceof FetchError && e.finalUrl) landed = e.finalUrl;
       }
       const videoUrl = /\/video\/|\/photo\//.test(landed) ? landed.split('?')[0] : url.toString();
       const o = await getJson(`https://www.tiktok.com/oembed?url=${encodeURIComponent(videoUrl)}`, fetchImpl);
-      return { kind, sourceUrl: videoUrl, title: typeof o?.title === 'string' ? o.title : null, imageUrl: typeof o?.thumbnail_url === 'string' ? o.thumbnail_url : null, credit: videoCredit(o) ?? null };
+      const fallback = tikTokFallback(videoUrl, body);
+      return {
+        kind,
+        sourceUrl: videoUrl,
+        title: typeof o?.title === 'string' ? o.title : null,
+        imageUrl: (typeof o?.thumbnail_url === 'string' ? o.thumbnail_url : null) ?? (body ? metaContent(body, ['og:image']) : null) ?? fallback.imageUrl,
+        credit: videoCredit(o) ?? fallback.credit ?? null,
+      };
     }
     if (kind === 'youtube') {
       const id = youTubeId(url);

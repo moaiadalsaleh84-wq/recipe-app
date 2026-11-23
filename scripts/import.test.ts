@@ -14,7 +14,7 @@ import { assertPublicUrl } from '../supabase/functions/import-recipe/lib/http.ts
 import { isGrounded, normalize, parseLine } from '../supabase/functions/import-recipe/lib/ingredients.ts';
 import { isoMinutes, recipeFromHtml, yieldNumber } from '../supabase/functions/import-recipe/lib/jsonld.ts';
 import { MemoryCache, MemoryLimiter, pickServerKey, serverHeaders } from '../supabase/functions/import-recipe/lib/limits.ts';
-import { findUrl, instagramCaption, tikTokDescription, youTubeDescription } from '../supabase/functions/import-recipe/lib/sources.ts';
+import { findUrl, instagramCaption, tikTokDescription, tikTokFallback, youTubeDescription } from '../supabase/functions/import-recipe/lib/sources.ts';
 import type { ImportResponse, SourceMaterial } from '../supabase/functions/import-recipe/lib/types.ts';
 
 /* ---------------- fixtures ---------------- */
@@ -500,4 +500,27 @@ test('v2 checks: Title Case, combined lines split, units fixed, amounts out of n
   assert.deepEqual(recipe.stepMeta?.map((m) => m.ingredientIds), [['i1', 'i2', 'i3'], []]);
   assert.ok(problems.some((p) => /handful/.test(p)));
   assert.ok(problems.some((p) => /Garlic/.test(p)));
+});
+
+test('TikTok refuses oEmbed to the server: creator from the link, cover from the page data', async () => {
+  const url = 'https://www.tiktok.com/@crispykitchen/video/7400000000000000201';
+  const caption = 'Cornflake tenders. 600g chicken tenders, 100g cornflakes, 60g flour. Coat and fry for 6 minutes.';
+  const html = `<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__">{"itemStruct":{"desc":${JSON.stringify(caption)},"author":{"uniqueId":"crispykitchen"},"video":{"cover":"https:\\u002F\\u002Fp16.example.com\\u002Fcover.jpg"}}}</script>`;
+  const fb = tikTokFallback(url, html);
+  assert.deepEqual(fb.credit, { handle: '@crispykitchen', profileUrl: 'https://www.tiktok.com/@crispykitchen', siteName: null });
+  assert.equal(fb.imageUrl, 'https://p16.example.com/cover.jpg');
+  // No @ in the link: the page's uniqueId. No page: nothing (the app asks TikTok from the phone).
+  assert.equal(tikTokFallback('https://www.tiktok.com/t/abc', html).credit?.handle, '@crispykitchen');
+  assert.deepEqual(tikTokFallback('https://www.tiktok.com/t/abc', null), { credit: undefined, imageUrl: null });
+
+  const d = deps({
+    ai: fakeAi({ ingredients: [{ original: '600g chicken tenders', amount: 600, unit: 'g', name: 'chicken tenders' }] }),
+    fetchImpl: fakeFetch({ [url]: { body: html, headers: { 'content-type': 'text/html' } }, 'https://www.tiktok.com/oembed': { status: 403, body: 'blocked' } }),
+  });
+  const { json } = await post(d, { url });
+  assert.ok(json.ok, JSON.stringify(json));
+  if (json.ok) {
+    assert.equal(json.source.credit?.handle, '@crispykitchen');
+    assert.equal(json.recipe.imageUrl, 'https://p16.example.com/cover.jpg');
+  }
 });
