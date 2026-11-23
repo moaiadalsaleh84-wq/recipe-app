@@ -231,9 +231,11 @@ export function DrawnCheck({ size = 14, color = pop.ink, delay = 0 }: { size?: n
   }, [reduceMotion, delay, drawn]);
   const props = useAnimatedProps(() => ({ strokeDashoffset: TICK_LENGTH * (1 - drawn.get()) }));
   return (
-    <Svg width={size} height={size} viewBox="0 0 18 18" importantForAccessibility="no" accessibilityElementsHidden>
-      <AnimatedPath d="M3.5 9.5 L7 13 L14.5 4.5" fill="none" stroke={color} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" strokeDasharray={TICK_LENGTH} animatedProps={props} />
-    </Svg>
+    <View importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+      <Svg width={size} height={size} viewBox="0 0 18 18">
+        <AnimatedPath d="M3.5 9.5 L7 13 L14.5 4.5" fill="none" stroke={color} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" strokeDasharray={TICK_LENGTH} animatedProps={props} />
+      </Svg>
+    </View>
   );
 }
 
