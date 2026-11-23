@@ -274,7 +274,7 @@ function GroceryRow({ item, onToggle, onDelete }: { item: GroceryItem; onToggle:
           scaleTo={0.96}
           accessibilityRole="checkbox"
           aria-checked={item.checked}
-          accessibilityLabel={`${item.name}, ${showAmount(item.quantity, item.unit, item.name, units, item.aisle).text}`}
+          accessibilityLabel={`${item.name}, ${showAmount(item.quantity, item.unit, item.name, units, item.aisle).text}${item.total && item.quantity > 0 ? ' total' : ''}`}
           accessibilityActions={[{ name: 'delete', label: 'Delete' }]}
           onAccessibilityAction={(e) => e.nativeEvent.actionName === 'delete' && onDelete()}
           style={styles.checkTap}
@@ -311,6 +311,7 @@ function GroceryRow({ item, onToggle, onDelete }: { item: GroceryItem; onToggle:
           {/* The amount fades and is crossed out together with the name. */}
           <Text style={[t.type.subhead, { color: item.checked ? t.colors.secondaryLabel : t.colors.label, fontVariant: ['tabular-nums'] }, item.checked && styles.struck]}>
             {plainFractions(showAmount(item.quantity, item.unit, item.name, units, item.aisle).text)}
+            {item.total && item.quantity > 0 ? ' total' : ''}
           </Text>
         </PressableScale>
       </View>

@@ -5,7 +5,7 @@
  */
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { addWeekToList, groceryName, mergeIngredients, weekId, type ListIngredient, type ListItem } from '../src/lib/groceries.ts';
+import { addWeekToList, baseIngredientName, groceryName, mergeIngredients, mergeSameIngredients, weekId, type ListIngredient, type ListItem } from '../src/lib/groceries.ts';
 
 const recipes: Record<string, ListIngredient[]> = {
   curry: [
@@ -108,4 +108,38 @@ test('Crispy Beef Tacos: "Garlic" from the crema and the beef is one line, added
   const salt = list.filter((i) => i.name === 'Salt');
   assert.equal(salt.length, 2);
   assert.deepEqual(salt.map((i) => showAmount(i.quantity, i.unit, 'Salt').text).sort(), ['1½ tsp', 'pinch']);
+});
+
+test('the same ingredient twice in one recipe: one line with the total', () => {
+  const salt = [
+    { id: 'i2', name: 'Kosher salt for the chicken', quantity: 1, unit: 'tsp', aisle: 'Pantry' },
+    { id: 'i5', name: 'Kosher salt (for the flour)', quantity: 0.5, unit: 'tsp', aisle: 'Pantry' },
+    { id: 'i6', name: 'Flour', quantity: 60, unit: 'g', aisle: 'Pantry' },
+  ];
+  const list = mergeIngredients([], 'tenders', salt);
+  assert.equal(list.length, 2);
+  assert.equal(list[0].name, 'Kosher salt');
+  assert.equal(list[0].quantity, 1.5);
+  assert.equal(list[0].total, true);
+  assert.equal(list[1].total, undefined);
+
+  const tiles = mergeSameIngredients(salt.map((s) => ({ ...s })));
+  assert.equal(tiles.length, 2);
+  assert.equal(tiles[0].item.name, 'Kosher salt');
+  assert.equal(tiles[0].item.quantity, 1.5);
+  assert.equal(tiles[0].parts, 2);
+  assert.deepEqual(tiles[0].lines, ['i2-0', 'i5-1']);
+});
+
+test('names without "for…": what stays and what goes', () => {
+  assert.equal(baseIngredientName('Kosher salt for the chicken'), 'Kosher salt');
+  assert.equal(baseIngredientName('Oil, for frying'), 'Oil');
+  assert.equal(baseIngredientName('Butter (for greasing)'), 'Butter');
+  assert.equal(baseIngredientName('Self-raising flour'), 'Self-raising flour');
+  // A pinch and a number aren't added up.
+  const tiles = mergeSameIngredients([
+    { id: 'a', name: 'Salt', quantity: 1, unit: 'tsp' },
+    { id: 'b', name: 'Salt for the sauce', quantity: null, unit: 'pinch' },
+  ]);
+  assert.equal(tiles.length, 2);
 });

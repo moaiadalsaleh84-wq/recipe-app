@@ -7,12 +7,14 @@
  *   the count) and added at full precision, then rounded once, when shown (src/lib/scale.ts).
  *   Different kinds stay separate lines ("200 g flour" and "2 cups flour"), and a pinch or "to taste"
  *   never adds onto a number.
+ * - The same ingredient twice in one recipe ("salt for the chicken", "salt for the flour") becomes
+ *   one line named without the "for…" part, marked as a total ("Kosher salt · 1½ tsp total").
  * - Adding the week's plan is safe to repeat: each planned meal is added once per week.
  */
 import { combine, unitInfo } from './scale.ts';
 
 type Aisle = string;
-export type ListItem = { key: string; name: string; quantity: number; unit: string; aisle: Aisle; recipeIds: string[]; checked: boolean };
+export type ListItem = { key: string; name: string; quantity: number; unit: string; aisle: Aisle; recipeIds: string[]; checked: boolean; /** Two lines of one recipe added up ("¾ tsp total"). */ total?: boolean };
 /** quantity null = a pinch / to taste: goes on the list without a number. */
 export type ListIngredient = { id: string; name: string; quantity: number | null; unit: string; aisle: Aisle };
 
@@ -26,30 +28,79 @@ export const groceryName = (name: string) =>
     .map((w) => (w.length > 3 ? w.replace(/ies$/, 'y').replace(/(oes|ches|shes|sses)$/, (x) => x.slice(0, -2)).replace(/([^s])s$/, '$1') : w))
     .join(' ');
 
+/**
+ * The ingredient without what it's for: "Kosher salt for the chicken" → "Kosher salt",
+ * "Oil (for frying)" → "Oil". Used to find the same ingredient listed twice in one recipe.
+ */
+export const baseIngredientName = (name: string) => {
+  const base = name
+    .replace(/\s*\(\s*for\b[^)]*\)/i, '')
+    .replace(/\s*,?\s+for\s+(the\s+|a\s+|an\s+)?[\p{L} -]+$/iu, '')
+    .trim();
+  return base || name.trim();
+};
+
+/** The key two lines of the same ingredient share: "Kosher salt for the flour" → "kosher salt". */
+export const sameIngredientKey = (name: string) => groceryName(baseIngredientName(name));
+
+type Line = { id: string; name: string; quantity: number | null; unit: string };
+
+/**
+ * One recipe's ingredients with the same ingredient listed twice (salt for the chicken and salt for
+ * the flour) added up into one line, for "Grab your stuff". Lines that can't be added (a pinch and
+ * a number, grams and a count) stay separate. Order follows the first appearance. `key` is the
+ * first line's `${id}-${index}`; `lines` lists every line merged into it.
+ */
+export function mergeSameIngredients<T extends Line>(list: T[]): { key: string; item: T; parts: number; lines: string[] }[] {
+  const out: { key: string; item: T; parts: number; lines: string[] }[] = [];
+  list.forEach((ing, i) => {
+    const same = sameIngredientKey(ing.name);
+    const noAmount = (x: Line) => x.quantity == null;
+    const hit = out.find(
+      (o) => sameIngredientKey(o.item.name) === same && (noAmount(o.item) && noAmount(ing) ? true : combine(o.item, ing) != null),
+    );
+    if (!hit) {
+      out.push({ key: `${ing.id}-${i}`, item: ing, parts: 1, lines: [`${ing.id}-${i}`] });
+      return;
+    }
+    const sum = noAmount(hit.item) ? null : combine(hit.item, ing);
+    hit.item = { ...hit.item, name: baseIngredientName(hit.item.name), ...(sum ? { quantity: sum.quantity, unit: sum.unit } : {}) };
+    hit.parts += 1;
+    hit.lines.push(`${ing.id}-${i}`);
+  });
+  return out;
+}
+
 /** Adds a recipe's ingredients to the list. Existing items keep everything and only grow; nothing is removed. */
 export function mergeIngredients<T extends ListItem>(list: T[], recipeId: string, ingredients: ListIngredient[], scale = 1): T[] {
   const next = [...list];
+  // Items this call added or grew: a second line of the same recipe adds onto them ("total").
+  const touched = new Set<number>();
   for (const ing of ingredients) {
     const noAmount = ing.quantity == null || unitInfo(ing.unit).family === 'none';
     // Full precision: no rounding until the amount is shown.
     const qty = noAmount ? 0 : (ing.quantity as number) * scale;
     const unit = noAmount ? (ing.quantity == null ? 'pinch' : ing.unit) : ing.unit;
-    const same = groceryName(ing.name);
+    const same = sameIngredientKey(ing.name);
     const isPinch = (i: ListItem) => !(i.quantity > 0) && unitInfo(i.unit).family === 'none';
-    const idx = next.findIndex((i) => groceryName(i.name) === same && (noAmount ? isPinch(i) : !isPinch(i) && combine({ quantity: i.quantity, unit: i.unit }, { quantity: qty, unit }) != null));
+    const idx = next.findIndex((i) => sameIngredientKey(i.name) === same && (noAmount ? isPinch(i) : !isPinch(i) && combine({ quantity: i.quantity, unit: i.unit }, { quantity: qty, unit }) != null));
     if (idx >= 0) {
       const existing = next[idx];
       const sum = noAmount ? { quantity: 0, unit: existing.unit } : combine({ quantity: existing.quantity, unit: existing.unit }, { quantity: qty, unit })!;
+      const twice = touched.has(idx);
       next[idx] = {
         ...existing,
+        ...(twice ? { name: baseIngredientName(existing.name), total: true } : {}),
         quantity: sum.quantity,
         unit: sum.unit,
         // More is needed now, so it's back on the list (a second pinch doesn't change anything).
         checked: noAmount ? existing.checked : false,
         recipeIds: existing.recipeIds.includes(recipeId) ? existing.recipeIds : [...existing.recipeIds, recipeId],
       };
+      touched.add(idx);
     } else {
       next.push({ key: `${ing.id}|${unit}`, name: ing.name, quantity: qty, unit, aisle: ing.aisle, recipeIds: [recipeId], checked: false } as T);
+      touched.add(next.length - 1);
     }
   }
   return next;

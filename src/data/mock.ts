@@ -459,6 +459,8 @@ export type GroceryItem = {
   aisle: Aisle;
   recipeIds: string[];
   checked: boolean;
+  /** Two lines of one recipe added up: shown as "1½ tsp total". */
+  total?: boolean;
 };
 
 export const initialGroceries: GroceryItem[] = [

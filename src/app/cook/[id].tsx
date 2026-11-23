@@ -1,7 +1,7 @@
 import { useKeepAwake } from 'expo-keep-awake';
 import { router, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { Image } from 'expo-image';
 import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
@@ -38,7 +38,7 @@ import { PressableScale } from '../../components/PressableScale';
 import { RecipePhoto } from '../../components/RecipeCard';
 import { useToast } from '../../components/Toast';
 import { Lift, MascotSlot, PopButton, PopCard, PopChip, PopIconButton, SHOW_MASCOT_PLACEHOLDER } from '../../components/pop';
-import { AnimatedNumber, CheckCircle, EmptyState, ProgressBar } from '../../components/ui';
+import { AnimatedNumber, CheckCircle, DrawnCheck, EmptyState, ProgressBar } from '../../components/ui';
 import type { Ingredient, Rating, Recipe } from '../../data/mock';
 import { clock, isReady, secondsLeft, type CookTimer } from '../../lib/cookTimers';
 import { haptics } from '../../lib/haptics';
@@ -50,6 +50,7 @@ import { ingredientsInStep, splitTip, warnStepProblems } from '../../lib/steps';
 import { durationLabel, findTimers } from '../../lib/timers';
 import { convertStepText } from '../../lib/units';
 import { amountFor, ingredientLabel } from '../../lib/scale';
+import { mergeSameIngredients } from '../../lib/groceries';
 import { useStore } from '../../state/store';
 import { useTimers } from '../../state/timers';
 import { fonts, pop, popCycle, useTheme } from '../../theme';
@@ -58,7 +59,7 @@ type FinishEntry = { date: string; xpBefore: number; levelBefore: number; bonus:
 
 export default function CookMode() {
   const t = useTheme();
-  const params = useLocalSearchParams<{ id: string; servings?: string }>();
+  const params = useLocalSearchParams<{ id: string; servings?: string; step?: string }>();
   const { getRecipe, profile } = useStore();
   const recipe = getRecipe(params.id);
   if (!recipe) {
@@ -70,10 +71,10 @@ export default function CookMode() {
   }
   // Opened from the recipe page with its servings; from anywhere else (Home, You, a reminder), sized
   // for your household like the recipe page.
-  return <CookSession key={recipe.id} recipe={recipe} servings={Number(params.servings) || profile.household || recipe.servings || 1} />;
+  return <CookSession key={recipe.id} recipe={recipe} servings={Number(params.servings) || profile.household || recipe.servings || 1} startStep={Number(params.step) || 0} />;
 }
 
-function CookSession({ recipe, servings }: { recipe: Recipe; servings: number }) {
+function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; servings: number; startStep?: number }) {
   // The screen stays on while you cook. Leaving quickly can deactivate before activation finishes; that's harmless.
   useKeepAwake(undefined, { suppressDeactivateWarnings: true });
   const t = useTheme();
@@ -82,7 +83,8 @@ function CookSession({ recipe, servings }: { recipe: Recipe; servings: number })
   const store = useStore();
   const { units, logCooked, rateCooked, setCookedPhoto, cooked, customRecipes, plan, favorites, fun, claimBonus } = store;
 
-  const [page, setPage] = useState(0); // 0 = get ready, 1..n = steps, n+1 = finish
+  // Opened from another recipe's timer pill: straight to that timer's step.
+  const [page, setPage] = useState(() => Math.min(Math.max(0, startStep), recipe.steps.length)); // 0 = get ready, 1..n = steps, n+1 = finish
   // Kept for the whole cook: going back never resets what you've set out.
   const [gathered, setGathered] = useState<Record<string, boolean>>({});
   const [listOpen, setListOpen] = useState(false);
@@ -177,18 +179,23 @@ function CookSession({ recipe, servings }: { recipe: Recipe; servings: number })
     return `${shown.text} ${ingredientLabel(ing.name, shown)}`.trim();
   };
   /** The tile's two lines: "Cooked rice" (sentence case, like the recipe) and "400 g". */
-  const partsOf = (ing: Ingredient) => {
+  const partsOf = (ing: Ingredient, total = false) => {
     const shown = amountFor(ing, servings, recipe.servings, units);
     const name = ingredientLabel(ing.name, shown);
-    return { name: name.charAt(0).toUpperCase() + name.slice(1), qty: shown.text };
+    return { name: name.charAt(0).toUpperCase() + name.slice(1), qty: total && shown.text ? `${shown.text} total` : shown.text };
   };
+  // The same ingredient listed twice (salt for the chicken, salt for the flour) is one thing to set
+  // out: one tile with the total. The steps keep both lines.
+  const gatherTiles = useMemo(() => mergeSameIngredients(recipe.ingredients), [recipe.ingredients]);
+  // A line in the ingredients sheet ticks the tile it was merged into.
+  const tileOf = useMemo(() => Object.fromEntries(gatherTiles.flatMap((g) => g.lines.map((l) => [l, g.key]))), [gatherTiles]);
   const toggleGathered = (key: string) => {
     const next = { ...gathered, [key]: !gathered[key] };
     setGathered(next);
     // The last one set out: a small "ready" moment.
-    if (!gathered[key] && recipe.ingredients.every((ing, i) => next[`${ing.id}-${i}`])) haptics.success();
+    if (!gathered[key] && gatherTiles.every((g) => next[g.key])) haptics.success();
   };
-  const setOut = recipe.ingredients.filter((ing, i) => gathered[`${ing.id}-${i}`]).length;
+  const setOut = gatherTiles.filter((g) => gathered[g.key]).length;
 
   const onStep = page >= 1 && page <= steps.length;
   // Checked recipe text already gives °C and °F: shown exactly as written.
@@ -234,13 +241,13 @@ function CookSession({ recipe, servings }: { recipe: Recipe; servings: number })
             {/* Centered on the screen, not between the buttons. */}
             <View style={[StyleSheet.absoluteFill, styles.headerCenter, { top: Math.max(insets.top, 12) + 4 }]} pointerEvents="none">
               {page === 0 ? (
-                <View style={[styles.readyPill, { backgroundColor: setOut === recipe.ingredients.length ? pop.leaf : pop.white }]}>
-                  {setOut === recipe.ingredients.length ? (
+                <View style={[styles.readyPill, { backgroundColor: setOut === gatherTiles.length ? pop.leaf : pop.white }]}>
+                  {setOut === gatherTiles.length ? (
                     <Text style={[t.type.headline, { color: pop.ink, fontFamily: fonts.black }]} testID="gather-count">
                       Everything’s ready
                     </Text>
                   ) : (
-                    <AnimatedNumber value={setOut} suffix={` of ${recipe.ingredients.length} ready`} style={[t.type.headline, { color: pop.ink, fontFamily: fonts.black }]} testID="gather-count" />
+                    <AnimatedNumber value={setOut} suffix={` of ${gatherTiles.length} ready`} style={[t.type.headline, { color: pop.ink, fontFamily: fonts.black }]} testID="gather-count" />
                   )}
                 </View>
               ) : (
@@ -272,7 +279,7 @@ function CookSession({ recipe, servings }: { recipe: Recipe; servings: number })
           {floating.length > 0 && (
             <View style={styles.pills}>
               {floating.map((tm) => (
-                <TimerPill key={tm.id} timer={tm} now={now} here={tm.recipeId === recipe.id} onPress={() => (tm.recipeId === recipe.id ? go(tm.step) : undefined)} onStop={() => stop(tm.id)} />
+                <TimerPill key={tm.id} timer={tm} now={now} here={tm.recipeId === recipe.id} onPress={() => (tm.recipeId === recipe.id ? go(tm.step) : router.push({ pathname: '/cook/[id]', params: { id: tm.recipeId, step: String(tm.step) } }))} onStop={() => stop(tm.id)} />
               ))}
             </View>
           )}
@@ -288,18 +295,17 @@ function CookSession({ recipe, servings }: { recipe: Recipe; servings: number })
                 </View>
                 <MascotSlot
                   message={
-                    setOut === recipe.ingredients.length
+                    setOut === gatherTiles.length
                       ? 'Everything’s here. Let’s go!'
-                      : setOut >= Math.ceil(recipe.ingredients.length / 2) && setOut > 0
+                      : setOut >= Math.ceil(gatherTiles.length / 2) && setOut > 0
                         ? 'Halfway there!'
                         : 'Let’s gather everything!'
                   }
                 />
                 <View style={styles.grid}>
-                  {recipe.ingredients.map((ing, i) => {
-                    const key = `${ing.id}-${i}`;
-                    return <GatherTile key={key} {...partsOf(ing)} checked={!!gathered[key]} onPress={() => toggleGathered(key)} />;
-                  })}
+                  {gatherTiles.map(({ key, item, parts }) => (
+                    <GatherTile key={key} {...partsOf(item, parts > 1)} checked={!!gathered[key]} onPress={() => toggleGathered(key)} />
+                  ))}
                 </View>
               </Animated.View>
             )}
@@ -398,10 +404,10 @@ function CookSession({ recipe, servings }: { recipe: Recipe; servings: number })
           </Text>
           <ScrollView style={{ maxHeight: 420 }}>
             {recipe.ingredients.map((ing, i) => {
-              const key = `${ing.id}-${i}`;
+              const key = tileOf[`${ing.id}-${i}`] ?? `${ing.id}-${i}`;
               return (
                 <PressableScale
-                  key={key}
+                  key={`${ing.id}-${i}`}
                   onPress={() => toggleGathered(key)}
                   haptic="select"
                   scaleTo={0.98}
@@ -457,8 +463,8 @@ function GatherTile({ name, qty, checked, onPress }: { name: string; qty: string
       <View style={styles.tileShadow} />
       <Animated.View style={[styles.tile, { backgroundColor: checked ? pop.leaf : pop.white }, face]}>
         {checked ? (
-          <Animated.View entering={reduceMotion ? undefined : ZoomIn.springify().damping(9).stiffness(320)} style={styles.tileCheck}>
-            <Icon name="check" size={14} color={pop.ink} weight="bold" />
+          <Animated.View entering={reduceMotion ? undefined : FadeIn.duration(150)} style={styles.tileCheck}>
+            <DrawnCheck size={16} delay={60} />
           </Animated.View>
         ) : (
           <View style={styles.tileEmpty} />
@@ -545,7 +551,7 @@ function TimerCard({ seconds, timer: tm, now, first, onStart, onPause, onResume,
   );
 }
 
-/** A timer from another step: a small pill with the time left. Tap it to go back to its step. */
+/** A timer from another step or recipe: a small pill with the time left. Tap it to go to its step. */
 function TimerPill({ timer: tm, now, here, onPress, onStop }: { timer: CookTimer; now: number; here: boolean; onPress: () => void; onStop: () => void }) {
   const t = useTheme();
   const ringing = tm.status === 'ringing';
@@ -553,7 +559,7 @@ function TimerPill({ timer: tm, now, here, onPress, onStop }: { timer: CookTimer
   const text = ringing ? `Time’s up · ${where}` : tm.status === 'done' ? `Done · ${where}` : `${clock(secondsLeft(tm, now))} · ${where}`;
   return (
     <Animated.View entering={FadeInUp.duration(200)} layout={LinearTransition} style={[styles.pill, { backgroundColor: ringing ? pop.tomato : pop.white }]}>
-      <PressableScale onPress={onPress} disabled={!here} accessibilityLabel={`${text}${here ? '. Go to that step' : ''}`} style={styles.pillMain} testID="timer-pill">
+      <PressableScale onPress={onPress} accessibilityLabel={`${text}. Go to that step`} style={styles.pillMain} testID="timer-pill">
         <Icon name="timer" size={15} color={pop.ink} weight="bold" />
         <Text style={[t.type.footnote, { color: pop.ink, fontFamily: fonts.black, fontVariant: ['tabular-nums'], flexShrink: 1 }]}>
           {text}

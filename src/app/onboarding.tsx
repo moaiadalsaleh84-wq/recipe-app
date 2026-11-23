@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppIcon } from '../components/AppIcon';
 import { BottomBar } from '../components/BottomBar';
 import { Chunky } from '../components/Chunky';
-import { AnimatedNumber } from '../components/ui';
+import { AnimatedNumber, DrawnCheck } from '../components/ui';
 import { Icon, type IconName } from '../components/Icon';
 import { PopButton, PopCard, PopIconButton, Sticker } from '../components/pop';
 import { RecipePhoto } from '../components/RecipeCard';
@@ -292,11 +292,13 @@ function Step({ title, subtitle, children, footer, contentStyle }: { title: stri
 }
 
 /** The white check in a circle on a picked option. */
+/** The circle fades in (150 ms) and the tick draws itself in. No scaling. */
 function CheckBadge({ dark }: { dark?: boolean }) {
+  const reduceMotion = useReducedMotion();
   return (
-    <View style={[styles.badge, { backgroundColor: dark ? pop.ink : pop.white }]}>
-      <Icon name="check" size={dark ? 13 : 16} color={dark ? pop.white : pop.ink} weight="bold" />
-    </View>
+    <Animated.View entering={reduceMotion ? undefined : FadeIn.duration(150)} style={[styles.badge, { backgroundColor: dark ? pop.ink : pop.white }]}>
+      <DrawnCheck size={dark ? 15 : 17} color={dark ? pop.white : pop.ink} delay={60} />
+    </Animated.View>
   );
 }
 

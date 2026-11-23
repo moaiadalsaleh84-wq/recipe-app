@@ -6,21 +6,21 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native';
 import { Text } from './Text';
 import { num } from '../lib/text';
-import { duration as motionDuration, popSpring } from '../motion';
+import { duration as motionDuration } from '../motion';
 import Animated, {
   Easing,
   useAnimatedProps,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
+  withDelay,
   withRepeat,
-  withSequence,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import type { HapticKind } from '../lib/haptics';
 import { useTheme, pop } from '../theme';
-import Svg, { Circle } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 import { Mascot, MASCOT_ON } from './mascot/Mascot';
 import type { Mood } from './mascot/moods';
 import { Icon, type IconName } from './Icon';
@@ -215,33 +215,43 @@ export function Stepper({
 
 /* ---------- Animated checkmark circle ---------- */
 
+const AnimatedPath = Animated.createAnimatedComponent(Path);
+/** Length of the tick path below (two strokes, about 14.9), rounded up so it's fully hidden at 0. */
+const TICK_LENGTH = 16;
+
+/**
+ * A check mark whose line draws in from left to right (200 ms) when it appears. No scaling.
+ * With Reduce Motion it's simply there.
+ */
+export function DrawnCheck({ size = 14, color = pop.ink, delay = 0 }: { size?: number; color?: string; delay?: number }) {
+  const reduceMotion = useReducedMotion();
+  const drawn = useSharedValue(reduceMotion ? 1 : 0);
+  useEffect(() => {
+    if (!reduceMotion) drawn.set(withDelay(delay, withTiming(1, { duration: 200, easing: Easing.out(Easing.quad) })));
+  }, [reduceMotion, delay, drawn]);
+  const props = useAnimatedProps(() => ({ strokeDashoffset: TICK_LENGTH * (1 - drawn.get()) }));
+  return (
+    <Svg width={size} height={size} viewBox="0 0 18 18" importantForAccessibility="no" accessibilityElementsHidden>
+      <AnimatedPath d="M3.5 9.5 L7 13 L14.5 4.5" fill="none" stroke={color} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" strokeDasharray={TICK_LENGTH} animatedProps={props} />
+    </Svg>
+  );
+}
+
 export function CheckCircle({ checked, color, checkColor = pop.ink }: { checked: boolean; color: string; /** The tick itself (ink by default: text and marks on color are ink). */ checkColor?: string }) {
   const t = useTheme();
   const reduceMotion = useReducedMotion();
-  const scale = useSharedValue(checked ? 1 : 0);
-  const tick = useSharedValue(checked ? 1 : 0);
+  const fill = useSharedValue(checked ? 1 : 0);
 
   useEffect(() => {
-    if (checked) {
-      // The fill pops 0.6 → 1.1 → 1, then the tick draws in (grows and fades in from the left).
-      scale.set(reduceMotion ? 1 : withSequence(withTiming(0.6, { duration: 0 }), withTiming(1.1, { duration: motionDuration.fast }), withSpring(1, popSpring)));
-      tick.set(reduceMotion ? 1 : withSequence(withTiming(0, { duration: 0 }), withTiming(0, { duration: 90 }), withTiming(1, { duration: motionDuration.fast })));
-    } else {
-      scale.set(withTiming(0, { duration: 140 }));
-      tick.set(0);
-    }
-  }, [checked, reduceMotion, scale, tick]);
+    // The circle fills with a smooth fade (150 ms); the tick draws itself in (DrawnCheck). No scaling.
+    fill.set(reduceMotion ? (checked ? 1 : 0) : withTiming(checked ? 1 : 0, { duration: motionDuration.fast }));
+  }, [checked, reduceMotion, fill]);
 
-  const fillStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }], opacity: Math.min(1, scale.get() * 1.6) }));
-  const tickStyle = useAnimatedStyle(() => ({ opacity: tick.get(), transform: [{ translateX: (1 - tick.get()) * -4 }, { scale: 0.5 + tick.get() * 0.5 }] }));
+  const fillStyle = useAnimatedStyle(() => ({ opacity: fill.get() }));
 
   return (
     <View style={[styles.check, { borderColor: t.pop.ink, backgroundColor: t.colors.cell }]}>
-      <Animated.View style={[styles.checkFill, { backgroundColor: color }, fillStyle]}>
-        <Animated.View style={tickStyle}>
-          <Icon name="check" size={14} color={checkColor} weight="bold" />
-        </Animated.View>
-      </Animated.View>
+      <Animated.View style={[styles.checkFill, { backgroundColor: color }, fillStyle]}>{checked && <DrawnCheck size={16} color={checkColor} delay={60} />}</Animated.View>
     </View>
   );
 }
