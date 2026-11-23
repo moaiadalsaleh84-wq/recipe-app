@@ -2,16 +2,27 @@ import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { Text } from '../components/Text';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import Animated, {
+  Easing,
+  FadeIn,
+  cancelAnimation,
+  interpolateColor,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 import { MascotSays } from '../components/mascot/MascotSays';
 import type { Line } from '../components/mascot/lines';
 import { Icon } from '../components/Icon';
 import { PageHeader } from '../components/PageHeader';
 import { PressableScale } from '../components/PressableScale';
 import { useToast } from '../components/Toast';
-import { Button } from '../components/ui';
+import { Button, DrawnCheck } from '../components/ui';
 import { haptics } from '../lib/haptics';
 import {
   draftFromFailure,
@@ -38,6 +49,8 @@ type Phase = { name: 'input' } | { name: 'loading' } | { name: 'failed'; failure
 
 /** The three things the loading screen ticks off, in order. */
 const STAGES = ['Reading the recipe', 'Finding ingredients', 'Writing the steps'] as const;
+/** How long one line takes to be crossed off before the next one starts (strike 300 ms + a beat). */
+const LINE_MS = 450;
 
 const isLinkText = (value: string) => /^(https?:\/\/|www\.)\S+$/i.test(value) || (/https?:\/\//i.test(value) && value.length < 400);
 
@@ -74,6 +87,23 @@ export default function ImportScreen() {
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [previewFailed, setPreviewFailed] = useState(false);
   const [stage, setStage] = useState(0);
+  // What the to-do lines show: follows `stage` one line at a time, so each line is crossed out
+  // before the next one starts.
+  const [shown, setShown] = useState(0);
+  const shownRef = useRef(0);
+  const lastLineAt = useRef(0);
+  useEffect(() => {
+    shownRef.current = shown;
+    if (stage <= shown) return;
+    const id = setTimeout(
+      () => {
+        lastLineAt.current = Date.now();
+        setShown((s) => Math.min(stage, s + 1));
+      },
+      Math.max(0, lastLineAt.current + LINE_MS - Date.now()),
+    );
+    return () => clearTimeout(id);
+  }, [stage, shown]);
   // A link on the clipboard: offered as one tap ("Import this TikTok?").
   const [offer, setOffer] = useState<{ label: string; text: string | null } | null>(null);
   const abort = useRef<AbortController | null>(null);
@@ -156,6 +186,8 @@ export default function ImportScreen() {
     setPreview(null);
     setPreviewFailed(false);
     setStage(0);
+    setShown(0);
+    lastLineAt.current = 0;
     setPhase({ name: 'loading' });
     abort.current = new AbortController();
     const signal = abort.current.signal;
@@ -175,11 +207,9 @@ export default function ImportScreen() {
         openForm(draftFromImport(res.recipe, [missingMessage(res.missing), ...res.warnings].filter(Boolean).join(' '), res.source));
         return;
       }
-      // Tick off what's done, then open the finished recipe.
-      setStage(2);
-      await new Promise((r) => setTimeout(r, 300));
+      // Cross off the remaining lines one by one, then open the finished recipe.
       setStage(3);
-      await new Promise((r) => setTimeout(r, 350));
+      await new Promise((r) => setTimeout(r, (3 - shownRef.current) * LINE_MS + 250));
       await save(res);
     } else if (res.code === 'cancelled') {
       setPhase({ name: 'input' });
@@ -330,18 +360,9 @@ export default function ImportScreen() {
               </Text>
             ) : null}
             <View style={styles.stages}>
-              {STAGES.map((label, k) => {
-                const done = stage > k;
-                const active = !done && stage === k;
-                return (
-                  <View key={label} style={styles.stage} testID={`stage-${k}`} accessibilityLabel={`${label}${done ? ', done' : active ? ', working' : ''}`}>
-                    <View style={[styles.stageDot, { borderColor: t.pop.ink, backgroundColor: done ? t.pop.leaf : t.pop.white }]}>
-                      {done ? <Icon name="check" size={14} color={t.pop.ink} weight="bold" /> : active ? <ActivityIndicator size="small" color={t.pop.ink} /> : null}
-                    </View>
-                    <Text style={[t.type.headline, { color: done || active ? t.colors.label : t.colors.tertiaryLabel }]}>{label}</Text>
-                  </View>
-                );
-              })}
+              {STAGES.map((label, k) => (
+                <StageLine key={label} label={label} index={k} state={shown > k ? 'done' : shown === k ? 'active' : 'todo'} />
+              ))}
             </View>
             <Button label="Cancel" variant="plain" size="medium" onPress={() => abort.current?.abort()} style={{ marginTop: 12, alignSelf: 'center' }} accessibilityLabel="Cancel import" />
           </Animated.View>
@@ -394,6 +415,52 @@ function failureTitle(f: ImportFailure) {
   }
 }
 
+/**
+ * One line of the loading to-do list. The current line's text pulses gently; when it's done a line
+ * is drawn through it from left to right (300 ms), the text fades to muted and a check fades in on
+ * the left. With Reduce Motion there's no pulse and the strike simply appears.
+ */
+function StageLine({ label, index, state }: { label: string; index: number; state: 'todo' | 'active' | 'done' }) {
+  const t = useTheme();
+  const reduceMotion = useReducedMotion();
+  const pulse = useSharedValue(1);
+  const strike = useSharedValue(state === 'done' ? 1 : 0);
+
+  useEffect(() => {
+    if (state === 'active' && !reduceMotion) {
+      // Starts once the line above has been crossed off.
+      pulse.set(withDelay(index === 0 ? 0 : 300, withRepeat(withTiming(0.5, { duration: 900, easing: Easing.inOut(Easing.sin) }), -1, true)));
+    } else {
+      cancelAnimation(pulse);
+      pulse.set(state === 'active' || reduceMotion ? 1 : withTiming(1, { duration: 150 }));
+    }
+    if (state === 'done') strike.set(reduceMotion ? 1 : withTiming(1, { duration: 300, easing: Easing.out(Easing.quad) }));
+    else strike.set(0);
+  }, [state, reduceMotion, pulse, strike, index]);
+
+  const textStyle = useAnimatedStyle(() => ({
+    opacity: pulse.get(),
+    color: interpolateColor(strike.get(), [0, 1], [t.colors.label, t.colors.secondaryLabel]),
+  }));
+  const lineStyle = useAnimatedStyle(() => ({ width: `${strike.get() * 100}%` }));
+
+  return (
+    <View style={styles.stage} testID={`stage-${index}`} accessibilityLabel={`${label}${state === 'done' ? ', done' : state === 'active' ? ', working' : ''}`}>
+      <View style={[styles.stageDot, { borderColor: state === 'todo' ? t.colors.secondaryLabel : t.pop.ink }]}>
+        {state === 'done' && (
+          <Animated.View entering={reduceMotion ? undefined : FadeIn.duration(150)} style={[styles.stageDotFill, { backgroundColor: t.pop.leaf }]} testID={`stage-${index}-check`}>
+            <DrawnCheck size={16} delay={reduceMotion ? 0 : 100} />
+          </Animated.View>
+        )}
+      </View>
+      <View style={styles.stageText}>
+        <Animated.Text style={[t.type.headline, { color: state === 'todo' ? t.colors.secondaryLabel : t.colors.label }, state !== 'todo' && textStyle]}>{label}</Animated.Text>
+        <Animated.View style={[styles.strike, { backgroundColor: t.colors.secondaryLabel }, lineStyle]} pointerEvents="none" />
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   helpRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
   helpLink: { minHeight: 44, justifyContent: 'center', paddingLeft: 12 },
@@ -413,6 +480,9 @@ const styles = StyleSheet.create({
   loadPhoto: { width: '100%', aspectRatio: 4 / 3, borderRadius: 22, borderWidth: 2.5, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
   stages: { gap: 14, marginTop: 20, alignSelf: 'stretch' },
   stage: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 32 },
-  stageDot: { width: 28, height: 28, borderRadius: 14, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
+  stageDot: { width: 28, height: 28, borderRadius: 14, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  stageDotFill: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
+  stageText: { justifyContent: 'center', alignSelf: 'center' },
+  strike: { position: 'absolute', left: 0, top: '52%', height: 2, borderRadius: 1 },
   h: { marginTop: 22, marginBottom: 8 },
 });
