@@ -9,8 +9,8 @@
  * Metric display
  *   g / ml:  under 10 → nearest 1 · 10–250 → nearest 5 · over 250 → nearest 10 ·
  *            1000+ → kg / l with up to 2 decimals ("1.05 kg"). kg / l in data are converted first.
- *   tsp / tbsp: worked out in teaspoons (1 tbsp = 3 tsp). Under 3 tsp → tsp, else tbsp, as the
- *            nearest kitchen fraction (¼ ⅓ ½ ⅔ ¾). Never 0 (minimum ¼).
+ *   tsp / tbsp: worked out in teaspoons (1 tbsp = 3 tsp). Under 3 tsp → tsp to the nearest ¼,
+ *            else tbsp to the nearest ½ (2⅔ tbsp → 2½ tbsp). Never 0 (minimum ¼ tsp).
  *   counts:  eggs, avocado, lime, tomato, onion → nearest ½ (minimum ½). Everything else
  *            (tortillas, buns, wraps, pita, slices, cloves, green onions…) → whole, minimum 1.
  *            Units read "1 clove", "2 cloves"; "piece" isn't shown.
@@ -18,7 +18,7 @@
  * US display (from the precise metric value, then rounded)
  *   1 cup = 240 ml · 1 tbsp = 15 ml · 1 tsp = 5 ml · 1 oz = 28.35 g · 1 lb = 453.6 g.
  *   Under 60 ml → spoons (the tsp/tbsp rule) · 60 ml and up → cups. Under 1 lb → oz · else lb.
- *   oz, lb and cups show the nearest kitchen fraction. Produce under 2 oz (onion, garlic, herbs)
+ *   oz, lb and cups show the nearest kitchen fraction (¼ ⅓ ½ ⅔ ¾). Produce under 2 oz (onion, garlic, herbs)
  *   stays in grams: "⅔ oz onion" means nothing in a kitchen.
  * Times, temperatures, timers and nutrition per serving never change with servings.
  *
@@ -128,11 +128,20 @@ function metricMass(g: number, small: string, big: string): { qty: string; unit:
   return { qty: String(r), unit: small };
 }
 
-/** tsp under 3, tbsp from 3 tsp up, as a kitchen fraction. value in tsp. */
+/** v rounded half-up to a step (¼ or ½), never 0, written as "1½" / "¾". */
+function stepFraction(v: number, step: number): { value: number; text: string } {
+  const value = Math.max(step, halfUp(v / step) * step);
+  const whole = Math.floor(value + 1e-9);
+  const rest = value - whole;
+  const f = rest < 1e-9 ? '' : (FRACTIONS.find((x) => Math.abs(x[0] - rest) < 1e-9)?.[1] ?? '');
+  return { value, text: whole === 0 ? f : `${whole}${f}` };
+}
+
+/** tsp under 3 (nearest ¼), tbsp from 3 tsp up (nearest ½). value in tsp. */
 function spoons(tsp: number): { qty: string; unit: string } {
-  const asTsp = kitchenFraction(tsp);
+  const asTsp = stepFraction(tsp, 0.25);
   if (asTsp.value < 3) return { qty: asTsp.text, unit: 'tsp' };
-  return { qty: kitchenFraction(tsp / 3).text, unit: 'tbsp' };
+  return { qty: stepFraction(tsp / 3, 0.5).text, unit: 'tbsp' };
 }
 
 export type Shown = {

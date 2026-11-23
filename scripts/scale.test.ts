@@ -72,3 +72,14 @@ test('US mode: produce under 2 oz stays in grams, bigger produce and other food 
   assert.equal(showAmount(20, 'g', 'Grated parmesan', 'us', 'Dairy & Eggs').text, '⅔ oz');
   assert.equal(amountFor({ quantity: 40, unit: 'g', name: 'Onion', aisle: 'Produce' }, 1, 2, 'us').text, '20 g');
 });
+
+test('spoons: tbsp to the nearest ½, tsp to the nearest ¼, cups keep thirds', () => {
+  assert.equal(showAmount(8, 'tsp', 'Sugar').qty, '2½');
+  assert.equal(showAmount(1.3, 'tsp', 'Salt').qty, '1¼');
+  assert.equal(showAmount(1.4, 'tbsp', 'Olive oil').qty, '1½');
+  assert.equal(showAmount(0.1, 'tsp', 'Salt').qty, '¼');
+  assert.equal(showAmount(2.9, 'tsp', 'Salt').unit, 'tbsp');
+  assert.equal(showAmount(2.9, 'tsp', 'Salt').qty, '1');
+  assert.equal(showAmount(160, 'ml', 'Flour', 'us').qty, '⅔');
+  assert.equal(showAmount(160, 'ml', 'Flour', 'us').unit, 'cup');
+});
