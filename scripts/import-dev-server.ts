@@ -118,7 +118,10 @@ const deps = {
   limiter: new MemoryLimiter(),
   cache: new MemoryCache(),
   shared: new MemoryShared(),
-  discover: new MemoryDiscover(),
+  discover: Object.assign(new MemoryDiscover(), {
+    // Uploaded photos come back as data links, so the browser can show them without storage.
+    publicUrl: (_path: string, bytes: Uint8Array, type: string) => `data:${type};base64,${Buffer.from(bytes).toString('base64')}`,
+  }),
   // Local testing only: ADMIN_TOKEN=… turns admin on (the real one is the DISCOVER_ADMIN_TOKEN secret).
   adminToken: process.env.ADMIN_TOKEN ?? '',
   // The stand-in "rewrites" by rephrasing the start of each step; the real one is the AI.

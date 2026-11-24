@@ -19,7 +19,7 @@ import { Text } from './Text';
 import { useToast } from './Toast';
 
 /** True for a recipe this user imported from TikTok, YouTube or a website. */
-export const isImported = (r: Recipe) => r.source === 'tiktok' || r.source === 'youtube' || r.source === 'web';
+export const isImported = (r: Recipe) => r.source === 'tiktok' || r.source === 'youtube' || r.source === 'instagram' || r.source === 'web';
 
 /** Opens a link: TikTok and YouTube links open their app when it's installed, otherwise the browser. */
 export function useOpenLink() {
@@ -71,7 +71,7 @@ export function RecipeByRow({ recipe, onPress }: { recipe: Recipe; onPress: () =
   // Only a real creator name ("@crispykitchen", a site's name): never "From TikTok", never empty.
   // A TikTok link carries the handle itself (tiktok.com/@name/video/…).
   const name = recipe.creatorHandle?.trim() || (recipe.source === 'tiktok' ? tikTokHandle(recipe.sourceUrl) : null) || null;
-  const video = recipe.source === 'tiktok' || recipe.source === 'youtube';
+  const video = recipe.source === 'tiktok' || recipe.source === 'youtube' || recipe.source === 'instagram';
   const watch = (
     <View style={[styles.watch, { borderColor: t.pop.ink, backgroundColor: t.pop.sunshine }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       <Icon name={video ? 'play' : 'link'} size={12} color={t.pop.ink} weight="bold" />

@@ -128,6 +128,33 @@ links your users share.
   Reinstalling resets it. The server limits still cap the cost. To enforce it for real, add
   accounts or Apple's App Attest later.
 
+### Discover and admin mode (publishing recipes yourself)
+
+Discover shows only recipes you publish. The app never searches for or imports recipes by itself,
+and other people's imports stay private.
+
+1. Create the tables (once): `supabase db push --remote` (adds `discover_recipes`,
+   `discover_saves`, `discover_reports` and the public `discover-photos` bucket).
+2. Make an admin code (a long random text) and store it **only on Supabase**:
+   ```bash
+   openssl rand -hex 24
+   ```
+   ```bash
+   supabase secrets set DISCOVER_ADMIN_TOKEN=PASTE-THE-CODE-HERE
+   ```
+   Keep the code somewhere safe (a password manager). Changing the secret turns admin off on
+   every phone that had the old code.
+3. Deploy the function again: `supabase functions deploy import-recipe`.
+4. In the app: Settings → press and hold **Privacy** for 2 seconds → type the code → **Turn on
+   admin mode**. The server checks the code; a wrong code does nothing (10 wrong tries a day per
+   network, then it's blocked until tomorrow).
+5. Open one of your imported recipes: a lilac **Admin · only you see this** card has the
+   **Publish to Discover** switch. You can change the title, photo crop, cuisine, tags and diet,
+   then publish. The steps are rewritten in the app's own words; "Recipe by @creator" and **Watch**
+   always show. **Unpublish** takes it off again.
+6. Reports: Settings → **Admin** lists reported recipes (hidden until you decide): **Restore** or
+   **Remove**.
+
 ### Running it on your computer instead
 
 ```bash

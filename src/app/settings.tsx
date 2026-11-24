@@ -15,6 +15,7 @@ import { MANAGE_SUBSCRIPTIONS_URL } from '../lib/purchases';
 import { noWidow } from '../lib/text';
 import { useStore } from '../state/store';
 import { pop, useTheme } from '../theme';
+import { useAdminMode } from '../lib/discoverApi';
 
 /** Moves an "HH:MM" time by 30 minutes, kept between 3 pm and 9:30 pm. */
 function shiftTime(hhmm: string, by: number) {
@@ -26,6 +27,7 @@ function shiftTime(hhmm: string, by: number) {
 /** Settings: Pro, units, the daily dinner idea, privacy. Opened from the gear on the Progress tab. */
 export default function Settings() {
   const t = useTheme();
+  const admin = useAdminMode();
   const toast = useToast();
   const { units, setUnits, pro, profile, setProfile } = useStore();
   const reminder = profile.reminder ?? { enabled: false, time: '18:00' };
@@ -142,7 +144,8 @@ export default function Settings() {
           </View>
         </Section>
         <Section>
-          <PressableScale onPress={() => router.push('/privacy')} style={styles.row} accessibilityLabel="Privacy" scaleTo={0.99}>
+          {/* Admin mode (the owner): a long press here opens the code screen; the server checks the code. */}
+          <PressableScale onPress={() => router.push('/privacy')} onLongPress={() => router.push('/admin')} delayLongPress={1500} style={styles.row} accessibilityLabel="Privacy" scaleTo={0.99}>
             <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>Privacy</Text>
             <Icon name="chevronRight" size={14} color={t.colors.tertiaryLabel} weight="semibold" />
           </PressableScale>
@@ -150,6 +153,12 @@ export default function Settings() {
             <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>Photo credits</Text>
             <Icon name="chevronRight" size={14} color={t.colors.tertiaryLabel} weight="semibold" />
           </PressableScale>
+          {admin && (
+            <PressableScale onPress={() => router.push('/admin')} style={[styles.row, { borderTopWidth: StyleSheet.hairlineWidth, borderColor: t.colors.separator }]} accessibilityLabel="Admin: reports and Discover" scaleTo={0.99} testID="admin-row">
+              <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>Admin</Text>
+              <Icon name="chevronRight" size={14} color={t.colors.tertiaryLabel} weight="semibold" />
+            </PressableScale>
+          )}
         </Section>
       </ScrollView>
     </View>

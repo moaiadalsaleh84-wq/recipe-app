@@ -41,6 +41,8 @@ import { macroPercents } from '../../lib/percent';
 import { fonts, pop, popCycle, useTheme } from '../../theme';
 import { duration, keepTogether, nb } from '../../lib/text';
 import { PhotoFrame } from '../../components/PhotoFrame';
+import { AdminPublishCard } from '../../components/AdminPublish';
+import { useDiscoverSave } from '../../components/DiscoverCard';
 
 export default function RecipeScreen() {
   const reduceMotion = useReducedMotion();
@@ -55,6 +57,7 @@ export default function RecipeScreen() {
   } = useStore();
   const recipe = getRecipe(id);
   const openLink = useOpenLink();
+  const { save: saveDiscover } = useDiscoverSave();
   // Recipes this user imported from a link carry their creator's credit, always shown.
   const imported = !!recipe && isImported(recipe);
   // The first time an imported recipe opens: a hint at the "Recipe by" row, once, ever.
@@ -107,6 +110,13 @@ export default function RecipeScreen() {
     );
   }
 
+  // A Discover recipe you haven't saved: the header's heart becomes Save (bookmark).
+  const fromDiscover = !!recipe.discover;
+  const onSaveDiscover = async () => {
+    const newId = await saveDiscover(recipe.discover!.id, recipe.sourceUrl ?? '');
+    if (newId) router.replace({ pathname: '/recipe/[id]', params: { id: newId } });
+  };
+  const discoverId = recipe.discover?.id ?? recipe.discoverId;
   const fav = isFavorite(recipe.id);
   const inCookbooks = cookbooks.filter((c) => c.recipeIds.includes(recipe.id)).length + (favorites.includes(recipe.id) ? 1 : 0);
   const scale = servings / recipe.servings;
@@ -210,7 +220,11 @@ export default function RecipeScreen() {
       <Animated.View style={[styles.controls, { paddingTop: insets.top + 8 }, barStyle]} testID="detail-controls">
         <PopIconButton icon="back" accessibilityLabel="Back" onPress={goBack} />
         <View style={styles.controlsRight}>
-          <PopIconButton icon={fav ? 'heartFill' : 'heart'} accessibilityLabel={fav ? 'Remove from Favorites' : 'Add to Favorites'} onPress={onFavorite} iconColor={fav ? t.pop.tomato : t.pop.ink} haptic={null} />
+          {fromDiscover ? (
+            <PopIconButton icon="bookmark" accessibilityLabel="Save to your recipes" onPress={() => void onSaveDiscover()} haptic={null} testID="discover-save-recipe" />
+          ) : (
+            <PopIconButton icon={fav ? 'heartFill' : 'heart'} accessibilityLabel={fav ? 'Remove from Favorites' : 'Add to Favorites'} onPress={onFavorite} iconColor={fav ? t.pop.tomato : t.pop.ink} haptic={null} />
+          )}
           <PopIconButton icon="more" accessibilityLabel="More: share or save to a cookbook" onPress={() => setMenuOpen(true)} />
         </View>
       </Animated.View>
@@ -227,7 +241,8 @@ export default function RecipeScreen() {
         <View style={[styles.header, { backgroundColor: t.pop.tomatoTint, paddingTop: 0, borderBottomColor: t.pop.ink }]} testID="hero" onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}>
           <Lift radius={24}>
             <PhotoFrame recipe={recipe} iconSize={64} radius={24} style={{ width: photoWidth, height: Math.round(photoWidth * 0.75) }}>
-              {imported && <ImportedPhotoOverlay recipe={recipe} onOwnPhoto={onOwnPhoto} ownPhoto={usingOwnPhoto} />}
+              {/* Not on Discover recipes you haven't saved: there's nothing of yours to change yet. */}
+              {imported && !recipe.discover && <ImportedPhotoOverlay recipe={recipe} onOwnPhoto={onOwnPhoto} ownPhoto={usingOwnPhoto} />}
             </PhotoFrame>
           </Lift>
           {recipe.custom && !imported && (
@@ -283,6 +298,8 @@ export default function RecipeScreen() {
               />
             </>
           )}
+          {/* Admin mode only (checked by the server): publish this import to Discover. */}
+          {imported && recipe.custom && <AdminPublishCard recipe={recipe} />}
           {estimatedNote && (
             <View style={[styles.estBanner, { backgroundColor: t.pop.sunshineTint, borderColor: t.pop.ink }]} testID="estimated-banner" accessibilityRole="alert">
               <Icon name="info" size={18} color={t.pop.ink} />
@@ -466,13 +483,16 @@ export default function RecipeScreen() {
         top={insets.top + 60}
         rows={[
           { label: 'Share recipe', icon: 'share', onPress: onShare },
-          { label: inCookbooks > 0 ? 'Saved to a cookbook' : 'Save to a cookbook', icon: inCookbooks > 0 ? 'bookmarkFill' : 'bookmark', onPress: () => router.push({ pathname: '/save-to-cookbook', params: { id: recipe.id } }) },
+          ...(fromDiscover
+            ? [{ label: 'Save to your recipes', icon: 'bookmark' as const, onPress: () => void onSaveDiscover() }]
+            : [{ label: inCookbooks > 0 ? 'Saved to a cookbook' : 'Save to a cookbook', icon: inCookbooks > 0 ? ('bookmarkFill' as const) : ('bookmark' as const), onPress: () => router.push({ pathname: '/save-to-cookbook', params: { id: recipe.id } }) }]),
           ...(recipe.custom ? [{ label: 'Edit recipe', icon: 'edit' as const, onPress: () => router.push({ pathname: '/recipe/new', params: { edit: recipe.id } }) }] : []),
           ...(imported && recipe.creatorUrl ? [{ label: 'Open creator’s profile', icon: 'people' as const, onPress: () => openLink(recipe.creatorUrl) }] : []),
           ...(needsPhotoRetry(recipe) ? [{ label: 'Retry photo', icon: 'camera' as const, onPress: () => void retryPhoto() }] : []),
           ...(usingOwnPhoto && recipe.importedImage
             ? [{ label: 'Use the imported photo', icon: 'undo' as const, onPress: () => setRecipeImage(recipe.id, { uri: recipe.importedImage!.card }) }]
             : []),
+          ...(discoverId ? [{ label: 'Report', icon: 'flag' as const, onPress: () => router.push({ pathname: '/report/[id]', params: { id: discoverId } }) }] : []),
         ]}
       />
 

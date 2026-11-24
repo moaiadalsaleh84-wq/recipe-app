@@ -55,6 +55,7 @@ const icons = {
   pot: { ios: 'frying.pan', md: 'skillet' },
   lock: { ios: 'lock.fill', md: 'lock' },
   crown: { ios: 'crown.fill', md: 'workspace_premium' },
+  flag: { ios: 'flag', md: 'flag' },
   trophy: { ios: 'trophy.fill', md: 'emoji_events' },
   flameFill: { ios: 'flame.fill', md: 'local_fire_department' },
   more: { ios: 'ellipsis', md: 'more_horiz' },

@@ -28,6 +28,7 @@ import { useStore } from '../../../state/store';
 import { fonts, pop, useTheme } from '../../../theme';
 import { nb } from '../../../lib/text';
 import { PhotoFrame } from '../../../components/PhotoFrame';
+import { DiscoverRow } from '../../../components/DiscoverRow';
 
 
 type Sort = 'suggested' | 'az' | 'quickest' | 'cooked';
@@ -347,6 +348,9 @@ export default function RecipesScreen() {
               action={{ label: 'See all', onPress: () => router.push({ pathname: '/cookbook/[id]', params: { id: FAVORITES_ID } }) }}
             />
           )}
+
+          {/* Discover: recipes the owner published (hidden when there are none) */}
+          <DiscoverRow width={railWidth} />
 
           {/* 5. Cookbooks */}
           <SectionHeader title="Cookbooks" subtitle={books.length ? nb(books.length, books.length === 1 ? 'collection' : 'collections') : 'Save recipes you love in one place'} />

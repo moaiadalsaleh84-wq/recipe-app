@@ -37,7 +37,7 @@ export type FilterTag = DietTag | typeof QUICK_FILTER;
 export const filterTags: FilterTag[] = [QUICK_FILTER, ...dietTags];
 
 /** Where an imported recipe came from. */
-export type ImportSource = 'tiktok' | 'youtube' | 'web';
+export type ImportSource = 'tiktok' | 'youtube' | 'instagram' | 'web';
 
 /**
  * An imported recipe's picture, stored on the phone: the original as downloaded, a 4:3 crop for
@@ -98,6 +98,12 @@ export type Recipe = {
   servingSize?: string;
   /** Parts of the calories worth seeing (dips, sauces, absorbed frying oil), per serving. Already in `calories`. */
   nutritionBreakdown?: { name: string; calories: number }[];
+  /** Which part of the photo cards show (Discover recipes, set by the owner): fractions of the original. */
+  photoCrop?: { x: number; y: number; w: number; h: number };
+  /** A Discover recipe (not saved yet): its id there and how many people saved it. */
+  discover?: { id: string; saves: number };
+  /** Saved from Discover: that recipe's id, for reporting it. */
+  discoverId?: string;
   /** Imported recipes: servings / time the source didn't give, estimated (shown as "est."). */
   estimated?: { servings?: boolean; time?: boolean };
   /** True for recipes the user created. */

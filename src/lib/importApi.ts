@@ -76,7 +76,7 @@ const INSTALL_KEY = 'pantry-pop-install-id';
 let installId: string | null = null;
 
 /** A random id for this install. Not linked to the person; only used for rate limits. */
-async function getInstallId() {
+export async function getInstallId() {
   if (installId) return installId;
   try {
     installId = await AsyncStorage.getItem(INSTALL_KEY);

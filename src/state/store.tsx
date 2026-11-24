@@ -125,6 +125,8 @@ type Store = Saved & {
   updateRecipe: (id: string, patch: Partial<Omit<Recipe, 'id' | 'custom'>>) => void;
   /** Your recipe saved from this link already (any form of the same link), if any. */
   findBySource: (url: string | null | undefined) => Recipe | undefined;
+  /** A Discover recipe you opened (memory only, until you save it). */
+  rememberDiscover: (r: Recipe) => void;
   /** Hand-written recipes, the ones the free limit counts. */
   manualRecipeCount: number;
   deleteRecipe: (id: string) => void;
@@ -248,7 +250,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const existing = [...saved.customRecipes, ...builtInRecipes];
     return [...existing, ...withoutDuplicates(pantryPopRecipes, existing).kept];
   }, [saved.customRecipes]);
-  const getRecipe = useCallback((id: string | undefined) => allRecipes.find((r) => r.id === id), [allRecipes]);
+  // Discover recipes opened but not saved: kept in memory only (never saved to the phone), so the
+  // recipe page and Cook Mode can show them like any other recipe.
+  const [discovered, setDiscovered] = useState<Record<string, Recipe>>({});
+  const rememberDiscover = useCallback((r: Recipe) => setDiscovered((d) => (d[r.id] === r ? d : { ...d, [r.id]: r })), []);
+  const getRecipe = useCallback((id: string | undefined) => allRecipes.find((r) => r.id === id) ?? (id ? discovered[id] : undefined), [allRecipes, discovered]);
 
   const addRecipe = useCallback(
     (r: Omit<Recipe, 'id' | 'custom'>) => {
@@ -504,6 +510,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addRecipe,
       updateRecipe,
       findBySource,
+      rememberDiscover,
       manualRecipeCount,
       deleteRecipe,
       setRecipeImage,
@@ -536,7 +543,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       undoGroceries,
     }),
     [
-      saved, hydrated, setBuddy, setProfile, completeOnboarding, setPro, addPet, claimBonus, addListDone, unlockBadges, setLastLevel, markImportHintSeen, markUpkeepDone, countImport, draft, addPantry, removePantry, restorePantry, allRecipes, getRecipe, addRecipe, updateRecipe, findBySource, manualRecipeCount, deleteRecipe, setRecipeImage, setNote, setUnits, setGoals, logCooked, rateCooked, setCookedPhoto,
+      saved, hydrated, setBuddy, setProfile, completeOnboarding, setPro, addPet, claimBonus, addListDone, unlockBadges, setLastLevel, markImportHintSeen, markUpkeepDone, countImport, draft, addPantry, removePantry, restorePantry, allRecipes, getRecipe, addRecipe, updateRecipe, findBySource, rememberDiscover, manualRecipeCount, deleteRecipe, setRecipeImage, setNote, setUnits, setGoals, logCooked, rateCooked, setCookedPhoto,
       category, tags, toggleTag, showOnlyTag, clearFilters, isFavorite, toggleFavorite, addCookbook, renameCookbook,
       deleteCookbook, restoreCookbook, toggleInCookbook, setMeal, toggleGrocery, addIngredients, addWeekToGroceries, addCustomItem,
       removeGrocery, clearCompleted, undoGroceries,

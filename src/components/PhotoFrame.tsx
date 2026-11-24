@@ -76,6 +76,23 @@ export function RecipePhoto({
         ? image
         : { uri: photoUri(imp && square ? imp.square : image.uri) };
     const blurhash = own ? (square ? own.squareBlurhash : own.blurhash) : imp?.blurhash;
+    // A Discover photo with the owner's crop (4:3 spots): the chosen part fills the frame.
+    const crop = !square && !own && recipe.photoCrop ? recipe.photoCrop : null;
+    if (crop) {
+      return (
+        <View style={[StyleSheet.absoluteFill, round, { overflow: 'hidden' }]}>
+          <Image
+            source={source}
+            style={{ position: 'absolute', width: `${100 / crop.w}%`, height: `${100 / crop.h}%`, left: `${(-crop.x / crop.w) * 100}%`, top: `${(-crop.y / crop.h) * 100}%` }}
+            contentFit="cover"
+            transition={250}
+            cachePolicy="memory-disk"
+            onError={() => setFailed(image)}
+            accessibilityIgnoresInvertColors
+          />
+        </View>
+      );
+    }
     // While it loads: the blurred photo (or a shimmer for your own photos); then the photo fades in
     // (250ms). Cached on disk and in memory.
     return (

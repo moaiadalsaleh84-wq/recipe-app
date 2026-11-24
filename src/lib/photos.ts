@@ -145,3 +145,27 @@ async function cropToWebp(uri: string, rect: Rect, maxWidth: number): Promise<st
   }
   return null;
 }
+
+/**
+ * A photo's bytes as base64, to upload (publishing to Discover). A file on the phone is read
+ * directly; a web link is downloaded. null when it can't be read.
+ */
+export async function photoAsBase64(uri: string): Promise<{ base64: string; contentType: string } | null> {
+  const type = (u: string) => (/\.png($|\?)/i.test(u) ? 'image/png' : /\.jpe?g($|\?)/i.test(u) ? 'image/jpeg' : 'image/webp');
+  try {
+    if (native && uri.startsWith('file:')) return { base64: await new File(uri).base64(), contentType: type(uri) };
+    const res = await fetch(photoUri(uri));
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(blob);
+    });
+    const base64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
+    return base64 ? { base64, contentType: blob.type || type(uri) } : null;
+  } catch {
+    return null;
+  }
+}

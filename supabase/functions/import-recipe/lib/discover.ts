@@ -387,9 +387,11 @@ export class MemoryDiscover implements DiscoverStore {
   async resolveReports(discoverId: string, resolution: 'restored' | 'removed') {
     for (const r of this.reports) if (r.discover_id === discoverId && !r.resolved_at) Object.assign(r, { resolved_at: new Date().toISOString(), resolution });
   }
-  async uploadPhoto(path: string, bytes: Uint8Array) {
+  /** Local testing: how an uploaded photo's link is made (default: a pretend storage link). */
+  publicUrl: (path: string, bytes: Uint8Array, contentType: string) => string = (path) => `https://storage.example.com/discover-photos/${path}`;
+  async uploadPhoto(path: string, bytes: Uint8Array, contentType: string) {
     this.photos.set(path, bytes);
-    return `https://storage.example.com/discover-photos/${path}`;
+    return this.publicUrl(path, bytes, contentType);
   }
 }
 
