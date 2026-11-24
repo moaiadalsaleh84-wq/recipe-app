@@ -54,7 +54,8 @@ supabase link --project-ref YOUR-PROJECT-REF
 ```bash
 supabase db push --remote
 ```
-That last command creates the rate-limit and cache tables (`supabase/migrations/`). Answer `y` when
+That last command creates the tables in `supabase/migrations/` (rate limits, cache, reused imports,
+Discover). Run it again whenever a new migration file appears. Answer `y` when
 asked. (`--remote` is needed with Supabase CLI 3 and later, which otherwise targets a local database.)
 
 4. Set the secrets (they live on Supabase's servers, not in the app). Easiest is the website,
@@ -116,6 +117,10 @@ links your users share.
   - `IMPORT_DAILY_CAP` AI imports per day for everyone together
 - **Request limits:** request size 64 KB, page size 3 MB, 12-second page timeout, private
   network addresses refused.
+- **Reused imports** (`shared_recipes`): once anyone has imported a link, the next import of the
+  same link (any form: `?_r=…`, `vm.tiktok.com/…`, `www.` or not) is copied from there with no AI
+  call. It still counts toward that person's daily limit. The table holds only the recipe and its
+  public link, never who imported it, and is never shown to users: each import is a private copy.
 - **Cache:** a link imported in the last 7 days is served from the cache at no AI cost.
 - **Worst case:** your daily bill is about `IMPORT_DAILY_CAP × $0.08`. At 200 that's about $16
   a day, and your Anthropic spend limit stops it entirely.

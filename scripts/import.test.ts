@@ -555,3 +555,58 @@ test('nutrition only: a saved import is counted again (limited, needs the AI)', 
   const none = await post({ ...deps({ ai: fakeAi() }), nutritionAi: null }, { nutrition: { ingredients: ['x'] } });
   assert.equal((none.json as { ok: boolean }).ok, false);
 });
+
+test('reused imports: the second import of a link (any form) skips the AI, still counts, stores nothing about the user', async () => {
+  const { MemoryShared } = await import('../supabase/functions/import-recipe/lib/shared.ts');
+  const full = 'https://www.tiktok.com/@crispykitchen/video/7400000000000000201';
+  const caption = 'Cornflake tenders. 600g chicken tenders, 100g cornflakes, 60g flour. Coat and fry for 6 minutes.';
+  const html = `<script>{"itemStruct":{"desc":${JSON.stringify(caption)},"video":{"cover":"https://p16.example.com/fresh.jpg"}}}</script>`;
+  let aiCalls = 0;
+  const shared = new MemoryShared();
+  const limiter = new MemoryLimiter();
+  const d = deps({
+    limiter,
+    cache: null,
+    shared,
+    ai: async (m) => {
+      aiCalls += 1;
+      return fakeAi({ ingredients: [{ original: '600g chicken tenders', amount: 600, unit: 'g', name: 'chicken tenders' }] })(m);
+    },
+    fetchImpl: fakeFetch({
+      'https://vm.tiktok.com/ZMcorn/': { status: 301, body: '', headers: { location: `${full}?_r=1&is_from_webapp=1` } },
+      [full]: { body: html, headers: { 'content-type': 'text/html' } },
+      'https://www.tiktok.com/oembed': { status: 403, body: 'no' },
+    }),
+  });
+  const first = await post(d, { url: `${full}?_r=1` }, { 'x-install-id': 'device-aaaaaaaaaaaaaaaa' });
+  assert.ok(first.json.ok, JSON.stringify(first.json));
+  assert.equal(aiCalls, 1);
+  // Stored under the link in one form, with nothing from the request.
+  const row = [...shared.rows.values()][0];
+  assert.equal(row.link, 'https://tiktok.com/@crispykitchen/video/7400000000000000201');
+  const stored = JSON.stringify(row.result);
+  assert.ok(!stored.includes('device-aaaa') && !stored.includes('install'), 'no device or user in the shared row');
+
+  // Another person, another form of the link: no AI call, same recipe, fresh picture.
+  const second = await post(d, { url: `${full}?is_from_webapp=1&sender_device=pc` }, { 'x-install-id': 'device-bbbbbbbbbbbbbbbb' });
+  assert.ok(second.json.ok);
+  assert.equal(aiCalls, 1);
+  if (second.json.ok && first.json.ok) {
+    assert.equal(second.json.source.reused, true);
+    assert.equal(second.json.recipe.title, first.json.recipe.title);
+    assert.equal(second.json.recipe.imageUrl, 'https://p16.example.com/fresh.jpg');
+  }
+  // A share link resolves to the same video: reused too.
+  const third = await post(d, { url: 'https://vm.tiktok.com/ZMcorn/' }, { 'x-install-id': 'device-cccccccccccccccc' });
+  assert.ok(third.json.ok && third.json.source.reused);
+  assert.equal(aiCalls, 1);
+  // Text pasted with the link makes it the user's own: read again.
+  await post(d, { url: full, text: 'my notes: double the honey' }, { 'x-install-id': 'device-dddddddddddddddd' });
+  assert.equal(aiCalls, 2);
+
+  // Reused imports still count toward the device's daily limit.
+  const busy = deps({ limiter: new MemoryLimiter(), cache: null, shared, ai: null, fetchImpl: d.fetchImpl });
+  let last;
+  for (let i = 0; i < 11; i++) last = await post(busy, { url: full }, { 'x-install-id': 'device-eeeeeeeeeeeeeeee' });
+  assert.equal(last!.status, 429);
+});

@@ -98,7 +98,7 @@ export type ImportSuccess = {
   missing: MissingField[];
   /** Plain-language notes for the user, e.g. "2 ingredients were left out because they weren't in the source". */
   warnings: string[];
-  source: { kind: SourceKind; host: string | null; usedStructuredData: boolean; usedAi: boolean; credit: SourceCredit | null };
+  source: { kind: SourceKind; host: string | null; usedStructuredData: boolean; usedAi: boolean; credit: SourceCredit | null; /** Read before by someone (shared_recipes): no AI call this time. */ reused?: boolean };
   /** What the recipe checks fixed or couldn't fix (for logs and tests; not shown to people). */
   checks?: string[];
 };

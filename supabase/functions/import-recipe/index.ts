@@ -10,6 +10,7 @@
  * are provided by Supabase automatically.
  */
 import { claudeCaller, claudeNutritionCaller } from './lib/extract.ts';
+import { SupabaseShared } from './lib/shared.ts';
 import { handle } from './lib/handler.ts';
 import { SupabaseCache, SupabaseLimiter, pickServerKey } from './lib/limits.ts';
 
@@ -28,6 +29,7 @@ const deps = {
   nutritionAi: key ? claudeNutritionCaller(key, env('IMPORT_MODEL') || undefined) : null,
   limiter: new SupabaseLimiter(supabaseUrl, serviceKey),
   cache: new SupabaseCache(supabaseUrl, serviceKey),
+  shared: new SupabaseShared(supabaseUrl, serviceKey),
   salt: salt || 'unset-salt',
   dailyAiCap: Number(env('IMPORT_DAILY_CAP')) || undefined,
   log: (e: Record<string, unknown>) => console.log(JSON.stringify(e)),

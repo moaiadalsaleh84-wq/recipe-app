@@ -43,3 +43,16 @@ test('duplicates already saved: newest kept, everything pointing at the old copy
   // Nothing to do: the same object comes back.
   assert.equal(removeDuplicateImports(saved).removed, 0);
 });
+
+test('server and app write links the same way', async () => {
+  const server = await import('../supabase/functions/import-recipe/lib/links.ts');
+  for (const u of [
+    'https://www.tiktok.com/@CrispyKitchen/video/7400000000000000201?_r=1&is_from_webapp=1',
+    'https://youtu.be/abc123XYZ_-?si=xyz',
+    'https://www.instagram.com/reels/C1abc/?igsh=xx',
+    'https://www.site.com/recipes/pie/?utm_source=x&page=2#comments',
+    'https://vm.tiktok.com/ZMcorn/',
+  ]) assert.equal(server.normalizeSourceUrl(u), normalizeSourceUrl(u), u);
+  assert.ok(server.isShortLink('https://vm.tiktok.com/ZMcorn/'));
+  assert.ok(!server.isShortLink('https://www.tiktok.com/@a/video/1'));
+});

@@ -6,6 +6,8 @@
  */
 import { AiError, fromAi, fromStructured, nutritionFromAi, type AiCaller, type NutritionCaller } from './extract.ts';
 import { LIMITS, sha256, type Limiter, type ResultCache } from './limits.ts';
+import { isShortLink, normalizeSourceUrl } from './links.ts';
+import type { SharedStore } from './shared.ts';
 import { SourceError, gatherSource, previewSource } from './sources.ts';
 import { validateRecipe } from './validate.ts';
 import type { ImportFailure, ImportResponse, ImportSuccess, ImportedRecipe, MissingField, SourceMaterial } from './types.ts';
@@ -17,6 +19,8 @@ export type Deps = {
   nutritionAi?: NutritionCaller | null;
   limiter: Limiter;
   cache: ResultCache | null;
+  /** Imports already read for anyone (shared_recipes): reused instead of calling the AI again. */
+  shared?: SharedStore | null;
   salt: string;
   dailyAiCap?: number;
   fetchImpl?: typeof fetch;
@@ -108,6 +112,15 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
     return fail({ ok: false, code: 'server_error', message: 'Import is temporarily unavailable. Try again soon.' });
   }
 
+  /* ---------- read before? (shared_recipes: no AI call, still counted above) ---------- */
+  // Only a plain link: text pasted with it makes the import the user's own.
+  const linkOnly = !!url?.trim() && !text?.trim();
+  const typedLink = linkOnly ? normalizeSourceUrl(url) : null;
+  if (deps.shared && typedLink && !isShortLink(url!)) {
+    const hit = await deps.shared.get(typedLink).catch(() => null);
+    if (hit) return json(200, await reuse(hit, typedLink, deps, log));
+  }
+
   /* ---------- gather the source ---------- */
   let material: SourceMaterial;
   let warnings: string[];
@@ -120,6 +133,13 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
     }
     log({ event: 'server_error', error: String(e) });
     return fail({ ok: false, code: 'server_error', message: 'Something went wrong reading that link.' });
+  }
+
+  // A share link, now resolved to the video itself: check again.
+  const sharedLink = linkOnly && material.url ? normalizeSourceUrl(material.url) : null;
+  if (deps.shared && sharedLink && sharedLink !== typedLink) {
+    const hit = await deps.shared.get(sharedLink).catch(() => null);
+    if (hit) return json(200, await reuse(hit, sharedLink, deps, log));
   }
 
   const cacheKey = material.url ? await sha256(`v4|${material.url}|${(text ?? '').trim()}`) : null;
@@ -190,6 +210,8 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
   result.checks = checked.problems;
   log({ event: 'import', kind: material.kind, status: result.status, structured: !!s, usedAi, ingredients: result.recipe.ingredients.length });
   if (cacheKey && deps.cache && result.status === 'complete') await deps.cache.set(cacheKey, result).catch(() => {});
+  // Kept for the next person who imports this link (the recipe only, nothing about this user).
+  if (deps.shared && sharedLink && result.status === 'complete' && (usedAi || structuredComplete)) await deps.shared.put(sharedLink, result).catch(() => {});
   return json(200, result);
 }
 
@@ -227,6 +249,22 @@ async function nutritionOnly(raw: Record<string, unknown>, installId: string, de
     deps.log?.({ event: 'ai_error', reason: e instanceof AiError ? e.reason : 'unknown', what: 'nutrition' });
     return fail({ ok: false, code: 'ai_unavailable', message: 'Couldn’t work out the nutrition right now.' });
   }
+}
+
+/**
+ * A recipe someone imported before, for this user: same recipe, their own copy (the app saves it
+ * in their private recipes). TikTok and Instagram picture links expire, so the picture and creator
+ * are fetched fresh (cheap, no AI); without them the app asks TikTok from the phone.
+ */
+async function reuse(hit: ImportSuccess, link: string, deps: Deps, log: (e: Record<string, unknown>) => void): Promise<ImportSuccess> {
+  log({ event: 'shared_hit', kind: hit.source.kind });
+  const out: ImportSuccess = { ...hit, warnings: [...hit.warnings], source: { ...hit.source, reused: true }, recipe: { ...hit.recipe } };
+  if (hit.source.kind === 'tiktok' || hit.source.kind === 'instagram') {
+    const fresh = await previewSource(hit.recipe.sourceUrl ?? link, deps.fetchImpl).catch(() => null);
+    out.recipe.imageUrl = fresh?.imageUrl ?? null;
+    if (fresh?.credit?.handle) out.source.credit = fresh.credit;
+  }
+  return out;
 }
 
 /** Works out what is missing, so the app can say so and open the edit form. */

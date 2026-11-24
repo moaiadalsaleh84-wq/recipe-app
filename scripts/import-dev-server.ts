@@ -18,6 +18,7 @@ import { claudeCaller, claudeNutritionCaller, type AiCaller, type AiNutrition, t
 import { handle } from '../supabase/functions/import-recipe/lib/handler.ts';
 import { parseLine } from '../supabase/functions/import-recipe/lib/ingredients.ts';
 import { LIMITS, MemoryCache, MemoryLimiter } from '../supabase/functions/import-recipe/lib/limits.ts';
+import { MemoryShared } from '../supabase/functions/import-recipe/lib/shared.ts';
 import { FIXTURE_PAGES, FIXTURE_ROUTES } from './import-fixtures.ts';
 
 const port = Number(process.env.PORT ?? 8787);
@@ -115,6 +116,7 @@ const deps = {
   nutritionAi: process.env.FAKE_AI ? fakeNutritionAi : key ? claudeNutritionCaller(key, process.env.IMPORT_MODEL || undefined) : null,
   limiter: new MemoryLimiter(),
   cache: new MemoryCache(),
+  shared: new MemoryShared(),
   salt: 'dev',
   fetchImpl: process.env.FIXTURES ? fixtureFetch : undefined,
   log: (e: Record<string, unknown>) => console.log(new Date().toISOString(), JSON.stringify(e)),
