@@ -22,7 +22,7 @@ import { pantryHas } from '../../lib/pantry';
 import { FoodIcon } from '../../components/FoodIcon';
 import { Icon, type IconName } from '../../components/Icon';
 import { PressableScale } from '../../components/PressableScale';
-import { RecipeCard, RecipePhoto } from '../../components/RecipeCard';
+import { RecipeCard } from '../../components/RecipeCard';
 import { mainIngredient } from '../../lib/bonus';
 import { pantryMatch } from '../../lib/moods';
 import { useToast } from '../../components/Toast';
@@ -40,6 +40,7 @@ import { useStore } from '../../state/store';
 import { macroPercents } from '../../lib/percent';
 import { fonts, pop, popCycle, useTheme } from '../../theme';
 import { duration, keepTogether, nb } from '../../lib/text';
+import { PhotoFrame } from '../../components/PhotoFrame';
 
 export default function RecipeScreen() {
   const reduceMotion = useReducedMotion();
@@ -225,10 +226,9 @@ export default function RecipeScreen() {
         {/* Header: the buttons sit above the photo (12pt gap); the photo is straight, framed in ink. */}
         <View style={[styles.header, { backgroundColor: t.pop.tomatoTint, paddingTop: 0, borderBottomColor: t.pop.ink }]} testID="hero" onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}>
           <Lift radius={24}>
-            <View style={[styles.photoFrame, { width: photoWidth, height: Math.round(photoWidth * 0.75), backgroundColor: t.colors.imagePlaceholder }]}>
-              <RecipePhoto recipe={recipe} iconSize={64} radius={21.5} />
+            <PhotoFrame recipe={recipe} iconSize={64} radius={24} style={{ width: photoWidth, height: Math.round(photoWidth * 0.75) }}>
               {imported && <ImportedPhotoOverlay recipe={recipe} onOwnPhoto={onOwnPhoto} ownPhoto={usingOwnPhoto} />}
-            </View>
+            </PhotoFrame>
           </Lift>
           {recipe.custom && !imported && (
             <PopButton
@@ -749,7 +749,6 @@ function shareText(r: Recipe, servings: number, units: Units) {
 const styles = StyleSheet.create({
   header: { alignItems: 'center', paddingBottom: 24, borderBottomWidth: 2.5 },
   // The frame carries the ink border and clips; the photo inside has corners 2.5 smaller.
-  photoFrame: { borderRadius: 24, borderWidth: 2.5, borderColor: pop.ink, overflow: 'hidden', borderCurve: 'continuous' },
   body: { paddingHorizontal: 20, paddingTop: 20 },
   source: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, alignSelf: 'flex-start' },
   stats: { flexDirection: 'row', marginTop: 18, gap: 10 },

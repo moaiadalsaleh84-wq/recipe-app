@@ -27,6 +27,7 @@ import { useFlip } from '../../../components/useFlip';
 import { useStore } from '../../../state/store';
 import { fonts, pop, useTheme } from '../../../theme';
 import { nb } from '../../../lib/text';
+import { PhotoFrame } from '../../../components/PhotoFrame';
 
 
 type Sort = 'suggested' | 'az' | 'quickest' | 'cooked';
@@ -565,9 +566,11 @@ function CookbookTile({ id, name, recipes, width }: { id: string; name: string; 
       accessibilityLabel={`${name} cookbook, ${recipes.length} recipes`}
       radius={24}
       style={{ width }}
+      // Ink behind the covers, so photo edges never show a light hairline (see PhotoFrame).
+      color={empty ? pop.white : pop.ink}
       contentStyle={styles.book}
     >
-      <View style={[styles.covers, { backgroundColor: empty ? t.pop.berryTint : t.colors.imagePlaceholder, borderBottomColor: t.pop.ink }]}>
+      <PhotoFrame radius={21.5} corners="top" edge="bottom" placeholderColor={empty ? t.pop.berryTint : undefined} style={styles.covers}>
         {empty ? (
           <Icon name={fav ? 'heart' : 'book'} size={30} color={t.pop.ink} weight="bold" />
         ) : (
@@ -585,7 +588,8 @@ function CookbookTile({ id, name, recipes, width }: { id: string; name: string; 
             );
           })
         )}
-      </View>
+      </PhotoFrame>
+      <View style={[styles.bookBody, { backgroundColor: pop.white }]}>
       <View style={styles.bookText}>
         {fav && <Icon name="heartFill" size={14} color={t.pop.tomato} />}
         <Text style={[t.type.title3, { color: t.colors.label, fontSize: 18, flexShrink: 1 }]}>
@@ -595,6 +599,7 @@ function CookbookTile({ id, name, recipes, width }: { id: string; name: string; 
       <Text style={[t.type.caption1, { color: t.colors.secondaryLabel, paddingHorizontal: 12 }]}>
         {empty ? 'Nothing yet' : `${recipes.length} ${recipes.length === 1 ? 'recipe' : 'recipes'}`}
       </Text>
+      </View>
     </PopCard>
   );
 }
@@ -627,14 +632,15 @@ const styles = StyleSheet.create({
   moodCheck: { position: 'absolute', top: 10, right: 10, width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   sortBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', minHeight: 44, marginBottom: 4 },
   rail: { paddingBottom: 4 },
-  book: { paddingBottom: 12, minHeight: 168 },
+  book: { minHeight: 168 },
+  bookBody: { flexGrow: 1, paddingBottom: 12, borderBottomLeftRadius: 21.5, borderBottomRightRadius: 21.5 },
   // 16pt inside; the + circle and the label both centered.
   newBook: { flexGrow: 1, minHeight: 168, padding: 16, gap: 10, alignItems: 'center', justifyContent: 'center' },
   newIcon: { width: 48, height: 48, borderRadius: 24, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
   newLabel: { fontFamily: fonts.black, fontSize: 16, lineHeight: 21, textAlign: 'center' },
   bookHint: { justifyContent: 'center', paddingHorizontal: 4 },
   // Flush with the card's top border, top corners following its inner curve (24 − 2.5).
-  covers: { height: COVER_H, overflow: 'hidden', borderTopLeftRadius: 21.5, borderTopRightRadius: 21.5, borderBottomWidth: 2.5, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' },
+  covers: { height: COVER_H, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' },
   bookText: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, marginTop: 6 },
   popular: { gap: 8, marginTop: 12 },
   popularRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

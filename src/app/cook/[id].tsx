@@ -3,7 +3,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { Image } from 'expo-image';
 import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Text } from '../../components/Text';
 import Animated, {
@@ -35,14 +34,13 @@ import { stickers } from '../../data/stickers';
 import { todayIndex, useTonightPick } from '../../lib/tonightPick';
 import { Icon } from '../../components/Icon';
 import { PressableScale } from '../../components/PressableScale';
-import { RecipePhoto } from '../../components/RecipeCard';
 import { useToast } from '../../components/Toast';
 import { Lift, MascotSlot, PopButton, PopCard, PopChip, PopIconButton, SHOW_MASCOT_PLACEHOLDER } from '../../components/pop';
 import { AnimatedNumber, CheckCircle, DrawnCheck, EmptyState, ProgressBar } from '../../components/ui';
 import type { Ingredient, Rating, Recipe } from '../../data/mock';
 import { clock, isReady, secondsLeft, type CookTimer } from '../../lib/cookTimers';
 import { haptics } from '../../lib/haptics';
-import { photoUri, takePhoto } from '../../lib/photos';
+import { takePhoto } from '../../lib/photos';
 import { levelFor, streakOf, xpFor } from '../../lib/progress';
 import { playSuccess } from '../../lib/sounds';
 import { keepTogether, nb } from '../../lib/text';
@@ -54,6 +52,7 @@ import { mergeSameIngredients } from '../../lib/groceries';
 import { useStore } from '../../state/store';
 import { useTimers } from '../../state/timers';
 import { fonts, pop, popCycle, useTheme } from '../../theme';
+import { PhotoFrame } from '../../components/PhotoFrame';
 
 type FinishEntry = { date: string; xpBefore: number; levelBefore: number; bonus: Bonus };
 
@@ -659,9 +658,11 @@ function Finish({
           {/* The dish in a 200pt circle, centered: the frame carries the border and clips; the photo is
               3pt smaller all round. With the character on, it says "Chef's kiss!" beside it. */}
           <Lift radius={100}>
-            <View style={styles.finishPhoto}>
-              {photo ? <Image source={{ uri: photoUri(photo) }} style={[StyleSheet.absoluteFill, { borderRadius: 97 }]} contentFit="cover" accessibilityLabel="Your photo of the dish" /> : <RecipePhoto recipe={recipe} iconSize={56} radius={97} square />}
-            </View>
+            {photo ? (
+              <PhotoFrame uri={photo} radius={100} accessibilityLabel="Your photo of the dish" style={styles.finishPhoto} />
+            ) : (
+              <PhotoFrame recipe={recipe} iconSize={56} radius={100} square style={styles.finishPhoto} />
+            )}
           </Lift>
           {SHOW_MASCOT_PLACEHOLDER && <MascotSlot message="Chef’s kiss!" size={56} />}
         </Animated.View>
@@ -744,9 +745,7 @@ function Finish({
         {tomorrow && (
           <Animated.View entering={enter(7, reduceMotion)} style={{ alignSelf: 'stretch' }}>
             <PopCard color={pop.white} radius={20} contentStyle={styles.tomorrow} testID="finish-tomorrow">
-              <View style={styles.tomorrowThumb}>
-                <RecipePhoto recipe={tomorrow.recipe} radius={12} iconSize={20} square />
-              </View>
+              <PhotoFrame recipe={tomorrow.recipe} radius={14} iconSize={20} square style={styles.tomorrowThumb} />
               {/* The name needs room: when the button doesn't fit beside it, it moves underneath. */}
               <View style={styles.tomorrowText}>
                 <Text style={[t.type.caption1, { color: pop.inkMuted }]}>Tomorrow</Text>
@@ -895,7 +894,7 @@ const styles = StyleSheet.create({
   bonusIcon: { width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: pop.ink, alignItems: 'center', justifyContent: 'center' },
   tomorrow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 12, padding: 12 },
   tomorrowText: { flexGrow: 1, flexShrink: 1, flexBasis: 160, minWidth: 0 },
-  tomorrowThumb: { width: 52, height: 52, borderRadius: 14, borderWidth: 2, borderColor: pop.ink, overflow: 'hidden' },
+  tomorrowThumb: { width: 52, height: 52 },
   drainTrack: { height: 10, borderRadius: 5, borderWidth: 2, borderColor: pop.ink, backgroundColor: pop.tomatoTint, overflow: 'hidden', marginVertical: 6 },
   drainFill: { flex: 1, backgroundColor: pop.white, transformOrigin: 'left' },
   pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 20, marginTop: 14 },
@@ -927,7 +926,7 @@ const styles = StyleSheet.create({
   sheetRow: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 56 },
   finish: { paddingHorizontal: 20, gap: 22, alignItems: 'center', width: '100%', maxWidth: 560, alignSelf: 'center' },
   finishTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, alignSelf: 'stretch' },
-  finishPhoto: { width: 200, height: 200, borderRadius: 100, borderWidth: 3, borderColor: pop.ink, backgroundColor: pop.white, overflow: 'hidden' },
+  finishPhoto: { width: 200, height: 200 },
   finishTitle: { fontFamily: fonts.heading, fontSize: 42, lineHeight: 48, textAlign: 'center' },
   rewards: { flexDirection: 'row', gap: 12, alignSelf: 'stretch' },
   reward: { alignItems: 'center', gap: 2, paddingVertical: 14, paddingHorizontal: 10 },

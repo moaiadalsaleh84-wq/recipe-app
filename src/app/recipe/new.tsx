@@ -1,4 +1,3 @@
-import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
@@ -14,11 +13,12 @@ import { categories, dietTags, type Category, type DietTag } from '../../data/mo
 import { creditFields, nutritionExtras } from '../../lib/importApi';
 import { haptics } from '../../lib/haptics';
 import { parseIngredient } from '../../lib/parseIngredient';
-import { photoUri, pickPhoto as pickLibraryPhoto, saveImportedPicture } from '../../lib/photos';
+import { pickPhoto as pickLibraryPhoto, saveImportedPicture } from '../../lib/photos';
 import { showPaywall, useProGate } from '../../lib/pro';
 import { useStore } from '../../state/store';
 import { useTheme } from '../../theme';
 import { Lift } from '../../components/pop/Lift';
+import { PhotoFrame } from '../../components/PhotoFrame';
 
 /** One ingredient in the form: amount, unit and name in their own fields. */
 type Row = { key: string; amount: string; unit: string; name: string; note?: string; estimated?: boolean; id?: string };
@@ -205,10 +205,11 @@ export default function NewRecipe() {
           <PressableScale
             onPress={pickPhoto}
             accessibilityLabel={photo ? 'Change photo' : 'Add a photo'}
-            style={[styles.photo, { backgroundColor: t.colors.cell, ...t.chunky.card }]}
+            // With a photo, the PhotoFrame draws the ink border; the empty box keeps the card look.
+            style={[styles.photo, !photo && { backgroundColor: t.colors.cell, ...t.chunky.card }]}
           >
             {photo ? (
-              <Image source={{ uri: photoUri(photo) }} style={StyleSheet.absoluteFill} contentFit="cover" onError={() => setPhoto(null)} />
+              <PhotoFrame uri={photo} radius={20} onError={() => setPhoto(null)} style={StyleSheet.absoluteFill} />
             ) : (
               <>
                 <Icon name="camera" size={28} color={t.colors.tint} />

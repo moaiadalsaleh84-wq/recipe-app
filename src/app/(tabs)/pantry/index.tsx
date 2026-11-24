@@ -8,7 +8,7 @@ import { FoodIcon } from '../../../components/FoodIcon';
 import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
 import { Reveal } from '../../../components/Reveal';
-import { RecipePhoto, openRecipe } from '../../../components/RecipeCard';
+import { openRecipe } from '../../../components/RecipeCard';
 import { useToast } from '../../../components/Toast';
 import { Button, Chip, EmptyState, IconButton, ProgressBar, Section, SectionHeader, Separator } from '../../../components/ui';
 import { Lift, PopCard } from '../../../components/pop';
@@ -19,6 +19,7 @@ import { showPaywall, useProGate } from '../../../lib/pro';
 import { TabScreen } from '../../../components/TabScreen';
 import { FREE_LIMITS, useStore } from '../../../state/store';
 import { popCycle, useTheme } from '../../../theme';
+import { PhotoFrame } from '../../../components/PhotoFrame';
 
 /** What's in your kitchen, and what you can cook with it. */
 export default function PantryScreen() {
@@ -234,9 +235,7 @@ function MatchCard({ match, onAddMissing }: { match: PantryMatch; onAddMissing: 
   return (
     <PopCard style={styles.match} contentStyle={styles.card}>
       <PressableScale onPress={() => openRecipe(recipe.id)} scaleTo={0.98} accessibilityLabel={`${recipe.title}, you have ${have.length} of ${needed}`} style={styles.matchTop}>
-        <View style={[styles.thumb, { backgroundColor: t.colors.imagePlaceholder, borderColor: t.pop.ink }]}>
-          <RecipePhoto recipe={recipe} iconSize={22} radius={13.5} square />
-        </View>
+        <PhotoFrame recipe={recipe} iconSize={22} radius={16} square style={styles.thumb} />
         <View style={{ flex: 1, gap: 6, minWidth: 0 }}>
           <Text style={[t.type.title3, { color: t.colors.label }]}>{recipe.title}</Text>
           <View style={styles.meterRow}>
@@ -278,5 +277,5 @@ const styles = StyleSheet.create({
   locked: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   match: { marginBottom: 12 },
   matchTop: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
-  thumb: { width: 84, height: 84, borderRadius: 16, borderWidth: 2.5, overflow: 'hidden', borderCurve: 'continuous' },
+  thumb: { width: 84, height: 84 },
 });

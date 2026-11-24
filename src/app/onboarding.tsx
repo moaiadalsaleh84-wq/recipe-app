@@ -19,7 +19,6 @@ import { Chunky } from '../components/Chunky';
 import { AnimatedNumber, DrawnCheck } from '../components/ui';
 import { Icon, type IconName } from '../components/Icon';
 import { PopButton, PopCard, PopIconButton, Sticker } from '../components/pop';
-import { RecipePhoto } from '../components/RecipeCard';
 import { isImported } from '../components/ImportCredit';
 import { Text } from '../components/Text';
 import { useToast } from '../components/Toast';
@@ -34,6 +33,7 @@ import { nb, noWidow } from '../lib/text';
 import { duration, uiEase } from '../motion';
 import { useStore } from '../state/store';
 import { fonts, noWidows, pop, stroke } from '../theme';
+import { PhotoFrame } from '../components/PhotoFrame';
 
 const SCREENS = ['welcome', 'name', 'goal', 'household', 'diet', 'dinner', 'reminder', 'pantry', 'building', 'pick'] as const;
 type Screen = (typeof SCREENS)[number];
@@ -364,9 +364,7 @@ function PhotoTile({ recipe, size }: { recipe: Recipe | undefined; size: number 
   return (
     <View style={{ width: size, height: size + 4 }}>
       <View style={{ position: 'absolute', top: 4, left: 0, width: size, height: size, borderRadius: r, backgroundColor: pop.ink }} />
-      <View style={{ width: size, height: size, borderRadius: r, borderWidth: 3, borderColor: pop.ink, overflow: 'hidden', backgroundColor: pop.white }}>
-        {recipe ? <RecipePhoto recipe={recipe} radius={r - 3} square /> : null}
-      </View>
+      {recipe ? <PhotoFrame recipe={recipe} radius={r} square style={{ width: size, height: size }} /> : <PhotoFrame radius={r} placeholderColor={pop.sunshineTint} style={{ width: size, height: size }} />}
     </View>
   );
 }
@@ -747,11 +745,10 @@ function FirstPick({ name, servings, picks, onCook }: { name: string; servings: 
         </Text>
         {pick ? (
           <Animated.View style={[{ marginTop: 20 }, flip]}>
-            <PopCard radius={24} contentStyle={{ padding: 0 }} testID="ob-pick-card">
-              <View style={{ height: 190 }}>
-                <RecipePhoto recipe={pick.recipe} radius={0} />
-              </View>
-              <View style={{ padding: 16, borderTopWidth: stroke.thick, borderColor: pop.ink }}>
+            {/* Ink behind the photo, so its soft edges never show a light hairline (see PhotoFrame). */}
+            <PopCard radius={24} color={pop.ink} contentStyle={{ padding: 0 }} testID="ob-pick-card">
+              <PhotoFrame recipe={pick.recipe} radius={21.5} corners="top" edge="bottom" style={{ height: 190 }} />
+              <View style={{ padding: 16, backgroundColor: pop.white, borderBottomLeftRadius: 21.5, borderBottomRightRadius: 21.5 }}>
                 <Text style={styles.cardTitle} testID="ob-pick-title">
                   {pick.recipe.title}
                 </Text>
@@ -770,9 +767,7 @@ function FirstPick({ name, servings, picks, onCook }: { name: string; servings: 
           <View style={styles.moreRow}>
             <View style={{ width: 44 + (thumbs.length - 1) * 22, height: 44 }}>
               {thumbs.map((p, k) => (
-                <View key={p.recipe.id} style={[styles.thumb, { left: k * 22, zIndex: 2 - k }]}>
-                  <RecipePhoto recipe={p.recipe} radius={10} iconSize={18} square />
-                </View>
+                <PhotoFrame key={p.recipe.id} recipe={p.recipe} radius={12} iconSize={18} square style={[styles.thumb, { left: k * 22, zIndex: 2 - k }]} />
               ))}
             </View>
             <Text style={[styles.rowLabel, { flex: 1 }]}>+{more.length} more you can make this{' '}week</Text>
@@ -843,5 +838,5 @@ const styles = StyleSheet.create({
   tag: { flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 2, borderColor: pop.ink, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 5 },
   tagText: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 18, color: pop.ink },
   moreRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 20 },
-  thumb: { position: 'absolute', top: 0, width: 44, height: 44, borderRadius: 12, borderWidth: 2, borderColor: pop.ink, overflow: 'hidden', backgroundColor: pop.white },
+  thumb: { position: 'absolute', top: 0, width: 44, height: 44 },
 });

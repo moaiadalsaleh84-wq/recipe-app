@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MascotSays } from '../components/mascot/MascotSays';
 import type { Line } from '../components/mascot/lines';
 import { PageHeader } from '../components/PageHeader';
-import { RecipePhoto } from '../components/RecipeCard';
+import { PhotoFrame } from '../components/PhotoFrame';
 import { Button } from '../components/ui';
 import { matchesFilter, type Recipe } from '../data/mock';
 import { fitsDiet } from '../lib/onboardingPicks';
@@ -67,11 +67,12 @@ export default function BuddyPick() {
       <PageHeader title="Pick for me" mode="cancel" inSheet={isIOS} />
       <View style={[styles.body, { paddingBottom: insets.bottom + 16 }]}>
         <Lift radius={24}>
-          <View style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card }]} accessibilityLiveRegion="polite" accessibilityLabel={rolling ? 'Shuffling recipes' : `Picked: ${recipe.title}`}>
-            <Animated.View key={`${round}-${index}-${rolling}`} entering={FadeIn.duration(rolling ? 60 : 220)} style={styles.photo}>
-              <RecipePhoto recipe={recipe} iconSize={48} />
+          {/* Ink behind the photo, so its soft edges never show a light hairline (see PhotoFrame). */}
+          <View style={[styles.card, { backgroundColor: t.pop.ink, ...t.chunky.card }]} accessibilityLiveRegion="polite" accessibilityLabel={rolling ? 'Shuffling recipes' : `Picked: ${recipe.title}`}>
+            <Animated.View key={`${round}-${index}-${rolling}`} entering={FadeIn.duration(rolling ? 60 : 220)}>
+              <PhotoFrame recipe={recipe} iconSize={48} radius={21.5} corners="top" edge="bottom" style={styles.photo} />
             </Animated.View>
-            <View style={{ padding: 14, gap: 2 }}>
+            <View style={{ padding: 14, gap: 2, backgroundColor: t.colors.cell, borderBottomLeftRadius: 21.5, borderBottomRightRadius: 21.5 }}>
               <Text style={[t.type.title3, { color: t.colors.label }]} testID="pick-title">
                 {recipe.title}
               </Text>

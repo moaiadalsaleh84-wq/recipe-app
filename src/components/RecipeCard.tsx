@@ -1,17 +1,14 @@
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { Text } from './Text';
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
-import { useState } from 'react';
-import type { Recipe, RecipeImage } from '../data/mock';
-import { recipePhotos } from '../data/recipePhotos';
-import { photoUri } from '../lib/photos';
+import type { Recipe } from '../data/mock';
 import { useStore } from '../state/store';
 import { haptics } from '../lib/haptics';
 import { fonts, useTheme, pop } from '../theme';
 import { nb } from '../lib/text';
 import { Icon } from './Icon';
+import { PhotoFrame, RecipePhoto } from './PhotoFrame';
 import { PressableScale } from './PressableScale';
 import { PopButton } from './pop/PopButton';
 import { PopIconButton } from './pop/PopIconButton';
@@ -23,69 +20,7 @@ import { IconButton, Skeleton } from './ui';
 
 export const openRecipe = (id: string) => router.push({ pathname: '/recipe/[id]', params: { id } });
 
-const TINTS = [pop.sunshineTint, pop.skyTint, pop.berryTint, pop.leafTint, pop.lilacTint, pop.tomatoTint];
-const placeholderTint = (id: string) => TINTS[[...id].reduce((n, c) => (n * 31 + c.charCodeAt(0)) >>> 0, 7) % TINTS.length];
-
-/** The recipe's photo, or a cozy placeholder for recipes added without one. */
-export function RecipePhoto({
-  recipe,
-  iconSize = 36,
-  radius = 0,
-  square = false,
-}: {
-  recipe: Recipe;
-  iconSize?: number;
-  /** Corner radius of the photo itself: the frame's radius minus its border (2.5). */
-  radius?: number;
-  /** A square spot (thumbnails, circles): uses the 1:1 crop when the recipe has one. */
-  square?: boolean;
-}) {
-  const t = useTheme();
-  // Remembers which image failed (an expired link), so a new photo gets a fresh try.
-  const [failed, setFailed] = useState<RecipeImage>(null);
-  const [loaded, setLoaded] = useState<RecipeImage>(null);
-  const image = recipe.image;
-  if (image && image !== failed) {
-    // The app's own photos have a 1:1 crop and a blurhash; a photo you picked yourself doesn't.
-    const set = recipePhotos[recipe.id];
-    const own = set && image === set.card ? set : undefined;
-    // An imported picture has its own card and thumbnail crops (and maybe a blurhash).
-    const imp = recipe.importedImage && typeof image === 'object' && image.uri === recipe.importedImage.card ? recipe.importedImage : undefined;
-    const source = own
-      ? square
-        ? own.square
-        : own.card
-      : typeof image === 'number'
-        ? image
-        : { uri: photoUri(imp && square ? imp.square : image.uri) };
-    const blurhash = own ? (square ? own.squareBlurhash : own.blurhash) : imp?.blurhash;
-    // While it loads: the blurred photo (or a shimmer for your own photos); then the photo fades in
-    // (250ms). Cached on disk and in memory.
-    return (
-      <>
-        {!blurhash && loaded !== image && <Skeleton style={[StyleSheet.absoluteFill, { borderRadius: radius }]} />}
-        <Image
-          source={source}
-          placeholder={blurhash ? { blurhash } : undefined}
-          placeholderContentFit="cover"
-          style={[StyleSheet.absoluteFill, { borderRadius: radius }]}
-          contentFit="cover"
-          transition={250}
-          cachePolicy="memory-disk"
-          onLoad={() => setLoaded(image)}
-          onError={() => setFailed(image)}
-          accessibilityIgnoresInvertColors
-        />
-      </>
-    );
-  }
-  // No photo yet: a soft tinted card (one of the palette's tints, the same for the same recipe every time).
-  return (
-    <View style={[StyleSheet.absoluteFill, styles.noPhoto, { backgroundColor: placeholderTint(recipe.id), borderRadius: radius }]} testID="photo-placeholder">
-      <Icon name="pot" size={iconSize} color={t.pop.inkMuted} />
-    </View>
-  );
-}
+export { RecipePhoto };
 
 /** Imported from a link: a tiny source mark in the picture's corner (a play button for videos). */
 function SourceMark({ recipe }: { recipe: Recipe }) {
@@ -188,16 +123,16 @@ export function RecipeCard({ recipe, width, color }: { recipe: Recipe; width: nu
         onPress={() => openRecipe(recipe.id)}
         accessibilityLabel={`${recipe.title}, ${recipe.minutes} minutes, ${recipe.difficulty}`}
         accessibilityHint="Opens the recipe"
-        color={color}
+        // Ink behind the photo, so its soft edges never show a light hairline (see PhotoFrame).
+        color={pop.ink}
         radius={24}
         style={{ flexGrow: 1 }}
         contentStyle={{ flexGrow: 1 }}
       >
-        <View style={[styles.imageWrap, { backgroundColor: t.colors.imagePlaceholder }]}>
-          <RecipePhoto recipe={recipe} />
+        <PhotoFrame recipe={recipe} radius={21.5} corners="top" edge="bottom" style={styles.imageWrap}>
           <SourceMark recipe={recipe} />
-        </View>
-        <View style={styles.cardBody}>
+        </PhotoFrame>
+        <View style={[styles.cardBody, { backgroundColor: color ?? pop.white }]}>
           <Text style={[t.type.title3, styles.cardTitle, t.noWidows.balanced, { color: t.colors.label }]} {...t.noWidows.props}>{recipe.title}</Text>
           <View style={styles.cardMeta}>
             <View style={styles.meta}>
@@ -253,14 +188,14 @@ export function TonightCard({
   const t = useTheme();
   return (
     <View>
-      <PopCard clip={false} contentStyle={{ overflow: 'hidden' }}>
+      {/* Ink behind the photo, so its soft edges never show a light hairline (see PhotoFrame). */}
+      <PopCard clip={false} color={pop.ink} contentStyle={{ overflow: 'hidden' }}>
         {/* The photo and name open the recipe; the button below is its own tap (no button inside a button). */}
         <PressableScale onPress={() => openRecipe(recipe.id)} scaleTo={0.99} accessibilityLabel={`${label}: ${recipe.title}, ${recipe.minutes} minutes`} accessibilityHint="Opens the recipe">
-          <View style={[styles.tonightPhoto, { backgroundColor: t.colors.imagePlaceholder }]}>
-            <RecipePhoto recipe={recipe} iconSize={48} />
+          <PhotoFrame recipe={recipe} iconSize={48} radius={21.5} corners="top" edge="bottom" style={styles.tonightPhoto}>
             <SourceMark recipe={recipe} />
-          </View>
-          <View style={styles.tonightText}>
+          </PhotoFrame>
+          <View style={[styles.tonightText, styles.tonightWhite]}>
             <Text style={[t.type.title1, { color: t.colors.label, fontSize: 24, lineHeight: 29 }]}>
               {recipe.title}
             </Text>
@@ -275,6 +210,7 @@ export function TonightCard({
             ) : null}
           </View>
         </PressableScale>
+        <View style={styles.tonightBottom}>
         <View style={[styles.tonightBtn, { flexDirection: 'row', gap: 12 }]}>
           <PopButton label="Cook it!" iconRight="arrowRight" onPress={onCook} accessibilityLabel={`Cook ${recipe.title}`} style={{ flex: 1 }} />
           {onShuffle && <PopIconButton icon="shuffle" size={56} iconSize={22} onPress={onShuffle} accessibilityLabel="Show me another" testID="tonight-shuffle" />}
@@ -283,6 +219,7 @@ export function TonightCard({
         <PressableScale onPress={() => openRecipe(recipe.id)} accessibilityRole="link" accessibilityLabel={`See the recipe for ${recipe.title}`} style={styles.seeRecipe}>
           <Text style={[t.type.subhead, { color: t.colors.label, fontFamily: t.fonts.black, textDecorationLine: 'underline' }]}>See recipe</Text>
         </PressableScale>
+        </View>
       </PopCard>
       {/* Slapped on where the photo meets the card. */}
       <Sticker label="Tonight's pick" style={styles.tonightSticker} />
@@ -315,9 +252,7 @@ export function RecipeRow({
   return (
     <View style={styles.row}>
       <PressableScale onPress={onPress ?? (() => openRecipe(recipe.id))} scaleTo={0.98} accessibilityLabel={`${recipe.title}, ${metaLines ? metaLines.join(', ') : (subtitle ?? meta(recipe))}`} accessibilityHint={accessibilityHint} style={styles.rowMain}>
-        <View style={[styles.thumb, { backgroundColor: t.colors.imagePlaceholder, borderColor: t.pop.ink }]}>
-          <RecipePhoto recipe={recipe} iconSize={24} radius={13.5} square />
-        </View>
+        <PhotoFrame recipe={recipe} iconSize={24} radius={16} square style={styles.thumb} />
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={[t.type.title3, t.noWidows.balanced, { color: t.colors.label, fontSize: 18, lineHeight: 22 }]} {...t.noWidows.props}>{recipe.title}</Text>
           {metaLines ? (
@@ -341,9 +276,9 @@ const styles = StyleSheet.create({
   // Photos (4:3) with a thick ink line underneath.
   // Flush with the card's top border (no gap): the photo's top corners follow the card's inner curve (24 − 2.5).
   sourceMark: { position: 'absolute', left: 8, bottom: 8, width: 24, height: 24, borderRadius: 12, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  imageWrap: { width: '100%', aspectRatio: 4 / 3, overflow: 'hidden', borderTopLeftRadius: 21.5, borderTopRightRadius: 21.5, borderBottomWidth: 2.5, borderBottomColor: pop.ink },
+  imageWrap: { width: '100%', aspectRatio: 4 / 3 },
   // 14pt inside on every side; the meta sits at the bottom so cards in a row line up.
-  cardBody: { flexGrow: 1, padding: 14, gap: 10, justifyContent: 'space-between' },
+  cardBody: { flexGrow: 1, padding: 14, gap: 10, justifyContent: 'space-between', borderBottomLeftRadius: 21.5, borderBottomRightRadius: 21.5 },
   // Fredoka 700, 19/23, up to 3 lines; 3 lines of room on every card so a row lines up.
   cardTitle: { fontFamily: fonts.heading, fontSize: 19, lineHeight: 23, minHeight: 69 },
   cardMeta: { gap: 8, alignItems: 'flex-start' },
@@ -363,8 +298,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tonightPhoto: { height: 150, overflow: 'hidden', borderTopLeftRadius: 21.5, borderTopRightRadius: 21.5, borderBottomWidth: 2.5, borderBottomColor: pop.ink },
+  tonightPhoto: { height: 150 },
   tonightText: { paddingHorizontal: 16, paddingTop: 22, gap: 4 },
+  // The white part of the card below the photo (the card's face is ink behind the photo).
+  tonightWhite: { backgroundColor: pop.white },
+  tonightBottom: { backgroundColor: pop.white, borderBottomLeftRadius: 21.5, borderBottomRightRadius: 21.5 },
   tonightBtn: { marginHorizontal: 16, marginTop: 12 },
   seeRecipe: { alignSelf: 'center', minHeight: 44, justifyContent: 'center', paddingHorizontal: 16, marginBottom: 4 },
   tonightSticker: { position: 'absolute', top: 134, left: 14 },
@@ -372,5 +310,5 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', paddingRight: 8 },
   metaLine: { fontFamily: fonts.medium, fontSize: 15, lineHeight: 20 },
   rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 10, paddingLeft: 12, paddingRight: 8, minHeight: 84 },
-  thumb: { width: 64, height: 64, borderRadius: 16, overflow: 'hidden', borderWidth: 2.5, borderCurve: 'continuous' },
+  thumb: { width: 64, height: 64 },
 });

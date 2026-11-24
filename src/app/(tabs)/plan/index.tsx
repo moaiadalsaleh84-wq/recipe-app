@@ -7,7 +7,7 @@ import { enter } from '../../../motion';
 import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
 import { Reveal } from '../../../components/Reveal';
-import { RecipePhoto, RecipeRow, openRecipe } from '../../../components/RecipeCard';
+import { RecipeRow, openRecipe } from '../../../components/RecipeCard';
 import { Lift, PopButton, PopCard, PopChip, PopIconButton } from '../../../components/pop';
 import { useToast } from '../../../components/Toast';
 import { IconButton, Section, SectionHeader, Separator } from '../../../components/ui';
@@ -19,6 +19,7 @@ import { fonts, pop, popCycle, useTheme } from '../../../theme';
 import { weekDays } from '../../../lib/week';
 import { fillDinners } from '../../../lib/planFill';
 import { nb } from '../../../lib/text';
+import { PhotoFrame } from '../../../components/PhotoFrame';
 
 
 export default function PlanScreen() {
@@ -265,9 +266,7 @@ function MealCard({ meal, recipe, onChange, onRemove }: { meal: string; recipe: 
   return (
     <PopCard radius={22} depth={4} contentStyle={styles.meal}>
       <PressableScale onPress={() => openRecipe(recipe.id)} scaleTo={0.98} accessibilityLabel={`${meal}: ${recipe.title}, ${recipe.minutes} min, ${recipe.calories} kcal`} accessibilityHint="Opens the recipe" style={styles.mealMain}>
-        <View style={[styles.mealPhoto, { backgroundColor: t.colors.imagePlaceholder, borderColor: t.pop.ink }]}>
-          <RecipePhoto recipe={recipe} iconSize={24} radius={13.5} square />
-        </View>
+        <PhotoFrame recipe={recipe} iconSize={24} radius={16} square style={styles.mealPhoto} />
         <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
           <PopChip label={meal} color={MEAL_TINT[meal] ?? t.pop.sunshineTint} small />
           <Text style={[t.type.title3, { color: t.colors.label }]}>
@@ -300,7 +299,7 @@ const styles = StyleSheet.create({
   slotIcon: { width: 52, height: 52, borderRadius: 16, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
   meal: { flexDirection: 'row', alignItems: 'center', padding: 8, paddingRight: 0 },
   mealMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14 },
-  mealPhoto: { width: 92, height: 92, borderRadius: 16, borderWidth: 2.5, overflow: 'hidden', borderCurve: 'continuous' },
+  mealPhoto: { width: 92, height: 92 },
   mealActions: { alignItems: 'center' },
   fillCard: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 24, borderCurve: 'continuous' },
   fillIcon: { width: 48, height: 48, borderRadius: 16, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },

@@ -5,10 +5,7 @@ import { Text } from '../../../components/Text';
 import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
 import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
-import { RecipePhoto } from '../../../components/RecipeCard';
 import { Lift, PopButton, PopCard, PopChip, PopIconButton } from '../../../components/pop';
-import { Image } from 'expo-image';
-import { photoUri } from '../../../lib/photos';
 import { useTonightPick } from '../../../lib/tonightPick';
 import { stickers } from '../../../data/stickers';
 import { nb } from '../../../lib/text';
@@ -21,6 +18,7 @@ import { BADGES, levelFor, streakOf, xpFor } from '../../../lib/progress';
 import { TabScreen } from '../../../components/TabScreen';
 import { totalsFor, useStore } from '../../../state/store';
 import { fonts, pop, popCycle, useTheme } from '../../../theme';
+import { PhotoFrame } from '../../../components/PhotoFrame';
 
 const dayKey = (d: Date) => d.toDateString();
 const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -258,8 +256,8 @@ export default function ProgressScreen() {
           <SectionHeader title="My dishes" subtitle={nb(myPhotos.length, myPhotos.length === 1 ? 'photo' : 'photos')} />
           <View style={styles.gallery} testID="my-dishes">
             {myPhotos.slice(0, 9).map((c) => (
-              <PressableScale key={c.date} onPress={() => router.push({ pathname: '/recipe/[id]', params: { id: c.recipeId } })} accessibilityLabel={`Your ${getRecipe(c.recipeId)?.title ?? 'dish'}`} style={[styles.galleryItem, { borderColor: t.pop.ink }]}>
-                <Image source={{ uri: photoUri(c.photo!) }} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />
+              <PressableScale key={c.date} onPress={() => router.push({ pathname: '/recipe/[id]', params: { id: c.recipeId } })} accessibilityLabel={`Your ${getRecipe(c.recipeId)?.title ?? 'dish'}`} style={styles.galleryItem}>
+                <PhotoFrame uri={c.photo!} radius={14} style={StyleSheet.absoluteFill} />
               </PressableScale>
             ))}
           </View>
@@ -317,9 +315,7 @@ export default function ProgressScreen() {
             return (
               <PopCard key={c.recipeId} radius={20} depth={4} contentStyle={styles.historyRow}>
                 <PressableScale onPress={() => router.push({ pathname: '/recipe/[id]', params: { id: r.id } })} scaleTo={0.98} accessibilityLabel={`${r.title}, last cooked ${old ? when.toDateString() : day}${said}. Opens the recipe`} style={styles.historyMain}>
-                  <View style={[styles.historyThumb, { borderColor: t.pop.ink, backgroundColor: t.colors.imagePlaceholder }]}>
-                    {c.photo ? <Image source={{ uri: photoUri(c.photo) }} style={[StyleSheet.absoluteFill, { borderRadius: 11.5 }]} contentFit="cover" /> : <RecipePhoto recipe={r} iconSize={20} radius={11.5} square />}
-                  </View>
+                  {c.photo ? <PhotoFrame uri={c.photo} radius={14} style={styles.historyThumb} /> : <PhotoFrame recipe={r} iconSize={20} radius={14} square style={styles.historyThumb} />}
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={[t.type.title3, { color: t.colors.label, fontSize: 17, lineHeight: 21 }]}>{r.title}</Text>
                     <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]}>
@@ -395,7 +391,7 @@ function GoalRow({ label, unit, eaten, goal, color, children }: { label: string;
 const styles = StyleSheet.create({
   kitchen: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, padding: 16 },
   gallery: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  galleryItem: { width: '31.5%', aspectRatio: 1, borderRadius: 14, borderWidth: 2, overflow: 'hidden' },
+  galleryItem: { width: '31.5%', aspectRatio: 1 },
   stickerBook: { flexDirection: 'row', flexWrap: 'wrap', padding: 12, rowGap: 12 },
   stickerCell: { width: '25%', alignItems: 'center', gap: 4, paddingHorizontal: 2 },
   stickerDisc: { width: 52, height: 52, borderRadius: 26, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
@@ -418,7 +414,7 @@ const styles = StyleSheet.create({
   emptyHistory: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16 },
   historyRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 12 },
   historyMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, minHeight: 76 },
-  historyThumb: { width: 56, height: 56, borderRadius: 14, borderWidth: 2.5, overflow: 'hidden' },
+  historyThumb: { width: 56, height: 56 },
   goalsSmall: { padding: 16, gap: 10 },
   goalsRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   goalsBtn: { alignSelf: 'flex-start', marginLeft: 56 },

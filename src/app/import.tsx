@@ -1,5 +1,4 @@
 import * as Clipboard from 'expo-clipboard';
-import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
@@ -48,6 +47,7 @@ import { FREE_LIMITS, useStore } from '../state/store';
 import { useTheme } from '../theme';
 import { Lift } from '../components/pop/Lift';
 import { noWidow } from '../lib/text';
+import { PhotoFrame } from '../components/PhotoFrame';
 
 type Phase = { name: 'input' } | { name: 'loading' } | { name: 'failed'; failure: ImportFailure };
 
@@ -370,13 +370,9 @@ export default function ImportScreen() {
           <Animated.View entering={FadeIn.duration(200)} accessibilityLiveRegion="polite" testID="import-loading">
             {/* The picture as soon as we have it; the tinted card until then. */}
             <Lift radius={22}>
-              <View style={[styles.loadPhoto, { backgroundColor: t.pop.tomatoTint, borderColor: t.pop.ink }]}>
-                {preview?.imageUrl && !previewFailed ? (
-                  <Image source={{ uri: preview.imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} onError={() => setPreviewFailed(true)} accessibilityIgnoresInvertColors testID="loading-thumb" />
-                ) : (
-                  <Icon name="pot" size={56} color={t.pop.inkMuted} />
-                )}
-              </View>
+              <PhotoFrame uri={preview?.imageUrl && !previewFailed ? preview.imageUrl : null} radius={22} placeholderColor={t.pop.tomatoTint} onError={() => setPreviewFailed(true)} style={styles.loadPhoto} testID={preview?.imageUrl && !previewFailed ? 'loading-thumb' : undefined}>
+                {!(preview?.imageUrl && !previewFailed) && <Icon name="pot" size={56} color={t.pop.inkMuted} />}
+              </PhotoFrame>
             </Lift>
             {preview?.credit?.handle || preview?.credit?.siteName ? (
               <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, marginTop: 10 }]} numberOfLines={1} testID="loading-credit">
@@ -501,7 +497,7 @@ const styles = StyleSheet.create({
   card: { borderRadius: 18, padding: 16, borderCurve: 'continuous' },
   lifted: {},
   offer: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, paddingLeft: 16, borderRadius: 18, borderWidth: 2.5, borderCurve: 'continuous' },
-  loadPhoto: { width: '100%', aspectRatio: 4 / 3, borderRadius: 22, borderWidth: 2.5, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
+  loadPhoto: { width: '100%', aspectRatio: 4 / 3, alignItems: 'center', justifyContent: 'center' },
   stages: { gap: 14, marginTop: 20, alignSelf: 'stretch' },
   stage: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 32 },
   stageDot: { width: 28, height: 28, borderRadius: 14, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
