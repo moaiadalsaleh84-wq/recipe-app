@@ -83,7 +83,7 @@ export default function ImportScreen() {
   const toast = useToast();
   const params = useLocalSearchParams<{ url?: string; from?: string; auto?: string }>();
   const fromOnboarding = params.from === 'onboarding';
-  const { addRecipe, countImport, setDraft, importsUsed } = useStore();
+  const { addRecipe, countImport, setDraft, importsUsed, findBySource } = useStore();
   const { canImport, importsLeft } = useProGate();
   const [input, setInput] = useState(typeof params.url === 'string' ? params.url : '');
   const [phase, setPhase] = useState<Phase>({ name: 'input' });
@@ -145,6 +145,13 @@ export default function ImportScreen() {
     else router.replace('/');
   };
 
+  // Already in your recipes (the same link in any form): open it instead of importing it again.
+  const openExisting = (id: string) => {
+    abort.current?.abort();
+    toast({ message: 'You already saved this one. Here it is.', icon: 'bookmarkFill' });
+    router.replace({ pathname: '/recipe/[id]', params: { id } });
+  };
+
   const openForm = (draft: ReturnType<typeof draftFromImport>) => {
     setDraft(draft);
     router.replace({ pathname: '/recipe/new', params: { draft: '1', ...(fromOnboarding ? { next: 'onboarding' } : {}) } });
@@ -181,6 +188,11 @@ export default function ImportScreen() {
     if (override !== undefined) setInput(value);
     // The built-in example is free: it never counts towards the free imports.
     const isExample = value === EXAMPLE_URL;
+    const already = isLinkText(value) ? findBySource(value) : undefined;
+    if (already) {
+      openExisting(already.id);
+      return;
+    }
     if (!canImport && !isExample) {
       showPaywall('imports');
       return;
@@ -203,6 +215,12 @@ export default function ImportScreen() {
     if (isLink) {
       void importPreview(value, signal).then((p) => {
         if (signal.aborted) return;
+        // A share link (vm.tiktok.com/…) is only known once resolved: same check again.
+        const saved = p?.sourceUrl ? findBySource(p.sourceUrl) : undefined;
+        if (saved) {
+          openExisting(saved.id);
+          return;
+        }
         if (p) setPreview(p);
         setStage((s) => Math.max(s, 1));
         if (isTikTokLink(p?.sourceUrl ?? value) && (!p?.imageUrl || !p.credit?.handle)) {
@@ -223,6 +241,11 @@ export default function ImportScreen() {
     let res = await importRecipe(isLink ? { url: value } : { text: value }, signal);
     if (res.ok && res.source.kind === 'tiktok' && (!res.recipe.imageUrl || !res.source.credit?.handle)) {
       res = withPhoneDetails(res, await askPhone(res.recipe.sourceUrl ?? value));
+    }
+    const savedAlready = res.ok ? findBySource(res.recipe.sourceUrl) : undefined;
+    if (savedAlready) {
+      openExisting(savedAlready.id);
+      return;
     }
     if (res.ok) {
       if (!isExample) countImport();

@@ -91,6 +91,8 @@ export const CORNFLAKE_OEMBED = {
   thumbnail_url: 'https://images.unsplash.com/photo-1690749127581-c9351d7d0abc?w=720&h=1280&fit=crop',
 };
 Object.assign(FIXTURE_ROUTES, {
+  // A share link to the same video, with tracking parameters.
+  'https://vm.tiktok.com/ZMcorn/': { status: 301, body: '', headers: { location: `${CORNFLAKE_URL}?_r=1&is_from_webapp=1` } },
   // The page loads (with the caption in its data) but has no picture tag; oEmbed is refused.
   [CORNFLAKE_URL]: page(`<html><head><title>TikTok</title></head><body><script id="__UNIVERSAL_DATA_FOR_REHYDRATION__">{"itemStruct":{"desc":${JSON.stringify(CORNFLAKE_CAPTION)}}}</script></body></html>`),
   [`https://www.tiktok.com/oembed?url=${encodeURIComponent(CORNFLAKE_URL)}`]: { status: 403, body: 'blocked', headers: { 'content-type': 'text/html' } },

@@ -42,7 +42,7 @@ function rowFromLine(line: string): Row | null {
 export default function NewRecipe() {
   const t = useTheme();
   const toast = useToast();
-  const { addRecipe, updateRecipe, getRecipe, draft: storedDraft, setDraft } = useStore();
+  const { addRecipe, updateRecipe, getRecipe, draft: storedDraft, setDraft, findBySource } = useStore();
   const { canAddRecipe } = useProGate();
   const params = useLocalSearchParams<{ draft?: string; next?: string; edit?: string }>();
   // Editing an existing recipe of yours, or finishing an import (pre-filled), or a blank one.
@@ -112,6 +112,13 @@ export default function NewRecipe() {
     if (!valid) return;
     const url = link.trim();
     const sourceUrl = url ? (/^https?:\/\//i.test(url) ? url : `https://${url}`) : undefined;
+    // An import from a link that's already in your recipes: open that one, never a second copy.
+    const already = fromImport && !editing ? findBySource(sourceUrl) : undefined;
+    if (already) {
+      toast({ message: 'You already saved this one. Here it is.', icon: 'bookmarkFill' });
+      router.replace({ pathname: '/recipe/[id]', params: { id: already.id } });
+      return;
+    }
 
     if (editing) {
       // Steps left unchanged keep their timers, "est." marks and ingredient links (to ingredients still there).

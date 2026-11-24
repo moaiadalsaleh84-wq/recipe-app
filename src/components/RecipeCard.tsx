@@ -22,18 +22,13 @@ export const openRecipe = (id: string) => router.push({ pathname: '/recipe/[id]'
 
 export { RecipePhoto };
 
-/** Imported from a link: a tiny source mark in the picture's corner (a play button for videos). */
+/** Imported from a website: a tiny link mark in the picture's corner. (Videos have none: no play button on cards.) */
 function SourceMark({ recipe }: { recipe: Recipe }) {
   const t = useTheme();
-  if (recipe.source !== 'tiktok' && recipe.source !== 'youtube' && recipe.source !== 'web') return null;
+  if (recipe.source !== 'web') return null;
   return (
-    <View
-      style={[styles.sourceMark, { backgroundColor: t.pop.white, borderColor: t.pop.ink }]}
-      accessible
-      accessibilityLabel={recipe.source === 'web' ? 'Imported from a website' : `Imported from ${recipe.source === 'tiktok' ? 'TikTok' : 'YouTube'}`}
-      testID="source-mark"
-    >
-      <Icon name={recipe.source === 'web' ? 'link' : 'play'} size={11} color={t.pop.ink} weight="bold" />
+    <View style={[styles.sourceMark, { backgroundColor: t.pop.white, borderColor: t.pop.ink }]} accessible accessibilityLabel="Imported from a website" testID="source-mark">
+      <Icon name="link" size={11} color={t.pop.ink} weight="bold" />
     </View>
   );
 }

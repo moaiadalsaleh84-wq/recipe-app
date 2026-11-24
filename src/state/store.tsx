@@ -26,6 +26,7 @@ import {
 } from '../data/mock';
 import { pantryPopRecipes } from '../data/pantryPop';
 import { withoutDuplicates } from '../lib/pantryPopImport';
+import { normalizeSourceUrl, removeDuplicateImports } from '../lib/sourceLink';
 
 /** Everything that survives an app restart. */
 type Saved = {
@@ -122,6 +123,8 @@ type Store = Saved & {
   getRecipe: (id: string | undefined) => Recipe | undefined;
   addRecipe: (r: Omit<Recipe, 'id' | 'custom'>) => string;
   updateRecipe: (id: string, patch: Partial<Omit<Recipe, 'id' | 'custom'>>) => void;
+  /** Your recipe saved from this link already (any form of the same link), if any. */
+  findBySource: (url: string | null | undefined) => Recipe | undefined;
   /** Hand-written recipes, the ones the free limit counts. */
   manualRecipeCount: number;
   deleteRecipe: (id: string) => void;
@@ -189,7 +192,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       .then((raw) => {
         if (raw) {
           const parsed = JSON.parse(raw) as Partial<Saved>;
-          setSaved({ ...initialSaved, ...parsed, fun: { ...initialSaved.fun, ...parsed.fun }, profile: { ...initialSaved.profile, ...parsed.profile } });
+          const loaded: Saved = { ...initialSaved, ...parsed, fun: { ...initialSaved.fun, ...parsed.fun }, profile: { ...initialSaved.profile, ...parsed.profile } };
+          // The same link imported twice (before imports checked for it): keep the newest copy.
+          setSaved(removeDuplicateImports(loaded).saved);
         }
       })
       .catch(() => {
@@ -252,6 +257,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return id;
     },
     [update],
+  );
+  /** Your recipe imported from this link already (any form of the same link), if any. */
+  const findBySource = useCallback(
+    (url: string | null | undefined) => {
+      const key = normalizeSourceUrl(url);
+      return key ? saved.customRecipes.find((r) => normalizeSourceUrl(r.sourceUrl) === key) : undefined;
+    },
+    [saved.customRecipes],
   );
   const manualRecipeCount = useMemo(() => saved.customRecipes.filter((r) => r.origin !== 'import').length, [saved.customRecipes]);
   const countImport = useCallback(() => update((s) => ({ importsUsed: s.importsUsed + 1 })), [update]);
@@ -490,6 +503,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       getRecipe,
       addRecipe,
       updateRecipe,
+      findBySource,
       manualRecipeCount,
       deleteRecipe,
       setRecipeImage,
@@ -522,7 +536,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       undoGroceries,
     }),
     [
-      saved, hydrated, setBuddy, setProfile, completeOnboarding, setPro, addPet, claimBonus, addListDone, unlockBadges, setLastLevel, markImportHintSeen, markUpkeepDone, countImport, draft, addPantry, removePantry, restorePantry, allRecipes, getRecipe, addRecipe, updateRecipe, manualRecipeCount, deleteRecipe, setRecipeImage, setNote, setUnits, setGoals, logCooked, rateCooked, setCookedPhoto,
+      saved, hydrated, setBuddy, setProfile, completeOnboarding, setPro, addPet, claimBonus, addListDone, unlockBadges, setLastLevel, markImportHintSeen, markUpkeepDone, countImport, draft, addPantry, removePantry, restorePantry, allRecipes, getRecipe, addRecipe, updateRecipe, findBySource, manualRecipeCount, deleteRecipe, setRecipeImage, setNote, setUnits, setGoals, logCooked, rateCooked, setCookedPhoto,
       category, tags, toggleTag, showOnlyTag, clearFilters, isFavorite, toggleFavorite, addCookbook, renameCookbook,
       deleteCookbook, restoreCookbook, toggleInCookbook, setMeal, toggleGrocery, addIngredients, addWeekToGroceries, addCustomItem,
       removeGrocery, clearCompleted, undoGroceries,
