@@ -6,6 +6,7 @@
  */
 import { AiError, fromAi, fromStructured, nutritionFromAi, type AiCaller, type NutritionCaller } from './extract.ts';
 import { LIMITS, sha256, type Limiter, type ResultCache } from './limits.ts';
+import { handleDiscover, type DiscoverStore, type StepWriter } from './discover.ts';
 import { isShortLink, normalizeSourceUrl } from './links.ts';
 import type { SharedStore } from './shared.ts';
 import { SourceError, gatherSource, previewSource } from './sources.ts';
@@ -21,6 +22,12 @@ export type Deps = {
   cache: ResultCache | null;
   /** Imports already read for anyone (shared_recipes): reused instead of calling the AI again. */
   shared?: SharedStore | null;
+  /** Discover: the owner's published recipes. */
+  discover?: DiscoverStore | null;
+  /** The DISCOVER_ADMIN_TOKEN secret ("" or missing = no admin). */
+  adminToken?: string;
+  /** Rewrites steps in the app's own words before publishing to Discover. */
+  stepWriter?: StepWriter | null;
   salt: string;
   dailyAiCap?: number;
   fetchImpl?: typeof fetch;
@@ -30,11 +37,13 @@ export type Deps = {
 const CORS = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'POST, OPTIONS',
-  'access-control-allow-headers': 'content-type, x-install-id, authorization, apikey, x-client-info',
+  'access-control-allow-headers': 'content-type, x-install-id, x-admin-token, authorization, apikey, x-client-info',
   'access-control-max-age': '86400',
 };
 
 const MAX_BODY = 64 * 1024;
+/** Publishing to Discover carries the photo (admin only). */
+const MAX_ADMIN_BODY = 8 * 1024 * 1024;
 
 const STATUS: Record<ImportFailure['code'], number> = {
   invalid_input: 400,
@@ -63,13 +72,26 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
   const installId = req.headers.get('x-install-id') ?? '';
   if (!/^[A-Za-z0-9-]{16,64}$/.test(installId)) return fail({ ok: false, code: 'invalid_input', message: 'Please update the app and try again.' });
   const raw = await req.text();
-  if (raw.length > MAX_BODY) return fail({ ok: false, code: 'invalid_input', message: 'That’s too much text to import at once.' });
-  let body: { url?: unknown; text?: unknown; preview?: unknown; nutrition?: unknown };
+  if (raw.length > (req.headers.get('x-admin-token') ? MAX_ADMIN_BODY : MAX_BODY)) return fail({ ok: false, code: 'invalid_input', message: 'That’s too much text to import at once.' });
+  let body: { url?: unknown; text?: unknown; preview?: unknown; nutrition?: unknown; action?: unknown };
   try {
     body = JSON.parse(raw) as typeof body;
   } catch {
     return fail({ ok: false, code: 'invalid_input', message: 'Paste a link or recipe text.' });
   }
+  /* ---------- Discover and admin (discover.ts) ---------- */
+  if (typeof body.action === 'string' && /^(discover|admin)\.[a-z]+$/.test(body.action)) {
+    const ipAddr = (req.headers.get('cf-connecting-ip') ?? req.headers.get('x-forwarded-for')?.split(',')[0] ?? 'unknown').trim();
+    return handleDiscover(body.action, body as Record<string, unknown>, req, installId, ipAddr, {
+      store: deps.discover ?? null,
+      limiter: deps.limiter,
+      salt: deps.salt,
+      adminToken: deps.adminToken ?? '',
+      stepWriter: deps.stepWriter ?? null,
+      log,
+    }, CORS);
+  }
+
   /* ---------- nutrition only: a saved import, counted again with the current rules ---------- */
   if (body.nutrition && typeof body.nutrition === 'object') return nutritionOnly(body.nutrition as Record<string, unknown>, installId, deps);
 

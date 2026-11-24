@@ -9,7 +9,8 @@
  * SUPABASE_URL and the server key (SUPABASE_SECRET_KEYS, or the legacy SUPABASE_SERVICE_ROLE_KEY)
  * are provided by Supabase automatically.
  */
-import { claudeCaller, claudeNutritionCaller } from './lib/extract.ts';
+import { SupabaseDiscover } from './lib/discover.ts';
+import { claudeCaller, claudeNutritionCaller, claudeStepWriter } from './lib/extract.ts';
 import { SupabaseShared } from './lib/shared.ts';
 import { handle } from './lib/handler.ts';
 import { SupabaseCache, SupabaseLimiter, pickServerKey } from './lib/limits.ts';
@@ -30,6 +31,10 @@ const deps = {
   limiter: new SupabaseLimiter(supabaseUrl, serviceKey),
   cache: new SupabaseCache(supabaseUrl, serviceKey),
   shared: new SupabaseShared(supabaseUrl, serviceKey),
+  discover: new SupabaseDiscover(supabaseUrl, serviceKey),
+  // Admin mode (publishing to Discover): only with this secret, set by the owner. Never in the app.
+  adminToken: env('DISCOVER_ADMIN_TOKEN'),
+  stepWriter: key ? claudeStepWriter(key, env('IMPORT_MODEL') || undefined) : null,
   salt: salt || 'unset-salt',
   dailyAiCap: Number(env('IMPORT_DAILY_CAP')) || undefined,
   log: (e: Record<string, unknown>) => console.log(JSON.stringify(e)),

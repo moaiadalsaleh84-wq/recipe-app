@@ -14,11 +14,12 @@
  * Limits and the cache are kept in memory and reset when you restart.
  */
 import { createServer } from 'node:http';
-import { claudeCaller, claudeNutritionCaller, type AiCaller, type AiNutrition, type NutritionCaller } from '../supabase/functions/import-recipe/lib/extract.ts';
+import { claudeCaller, claudeNutritionCaller, claudeStepWriter, type AiCaller, type AiNutrition, type NutritionCaller } from '../supabase/functions/import-recipe/lib/extract.ts';
 import { handle } from '../supabase/functions/import-recipe/lib/handler.ts';
 import { parseLine } from '../supabase/functions/import-recipe/lib/ingredients.ts';
 import { LIMITS, MemoryCache, MemoryLimiter } from '../supabase/functions/import-recipe/lib/limits.ts';
 import { MemoryShared } from '../supabase/functions/import-recipe/lib/shared.ts';
+import { MemoryDiscover } from '../supabase/functions/import-recipe/lib/discover.ts';
 import { FIXTURE_PAGES, FIXTURE_ROUTES } from './import-fixtures.ts';
 
 const port = Number(process.env.PORT ?? 8787);
@@ -117,6 +118,15 @@ const deps = {
   limiter: new MemoryLimiter(),
   cache: new MemoryCache(),
   shared: new MemoryShared(),
+  discover: new MemoryDiscover(),
+  // Local testing only: ADMIN_TOKEN=… turns admin on (the real one is the DISCOVER_ADMIN_TOKEN secret).
+  adminToken: process.env.ADMIN_TOKEN ?? '',
+  // The stand-in "rewrites" by rephrasing the start of each step; the real one is the AI.
+  stepWriter: process.env.FAKE_AI
+    ? async (steps: string[]) => steps.map((st) => `Next, ${st.charAt(0).toLowerCase()}${st.slice(1)}`.replace(/^Next, next, /i, 'Next, '))
+    : key
+      ? claudeStepWriter(key, process.env.IMPORT_MODEL || undefined)
+      : null,
   salt: 'dev',
   fetchImpl: process.env.FIXTURES ? fixtureFetch : undefined,
   log: (e: Record<string, unknown>) => console.log(new Date().toISOString(), JSON.stringify(e)),
