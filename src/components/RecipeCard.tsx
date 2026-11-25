@@ -7,7 +7,7 @@ import type { Recipe } from '../data/mock';
 import { useStore } from '../state/store';
 import { haptics } from '../lib/haptics';
 import { fonts, useTheme, pop } from '../theme';
-import { nb } from '../lib/text';
+import { nb, duration } from '../lib/text';
 import { Icon } from './Icon';
 import { PhotoFrame, RecipePhoto } from './PhotoFrame';
 import { PressableScale } from './PressableScale';
@@ -86,10 +86,10 @@ export function HeartIcon({ on, size, offColor }: { on: boolean; size: number; o
   );
 }
 
-const useMeta = () => (r: Recipe) => `${nb(r.minutes, 'min')} · ${nb(r.calories, 'kcal')}`;
+const useMeta = () => (r: Recipe) => `${duration(r.minutes)} · ${nb(r.calories, 'kcal')}`;
 
 /** The one meta line under a card's title: "75 min · Easy". */
-export const cardMeta = (r: Pick<Recipe, 'minutes' | 'difficulty'>) => `${nb(r.minutes, 'min')}\u00A0·\u00A0${r.difficulty}`;
+export const cardMeta = (r: Pick<Recipe, 'minutes' | 'difficulty'>) => `${duration(r.minutes)}\u00A0· ${r.difficulty}`;
 
 /**
  * Under a card's photo: "@creator" for imported and Discover recipes (1 line), the title (2 lines,
@@ -109,7 +109,8 @@ export function CardText({ creator, title, meta, metaTestID }: { creator?: strin
           {title}
         </Text>
       </View>
-      <Text style={[styles.cardMetaText, { color: t.colors.secondaryLabel }]} numberOfLines={1} testID={metaTestID}>
+      {/* Never cut a time short: with large text the meta may take a second line. */}
+      <Text style={[styles.cardMetaText, { color: t.colors.secondaryLabel }]} numberOfLines={2} testID={metaTestID}>
         {meta}
       </Text>
     </View>
@@ -200,12 +201,12 @@ export function TonightCard({
             <SourceMark recipe={recipe} />
           </PhotoFrame>
           <View style={[styles.tonightText, styles.tonightWhite]}>
-            <Text style={[t.type.title1, { color: t.colors.label, fontSize: 20, lineHeight: 25 }]}>
+            <Text style={[t.type.title1, { color: t.colors.label, fontSize: 20, lineHeight: 25 }]} numberOfLines={3}>
               {recipe.title}
             </Text>
             {/* Nothing at home yet: just how big the job is. From one item up: how close you are. */}
             <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]} testID="tonight-meta">
-              {nb(recipe.minutes, 'min')} · {needed === 0 ? recipe.difficulty : have === 0 ? nb(needed, needed === 1 ? 'ingredient' : 'ingredients') : `you have ${have} of\u00A0${needed}`}
+              {duration(recipe.minutes)} · {needed === 0 ? recipe.difficulty : have === 0 ? nb(needed, needed === 1 ? 'ingredient' : 'ingredients') : `you have ${have} of\u00A0${needed}`}
             </Text>
             {note ? (
               <Text style={[t.type.caption1, { color: t.colors.label }]} testID="tonight-note">

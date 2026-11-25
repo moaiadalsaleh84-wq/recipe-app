@@ -2,8 +2,7 @@ import { router } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { Linking, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Text } from '../../../components/Text';
-import Animated, { FadeIn, FadeInRight, FadeOut, LinearTransition, useReducedMotion } from 'react-native-reanimated';
-import { enter } from '../../../motion';
+import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { Icon, type IconName } from '../../../components/Icon';
 import { Menu } from '../../../components/Menu';
 import { PopButton, PopCard, PopChip, PopIconButton } from '../../../components/pop';
@@ -55,7 +54,6 @@ const MOODS: { id: Mood | 'surprise'; label: string; hint: string; icon: IconNam
 ];
 
 export default function RecipesScreen() {
-  const reduceMotion = useReducedMotion();
   const t = useTheme();
   const toast = useToast();
   const { width } = useWindowDimensions();
@@ -310,7 +308,8 @@ export default function RecipesScreen() {
           ) : (
             <View style={[styles.grid, { gap, rowGap: t.spacing.md }]}>
               {moodRecipes.map((r, i) => (
-                <Animated.View key={r.id} entering={enter(i, reduceMotion)} style={styles.cardSlot}>
+                // One entrance per container: the mood view fades in; its cards are just there.
+                <Animated.View key={r.id} style={styles.cardSlot}>
                   <RecipeCard recipe={r} width={cardWidth} />
                 </Animated.View>
               ))}
@@ -486,7 +485,9 @@ export default function RecipesScreen() {
             <View style={[styles.grid, { gap, rowGap: t.spacing.md }]}>
               {sorted.map((r, i) => (
                 // Cards glide when the order changes, but not in long lists (over 20): too much motion.
-                <Animated.View key={r.id} layout={sorted.length <= 20 ? LinearTransition.duration(220) : undefined} entering={enter(i, reduceMotion)} style={styles.cardSlot}>
+                // No entrance per card: Home fades in as one, and filtering (many times a day) shows
+                // results at once. Reordering glides.
+                <Animated.View key={r.id} layout={sorted.length <= 20 ? LinearTransition.duration(220) : undefined} style={styles.cardSlot}>
                   <RecipeCard recipe={r} width={cardWidth} />
                 </Animated.View>
               ))}
@@ -553,10 +554,11 @@ function Rail({ title, subtitle, recipes, width, action }: { title: string; subt
       <SectionHeader title={title} subtitle={subtitle} action={action} />
       <HorizontalList gap={t.spacing.sm} contentStyle={styles.rail}>
         {recipes.map((r, i) => (
-          // A row, so the card stretches to the tallest card's height.
-          <Animated.View key={r.id} entering={FadeInRight.duration(360).delay(i * 60)} style={styles.cardSlot}>
+          // A row, so the card stretches to the tallest card's height. No entrance of its own: the
+          // section around it carries the motion (one entrance per container).
+          <View key={r.id} style={styles.cardSlot}>
             <RecipeCard recipe={r} width={width} />
-          </Animated.View>
+          </View>
         ))}
       </HorizontalList>
     </>

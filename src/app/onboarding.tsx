@@ -29,7 +29,7 @@ import { askReminderPermission, reminderText } from '../lib/dinnerReminders';
 import { haptics } from '../lib/haptics';
 import { cookableCount, rankPicks, type Pick } from '../lib/onboardingPicks';
 import { restore } from '../lib/purchases';
-import { nb, noWidow } from '../lib/text';
+import { nb, noWidow, duration as cookTime } from '../lib/text';
 import { duration, uiEase } from '../motion';
 import { useStore } from '../state/store';
 import { fonts, noWidows, pop, stroke } from '../theme';
@@ -753,7 +753,7 @@ function FirstPick({ name, servings, picks, onCook }: { name: string; servings: 
                   {pick.recipe.title}
                 </Text>
                 <View style={[styles.wrap, { marginTop: 12, gap: 8 }]}>
-                  <Tag icon="clock" label={nb(pick.recipe.minutes, 'min')} color={pop.tomatoTint} />
+                  <Tag icon="clock" label={cookTime(pick.recipe.minutes)} color={pop.tomatoTint} />
                   <Tag icon="people" label={`For\u00A0${servings}`} color={pop.skyTint} />
                   <Tag icon="fridge" label={pick.have > 0 ? `You have ${pick.have} of\u00A0${pick.needed}` : nb(pick.needed, 'ingredients')} color={pop.leafTint} />
                 </View>

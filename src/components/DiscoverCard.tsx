@@ -18,8 +18,8 @@ import { PressableScale } from './PressableScale';
 import { Text } from './Text';
 import { useToast } from './Toast';
 
-/** "1 save", "12 saves", "1.2k saves". */
-export const savesLabel = (n: number) => `${n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, '')}k` : n} ${n === 1 ? 'save' : 'saves'}`;
+/** "New" before the first save, then "1 save", "12 saves", "1.2k saves". */
+export const savesLabel = (n: number) => n === 0 ? 'New' : `${n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, '')}k` : n} ${n === 1 ? 'save' : 'saves'}`;
 
 /** Save a Discover recipe into your recipes (once: the same link is never saved twice). */
 export function useDiscoverSave() {

@@ -18,7 +18,7 @@ import { totalsFor, useStore } from '../../../state/store';
 import { fonts, pop, popCycle, useTheme } from '../../../theme';
 import { weekDays } from '../../../lib/week';
 import { fillDinners } from '../../../lib/planFill';
-import { nb } from '../../../lib/text';
+import { nb, duration } from '../../../lib/text';
 import { PhotoFrame } from '../../../components/PhotoFrame';
 
 
@@ -235,7 +235,7 @@ export default function PlanScreen() {
                   recipe={recipe}
                   thumb={72}
                   label={meal}
-                  subtitle={`${nb(recipe.minutes, 'min')} · ${nb(recipe.calories, 'kcal')}`}
+                  subtitle={`${duration(recipe.minutes)} · ${nb(recipe.calories, 'kcal')}`}
                   trailing={
                     <PopIconButton
                       icon="plus"
@@ -276,7 +276,7 @@ function MealCard({ meal, recipe, onChange, onRemove }: { meal: string; recipe: 
             {recipe.title}
           </Text>
           <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, alignSelf: 'stretch' }]} numberOfLines={1}>
-            {nb(recipe.minutes, 'min')} · {nb(recipe.calories, 'kcal')}
+            {duration(recipe.minutes)} · {nb(recipe.calories, 'kcal')}
           </Text>
         </View>
       </PressableScale>
