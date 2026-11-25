@@ -65,8 +65,9 @@ export default function PlanPicker() {
         {matches.length === 0 && (
           <Text style={[t.type.body, { color: t.colors.secondaryLabel, textAlign: 'center', marginTop: 24 }]}>No recipes match “{query.trim()}”.</Text>
         )}
-        {suggested.length > 0 && <Section title={`Suggested for ${meal.toLowerCase()}`}>{list(suggested)}</Section>}
-        {others.length > 0 && <Section title={suggested.length ? 'More recipes' : 'All recipes'}>{list(others)}</Section>}
+        {/* Your recipes, for you to choose from: those made for this meal first, no "suggested" picks. */}
+        {suggested.length > 0 && <Section title={`${meal} recipes`}>{list(suggested)}</Section>}
+        {others.length > 0 && <Section title={suggested.length ? 'Other recipes' : 'All recipes'}>{list(others)}</Section>}
       </ScrollView>
     </View>
   );

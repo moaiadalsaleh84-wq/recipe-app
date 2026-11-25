@@ -7,12 +7,11 @@ import { enter } from '../../../motion';
 import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
 import { Reveal } from '../../../components/Reveal';
-import { RecipeRow, openRecipe } from '../../../components/RecipeCard';
-import { Lift, PopButton, PopCard, PopChip, PopIconButton } from '../../../components/pop';
+import { openRecipe } from '../../../components/RecipeCard';
+import { Lift, PopButton, PopCard, PopChip } from '../../../components/pop';
 import { useToast } from '../../../components/Toast';
-import { IconButton, Section, SectionHeader, Separator } from '../../../components/ui';
+import { IconButton, SectionHeader } from '../../../components/ui';
 import { meals, type Meal, type Recipe } from '../../../data/mock';
-import { haptics } from '../../../lib/haptics';
 import { TabScreen } from '../../../components/TabScreen';
 import { totalsFor, useStore } from '../../../state/store';
 import { fonts, pop, popCycle, useTheme } from '../../../theme';
@@ -25,7 +24,7 @@ export default function PlanScreen() {
   const reduceMotion = useReducedMotion();
   const t = useTheme();
   const toast = useToast();
-  const { plan, setMeal, getRecipe, goals, isPro, allRecipes } = useStore();
+  const { plan, setMeal, getRecipe, goals, isPro } = useStore();
   const [day, setDay] = useState(weekDays.find((d) => d.isToday)?.index ?? 0);
   const dayPlan = useMemo(() => plan[day] ?? {}, [plan, day]);
   const plannedToday = meals.filter((m) => dayPlan[m]).length;
@@ -53,22 +52,6 @@ export default function PlanScreen() {
     });
   };
 
-  // Up to three ideas, one for each empty meal, matching the meal when a recipe is made for it.
-  const ideas = useMemo(() => {
-    const used = new Set(meals.map((m) => dayPlan[m]).filter(Boolean));
-    const out: { recipe: (typeof allRecipes)[number]; meal: Meal }[] = [];
-    for (const meal of meals.filter((m) => !dayPlan[m])) {
-      const pool = allRecipes.filter((r) => !used.has(r.id) && r.category !== 'Dessert');
-      const fits = pool.filter((r) => r.category === meal);
-      const list = fits.length ? fits : pool;
-      const pick = list[(day * 3 + out.length) % Math.max(1, list.length)];
-      if (pick) {
-        used.add(pick.id);
-        out.push({ recipe: pick, meal });
-      }
-    }
-    return out;
-  }, [allRecipes, dayPlan, day]);
 
   // Adding and changing a meal both open the recipe picker for that slot.
   const addMeal = (meal: Meal) => router.push({ pathname: '/plan-picker', params: { day: String(day), meal } });
@@ -177,38 +160,6 @@ export default function PlanScreen() {
         </Reveal>
       )}
 
-      {/* Ideas to fill the day: one tap plans them. */}
-      {ideas.length > 0 && (
-        <>
-          <SectionHeader title={`Ideas for ${weekDays[day].isToday ? 'today' : weekDays[day].long}`} subtitle="One tap adds them to the plan" />
-          <Section>
-            {ideas.map(({ recipe, meal }, i) => (
-              <View key={recipe.id}>
-                {i > 0 && <Separator inset={96} />}
-                <RecipeRow
-                  recipe={recipe}
-                  thumb={72}
-                  label={meal}
-                  subtitle={`${duration(recipe.minutes)} · ${nb(recipe.calories, 'kcal')}`}
-                  trailing={
-                    <PopIconButton
-                      icon="plus"
-                      accessibilityLabel={`Plan ${recipe.title} for ${meal.toLowerCase()} on ${weekDays[day].long}`}
-                      color={t.pop.sunshine}
-                      iconSize={17}
-                      onPress={() => {
-                        setMeal(day, meal, recipe.id);
-                        haptics.success();
-                        toast({ message: `${recipe.title} planned for ${meal.toLowerCase()}`, icon: 'calendar', action: { label: 'Undo', onPress: () => setMeal(day, meal, null) } });
-                      }}
-                    />
-                  }
-                />
-              </View>
-            ))}
-          </Section>
-        </>
-      )}
     </TabScreen>
   );
 }
