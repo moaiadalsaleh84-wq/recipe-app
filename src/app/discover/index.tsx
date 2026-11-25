@@ -2,6 +2,7 @@
  * Discover: every recipe the owner published, with search ("What would you like to cook?") and
  * filters (cuisine, meal type, ingredient, diet). Most saved this week first.
  */
+import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { DiscoverCard } from '../../components/DiscoverCard';
@@ -25,6 +26,7 @@ export default function DiscoverScreen() {
   const [items, setItems] = useState<DiscoverCardData[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const seq = useRef(0);
+  const [retry, setRetry] = useState(0);
 
   // Search waits for a short pause in typing; filters apply at once.
   useEffect(() => {
@@ -42,7 +44,7 @@ export default function DiscoverScreen() {
       q ? 300 : 0,
     );
     return () => clearTimeout(id);
-  }, [q, filters]);
+  }, [q, filters, retry]);
 
   const toggle = <K extends keyof DiscoverFilters>(key: K, value: DiscoverFilters[K]) => setFilters((f) => ({ ...f, [key]: f[key] === value ? undefined : value }));
   const filtered = !!q.trim() || Object.values(filters).some(Boolean);
@@ -69,7 +71,7 @@ export default function DiscoverScreen() {
         {chipRow('Diet', DIETS.map((d) => ({ label: d, selected: filters.diet === d, onPress: () => toggle('diet', d) })))}
 
         {error && !items ? (
-          <EmptyState icon="info" title="Couldn’t load Discover" message={error} />
+          <EmptyState icon="info" title="Couldn’t load Discover" message={error} action={{ label: 'Try again', onPress: () => setRetry((n) => n + 1) }} />
         ) : !items ? (
           <View style={[styles.grid, { gap }]}>
             {[0, 1, 2, 3].map((k) => (
@@ -81,7 +83,7 @@ export default function DiscoverScreen() {
             icon="search"
             title={filtered ? 'No recipes match' : 'Nothing here yet'}
             message={filtered ? 'Try fewer filters or another word.' : 'New recipes appear here soon.'}
-            action={filtered ? { label: 'Clear filters', onPress: () => { setQ(''); setFilters({}); } } : undefined}
+            action={filtered ? { label: 'Clear filters', onPress: () => { setQ(''); setFilters({}); } } : { label: 'Back to recipes', onPress: () => (router.canGoBack() ? router.back() : router.replace('/')) }}
           />
         ) : (
           <View style={[styles.grid, { gap }]} testID="discover-grid">

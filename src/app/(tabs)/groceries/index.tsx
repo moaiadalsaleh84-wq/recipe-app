@@ -116,12 +116,13 @@ export default function GroceriesScreen() {
         <Reveal index={0}>
           <PopCard color={done === total ? t.pop.leafTint : t.pop.white} contentStyle={styles.hero}>
             <View style={styles.heroTop}>
-              <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
+              {/* All done: the bar is full and green, and the message slides in. */}
+              <Animated.View key={done === total ? 'all-done' : 'counting'} entering={done === total ? enter(0, reduceMotion) : undefined} style={{ flex: 1, gap: 2, minWidth: 0 }}>
                 <Text style={[t.type.title2, { color: t.colors.label }]} testID="grocery-progress">
                   {done === total ? 'Everything’s in the\u00A0basket!' : `${done} of ${total} in your basket`}
                 </Text>
                 {done === total && <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{'Nice shopping. Clear the list when you’re ready.'}</Text>}
-              </View>
+              </Animated.View>
             </View>
             <View style={styles.heroBar}>
               <View style={{ flex: 1 }}>
@@ -162,7 +163,6 @@ export default function GroceriesScreen() {
           title="Your list is empty"
           message={tonight ? `Tonight’s pick is ${tonight.recipe.title}. Add what you’re missing in one tap.` : 'Add items here, or add a recipe’s ingredients from its page or your weekly plan.'}
           action={tonight ? { label: 'Add tonight’s pick ingredients', icon: 'cartAdd', onPress: addTonight } : { label: 'Browse recipes', icon: 'book', onPress: () => router.navigate('/') }}
-          secondary={tonight ? { label: 'Browse recipes', onPress: () => router.navigate('/') } : undefined}
         />
       ) : (
         <>

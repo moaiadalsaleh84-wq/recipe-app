@@ -305,6 +305,7 @@ export default function RecipesScreen() {
               icon={moodInfo.icon}
               title={mood === 'pantry' ? 'Nothing from your pantry yet' : 'Nothing here yet'}
               message={mood === 'pantry' ? 'Add what you have on the Pantry tab and matching recipes show up here.' : 'Add a few more recipes and they’ll show up here.'}
+              action={mood === 'pantry' ? { label: 'Go to Pantry', onPress: () => router.navigate('/pantry') } : { label: 'Import a recipe', onPress: () => router.push('/import') }}
             />
           ) : (
             <View style={[styles.grid, { gap, rowGap: t.spacing.md }]}>

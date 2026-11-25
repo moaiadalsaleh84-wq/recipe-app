@@ -85,7 +85,7 @@ export function RecipePhoto({
             source={source}
             style={{ position: 'absolute', width: `${100 / crop.w}%`, height: `${100 / crop.h}%`, left: `${(-crop.x / crop.w) * 100}%`, top: `${(-crop.y / crop.h) * 100}%` }}
             contentFit="cover"
-            transition={250}
+            transition={200}
             cachePolicy="memory-disk"
             onError={() => setFailed(image)}
             accessibilityIgnoresInvertColors
@@ -104,7 +104,7 @@ export function RecipePhoto({
           placeholderContentFit="cover"
           style={[StyleSheet.absoluteFill, round]}
           contentFit="cover"
-          transition={250}
+          transition={200}
           cachePolicy="memory-disk"
           onLoad={() => setLoaded(image)}
           onError={() => setFailed(image)}
@@ -162,7 +162,7 @@ export function PhotoFrame({ radius, corners = 'all', edge = 'all', recipe, uri,
               source={{ uri: photoUri(uri) }}
               style={[StyleSheet.absoluteFill, cornerRadii(inner, corners)]}
               contentFit="cover"
-              transition={250}
+              transition={200}
               onError={onError}
               accessibilityLabel={accessibilityLabel}
               accessibilityIgnoresInvertColors

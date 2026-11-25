@@ -211,7 +211,7 @@ export default function PantryScreen() {
             ))}
 
           {matches.length === 0 ? (
-            <EmptyState icon="pot" title="No matches yet" message="None of your recipes use these items. Add a few more, or import a recipe you love." />
+            <EmptyState icon="pot" title="No matches yet" message="None of your recipes use these items. Add a few more, or import a recipe you love." action={{ label: 'Import a recipe', onPress: () => router.push('/import') }} />
           ) : (
             matches.map((m, i) => (
               <Animated.View key={m.recipe.id} entering={enter(i, reduceMotion)}>
