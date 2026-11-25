@@ -204,8 +204,9 @@ function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; serv
   const inStep = !onStep ? [] : meta ? meta.ingredientIds.map((id) => recipe.ingredients.find((i) => i.id === id)).filter((i): i is Ingredient => !!i) : ingredientsInStep(steps[page - 1], recipe.ingredients);
   const stepTimers = !onStep ? [] : meta ? (meta.timerSeconds ? [{ label: durationLabel(meta.timerSeconds), seconds: meta.timerSeconds }] : []) : uniqueTimers(findTimers(stepText));
   const timerFor = (label: string) => timers.find((tm) => tm.recipeId === recipe.id && tm.step === page && tm.label === label);
-  // Timers that aren't on this step float as small pills, so you never lose them.
-  const floating = timers.filter((tm) => !(tm.recipeId === recipe.id && tm.step === page && stepTimers.some((s) => s.label === tm.label)));
+  // This recipe's timers from other steps float as small pills, so you never lose them. Timers
+  // from other recipes don't show here.
+  const floating = timers.filter((tm) => tm.recipeId === recipe.id && !(tm.step === page && stepTimers.some((s) => s.label === tm.label)));
   const color = onStep ? popCycle[(page - 1) % popCycle.length] : popCycle[0];
   const bg = page === 0 ? pop.sunshineTint : page === last ? pop.sunshine : color.tint;
 
@@ -272,7 +273,7 @@ function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; serv
             </View>
           )}
 
-          {/* Timers from other steps (or recipes), as small floating pills */}
+          {/* Timers from this recipe's other steps, as small floating pills */}
           {floating.length > 0 && (
             <View style={styles.pills}>
               {floating.map((tm) => (
