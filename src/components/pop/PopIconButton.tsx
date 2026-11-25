@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Text } from '../Text';
 import { pressIn, pressOut } from '../../motion';
@@ -24,12 +25,14 @@ type Props = {
   haptic?: HapticKind | null;
   style?: StyleProp<ViewStyle>;
   testID?: string;
+  /** Drawn in place of the icon (e.g. the animated heart). */
+  children?: ReactNode;
 };
 
 /**
  * A round icon button: white, thick ink outline, a 3px solid shadow. Presses down onto its shadow.
  */
-export function PopIconButton({ icon, onPress, accessibilityLabel, accessibilityHint, color = pop.white, iconColor = pop.ink, size = 44, iconSize, badge, disabled, haptic = null, style, testID }: Props) {
+export function PopIconButton({ icon, onPress, accessibilityLabel, accessibilityHint, color = pop.white, iconColor = pop.ink, size = 44, iconSize, badge, disabled, haptic = null, style, testID, children }: Props) {
   const reduceMotion = useReducedMotion();
   const down = useSharedValue(0);
   const depth = 3;
@@ -53,7 +56,7 @@ export function PopIconButton({ icon, onPress, accessibilityLabel, accessibility
     >
       <View style={[styles.shadow, { top: depth, width: d, height: d, borderRadius: d / 2 }]} />
       <Animated.View style={[styles.face, { width: d, height: d, borderRadius: d / 2, backgroundColor: disabled ? pop.lilacTint : color }, move]}>
-        <Icon name={icon} size={iconSize ?? Math.round(d * 0.42)} color={disabled ? pop.inkMuted : iconColor} weight="bold" />
+        {children ?? <Icon name={icon} size={iconSize ?? Math.round(d * 0.42)} color={disabled ? pop.inkMuted : iconColor} weight="bold" />}
       </Animated.View>
       {badge ? (
         <View style={styles.badge} pointerEvents="none">

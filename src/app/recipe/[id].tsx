@@ -22,7 +22,7 @@ import { pantryHas } from '../../lib/pantry';
 import { FoodIcon } from '../../components/FoodIcon';
 import { Icon, type IconName } from '../../components/Icon';
 import { PressableScale } from '../../components/PressableScale';
-import { RecipeCard } from '../../components/RecipeCard';
+import { HeartIcon, RecipeCard } from '../../components/RecipeCard';
 import { mainIngredient } from '../../lib/bonus';
 import { pantryMatch } from '../../lib/moods';
 import { useToast } from '../../components/Toast';
@@ -135,14 +135,10 @@ export default function RecipeScreen() {
     .map((x) => x.r);
 
   const onFavorite = () => {
+    // No message: the heart shows it (tap again to undo), with a little burst when liked.
     const now = toggleFavorite(recipe.id);
     if (now) haptics.success();
-    toast({
-      message: now ? 'Added to Favorites' : 'Removed from Favorites',
-      icon: now ? 'heartFill' : 'heart',
-      tone: now ? 'success' : 'info',
-      action: { label: 'Undo', onPress: () => toggleFavorite(recipe.id) },
-    });
+    else haptics.tap();
   };
 
   const onAdd = (which: 'all' | 'missing') => {
@@ -224,7 +220,9 @@ export default function RecipeScreen() {
           {fromDiscover ? (
             <PopIconButton icon="heart" accessibilityLabel="Save to your recipes" onPress={() => void onSaveDiscover()} haptic={null} testID="discover-save-recipe" />
           ) : (
-            <PopIconButton icon={fav ? 'heartFill' : 'heart'} accessibilityLabel={fav ? 'Remove from Favorites' : 'Add to Favorites'} onPress={onFavorite} iconColor={fav ? t.pop.berry : t.pop.ink} haptic={null} />
+            <PopIconButton icon={fav ? 'heartFill' : 'heart'} accessibilityLabel={fav ? 'Remove from Favorites' : 'Add to Favorites'} onPress={onFavorite} haptic={null}>
+              <HeartIcon on={fav} size={18} offColor={t.pop.ink} />
+            </PopIconButton>
           )}
           <PopIconButton icon="more" accessibilityLabel="More: share or save to a cookbook" onPress={() => setMenuOpen(true)} />
         </View>
@@ -232,6 +230,9 @@ export default function RecipeScreen() {
       <Animated.ScrollView
         onScroll={onScroll}
         scrollEventThrottle={16}
+        // No pulling past the top: it only showed an empty gap above the photo.
+        bounces={false}
+        overScrollMode="never"
         contentInsetAdjustmentBehavior="never"
         keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled"
