@@ -278,7 +278,8 @@ export default function ProgressScreen() {
         {(allStickers ? stickers : [...stickers].sort((a, b) => Number((fun.stickers ?? []).includes(b.id)) - Number((fun.stickers ?? []).includes(a.id))).slice(0, 4)).map((st) => {
           const got = (fun.stickers ?? []).includes(st.id);
           return (
-            <View key={st.id} style={allStickers ? styles.stickerCell : styles.stickerSmall} accessible accessibilityLabel={got ? `${st.name} sticker` : 'Sticker not found yet'}>
+            // Opening the whole book: the stickers that weren't shown yet fade in (the 4 already there stay put).
+            <Animated.View key={st.id} entering={allStickers && !reduceMotion ? FadeIn.duration(200) : undefined} style={allStickers ? styles.stickerCell : styles.stickerSmall} accessible accessibilityLabel={got ? `${st.name} sticker` : 'Sticker not found yet'}>
               <View style={[styles.stickerDisc, !allStickers && styles.stickerDiscSmall, got ? { backgroundColor: t.pop[st.color], borderColor: t.pop.ink } : { backgroundColor: t.pop.lilacTint, borderColor: t.pop.lilac, borderStyle: 'dashed' }]}>
                 <Icon name={st.icon} size={allStickers ? 22 : 18} color={got ? t.pop.ink : t.pop.lilac} weight="bold" />
               </View>
@@ -287,7 +288,7 @@ export default function ProgressScreen() {
                   {got ? st.name : '?'}
                 </Text>
               )}
-            </View>
+            </Animated.View>
           );
         })}
         {!allStickers && (

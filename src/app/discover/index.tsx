@@ -5,6 +5,7 @@
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 import { DiscoverCard } from '../../components/DiscoverCard';
 import { PageHeader } from '../../components/PageHeader';
 import { Text } from '../../components/Text';
@@ -27,6 +28,7 @@ export default function DiscoverScreen() {
   const [error, setError] = useState<string | null>(null);
   const seq = useRef(0);
   const [retry, setRetry] = useState(0);
+  const reduceMotion = useReducedMotion();
 
   // Search waits for a short pause in typing; filters apply at once.
   useEffect(() => {
@@ -86,11 +88,12 @@ export default function DiscoverScreen() {
             action={filtered ? { label: 'Clear filters', onPress: () => { setQ(''); setFilters({}); } } : { label: 'Back to recipes', onPress: () => (router.canGoBack() ? router.back() : router.replace('/')) }}
           />
         ) : (
-          <View style={[styles.grid, { gap }]} testID="discover-grid">
+          // The cards fade in over the loading boxes once (one entrance for the whole grid).
+          <Animated.View entering={reduceMotion ? undefined : FadeIn.duration(200)} style={[styles.grid, { gap }]} testID="discover-grid">
             {items.map((c) => (
               <DiscoverCard key={c.id} card={c} width={cardWidth} />
             ))}
-          </View>
+          </Animated.View>
         )}
       </ScrollView>
     </View>
