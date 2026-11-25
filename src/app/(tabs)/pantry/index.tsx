@@ -83,6 +83,7 @@ export default function PantryScreen() {
           onChangeText={setQuery}
           onSubmitEditing={() => add(query)}
           placeholder={pantry.length ? 'Add or find an item' : 'Add what you have, e.g. eggs'}
+          maxLength={60}
           placeholderTextColor={t.colors.tertiaryLabel}
           returnKeyType="done"
           accessibilityLabel="Add a pantry item"

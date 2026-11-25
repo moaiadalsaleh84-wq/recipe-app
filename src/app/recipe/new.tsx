@@ -226,7 +226,7 @@ export default function NewRecipe() {
           </PressableScale>
         </Lift>
 
-        <Field label="Title" value={title} onChangeText={setTitle} placeholder="Grandma’s lemon cake" returnKeyType="next" />
+        <Field label="Title" value={title} onChangeText={setTitle} maxLength={120} placeholder="Grandma’s lemon cake" returnKeyType="next" />
         <Field
           label="Link to the original (optional)"
           value={link}
@@ -261,10 +261,10 @@ export default function NewRecipe() {
         {/* Bottom-aligned, so the two boxes stay level even if a label wraps with large text. */}
         <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-end' }}>
           <View style={{ flex: 1 }}>
-            <Field label="Kcal per serving" value={calories} onChangeText={(v) => setCalories(v.replace(/[^0-9]/g, ''))} placeholder="e.g. 550" keyboardType="number-pad" />
+            <Field label="Kcal per serving" value={calories} onChangeText={(v) => setCalories(v.replace(/[^0-9]/g, ''))} placeholder="e.g. 550" maxLength={5} keyboardType="number-pad" />
           </View>
           <View style={{ flex: 1 }}>
-            <Field label="Protein (g)" value={protein} onChangeText={(v) => setProtein(v.replace(/[^0-9]/g, ''))} placeholder="e.g. 40" keyboardType="number-pad" />
+            <Field label="Protein (g)" value={protein} onChangeText={(v) => setProtein(v.replace(/[^0-9]/g, ''))} placeholder="e.g. 40" maxLength={4} keyboardType="number-pad" />
           </View>
         </View>
 
@@ -278,6 +278,7 @@ export default function NewRecipe() {
                 value={r.amount}
                 onChangeText={(v) => setRow(r.key, { amount: v.replace(/[^0-9.,/½¼¾⅓⅔ ]/g, '') })}
                 placeholder="qty"
+                maxLength={8}
                 keyboardType="decimal-pad"
                 accessibilityLabel={`Ingredient ${i + 1} amount`}
                 placeholderTextColor={t.colors.tertiaryLabel}
@@ -288,6 +289,7 @@ export default function NewRecipe() {
                 value={r.unit}
                 onChangeText={(v) => setRow(r.key, { unit: v.trim() })}
                 placeholder="unit"
+                maxLength={12}
                 autoCapitalize="none"
                 autoCorrect={false}
                 accessibilityLabel={`Ingredient ${i + 1} unit, like g, cup or tbsp`}
@@ -299,6 +301,7 @@ export default function NewRecipe() {
                 value={r.name}
                 onChangeText={(v) => setRow(r.key, { name: v })}
                 placeholder={i === 0 ? 'flour' : 'ingredient'}
+                maxLength={80}
                 accessibilityLabel={`Ingredient ${i + 1} name`}
                 placeholderTextColor={t.colors.tertiaryLabel}
                 style={[t.type.input, styles.input, styles.name, { color: t.colors.label, backgroundColor: t.colors.cell, ...t.chunky.card }]}

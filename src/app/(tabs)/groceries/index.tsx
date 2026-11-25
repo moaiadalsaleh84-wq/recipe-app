@@ -142,6 +142,7 @@ export default function GroceriesScreen() {
           onChangeText={setDraft}
           onSubmitEditing={add}
           placeholder="Add an item"
+          maxLength={60}
           placeholderTextColor={t.colors.tertiaryLabel}
           returnKeyType="done"
           blurOnSubmit={false}
