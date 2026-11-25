@@ -50,13 +50,13 @@ export function TabScreen({ title, kicker, right, children, maxWidth = 700, head
   });
   // The small bar fades in as the large title slides under it.
   const fadeAt = header ? 150 : kicker ? TITLE + 20 : TITLE;
-  // The big title stretches a little when you pull down, and shrinks and fades as you scroll up.
+  // The big title shrinks and fades as you scroll up.
   const titleStyle = useAnimatedStyle(() => {
     const v = y.get();
     return {
       // Full ink while readable; it only fades in the last stretch before the small bar covers it.
       opacity: interpolate(v, [fadeAt - 32, fadeAt - 8], [1, 0], Extrapolation.CLAMP),
-      transform: [{ scale: interpolate(v, [-120, 0, fadeAt], [1.12, 1, 0.92], Extrapolation.CLAMP) }, { translateY: interpolate(v, [0, fadeAt], [0, 10], Extrapolation.CLAMP) }],
+      transform: [{ scale: interpolate(v, [0, fadeAt], [1, 0.92], Extrapolation.CLAMP) }, { translateY: interpolate(v, [0, fadeAt], [0, 10], Extrapolation.CLAMP) }],
     };
   });
   // The small bar is always solid (nothing shows through it): it slides down from behind the
@@ -70,6 +70,9 @@ export function TabScreen({ title, kicker, right, children, maxWidth = 700, head
         ref={scrollRef}
         onScroll={onScroll}
         scrollEventThrottle={16}
+        // No pulling past the top (it showed an empty gap and stretched the title).
+        bounces={false}
+        overScrollMode="never"
         contentInsetAdjustmentBehavior="never"
         automaticallyAdjustContentInsets={false}
         style={{ flex: 1, backgroundColor: t.colors.background }}
