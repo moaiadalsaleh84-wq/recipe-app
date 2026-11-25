@@ -1,11 +1,10 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Text } from '../Text';
-import { pressSpring } from '../../motion';
-import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
-import { useEffect, useRef } from 'react';
+import { pressIn, pressOut } from '../../motion';
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { haptics } from '../../lib/haptics';
-import { fonts, motion, pop, radius, stroke } from '../../theme';
+import { fonts, pop, radius, stroke } from '../../theme';
 import { Icon, type IconName } from '../Icon';
 
 type Props = {
@@ -30,21 +29,12 @@ type Props = {
 
 /**
  * A chip: tint background, 2px ink outline, radius 12. As a button it sits on a 3pt solid shadow
- * and presses down; a selected filter turns sunshine with a check and gives a small bounce.
+ * and presses down; a selected filter turns sunshine with a check (no bounce).
  */
 export function PopChip({ label, color = pop.white, icon, leading, trailing, selected = false, onPress, toggle = false, accessibilityLabel, style, small }: Props) {
   const reduceMotion = useReducedMotion();
   const down = useSharedValue(0);
-  const bounce = useSharedValue(1);
-  const first = useRef(true);
-  useEffect(() => {
-    if (first.current) {
-      first.current = false;
-      return;
-    }
-    if (selected && !reduceMotion) bounce.set(withSequence(withTiming(1.1, { duration: 100 }), withSpring(1, motion.pop)));
-  }, [selected, reduceMotion, bounce]);
-  const faceMove = useAnimatedStyle(() => ({ transform: [{ translateY: down.get() * 3 }, { scale: bounce.get() }] }));
+  const faceMove = useAnimatedStyle(() => ({ transform: [{ translateY: down.get() * 3 }] }));
 
   const content = (
     <>
@@ -70,8 +60,8 @@ export function PopChip({ label, color = pop.white, icon, leading, trailing, sel
         haptics.select();
         onPress();
       }}
-      onPressIn={() => down.set(reduceMotion ? 1 : withSpring(1, pressSpring))}
-      onPressOut={() => down.set(reduceMotion ? 0 : withSpring(0, pressSpring))}
+      onPressIn={() => down.set(reduceMotion ? 1 : withTiming(1, pressIn))}
+      onPressOut={() => down.set(reduceMotion ? 0 : withTiming(0, pressOut))}
       accessibilityRole={toggle ? 'togglebutton' : 'button'}
       aria-selected={toggle ? selected : undefined}
       accessibilityLabel={accessibilityLabel ?? label}

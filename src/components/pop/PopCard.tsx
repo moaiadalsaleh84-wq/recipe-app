@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
-import { pressSpring } from '../../motion';
-import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from 'react-native-reanimated';
+import { pressIn, pressOut } from '../../motion';
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { haptics, type HapticKind } from '../../lib/haptics';
 import { depth as DEPTH, pop, stroke } from '../../theme';
 
@@ -39,7 +39,8 @@ export function PopCard({ children, color = pop.white, radius = 24, depth = DEPT
   const held = pressed ? 1 : 0;
   // Numbers only in here: this runs on the UI thread.
   const move = useAnimatedStyle(() => ({ transform: [{ translateY: Math.max(held, down.get()) * depth }] }));
-  const press = (to: number) => down.set(reduceMotion ? to : withSpring(to, pressSpring));
+  // Down onto the shadow in 120 ms, back up in 160 ms (ease-out cubic). No bounce.
+  const press = (to: number) => down.set(reduceMotion ? to : withTiming(to, to ? pressIn : pressOut));
   const face = [styles.face, { backgroundColor: color, borderRadius: radius, overflow: clip ? ('hidden' as const) : ('visible' as const) }, contentStyle];
 
   if (!onPress) {

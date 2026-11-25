@@ -20,12 +20,18 @@ export const duration = {
   slow: 400,
 } as const;
 
-/** Snappy, with a slight bounce. */
-export const spring: WithSpringConfig = { damping: 15, stiffness: 180, mass: 1 };
+/** Snappy, settles without overshooting (no bounce anywhere in the app). */
+export const spring: WithSpringConfig = { damping: 24, stiffness: 220, mass: 1, overshootClamping: true };
 /** Faster, for press-in / release. */
-export const pressSpring: WithSpringConfig = { damping: 20, stiffness: 600, mass: 0.6 };
-/** A bouncy pop for checks and badges (overshoots a little). */
-export const popSpring: WithSpringConfig = { damping: 9, stiffness: 320, mass: 0.6 };
+export const pressSpring: WithSpringConfig = { damping: 24, stiffness: 600, mass: 0.6, overshootClamping: true };
+/** Kept for older call sites: the same no-overshoot settle as `spring` (there are no pops anymore). */
+export const popSpring: WithSpringConfig = spring;
+
+/** The one curve for timed motion: Easing.out(Easing.cubic). */
+export const EASE_CUBIC = Easing.out(Easing.cubic);
+/** Press: a button, card or chip moves down onto its shadow in 120 ms and back up in 160 ms. */
+export const pressIn = { duration: 120, easing: EASE_CUBIC };
+export const pressOut = { duration: 160, easing: EASE_CUBIC };
 
 /**
  * The strong ease-out for anything entering, leaving or responding: starts fast, settles softly.
@@ -44,32 +50,33 @@ export function uiEase<T extends { easing: (e: typeof EASE_OUT) => T }>(builder:
 }
 
 /** Stagger between items appearing one after another. */
-export const STAGGER = 40;
+export const STAGGER = 30;
 /** Only the first few items of a list are staggered; the rest appear with the last one. */
-export const MAX_STAGGERED = 8;
+export const MAX_STAGGERED = 6;
 
 /**
- * The standard "arrive" animation for cards and rows: fade in while rising 12pt, staggered by index
- * (40ms each, capped at 8). With Reduce Motion: a plain short fade.
+ * The standard "arrive" animation for screens, sections, cards and rows: fade in while rising 8pt,
+ * 220 ms, staggered 30 ms by index (max 6). Only on first open (it's an entering animation).
+ * With Reduce Motion: a plain short fade.
  */
 export function enter(index = 0, reduceMotion = false) {
   const delay = Math.min(index, MAX_STAGGERED - 1) * STAGGER;
   if (reduceMotion) return FadeIn.duration(duration.fast).delay(delay);
-  const base = uiEase(FadeInDown.duration(duration.base).delay(delay));
-  // Phones: start 12pt lower (FadeInDown's default is 25). On web, custom start values make Reanimated
+  const base = uiEase(FadeInDown.duration(220).delay(delay));
+  // Phones: start 8pt lower (FadeInDown's default is 25). On web, custom start values make Reanimated
   // position the element absolutely (sections then overlap), so web keeps the default. Custom easing
   // isn't supported by web layout animations either, so the default ease is used everywhere.
-  return Platform.OS === 'web' ? base : base.withInitialValues({ opacity: 0, transform: [{ translateY: 12 }] });
+  return Platform.OS === 'web' ? base : base.withInitialValues({ opacity: 0, transform: [{ translateY: 8 }] });
 }
 
 /**
- * A menu or popover opening from its button: grows from 0.95 (never from 0) and fades in, 180ms
- * ease-out. Give the element `transformOrigin` at the button's corner. Reduce Motion: a fade.
+ * A menu or popover opening from its button: fades in while sliding 6pt down into place, 180 ms
+ * ease-out. No scaling. Reduce Motion: a fade.
  */
 export function popoverIn(reduceMotion = false) {
   if (reduceMotion) return FadeIn.duration(duration.fast);
   return new Keyframe({
-    0: { opacity: 0, transform: [{ scale: 0.95 }] },
-    100: { opacity: 1, transform: [{ scale: 1 }], ...(Platform.OS === 'web' ? {} : { easing: EASE_OUT }) },
+    0: { opacity: 0, transform: [{ translateY: -6 }] },
+    100: { opacity: 1, transform: [{ translateY: 0 }], ...(Platform.OS === 'web' ? {} : { easing: EASE_OUT }) },
   }).duration(180);
 }

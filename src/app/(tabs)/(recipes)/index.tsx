@@ -1,8 +1,8 @@
 import { router } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Linking, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Text } from '../../../components/Text';
-import Animated, { FadeIn, FadeInRight, FadeOut, LinearTransition, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInRight, FadeOut, LinearTransition, useReducedMotion } from 'react-native-reanimated';
 import { enter } from '../../../motion';
 import { Icon, type IconName } from '../../../components/Icon';
 import { Menu } from '../../../components/Menu';
@@ -540,19 +540,9 @@ export default function RecipesScreen() {
 }
 
 /** A titled row of recipe cards that scrolls sideways. The cards slide in one after another. */
-/**
- * The streak flame flickers gently (a slow, small scale loop) while today's cook is still to come:
- * a quiet reminder, nothing more. Still with Reduce Motion, and once you've cooked today.
- */
-function Flicker({ on, children }: { on: boolean; children: React.ReactNode }) {
-  const reduceMotion = useReducedMotion();
-  const s = useSharedValue(1);
-  useEffect(() => {
-    if (on && !reduceMotion) s.set(withRepeat(withSequence(withTiming(1.14, { duration: 700 }), withTiming(0.96, { duration: 600 })), -1, true));
-    else s.set(withTiming(1, { duration: 150 }));
-  }, [on, reduceMotion, s]);
-  const style = useAnimatedStyle(() => ({ transform: [{ scale: s.get() }] }));
-  return <Animated.View style={style}>{children}</Animated.View>;
+/** The streak flame. It used to flicker (a scale loop); now it simply sits still: no loops. */
+function Flicker({ children }: { on: boolean; children: React.ReactNode }) {
+  return <>{children}</>;
 }
 
 function Rail({ title, subtitle, recipes, width, action }: { title: string; subtitle?: string; recipes: Recipe[]; width: number; action?: { label: string; onPress: () => void } }) {

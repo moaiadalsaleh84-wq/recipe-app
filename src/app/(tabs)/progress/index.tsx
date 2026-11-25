@@ -2,7 +2,8 @@ import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/Text';
-import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
+import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
+import { enter } from '../../../motion';
 import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
 import { Lift, PopButton, PopCard, PopChip, PopIconButton } from '../../../components/pop';
@@ -25,6 +26,7 @@ const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 /** You: your chef level and XP, the streak, badges, cooking history and settings. */
 export default function ProgressScreen() {
+  const reduceMotion = useReducedMotion();
   const t = useTheme();
   const toast = useToast();
   const { cooked, getRecipe, goals, setGoals, customRecipes, plan, favorites, fun, profile } = useStore();
@@ -140,7 +142,7 @@ export default function ProgressScreen() {
             {week.map((d, i) => (
               <View key={i} style={styles.day}>
                 <Animated.View
-                  entering={ZoomIn.duration(240).delay(i * 40)}
+                  entering={enter(i, reduceMotion)}
                   style={[
                     styles.dayDot,
                     { width: dot, height: dot, borderRadius: dot / 2 },

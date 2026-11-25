@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Text } from '../Text';
-import { pressSpring } from '../../motion';
-import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from 'react-native-reanimated';
+import { pressIn, pressOut } from '../../motion';
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { haptics, type HapticKind } from '../../lib/haptics';
 import { fonts, pop, stroke } from '../../theme';
 import { Icon, type IconName } from '../Icon';
@@ -41,8 +41,8 @@ export function PopIconButton({ icon, onPress, accessibilityLabel, accessibility
         if (haptic) haptics[haptic]();
         onPress();
       }}
-      onPressIn={() => down.set(reduceMotion ? 1 : withSpring(1, pressSpring))}
-      onPressOut={() => down.set(reduceMotion ? 0 : withSpring(0, pressSpring))}
+      onPressIn={() => down.set(reduceMotion ? 1 : withTiming(1, pressIn))}
+      onPressOut={() => down.set(reduceMotion ? 0 : withTiming(0, pressOut))}
       disabled={disabled}
       aria-disabled={!!disabled}
       accessibilityRole="button"

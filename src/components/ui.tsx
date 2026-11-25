@@ -275,7 +275,7 @@ export function CheckCircle({ checked, color, checkColor = pop.ink }: { checked:
   );
 }
 
-/* ---------- Progress bar: fills with a small bounce ---------- */
+/* ---------- Progress bar: fills smoothly ---------- */
 
 export function ProgressBar({ value, color, track, height = 8, label }: { /** 0 to 1 */ value: number; color?: string; track?: string; height?: number; label?: string }) {
   const t = useTheme();
@@ -284,7 +284,8 @@ export function ProgressBar({ value, color, track, height = 8, label }: { /** 0 
   const shown = useSharedValue(0);
   const trackW = useSharedValue(0);
   useEffect(() => {
-    shown.set(reduceMotion ? withTiming(pct, { duration: 200 }) : withSpring(pct, { damping: 14, stiffness: 120, mass: 0.9 }));
+    // Fills smoothly over 500 ms (ease-out cubic), no bounce past the value.
+    shown.set(reduceMotion ? withTiming(pct, { duration: 200 }) : withTiming(pct, { duration: 500, easing: Easing.out(Easing.cubic) }));
   }, [pct, reduceMotion, shown]);
   // Empty means empty: no fill at all at 0. Above 0 the fill is at least as wide as it is tall (a round end, not a sliver).
   const fill = useAnimatedStyle(() => {
@@ -341,7 +342,7 @@ const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
  * read-only field Reanimated updates every frame, so React doesn't re-render 60 times a second.
  * With Reduce Motion it just shows the new number. 1,000+ get a thousands separator.
  */
-export function AnimatedNumber({ value, style, duration = 400, prefix = '', suffix = '', testID }: { value: number; style?: StyleProp<TextStyle>; duration?: number; prefix?: string; suffix?: string; testID?: string }) {
+export function AnimatedNumber({ value, style, duration = 500, prefix = '', suffix = '', testID }: { value: number; style?: StyleProp<TextStyle>; duration?: number; prefix?: string; suffix?: string; testID?: string }) {
   const reduceMotion = useReducedMotion();
   const shown = useSharedValue(reduceMotion ? value : 0);
   useEffect(() => {

@@ -1,12 +1,12 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
-import { enter, popSpring } from '../motion';
-import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import { EASE_CUBIC, enter } from '../motion';
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 
 /**
- * A section that fades in and rises 12pt when the screen first opens (not on re-renders or when you
+ * A section that fades in and rises 8pt when the screen first opens (not on re-renders or when you
  * come back to a tab: entering animations run once, on mount). Give each section its order (0, 1,
- * 2…): 40ms apart, at most 8 staggered. With Reduce Motion: a short fade.
+ * 2…): 30 ms apart, at most 6 staggered. With Reduce Motion: a short fade.
  */
 export function Reveal({ index = 0, children, style }: { index?: number; children: ReactNode; style?: StyleProp<ViewStyle> }) {
   const reduceMotion = useReducedMotion();
@@ -17,15 +17,18 @@ export function Reveal({ index = 0, children, style }: { index?: number; childre
   );
 }
 
-/** Bounces its child once each time `active` turns on (a selected day, a finished item). */
+/**
+ * Marks a change on its child (a selected day, a finished item) with a soft fade back to full
+ * strength: 0.6 → 1 opacity in 200 ms. No scaling, no bounce.
+ */
 export function Pop({ active, children, style }: { active: boolean; children: ReactNode; style?: StyleProp<ViewStyle> }) {
   const reduceMotion = useReducedMotion();
-  const scale = useSharedValue(1);
+  const glow = useSharedValue(1);
   const was = useRef(active);
   useEffect(() => {
-    if (active && !was.current && !reduceMotion) scale.set(withSequence(withTiming(1.12, { duration: 110 }), withSpring(1, popSpring)));
+    if (active && !was.current && !reduceMotion) glow.set(withSequence(withTiming(0.6, { duration: 0 }), withTiming(1, { duration: 200, easing: EASE_CUBIC })));
     was.current = active;
-  }, [active, reduceMotion, scale]);
-  const pop = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
-  return <Animated.View style={[style, pop]}>{children}</Animated.View>;
+  }, [active, reduceMotion, glow]);
+  const fade = useAnimatedStyle(() => ({ opacity: glow.get() }));
+  return <Animated.View style={[style, fade]}>{children}</Animated.View>;
 }

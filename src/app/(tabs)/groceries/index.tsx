@@ -3,7 +3,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { Share, StyleSheet, TextInput, View } from 'react-native';
 import { Text } from '../../../components/Text';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
-import Animated, { FadeIn, FadeOut, LinearTransition, FadeOutDown, ZoomIn, useAnimatedStyle, useReducedMotion, type SharedValue } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut, LinearTransition, FadeOutDown, FadeOutLeft, useAnimatedStyle, useReducedMotion, type SharedValue } from 'react-native-reanimated';
 import { enter, uiEase } from '../../../motion';
 import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
@@ -201,8 +201,8 @@ export default function GroceriesScreen() {
                 <Icon name="cart" size={18} color={t.pop.ink} weight="bold" />
                 <Text style={[t.type.headline, { color: t.pop.ink, flex: 1 }]}>
                   In the basket{' '}
-                  {/* The count pops each time something lands in the basket. */}
-                  <Animated.Text key={basket.length} entering={reduceMotion ? undefined : ZoomIn.springify().damping(9)}>
+                  {/* The count fades in fresh each time something lands in the basket (no pop). */}
+                  <Animated.Text key={basket.length} entering={reduceMotion ? undefined : FadeIn.duration(200)}>
                     ({basket.length})
                   </Animated.Text>
                 </Text>
@@ -212,7 +212,8 @@ export default function GroceriesScreen() {
                 <Animated.View entering={FadeIn.duration(180)} style={{ marginTop: 12 }}>
                   <Section>
                     {basket.map((item, i) => (
-                      <Animated.View key={item.key} entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)}>
+                      // Cleared rows slide out to the left and fade (Reduce Motion: fade only).
+                      <Animated.View key={item.key} entering={FadeIn.duration(200)} exiting={reduceMotion ? FadeOut.duration(150) : uiEase(FadeOutLeft.duration(220))}>
                         {i > 0 && <Separator inset={60} />}
                         <GroceryRow item={item} onToggle={() => toggle(item)} onDelete={() => remove(item)} />
                       </Animated.View>

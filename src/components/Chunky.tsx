@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Pressable, View, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
-import { pressSpring } from '../motion';
-import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from 'react-native-reanimated';
+import { pressIn, pressOut } from '../motion';
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { haptics, type HapticKind } from '../lib/haptics';
 import { depth as DEPTH, pop, radius as RADIUS, stroke } from '../theme';
 
@@ -33,7 +33,8 @@ export function Chunky({ children, face, radius, depth = DEPTH.button, style, fa
   const down = useSharedValue(0);
   // Only plain numbers in here: this runs on the UI thread.
   const move = useAnimatedStyle(() => ({ transform: [{ translateY: down.get() * depth }] }));
-  const press = (to: number) => down.set(reduceMotion ? to : withSpring(to, pressSpring));
+  // Down onto the shadow in 120 ms, back up in 160 ms (ease-out cubic). No bounce.
+  const press = (to: number) => down.set(reduceMotion ? to : withTiming(to, to ? pressIn : pressOut));
 
   return (
     <Pressable

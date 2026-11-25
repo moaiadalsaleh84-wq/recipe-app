@@ -16,18 +16,16 @@ import Animated, {
   useSharedValue,
   Easing,
   withDelay,
-  withRepeat,
   withSequence,
   withSpring,
   withTiming,
-  ZoomIn,
 } from 'react-native-reanimated';
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomBar } from '../../components/BottomBar';
 import { BottomSheet } from '../../components/BottomSheet';
 import { ConfettiBurst } from '../../components/ConfettiBurst';
-import { duration, enter, popSpring, pressSpring, spring, uiEase } from '../../motion';
+import { EASE_CUBIC, enter, pressIn, pressOut, pressSpring, spring, uiEase } from '../../motion';
 import { scheduleOnRN } from 'react-native-worklets';
 import { rollBonus, type Bonus } from '../../lib/bonus';
 import { stickers } from '../../data/stickers';
@@ -439,19 +437,18 @@ function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; serv
 function GatherTile({ name, qty, checked, onPress }: { name: string; qty: string; checked: boolean; onPress: () => void }) {
   const reduceMotion = useReducedMotion();
   const pressed = useSharedValue(checked ? 1 : 0);
-  const bounce = useSharedValue(1);
   useEffect(() => {
-    pressed.set(reduceMotion ? (checked ? 1 : 0) : withTiming(checked ? 1 : 0, { duration: 120 }));
+    // Down onto its shadow (120 ms) when ticked, back up (160 ms) when unticked. No bounce.
+    pressed.set(reduceMotion ? (checked ? 1 : 0) : withTiming(checked ? 1 : 0, checked ? pressIn : pressOut));
   }, [checked, reduceMotion, pressed]);
   // Numbers only in here: this runs on the UI thread.
-  const face = useAnimatedStyle(() => ({ transform: [{ translateY: pressed.get() * 3 }, { scale: bounce.get() }] }));
+  const face = useAnimatedStyle(() => ({ transform: [{ translateY: pressed.get() * 3 }] }));
   const { width } = useWindowDimensions();
   const tileWidth = (Math.min(width, 640) - 40 - 12) / 2;
   return (
     <Pressable
       onPress={() => {
         haptics.select();
-        if (!reduceMotion) bounce.set(withSequence(withTiming(1.06, { duration: 75 }), withTiming(1, { duration: 75 })));
         onPress();
       }}
       accessibilityRole="checkbox"
@@ -510,17 +507,17 @@ function TimerCard({ seconds, timer: tm, now, first, onStart, onPause, onResume,
     drain.set(running && !reduceMotion ? withTiming(to, { duration: 1000, easing: Easing.linear }) : to);
   }, [left, seconds, running, done, reduceMotion, drain]);
   const drainStyle = useAnimatedStyle(() => ({ transform: [{ scaleX: drain.get() }] }));
-  // Time's up: a success buzz and the card pulses three times.
+  // Time's up: a success buzz and the card glows softly once (opacity, no scaling).
   const pulse = useSharedValue(1);
   const wasDone = useRef(done);
   useEffect(() => {
     if (done && !wasDone.current) {
       haptics.success();
-      if (!reduceMotion) pulse.set(withRepeat(withSequence(withTiming(1.04, { duration: 160 }), withTiming(1, { duration: 160 })), 3, false));
+      if (!reduceMotion) pulse.set(withSequence(withTiming(0.7, { duration: 0 }), withTiming(1, { duration: 400, easing: EASE_CUBIC })));
     }
     wasDone.current = done;
   }, [done, reduceMotion, pulse]);
-  const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse.get() }] }));
+  const pulseStyle = useAnimatedStyle(() => ({ opacity: pulse.get() }));
   return (
     <Animated.View entering={FadeIn} layout={LinearTransition} style={pulseStyle}>
       <PopCard color={tm?.status === 'done' ? pop.tomatoTint : pop.tomato} contentStyle={styles.timerFace} testID={tm?.status === 'done' ? 'timer-finished-away' : undefined}>
@@ -654,7 +651,8 @@ function Finish({
     <View style={{ flex: 1 }}>
       <ConfettiBurst count={36} />
       <ScrollView contentContainerStyle={[styles.finish, { paddingTop: Math.max(insets.top, 16) + 28, paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
-        <Animated.View entering={reduceMotion ? FadeIn.duration(duration.base) : ZoomIn.springify().damping(12).stiffness(160)} style={styles.finishTop}>
+        {/* The photo fades in and settles (rises 8pt), then the cards slide up one after another. */}
+        <Animated.View entering={enter(0, reduceMotion)} style={styles.finishTop}>
           {/* The dish in a 200pt circle, centered: the frame carries the border and clips; the photo is
               3pt smaller all round. With the character on, it says "Chef's kiss!" beside it. */}
           <Lift radius={100}>
@@ -860,14 +858,14 @@ function Segment({ state }: { state: 'todo' | 'current' | 'done' }) {
   );
 }
 
-/** The streak flame's one "flare" when the streak goes up: grows and tilts, then settles. */
+/** The streak flame when the streak goes up: rises 4pt and settles back, once (no scaling). */
 function Flare({ active, children }: { active: boolean; children: ReactNode }) {
   const reduceMotion = useReducedMotion();
   const p = useSharedValue(0);
   useEffect(() => {
-    if (active && !reduceMotion) p.set(withDelay(500, withSequence(withTiming(1, { duration: duration.fast }), withSpring(0, popSpring))));
+    if (active && !reduceMotion) p.set(withDelay(500, withSequence(withTiming(1, { duration: 160, easing: EASE_CUBIC }), withTiming(0, { duration: 260, easing: EASE_CUBIC }))));
   }, [active, reduceMotion, p]);
-  const style = useAnimatedStyle(() => ({ transform: [{ scale: 1 + p.get() * 0.4 }, { rotate: `${p.get() * -14}deg` }] }));
+  const style = useAnimatedStyle(() => ({ transform: [{ translateY: p.get() * -4 }] }));
   return <Animated.View style={style}>{children}</Animated.View>;
 }
 

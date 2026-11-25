@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { Text } from './Text';
-import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
+import { useEffect } from 'react';
 import type { Recipe } from '../data/mock';
 import { useStore } from '../state/store';
 import { haptics } from '../lib/haptics';
@@ -15,7 +16,7 @@ import { PopIconButton } from './pop/PopIconButton';
 import { PopCard } from './pop/PopCard';
 import { Sticker } from './pop/Sticker';
 import { useToast } from './Toast';
-import { IconButton, Skeleton, TextButton } from './ui';
+import { Skeleton, TextButton } from './ui';
 
 export const openRecipe = (id: string) => router.push({ pathname: '/recipe/[id]', params: { id } });
 
@@ -37,22 +38,11 @@ export function FavoriteButton({ recipe, onPhoto }: { recipe: Recipe; onPhoto?: 
   const t = useTheme();
   const { isFavorite, toggleFavorite } = useStore();
   const toast = useToast();
-  const reduceMotion = useReducedMotion();
   const fav = isFavorite(recipe.id);
-  const bounce = useSharedValue(1);
-  const popStyle = useAnimatedStyle(() => ({ transform: [{ scale: bounce.get() }] }));
-  // The burst when you save: a ring and six little hearts flying out.
-  const burst = useSharedValue(0);
-  const ringStyle = useAnimatedStyle(() => ({ opacity: burst.get() > 0 && burst.get() < 1 ? 1 - burst.get() : 0, transform: [{ scale: 0.6 + burst.get() * 1.2 }] }));
   const onPress = () => {
     const now = toggleFavorite(recipe.id);
-    if (now) haptics.success();
-    else haptics.select();
-    if (now && !reduceMotion) {
-      bounce.set(withSequence(withTiming(0.6, { duration: 80 }), withSpring(1.15, { damping: 6, stiffness: 300 }), withSpring(1, t.motion.pop)));
-      burst.set(0);
-      burst.set(withTiming(1, { duration: 520, easing: Easing.out(Easing.cubic) }));
-    }
+    // A light tap either way; the heart fills with a soft colour fade (no scaling).
+    haptics.tap();
     toast({
       message: now ? 'Added to Favorites' : 'Removed from Favorites',
       icon: now ? 'heartFill' : 'heart',
@@ -62,39 +52,38 @@ export function FavoriteButton({ recipe, onPhoto }: { recipe: Recipe; onPhoto?: 
   };
   const label = fav ? `Remove ${recipe.title} from Favorites` : `Add ${recipe.title} to Favorites`;
   if (onPhoto) {
-    // On photos: a small solid white circle (32pt) inside a full 44pt tap area.
+    // On photos: a small solid white circle (34pt) inside a full 44pt tap area.
     return (
       <PressableScale onPress={onPress} haptic={null} scaleTo={0.96} accessibilityLabel={label} style={styles.favTap}>
-        <Animated.View pointerEvents="none" style={[styles.burstRing, { borderColor: pop.tomato }, ringStyle]} />
-        {SPARKS.map((sp, i) => (
-          <Spark key={i} dx={sp[0]} dy={sp[1]} burst={burst} />
-        ))}
-        <Animated.View style={[styles.favDot, popStyle]}>
-          <Icon name={fav ? 'heartFill' : 'heart'} size={17} color={fav ? pop.berry : pop.ink} weight="bold" />
-        </Animated.View>
+        <View style={styles.favDot}>
+          <HeartIcon on={fav} size={17} offColor={pop.ink} />
+        </View>
       </PressableScale>
     );
   }
   return (
-    <Animated.View style={popStyle}>
-      <IconButton icon={fav ? 'heartFill' : 'heart'} accessibilityLabel={label} color={fav ? t.colors.accent : t.colors.secondaryLabel} iconSize={20} haptic={null} onPress={onPress} />
-    </Animated.View>
+    <PressableScale onPress={onPress} haptic={null} accessibilityLabel={label} style={styles.favTap}>
+      <HeartIcon on={fav} size={20} offColor={t.colors.secondaryLabel} />
+    </PressableScale>
   );
 }
 
-/** The small print under a recipe's title. */
-/** Where the six little hearts fly to (worked out once, outside the animation). */
-const SPARKS = Array.from({ length: 6 }, (_, i) => {
-  const a = (i / 6) * Math.PI * 2 - Math.PI / 2;
-  return [Math.cos(a) * 26, Math.sin(a) * 26] as const;
-});
-
-function Spark({ dx, dy, burst }: { dx: number; dy: number; burst: ReturnType<typeof useSharedValue<number>> }) {
-  const style = useAnimatedStyle(() => {
-    const b = burst.get();
-    return { opacity: b > 0 && b < 1 ? 1 - b : 0, transform: [{ translateX: dx * b }, { translateY: dy * b }, { scale: 1 - b * 0.4 }] };
-  });
-  return <Animated.View pointerEvents="none" style={[styles.spark, { backgroundColor: pop.tomato }, style]} />;
+/** A heart that fills berry with a 200 ms fade (outline underneath, filled on top). No scaling. */
+export function HeartIcon({ on, size, offColor }: { on: boolean; size: number; offColor: string }) {
+  const reduceMotion = useReducedMotion();
+  const fill = useSharedValue(on ? 1 : 0);
+  useEffect(() => {
+    fill.set(reduceMotion ? (on ? 1 : 0) : withTiming(on ? 1 : 0, { duration: 200, easing: Easing.out(Easing.cubic) }));
+  }, [on, reduceMotion, fill]);
+  const filled = useAnimatedStyle(() => ({ opacity: fill.get() }));
+  return (
+    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+      <Icon name="heart" size={size} color={offColor} weight="bold" />
+      <Animated.View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, filled]}>
+        <Icon name="heartFill" size={size} color={pop.berry} weight="bold" />
+      </Animated.View>
+    </View>
+  );
 }
 
 const useMeta = () => (r: Recipe) => `${nb(r.minutes, 'min')} · ${nb(r.calories, 'kcal')}`;
@@ -311,8 +300,6 @@ const styles = StyleSheet.create({
   noPhoto: { alignItems: 'center', justifyContent: 'center' },
   favOnPhoto: { position: 'absolute', top: 2, right: 2 },
   favTap: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  burstRing: { position: 'absolute', width: 34, height: 34, borderRadius: 17, borderWidth: 2 },
-  spark: { position: 'absolute', width: 6, height: 6, borderRadius: 3 },
   favDot: {
     width: 34,
     height: 34,

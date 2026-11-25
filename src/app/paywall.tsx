@@ -12,7 +12,7 @@
  */
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Linking, ScrollView, StyleSheet, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../components/Text';
 import Animated, { FadeIn, FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import { ConfettiBurst } from '../components/ConfettiBurst';
@@ -137,7 +137,7 @@ export default function Paywall() {
       >
         <PopIconButton icon="close" accessibilityLabel="Close" accessibilityHint={source === 'onboarding' ? 'Continue with the free version' : undefined} onPress={close} />
         <PressableScale onPress={onRestore} style={styles.restore} accessibilityLabel="Restore purchases" disabled={!!busy}>
-          {busy === 'restore' ? <ActivityIndicator color={t.colors.tint} /> : <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.black }]}>Restore</Text>}
+          <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.black }]}>{busy === 'restore' ? 'Checking…' : 'Restore'}</Text>
         </PressableScale>
       </View>
       <ScrollView

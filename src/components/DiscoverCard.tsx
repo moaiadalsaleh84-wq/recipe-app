@@ -11,10 +11,9 @@ import { discoverGet, discoverSave, discoverToRecipe, savedCopy, type DiscoverCa
 import { haptics } from '../lib/haptics';
 import { useStore } from '../state/store';
 import { fonts, pop, stroke, useTheme } from '../theme';
-import { Icon } from './Icon';
 import { PhotoFrame } from './PhotoFrame';
 import { PopCard } from './pop/PopCard';
-import { CARD_DEPTH, CardText } from './RecipeCard';
+import { CARD_DEPTH, CardText, HeartIcon } from './RecipeCard';
 import { PressableScale } from './PressableScale';
 import { Text } from './Text';
 import { useToast } from './Toast';
@@ -123,7 +122,7 @@ export function DiscoverCard({ card, width }: { card: DiscoverCardData; width: n
       >
         {/* The same white heart circle as every recipe card; a filled berry heart = saved. */}
         <View style={styles.saveDot}>
-          <Icon name={mine ? 'heartFill' : 'heart'} size={17} color={mine ? pop.berry : pop.ink} weight="bold" />
+          <HeartIcon on={!!mine} size={17} offColor={pop.ink} />
         </View>
       </PressableScale>
     </View>

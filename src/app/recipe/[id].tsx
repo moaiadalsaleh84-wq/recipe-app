@@ -224,7 +224,7 @@ export default function RecipeScreen() {
           {fromDiscover ? (
             <PopIconButton icon="heart" accessibilityLabel="Save to your recipes" onPress={() => void onSaveDiscover()} haptic={null} testID="discover-save-recipe" />
           ) : (
-            <PopIconButton icon={fav ? 'heartFill' : 'heart'} accessibilityLabel={fav ? 'Remove from Favorites' : 'Add to Favorites'} onPress={onFavorite} iconColor={fav ? t.pop.tomato : t.pop.ink} haptic={null} />
+            <PopIconButton icon={fav ? 'heartFill' : 'heart'} accessibilityLabel={fav ? 'Remove from Favorites' : 'Add to Favorites'} onPress={onFavorite} iconColor={fav ? t.pop.berry : t.pop.ink} haptic={null} />
           )}
           <PopIconButton icon="more" accessibilityLabel="More: share or save to a cookbook" onPress={() => setMenuOpen(true)} />
         </View>
