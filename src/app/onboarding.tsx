@@ -352,7 +352,7 @@ function Welcome({ onStart, onRestore, restoring }: { onStart: () => void; onRes
       </Text>
       <Text style={[styles.subtitle, { color: pop.ink, marginTop: 10 }]}>Save recipes from anywhere. Cook with what you already have.</Text>
       <PopButton label="Let’s go" color={pop.ink} textColor={pop.white} onPress={onStart} style={{ marginTop: 24 }} testID="ob-start" />
-      <Pressable onPress={onRestore} disabled={restoring} accessibilityRole="button" style={styles.link} hitSlop={6}>
+      <Pressable onPress={onRestore} disabled={restoring} accessibilityRole="button" style={({ pressed }) => [styles.link, pressed && { opacity: 0.6 }]} hitSlop={6}>
         <Text style={styles.linkText}>{restoring ? 'Checking…' : 'I already have an account'}</Text>
       </Pressable>
     </View>
@@ -576,7 +576,7 @@ function ReminderStep({ time, preview, onYes, onNo }: { time: string; preview: P
             }}
             testID="ob-remind-yes"
           />
-          <Pressable onPress={onNo} accessibilityRole="button" style={styles.link} testID="ob-remind-no">
+          <Pressable onPress={onNo} accessibilityRole="button" style={({ pressed }) => [styles.link, pressed && { opacity: 0.6 }]} testID="ob-remind-no">
             <Text style={styles.linkText}>Not now</Text>
           </Pressable>
         </View>
@@ -802,7 +802,7 @@ const styles = StyleSheet.create({
   small: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 20, color: pop.inkMuted },
   hint: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 20, color: pop.inkMuted, textAlign: 'center', paddingVertical: 6 },
   link: { minHeight: 44, alignItems: 'center', justifyContent: 'center', marginTop: 6 },
-  linkText: { fontFamily: fonts.bold, fontSize: 16, color: pop.ink, textDecorationLine: 'underline' },
+  linkText: { fontFamily: fonts.bold, fontSize: 16, color: pop.ink },
   welcomeTitle: { fontFamily: fonts.heading, fontSize: 38, lineHeight: 44, color: pop.ink },
   collage: { flexDirection: 'row', justifyContent: 'center', gap: 16 },
   input: {
@@ -834,7 +834,7 @@ const styles = StyleSheet.create({
   notifBody: { fontFamily: fonts.body, fontSize: 15, lineHeight: 20, color: pop.ink, marginTop: 2 },
   counter: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingHorizontal: 16, paddingVertical: 14, minHeight: 78 },
   counterNum: { fontFamily: fonts.heading, fontSize: 44, lineHeight: 50, color: pop.ink, textAlign: 'left', fontVariant: ['tabular-nums'] },
-  cardTitle: { fontFamily: fonts.heading, fontSize: 24, lineHeight: 29, color: pop.ink },
+  cardTitle: { fontFamily: fonts.heading, fontSize: 20, lineHeight: 25, color: pop.ink },
   tag: { flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 2, borderColor: pop.ink, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 5 },
   tagText: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 18, color: pop.ink },
   moreRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 20 },

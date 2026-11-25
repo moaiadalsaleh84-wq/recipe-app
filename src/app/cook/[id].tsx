@@ -36,7 +36,7 @@ import { Icon } from '../../components/Icon';
 import { PressableScale } from '../../components/PressableScale';
 import { useToast } from '../../components/Toast';
 import { Lift, MascotSlot, PopButton, PopCard, PopChip, PopIconButton, SHOW_MASCOT_PLACEHOLDER } from '../../components/pop';
-import { AnimatedNumber, CheckCircle, DrawnCheck, EmptyState, ProgressBar } from '../../components/ui';
+import { AnimatedNumber, CheckCircle, DrawnCheck, EmptyState, ProgressBar, TextButton } from '../../components/ui';
 import type { Ingredient, Rating, Recipe } from '../../data/mock';
 import { clock, isReady, secondsLeft, type CookTimer } from '../../lib/cookTimers';
 import { haptics } from '../../lib/haptics';
@@ -736,9 +736,7 @@ function Finish({
 
         <Animated.View entering={enter(6, reduceMotion)} style={{ gap: 6, alignSelf: 'stretch' }}>
           <PopButton label={photo ? 'Change photo' : 'Snap your plate'} icon="camera" color={pop.ink} textColor={pop.white} onPress={snap} accessibilityLabel={photo ? 'Change the photo of your plate' : 'Snap a photo of your plate'} />
-          <PressableScale onPress={onDone} accessibilityLabel={rating || photo ? 'Done, back to Home' : 'Maybe later, back to Home'} style={styles.later} testID="finish-done">
-            <Text style={[t.type.button, { color: pop.ink, textDecorationLine: 'underline' }]}>{rating || photo ? 'Done' : 'Maybe later'}</Text>
-          </PressableScale>
+          <TextButton label={rating || photo ? 'Done' : 'Maybe later'} onPress={onDone} accessibilityLabel={rating || photo ? 'Done, back to Home' : 'Maybe later, back to Home'} color={pop.ink} style={styles.later} testID="finish-done" />
         </Animated.View>
 
         {/* Never a dead end: tomorrow's idea, one tap to put it in the plan. */}

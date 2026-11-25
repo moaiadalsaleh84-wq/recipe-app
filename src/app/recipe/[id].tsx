@@ -314,8 +314,8 @@ export default function RecipeScreen() {
               accessibilityLabel={`Open original recipe at ${hostOf(recipe.sourceUrl)}`}
               style={styles.source}
             >
-              <Icon name="link" size={15} color={t.colors.tint} weight="bold" />
-              <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.black, textDecorationLine: 'underline' }]}>
+              <Icon name="link" size={15} color={t.colors.label} weight="bold" />
+              <Text style={[t.type.subhead, { color: t.colors.label, fontFamily: t.fonts.bold }]}>
                 Original at {hostOf(recipe.sourceUrl)}
               </Text>
             </PressableScale>
@@ -366,7 +366,7 @@ export default function RecipeScreen() {
             <PressableScale onPress={() => setServings(recipe.servings)} style={styles.resetServings} accessibilityLabel={`Use the recipe's ${recipe.servings} servings`} testID="servings-reset">
               <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]}>
                 {servings === profile.household ? 'Sized for your household. ' : ''}The recipe makes {recipe.servings}.{' '}
-                <Text style={{ color: t.colors.tint, fontFamily: t.fonts.black, textDecorationLine: 'underline' }}>{`Use\u00A0${recipe.servings}`}</Text>
+                <Text style={{ color: t.colors.label, fontFamily: t.fonts.bold }}>{`Use\u00A0${recipe.servings}`}</Text>
               </Text>
             </PressableScale>
           )}

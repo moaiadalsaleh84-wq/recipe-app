@@ -15,7 +15,7 @@ import { PopIconButton } from './pop/PopIconButton';
 import { PopCard } from './pop/PopCard';
 import { Sticker } from './pop/Sticker';
 import { useToast } from './Toast';
-import { IconButton, Skeleton } from './ui';
+import { IconButton, Skeleton, TextButton } from './ui';
 
 export const openRecipe = (id: string) => router.push({ pathname: '/recipe/[id]', params: { id } });
 
@@ -177,7 +177,7 @@ export function RecipeCardSkeleton({ width }: { width: number }) {
 }
 
 /**
- * "Tonight's pick": a PopCard with the photo (ink line under it), a tilted tomato sticker, the
+ * "Tonight's pick": a PopCard with the photo (ink line under it), a straight tomato sticker, the
  * name, "25 min · you have 3 of 6", and a big "Cook it!" button that opens Get ready.
  */
 export function TonightCard({
@@ -211,7 +211,7 @@ export function TonightCard({
             <SourceMark recipe={recipe} />
           </PhotoFrame>
           <View style={[styles.tonightText, styles.tonightWhite]}>
-            <Text style={[t.type.title1, { color: t.colors.label, fontSize: 24, lineHeight: 29 }]}>
+            <Text style={[t.type.title1, { color: t.colors.label, fontSize: 20, lineHeight: 25 }]}>
               {recipe.title}
             </Text>
             {/* Nothing at home yet: just how big the job is. From one item up: how close you are. */}
@@ -231,13 +231,11 @@ export function TonightCard({
           {onShuffle && <PopIconButton icon="shuffle" size={56} iconSize={22} onPress={onShuffle} accessibilityLabel="Show me another" testID="tonight-shuffle" />}
         </View>
         {/* "Cook it!" goes straight to Get ready; the full recipe is one small tap away. */}
-        <PressableScale onPress={() => openRecipe(recipe.id)} accessibilityRole="link" accessibilityLabel={`See the recipe for ${recipe.title}`} style={styles.seeRecipe}>
-          <Text style={[t.type.subhead, { color: t.colors.label, fontFamily: t.fonts.black, textDecorationLine: 'underline' }]}>See recipe</Text>
-        </PressableScale>
+        <TextButton label="See recipe" onPress={() => openRecipe(recipe.id)} accessibilityRole="link" accessibilityLabel={`See the recipe for ${recipe.title}`} style={styles.seeRecipe} />
         </View>
       </PopCard>
       {/* Slapped on where the photo meets the card. */}
-      <Sticker label="Tonight's pick" style={styles.tonightSticker} />
+      <Sticker label="Tonight's pick" rotate={0} style={styles.tonightSticker} />
       <View style={styles.featuredFav}>
         <FavoriteButton recipe={recipe} onPhoto />
       </View>

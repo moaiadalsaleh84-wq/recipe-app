@@ -3,9 +3,9 @@
  * All tappable pieces are at least 44pt and give press + haptic feedback.
  */
 import { useEffect, useState, type ReactNode } from 'react';
-import { StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native';
 import { Text } from './Text';
-import { num } from '../lib/text';
+import { noWidow, num } from '../lib/text';
 import { duration as motionDuration } from '../motion';
 import Animated, {
   Easing,
@@ -19,7 +19,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import type { HapticKind } from '../lib/haptics';
-import { useTheme, pop } from '../theme';
+import { fonts, useTheme, pop } from '../theme';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { Mascot, MASCOT_ON } from './mascot/Mascot';
 import type { Mood } from './mascot/moods';
@@ -100,16 +100,33 @@ type ButtonProps = {
   accessibilityLabel?: string;
 };
 
+/**
+ * A text button ("Maybe later", "Not now", "See recipe"): Nunito 800, 16, ink, no underline, a
+ * 44pt tap area, and 60% opacity while pressed. `small` is for fine print links (13, muted).
+ */
+export function TextButton({ label, onPress, icon, color, small, disabled, style, accessibilityLabel, accessibilityRole = 'button', testID }: { label: string; onPress: () => void; icon?: IconName; color?: string; small?: boolean; disabled?: boolean; style?: StyleProp<ViewStyle>; accessibilityLabel?: string; accessibilityRole?: 'button' | 'link'; testID?: string }) {
+  const t = useTheme();
+  const ink = color ?? (small ? t.colors.secondaryLabel : t.colors.label);
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole={accessibilityRole}
+      accessibilityLabel={accessibilityLabel ?? label}
+      testID={testID}
+      style={({ pressed }) => [styles.textButton, { opacity: disabled ? 0.4 : pressed ? 0.6 : 1 }, style]}
+    >
+      {icon && <Icon name={icon} size={small ? 13 : 16} color={ink} weight="bold" />}
+      <Text style={[small ? styles.textButtonSmall : styles.textButtonLabel, { color: ink }]}>{label}</Text>
+    </Pressable>
+  );
+}
+
 export function Button({ label, onPress, icon, variant = 'filled', size = 'large', disabled, style, accessibilityLabel }: ButtonProps) {
   const t = useTheme();
   const large = size === 'large';
   if (variant === 'plain') {
-    return (
-      <PressableScale onPress={onPress} disabled={disabled} accessibilityLabel={accessibilityLabel ?? label} style={[styles.button, large ? styles.buttonLarge : styles.buttonMedium, !large && { alignSelf: 'center' }, style]}>
-        {icon && <Icon name={icon} size={large ? 20 : 17} color={t.colors.label} weight="bold" />}
-        <Text style={[large ? t.type.button : t.type.subhead, { color: t.colors.label, fontFamily: t.fonts.black, textDecorationLine: 'underline' }]}>{label}</Text>
-      </PressableScale>
-    );
+    return <TextButton label={label} icon={icon} onPress={onPress} disabled={disabled} accessibilityLabel={accessibilityLabel} style={[{ alignSelf: 'center' }, style]} />;
   }
   const kind = t.buttons[variant === 'filled' ? 'primary' : variant === 'tinted' ? 'secondary' : variant];
   return (
@@ -391,7 +408,8 @@ export function SectionHeader({ title, subtitle, action, right, style }: { title
         <Text style={[t.type.title2, { color: t.colors.label }]} accessibilityRole="header">
           {title}
         </Text>
-        {subtitle ? <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]}>{subtitle}</Text> : null}
+        {/* Never one word alone on the last line. */}
+        {subtitle ? <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]}>{noWidow(subtitle)}</Text> : null}
       </View>
       {action && (
         <PressableScale onPress={action.onPress} accessibilityLabel={`${action.label}: ${title}`} style={styles.shAction}>
@@ -449,9 +467,7 @@ export function EmptyState({
         </View>
       )}
       {secondary && (
-        <PressableScale onPress={secondary.onPress} accessibilityRole="link" style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 12 }}>
-          <Text style={[t.type.subhead, { color: t.colors.label, fontFamily: t.fonts.black, textDecorationLine: 'underline' }]}>{secondary.label}</Text>
-        </PressableScale>
+        <TextButton label={secondary.label} onPress={secondary.onPress} accessibilityRole="link" />
       )}
     </View>
   );
@@ -512,6 +528,9 @@ export function SearchField({ value, onChangeText, placeholder, style, ...rest }
 }
 
 const styles = StyleSheet.create({
+  textButton: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 12 },
+  textButtonLabel: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 21 },
+  textButtonSmall: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 18 },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',

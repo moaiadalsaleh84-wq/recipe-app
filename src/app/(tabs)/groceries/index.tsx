@@ -297,14 +297,19 @@ function GroceryRow({ item, onToggle, onDelete }: { item: GroceryItem; onToggle:
           accessibilityLabel={names.length > 1 ? `For ${names.length} recipes. ${showSources ? 'Hide' : 'Show'} which` : `${item.checked ? 'Untick' : 'Tick'} ${item.name}`}
           style={styles.rowMain}
         >
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, minWidth: 0 }}>
             {/* A name you typed can be long: it gets two lines, then "…". */}
             <Text style={[t.type.body, { color: item.checked ? t.colors.secondaryLabel : t.colors.label }, item.checked && styles.struck]} numberOfLines={2}>
               {item.name}
             </Text>
-            {names.length === 1 && <Text style={[styles.sub, { color: t.colors.secondaryLabel }]}>{names[0]}</Text>}
+            {/* One line: "For <recipe>" (the name shortened with …) or "For 2 recipes". */}
+            {names.length === 1 && (
+              <Text style={[styles.sub, { color: t.colors.secondaryLabel }]} numberOfLines={1}>
+                For {names[0]}
+              </Text>
+            )}
             {names.length > 1 && (
-              <Text style={[styles.sub, { color: t.colors.secondaryLabel }]}>
+              <Text style={[styles.sub, { color: t.colors.secondaryLabel }]} numberOfLines={showSources ? undefined : 1}>
                 {showSources ? names.join(', ') : `For\u00A0${names.length}\u00A0recipes\u00A0›`}
               </Text>
             )}
@@ -346,7 +351,7 @@ const styles = StyleSheet.create({
   checkTap: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, paddingLeft: 4, paddingVertical: 10, minHeight: 60 },
   // Under the name: the same style for one recipe or "For 2 recipes ›".
-  sub: { fontFamily: fonts.medium, fontSize: 15, lineHeight: 20, marginTop: 1 },
+  sub: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 19, marginTop: 1 },
   struck: { textDecorationLine: 'line-through' },
   delete: { width: 80, height: '100%' },
 });

@@ -23,7 +23,7 @@ import { Icon, type IconName } from '../components/Icon';
 import { PressableScale } from '../components/PressableScale';
 import { BottomBar } from '../components/BottomBar';
 import { useToast } from '../components/Toast';
-import { Button } from '../components/ui';
+import { Button, TextButton } from '../components/ui';
 import { PopButton, PopChip, PopIconButton } from '../components/pop';
 import { scheduleTrialReminder } from '../lib/trialReminder';
 import { benefitsFor, goalPhrase, type Goal } from '../data/onboarding';
@@ -203,15 +203,9 @@ export default function Paywall() {
         )}
 
         <View style={styles.links}>
-          <PressableScale onPress={() => open(TERMS_URL)} style={styles.link} accessibilityRole="link" accessibilityLabel="Terms of use">
-            <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, textDecorationLine: 'underline' }]}>Terms</Text>
-          </PressableScale>
-          <PressableScale onPress={() => router.push('/privacy')} style={styles.link} accessibilityRole="link" accessibilityLabel="Privacy policy">
-            <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, textDecorationLine: 'underline' }]}>Privacy</Text>
-          </PressableScale>
-          <PressableScale onPress={() => open(MANAGE_SUBSCRIPTIONS_URL)} style={styles.link} accessibilityRole="link" accessibilityLabel="Manage subscriptions">
-            <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, textDecorationLine: 'underline' }]}>Manage subscriptions</Text>
-          </PressableScale>
+          <TextButton small label="Terms" onPress={() => open(TERMS_URL)} accessibilityRole="link" accessibilityLabel="Terms of use" />
+          <TextButton small label="Privacy" onPress={() => router.push('/privacy')} accessibilityRole="link" accessibilityLabel="Privacy policy" />
+          <TextButton small label="Manage subscriptions" onPress={() => open(MANAGE_SUBSCRIPTIONS_URL)} accessibilityRole="link" accessibilityLabel="Manage subscriptions" />
         </View>
         {PURCHASES_ARE_MOCK && (
           <Text style={[t.type.caption1, { color: t.colors.tertiaryLabel, textAlign: 'center', marginTop: 4 }]} testID="test-mode">

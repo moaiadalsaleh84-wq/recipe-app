@@ -203,13 +203,13 @@ export const noWidows = {
 };
 
 export const type = {
-  /** Screen title: Fredoka 700, 34. */
-  largeTitle: title(34, 40),
+  /** Screen title: Fredoka 700, 32. */
+  largeTitle: title(32, 38),
   /** Big hero title (Home, Finish). */
   hero: title(36, 42),
   title1: title(28, 34),
-  /** Section title: Fredoka 700, 21. */
-  title2: title(21, 26),
+  /** Section title: Fredoka 700, 22. */
+  title2: title(22, 27),
   /** Card title: Fredoka 700, 20. */
   title3: title(20, 25),
   /** Row labels and small card titles. */

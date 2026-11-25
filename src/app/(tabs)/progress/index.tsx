@@ -11,7 +11,7 @@ import { stickers } from '../../../data/stickers';
 import { nb } from '../../../lib/text';
 import { weekDotSize } from '../../../lib/weekDots';
 import { useToast } from '../../../components/Toast';
-import { AnimatedNumber, Button, ProgressBar, Section, SectionHeader, Separator, Stepper } from '../../../components/ui';
+import { AnimatedNumber, Button, ProgressBar, Section, SectionHeader, Separator, Stepper, TextButton } from '../../../components/ui';
 import { Reveal } from '../../../components/Reveal';
 import { showPaywall, useProGate } from '../../../lib/pro';
 import { BADGES, levelFor, streakOf, xpFor } from '../../../lib/progress';
@@ -31,6 +31,7 @@ export default function ProgressScreen() {
   const { tonight } = useTonightPick();
   const { isPro } = useProGate();
   const [showAll, setShowAll] = useState(false);
+  const [allStickers, setAllStickers] = useState(false);
   const [allHistory, setAllHistory] = useState(false);
 
   const now = new Date();
@@ -194,7 +195,7 @@ export default function ProgressScreen() {
               </View>
               </Lift>
               {/* Two lines of room for every name, so the row stays level. */}
-              <Text style={[t.type.caption1, styles.badgeName, { color: t.colors.label }]}>
+              <Text style={[t.type.caption1, styles.badgeName, { color: t.colors.label }]} numberOfLines={2}>
                 {b.title}
               </Text>
             </PressableScale>
@@ -235,16 +236,17 @@ export default function ProgressScreen() {
       {history.length > 0 && (
         <>
           <SectionHeader title="Your kitchen" />
+          {/* Three equal columns: a big number (or the favorite's photo) above a one-line label. */}
           <PopCard color={t.pop.sunshineTint} contentStyle={styles.kitchen} testID="your-kitchen">
             <KitchenStat value={history.length} label={history.length === 1 ? 'meal cooked' : 'meals cooked'} />
-            <KitchenStat value={minutesCooked} label="minutes cooking" />
+            <KitchenStat value={minutesCooked} label="minutes" />
             {favorite && (
-              <View style={{ flex: 1.4, minWidth: 0 }}>
-                <Text style={[t.type.headline, { color: t.pop.ink }]} numberOfLines={2}>
-                  {favorite.title}
+              <PressableScale onPress={() => router.push({ pathname: '/recipe/[id]', params: { id: favorite.id } })} accessibilityLabel={`Your favorite: ${favorite.title}`} style={styles.kitchenCol}>
+                <PhotoFrame recipe={favorite} radius={12} iconSize={16} square style={{ width: 40, height: 40 }} />
+                <Text style={[t.type.caption1, { color: t.pop.ink }]} numberOfLines={1}>
+                  Favorite
                 </Text>
-                <Text style={[t.type.caption1, { color: t.pop.ink }]}>your favorite dish</Text>
-              </View>
+              </PressableScale>
             )}
           </PopCard>
         </>
@@ -265,21 +267,34 @@ export default function ProgressScreen() {
       )}
 
       {/* Sticker book: 12 to find, one sometimes turns up after cooking. Locked ones are silhouettes. */}
-      <SectionHeader title="Sticker book" subtitle={`${(fun.stickers ?? []).length} of ${stickers.length} found`} />
-      <PopCard contentStyle={styles.stickerBook} testID="sticker-book">
-        {stickers.map((st) => {
+      <SectionHeader title="Sticker book" />
+      {/* A compact row: the 4 nearest stickers (found ones first, then the next to find). "See all"
+          opens the whole book. */}
+      <PopCard contentStyle={allStickers ? styles.stickerBook : styles.stickerRow} testID="sticker-book">
+        {(allStickers ? stickers : [...stickers].sort((a, b) => Number((fun.stickers ?? []).includes(b.id)) - Number((fun.stickers ?? []).includes(a.id))).slice(0, 4)).map((st) => {
           const got = (fun.stickers ?? []).includes(st.id);
           return (
-            <View key={st.id} style={styles.stickerCell} accessible accessibilityLabel={got ? `${st.name} sticker` : 'Sticker not found yet'}>
-              <View style={[styles.stickerDisc, got ? { backgroundColor: t.pop[st.color], borderColor: t.pop.ink } : { backgroundColor: t.pop.lilacTint, borderColor: t.pop.lilac, borderStyle: 'dashed' }]}>
-                <Icon name={st.icon} size={22} color={got ? t.pop.ink : t.pop.lilac} weight="bold" />
+            <View key={st.id} style={allStickers ? styles.stickerCell : styles.stickerSmall} accessible accessibilityLabel={got ? `${st.name} sticker` : 'Sticker not found yet'}>
+              <View style={[styles.stickerDisc, !allStickers && styles.stickerDiscSmall, got ? { backgroundColor: t.pop[st.color], borderColor: t.pop.ink } : { backgroundColor: t.pop.lilacTint, borderColor: t.pop.lilac, borderStyle: 'dashed' }]}>
+                <Icon name={st.icon} size={allStickers ? 22 : 18} color={got ? t.pop.ink : t.pop.lilac} weight="bold" />
               </View>
-              <Text style={[t.type.caption2, { color: got ? t.pop.ink : t.pop.inkMuted, textAlign: 'center' }]} numberOfLines={2}>
-                {got ? st.name : '?'}
-              </Text>
+              {allStickers && (
+                <Text style={[t.type.caption2, { color: got ? t.pop.ink : t.pop.inkMuted, textAlign: 'center' }]} numberOfLines={2}>
+                  {got ? st.name : '?'}
+                </Text>
+              )}
             </View>
           );
         })}
+        {!allStickers && (
+          <TextButton
+            label={`${(fun.stickers ?? []).length} of ${stickers.length} · See all`}
+            onPress={() => setAllStickers(true)}
+            accessibilityLabel={`${(fun.stickers ?? []).length} of ${stickers.length} stickers found. See all`}
+            style={{ marginLeft: 'auto', paddingHorizontal: 4 }}
+            testID="stickers-see-all"
+          />
+        )}
       </PopCard>
 
       {/* Cooking history: one outlined row per dish */}
@@ -365,9 +380,11 @@ export default function ProgressScreen() {
 function KitchenStat({ value, label }: { value: number; label: string }) {
   const t = useTheme();
   return (
-    <View style={{ flex: 1, minWidth: 0 }}>
-      <AnimatedNumber value={value} style={[t.type.title2, { color: t.pop.ink }]} />
-      <Text style={[t.type.caption1, { color: t.pop.ink }]}>{label}</Text>
+    <View style={styles.kitchenCol}>
+      <AnimatedNumber value={value} style={[styles.kitchenNum, { color: t.pop.ink }]} />
+      <Text style={[t.type.caption1, { color: t.pop.ink }]} numberOfLines={1}>
+        {label}
+      </Text>
     </View>
   );
 }
@@ -388,11 +405,16 @@ function GoalRow({ label, unit, eaten, goal, color, children }: { label: string;
 }
 
 const styles = StyleSheet.create({
-  kitchen: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, padding: 16 },
+  kitchen: { flexDirection: 'row', alignItems: 'flex-end', gap: 12, padding: 16 },
+  kitchenCol: { flex: 1, minWidth: 0, alignItems: 'flex-start', gap: 4 },
+  kitchenNum: { fontFamily: fonts.heading, fontSize: 28, lineHeight: 34 },
   gallery: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   galleryItem: { width: '31.5%', aspectRatio: 1 },
   stickerBook: { flexDirection: 'row', flexWrap: 'wrap', padding: 12, rowGap: 12 },
   stickerCell: { width: '25%', alignItems: 'center', gap: 4, paddingHorizontal: 2 },
+  stickerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, paddingHorizontal: 12 },
+  stickerSmall: { alignItems: 'center' },
+  stickerDiscSmall: { width: 40, height: 40, borderRadius: 20 },
   stickerDisc: { width: 52, height: 52, borderRadius: 26, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   header: { marginBottom: 20 },
   avatar: { width: 60, height: 60, borderRadius: 30, borderWidth: 2.5, borderColor: pop.ink, alignItems: 'center', justifyContent: 'center' },

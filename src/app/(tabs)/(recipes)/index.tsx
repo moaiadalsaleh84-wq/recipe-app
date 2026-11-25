@@ -355,30 +355,47 @@ export default function RecipesScreen() {
 
           {/* 5. Cookbooks */}
           <SectionHeader title="Cookbooks" subtitle={books.length ? nb(books.length, books.length === 1 ? 'collection' : 'collections') : 'Save recipes you love in one place'} />
-          <HorizontalList gap={t.spacing.sm} contentStyle={styles.rail}>
-            {books.map((b) => (
-              <CookbookTile key={b.id} id={b.id} name={b.name} width={railWidth} recipes={b.recipeIds.map((id) => getRecipe(id)).filter((r): r is Recipe => !!r)} />
-            ))}
+          {books.length === 0 ? (
+            // No cookbooks yet: one slim row, not a big empty square.
             <PopCard
               onPress={() => (canAddCookbook ? router.push('/cookbook-edit') : showPaywall('cookbooks'))}
               accessibilityLabel="New cookbook"
               color={t.pop.lilacTint}
-              radius={24}
-              style={{ width: railWidth }}
-              contentStyle={styles.newBook}
+              radius={20}
+              depth={3}
+              contentStyle={styles.newBookSlim}
+              testID="new-cookbook-slim"
             >
               <View style={[styles.newIcon, { backgroundColor: t.pop.white, borderColor: t.pop.ink }]}>
                 <Icon name="plus" size={20} color={t.pop.ink} weight="bold" />
               </View>
-              <Text style={[styles.newLabel, { color: t.pop.ink }]}>{'New\u00A0cookbook'}</Text>
-            </PopCard>
-            {books.length === 0 && (
-              // No cookbooks yet: a hint beside the card, in the same row.
-              <View style={[styles.bookHint, { width: railWidth }]}>
-                <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]}>{'Group recipes like ‘Weeknights’ or ‘Date night’'}</Text>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={[styles.newLabel, { color: t.pop.ink }]}>New cookbook</Text>
+                <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]} numberOfLines={1}>
+                  {'Like ‘Weeknights’ or ‘Date night’'}
+                </Text>
               </View>
-            )}
-          </HorizontalList>
+            </PopCard>
+          ) : (
+            <HorizontalList gap={t.spacing.sm} contentStyle={styles.rail}>
+              {books.map((b) => (
+                <CookbookTile key={b.id} id={b.id} name={b.name} width={railWidth} recipes={b.recipeIds.map((id) => getRecipe(id)).filter((r): r is Recipe => !!r)} />
+              ))}
+              <PopCard
+                onPress={() => (canAddCookbook ? router.push('/cookbook-edit') : showPaywall('cookbooks'))}
+                accessibilityLabel="New cookbook"
+                color={t.pop.lilacTint}
+                radius={24}
+                style={{ width: railWidth }}
+                contentStyle={styles.newBook}
+              >
+                <View style={[styles.newIcon, { backgroundColor: t.pop.white, borderColor: t.pop.ink }]}>
+                  <Icon name="plus" size={20} color={t.pop.ink} weight="bold" />
+                </View>
+                <Text style={[styles.newLabel, { color: t.pop.ink }]}>{'New\u00A0cookbook'}</Text>
+              </PopCard>
+            </HorizontalList>
+          )}
         </Animated.View>
       )}
 
@@ -650,4 +667,5 @@ const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
   // Holds one card; a row so the card fills the row's height (cards in a row are equally tall).
   cardSlot: { flexDirection: 'row' },
+  newBookSlim: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 14, paddingVertical: 12 },
 });
