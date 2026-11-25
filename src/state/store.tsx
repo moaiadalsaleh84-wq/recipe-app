@@ -168,7 +168,8 @@ type Store = Saved & {
   toggleGrocery: (key: string) => void;
   addIngredients: (recipeId: string, ingredients: Ingredient[], scale?: number) => number;
   /** Adds every planned meal of this week that isn't on the list yet. Returns what was new. */
-  addWeekToGroceries: () => { meals: number; items: number };
+  /** Adds this week's planned meals to the list; `pick` keeps only the ingredients you ticked. */
+  addWeekToGroceries: (pick?: (recipeId: string, ingredient: Ingredient) => boolean) => { meals: number; items: number };
   addCustomItem: (name: string) => void;
   removeGrocery: (key: string) => void;
   clearCompleted: () => number;
@@ -447,11 +448,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
 
   /** "Add this week to groceries": safe to repeat. Each planned meal is added once per week. */
-  const addWeekToGroceries = useCallback(() => {
+  const addWeekToGroceries = useCallback((pick?: (recipeId: string, ingredient: Ingredient) => boolean) => {
     let result = { meals: 0, items: 0 };
     setSaved((s) => {
       const all = [...s.customRecipes, ...builtInRecipes, ...pantryPopRecipes];
-      const out = addWeekToList(s.groceries, s.plan, s.planAdded ?? [], (id) => all.find((r) => r.id === id)?.ingredients, weekId());
+      const out = addWeekToList(s.groceries, s.plan, s.planAdded ?? [], (id) => all.find((r) => r.id === id)?.ingredients, weekId(), pick as ((recipeId: string, ing: unknown) => boolean) | undefined);
       result = { meals: out.meals, items: out.items };
       if (out.meals === 0) return s;
       lastGroceries.current = s.groceries;

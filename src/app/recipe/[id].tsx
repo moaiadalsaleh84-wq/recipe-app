@@ -53,7 +53,7 @@ export default function RecipeScreen() {
   const toast = useToast();
   const { id } = useLocalSearchParams<{ id: string }>();
   const {
-    getRecipe, isFavorite, toggleFavorite, addIngredients, units, setUnits, notes, setNote,
+    getRecipe, isFavorite, toggleFavorite, units, setUnits, notes, setNote,
     cookbooks, favorites, deleteRecipe, setRecipeImage, goals, profile, isPro, pantry, allRecipes, fun, markImportHintSeen, updateRecipe,
   } = useStore();
   const recipe = getRecipe(id);
@@ -70,17 +70,14 @@ export default function RecipeScreen() {
 
   // Opens sized for your household (from onboarding), or the recipe's own servings.
   const [servings, setServings] = useState(profile.household ?? recipe?.servings ?? 2);
-  const [justAdded, setJustAdded] = useState<'all' | 'missing' | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   // Where the big title ends, so the small one appears only once it has scrolled away.
   const [titleBottom, setTitleBottom] = useState(0);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [noteDraft, setNoteDraft] = useState(recipe ? notes[recipe.id] ?? '' : '');
-  const addedTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const deleteTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(
     () => () => {
-      clearTimeout(addedTimer.current);
       clearTimeout(deleteTimer.current);
     },
     [],
@@ -120,7 +117,6 @@ export default function RecipeScreen() {
   const discoverId = recipe.discover?.id ?? recipe.discoverId;
   const fav = isFavorite(recipe.id);
   const inCookbooks = cookbooks.filter((c) => c.recipeIds.includes(recipe.id)).length + (favorites.includes(recipe.id) ? 1 : 0);
-  const scale = servings / recipe.servings;
   // What you already have at home (from the Pantry tab), so you only buy the rest.
   const have = new Set(pantry.length ? recipe.ingredients.filter((i) => pantryHas(pantry, i.name)).map((i) => i.id) : []);
   const missing = recipe.ingredients.filter((i) => !have.has(i.id));
@@ -141,18 +137,6 @@ export default function RecipeScreen() {
     else haptics.tap();
   };
 
-  const onAdd = (which: 'all' | 'missing') => {
-    const n = addIngredients(recipe.id, which === 'all' ? recipe.ingredients : missing, scale);
-    haptics.success();
-    setJustAdded(which);
-    clearTimeout(addedTimer.current);
-    addedTimer.current = setTimeout(() => setJustAdded(null), 1800);
-    toast({
-      message: `Added ${n} ${which === 'missing' ? 'missing ' : ''}${n === 1 ? 'ingredient' : 'ingredients'} for ${servings} ${servings === 1 ? 'serving' : 'servings'}`,
-      icon: 'cart',
-      action: { label: 'View', onPress: () => router.navigate('/groceries') },
-    });
-  };
 
   const onShare = async () => {
     try {
@@ -501,13 +485,14 @@ export default function RecipeScreen() {
       {/* Sticky actions: a basket for what's missing, and the big "Let's cook!" */}
       <BottomBar color={t.colors.background} border>
         <PopIconButton
-          icon={justAdded === 'missing' ? 'check' : 'cartAdd'}
+          icon="cartAdd"
           size={56}
           iconSize={24}
-          color={justAdded === 'missing' ? t.pop.leaf : t.pop.white}
-          badge={justAdded ? undefined : missing.length || undefined}
-          accessibilityLabel={missing.length && have.size ? `Add the ${missing.length} missing ingredients to the list` : 'Add the ingredients to the list'}
-          onPress={() => (have.size ? onAdd('missing') : onAdd('all'))}
+          color={t.pop.white}
+          badge={missing.length || undefined}
+          accessibilityLabel="Add ingredients to your shopping list"
+          // Opens "Add to your list": you pick what to buy (pantry items start unticked).
+          onPress={() => router.push({ pathname: '/add-to-list', params: { recipe: recipe.id, servings: String(servings) } })}
           testID="add-missing"
           haptic={null}
         />

@@ -128,6 +128,8 @@ export function addWeekToList<T extends ListItem>(
   added: string[],
   getIngredients: (recipeId: string) => ListIngredient[] | undefined,
   week: string,
+  /** Only the ingredients you ticked (the "Add to your list" sheet). Default: all of them. */
+  pick?: (recipeId: string, ingredient: ListIngredient) => boolean,
 ): { list: T[]; added: string[]; meals: number; items: number } {
   // Only this week's record matters; older weeks are dropped so the list stays small.
   const done = new Set(added.filter((k) => k.startsWith(`${week}|`)));
@@ -139,8 +141,9 @@ export function addWeekToList<T extends ListItem>(
       if (!recipeId) continue;
       const key = slotKey(week, day, meal, recipeId);
       if (done.has(key)) continue;
-      const ingredients = getIngredients(recipeId);
-      if (!ingredients) continue;
+      const all = getIngredients(recipeId);
+      if (!all) continue;
+      const ingredients = pick ? all.filter((ing) => pick(recipeId, ing)) : all;
       next = mergeIngredients(next, recipeId, ingredients);
       done.add(key);
       meals += 1;

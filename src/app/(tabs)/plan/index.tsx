@@ -25,7 +25,7 @@ export default function PlanScreen() {
   const reduceMotion = useReducedMotion();
   const t = useTheme();
   const toast = useToast();
-  const { plan, setMeal, addWeekToGroceries, getRecipe, goals, isPro, allRecipes } = useStore();
+  const { plan, setMeal, getRecipe, goals, isPro, allRecipes } = useStore();
   const [day, setDay] = useState(weekDays.find((d) => d.isToday)?.index ?? 0);
   const dayPlan = useMemo(() => plan[day] ?? {}, [plan, day]);
   const plannedToday = meals.filter((m) => dayPlan[m]).length;
@@ -39,18 +39,8 @@ export default function PlanScreen() {
   // Safe to press again: meals already added this week are skipped, and the same ingredient
   // from different recipes is added up on the list (see lib/groceries.ts).
   const addWeek = () => {
-    const { meals: added, items } = addWeekToGroceries();
-    if (added === 0) {
-      haptics.select();
-      toast({ message: 'This week’s meals are already on your list', icon: 'check', tone: 'info', action: { label: 'View', onPress: () => router.navigate('/groceries') } });
-      return;
-    }
-    haptics.success();
-    toast({
-      message: `Added ${items} ${items === 1 ? 'item' : 'items'} from ${added} ${added === 1 ? 'meal' : 'meals'}`,
-      icon: 'cart',
-      action: { label: 'View', onPress: () => router.navigate('/groceries') },
-    });
+    // You pick what to buy first ("Add to your list"); meals already added this week are left out.
+    router.push({ pathname: '/add-to-list', params: { week: '1' } });
   };
 
   const remove = (meal: Meal, recipeId: string) => {
@@ -181,7 +171,7 @@ export default function PlanScreen() {
                 {weekRecipes.length} {weekRecipes.length === 1 ? 'meal' : 'meals'} planned. Shared ingredients are{'\u00A0'}combined.
               </Text>
             </View>
-            <PopButton label="Shop the week" icon="cartAdd" onPress={addWeek} accessibilityLabel="Add this week to groceries" />
+            <PopButton label="Shop the week" icon="cartAdd" onPress={addWeek} accessibilityLabel="Pick what to buy for this week" />
           </View>
         </Lift>
         </Reveal>
