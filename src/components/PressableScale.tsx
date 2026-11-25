@@ -15,11 +15,11 @@ type Props = Omit<PressableProps, 'style'> & {
 };
 
 /**
- * The base for every tappable element without its own shadow (rows, tiles, small buttons): it
- * dims while pressed (opacity, 120 ms in / 160 ms out, ease-out cubic), a haptic tap, and a
- * dimmed state while disabled. No scaling: buttons and cards with a shadow press down onto it
- * instead (Chunky, PopButton, PopCard). `scaleTo` is kept for old call sites and only sets how
- * much it dims.
+ * The base for every tappable element without its own shadow (rows, tiles, small buttons): while
+ * your finger is down it settles slightly smaller (to `scaleTo`, 0.97 by default) and dims a
+ * little, 120 ms in / 160 ms out, ease-out cubic, never past its size (no bounce). A haptic tap,
+ * and a dimmed state while disabled. Buttons and cards with a shadow press down onto it instead
+ * (Chunky, PopButton, PopCard). With Reduce Motion it only dims.
  */
 export function PressableScale({
   scaleTo = motion.pressScale,
@@ -33,9 +33,10 @@ export function PressableScale({
 }: Props) {
   const reduceMotion = useReducedMotion();
   const pressed = useSharedValue(0);
-  // A smaller scaleTo used to mean a stronger press: dim a little more for those.
-  const dim = Math.min(0.4, Math.max(0.15, (1 - scaleTo) * 6));
-  const animatedStyle = useAnimatedStyle(() => ({ opacity: 1 - pressed.get() * dim }));
+  // A smaller scaleTo means a stronger press: a little more dimming for those too.
+  const dim = Math.min(0.3, Math.max(0.12, (1 - scaleTo) * 4));
+  const shrink = reduceMotion ? 0 : 1 - scaleTo;
+  const animatedStyle = useAnimatedStyle(() => ({ opacity: 1 - pressed.get() * dim, transform: [{ scale: 1 - pressed.get() * shrink }] }));
 
   return (
     <AnimatedPressable
