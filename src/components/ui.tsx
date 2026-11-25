@@ -529,7 +529,7 @@ export function SearchField({ value, onChangeText, placeholder, style, ...rest }
 
 const styles = StyleSheet.create({
   textButton: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 12 },
-  textButtonLabel: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 21 },
+  textButtonLabel: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 21, flexShrink: 1 },
   textButtonSmall: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 18 },
   chip: {
     flexDirection: 'row',

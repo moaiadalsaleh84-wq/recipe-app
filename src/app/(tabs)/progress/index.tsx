@@ -292,10 +292,10 @@ export default function ProgressScreen() {
         })}
         {!allStickers && (
           <TextButton
-            label={`${(fun.stickers ?? []).length} of ${stickers.length} · See all`}
+            label={`${(fun.stickers ?? []).length}\u00A0of\u00A0${stickers.length} · See\u00A0all`}
             onPress={() => setAllStickers(true)}
             accessibilityLabel={`${(fun.stickers ?? []).length} of ${stickers.length} stickers found. See all`}
-            style={{ marginLeft: 'auto', paddingHorizontal: 4 }}
+            style={{ marginLeft: 'auto', paddingHorizontal: 4, flexShrink: 1 }}
             testID="stickers-see-all"
           />
         )}
@@ -336,7 +336,9 @@ export default function ProgressScreen() {
                 <PressableScale onPress={() => router.push({ pathname: '/recipe/[id]', params: { id: r.id } })} scaleTo={0.98} accessibilityLabel={`${r.title}, last cooked ${old ? when.toDateString() : day}${said}. Opens the recipe`} style={styles.historyMain}>
                   {c.photo ? <PhotoFrame uri={c.photo} radius={14} style={styles.historyThumb} /> : <PhotoFrame recipe={r} iconSize={20} radius={14} square style={styles.historyThumb} />}
                   <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text style={[t.type.title3, { color: t.colors.label, fontSize: 17, lineHeight: 21 }]}>{r.title}</Text>
+                    <Text style={[t.type.title3, { color: t.colors.label, fontSize: 17, lineHeight: 21 }]} numberOfLines={3}>
+                      {r.title}
+                    </Text>
                     <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]}>
                       {day}
                       {said}
@@ -386,7 +388,7 @@ function KitchenStat({ value, label }: { value: number; label: string }) {
   return (
     <View style={styles.kitchenCol}>
       <AnimatedNumber value={value} style={[styles.kitchenNum, { color: t.pop.ink }]} />
-      <Text style={[t.type.caption1, { color: t.pop.ink }]} numberOfLines={1}>
+      <Text style={[t.type.caption1, { color: t.pop.ink, textAlign: 'center' }]} numberOfLines={2}>
         {label}
       </Text>
     </View>
