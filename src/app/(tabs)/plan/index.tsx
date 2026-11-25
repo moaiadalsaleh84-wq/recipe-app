@@ -272,7 +272,7 @@ function MealCard({ meal, recipe, onChange, onRemove }: { meal: string; recipe: 
         {/* The meal on top (left-aligned), the title (2 lines max), one meta line. */}
         <View style={{ flex: 1, gap: 3, minWidth: 0, alignItems: 'flex-start' }}>
           <PopChip label={meal} color={MEAL_TINT[meal] ?? t.pop.sunshineTint} small />
-          <Text style={[t.type.title3, { color: t.colors.label, fontSize: 18, lineHeight: 22, alignSelf: 'stretch' }]} numberOfLines={2}>
+          <Text style={[t.type.title3, { color: t.colors.label, fontSize: 18, lineHeight: 22, alignSelf: 'stretch' }]} numberOfLines={3}>
             {recipe.title}
           </Text>
           <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, alignSelf: 'stretch' }]} numberOfLines={1}>

@@ -748,7 +748,7 @@ function Finish({
                 <PhotoFrame recipe={tomorrow.recipe} radius={14} iconSize={20} square style={styles.tomorrowThumb} />
                 <View style={styles.tomorrowText}>
                   <Text style={[t.type.caption1, { color: pop.inkMuted }]}>Tomorrow</Text>
-                  <Text style={[t.type.headline, { color: pop.ink }]} numberOfLines={2}>
+                  <Text style={[t.type.headline, { color: pop.ink }]} numberOfLines={3}>
                     {tomorrow.recipe.title}
                   </Text>
                 </View>

@@ -105,7 +105,7 @@ export function CardText({ creator, title, meta, metaTestID }: { creator?: strin
             {creator}
           </Text>
         ) : null}
-        <Text style={[styles.cardTitle, { color: t.colors.label }]} numberOfLines={2}>
+        <Text style={[styles.cardTitle, { color: t.colors.label }]} numberOfLines={3}>
           {title}
         </Text>
       </View>
@@ -264,7 +264,7 @@ export function RecipeRow({
         <PhotoFrame recipe={recipe} iconSize={24} radius={16} square style={{ width: thumb, height: thumb }} />
         <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
           {label ? <Text style={[styles.metaLine, { color: t.colors.secondaryLabel, fontSize: 13, lineHeight: 17 }]} numberOfLines={1}>{label}</Text> : null}
-          <Text style={[t.type.title3, t.noWidows.balanced, { color: t.colors.label, fontSize: 18, lineHeight: 22 }]} numberOfLines={2} {...t.noWidows.props}>{recipe.title}</Text>
+          <Text style={[t.type.title3, t.noWidows.balanced, { color: t.colors.label, fontSize: 18, lineHeight: 22 }]} numberOfLines={3} {...t.noWidows.props}>{recipe.title}</Text>
           {metaLines ? (
             metaLines.map((line) => (
               <Text key={line} style={[styles.metaLine, { color: t.colors.secondaryLabel }]}>
