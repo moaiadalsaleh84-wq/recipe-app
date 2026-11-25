@@ -6,7 +6,10 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native';
 import { Text } from './Text';
 import { noWidow, num } from '../lib/text';
-import { duration as motionDuration } from '../motion';
+import { EASE_CUBIC, duration as motionDuration } from '../motion';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { scheduleOnRN } from 'react-native-worklets';
+import { haptics } from '../lib/haptics';
 import Animated, {
   Easing,
   useAnimatedProps,
@@ -577,6 +580,19 @@ const styles = StyleSheet.create({
 
 /* ---------- Segmented control ---------- */
 
+/** The time, callable from gestures (UI thread) and handlers alike. */
+function clock() {
+  'worklet';
+  return Date.now();
+}
+
+/** How the Segmented thumb moves to its new spot (no bounce). */
+const SEG_MOVE = { duration: 200, easing: EASE_CUBIC };
+
+/**
+ * Two or three options in a pill ("Metric | US"). Tap an option, or slide the yellow thumb across
+ * with your finger: it follows the finger and settles on the nearest option when you let go.
+ */
 export function Segmented<T extends string>({
   options,
   value,
@@ -592,32 +608,119 @@ export function Segmented<T extends string>({
   small?: boolean;
 }) {
   const t = useTheme();
+  const reduceMotion = useReducedMotion();
+  // Where each option sits, so the thumb can slide between them.
+  const [slots, setSlots] = useState<({ x: number; y: number; w: number; h: number } | undefined)[]>([]);
+  const measured = options.every((_, i) => !!slots[i]);
+  const index = Math.max(0, options.findIndex((o) => o.value === value));
+  const xs = useSharedValue<number[]>([]);
+  const ws = useSharedValue<number[]>([]);
+  const thumbX = useSharedValue(0);
+  const thumbW = useSharedValue(0);
+  const from = useSharedValue(0);
+  // When a slide ended: the finger lifting right after isn't also a tap on the option under it.
+  const slidAt = useSharedValue(0);
+
+  useEffect(() => {
+    if (!measured) return;
+    const all = slots.slice(0, options.length) as { x: number; w: number }[];
+    xs.set(all.map((s) => s.x));
+    ws.set(all.map((s) => s.w));
+    const s = all[index];
+    // The first time it jumps straight there; after that it slides.
+    const jump = thumbW.get() === 0 || reduceMotion;
+    thumbX.set(jump ? s.x : withTiming(s.x, SEG_MOVE));
+    thumbW.set(jump ? s.w : withTiming(s.w, SEG_MOVE));
+  }, [measured, slots, index, options.length, reduceMotion, xs, ws, thumbX, thumbW]);
+
+  const pick = (i: number) => {
+    const o = options[i];
+    if (o && o.value !== value) {
+      haptics.select();
+      onChange(o.value);
+    }
+  };
+  // Sideways drags only, so the page still scrolls up and down.
+  const slide = Gesture.Pan()
+    .enabled(measured)
+    .activeOffsetX([-6, 6])
+    .failOffsetY([-12, 12])
+    .onStart(() => {
+      from.set(thumbX.get());
+      slidAt.set(clock() + 60000);
+    })
+    .onChange((e) => {
+      const x = xs.get();
+      const w = ws.get();
+      const max = x[x.length - 1] + w[w.length - 1] - thumbW.get();
+      thumbX.set(Math.min(max, Math.max(x[0], from.get() + e.translationX)));
+    })
+    .onEnd(() => {
+      const x = xs.get();
+      const w = ws.get();
+      const mid = thumbX.get() + thumbW.get() / 2;
+      let best = 0;
+      for (let i = 1; i < x.length; i++) if (Math.abs(x[i] + w[i] / 2 - mid) < Math.abs(x[best] + w[best] / 2 - mid)) best = i;
+      thumbX.set(withTiming(x[best], SEG_MOVE));
+      thumbW.set(withTiming(w[best], SEG_MOVE));
+      scheduleOnRN(pick, best);
+    })
+    .onFinalize(() => {
+      if (slidAt.get() > clock()) slidAt.set(clock());
+    });
+  const thumbStyle = useAnimatedStyle(() => ({ width: thumbW.get(), transform: [{ translateX: thumbX.get() }] }));
+  const first = slots[0];
+
   return (
-    <View style={[segStyles.wrap, { backgroundColor: t.colors.cell, borderColor: t.pop.ink }]} accessibilityRole="radiogroup" accessibilityLabel={label}>
-      {options.map((o) => {
-        const selected = o.value === value;
-        return (
-          <PressableScale
-            key={o.value}
-            onPress={() => onChange(o.value)}
-            haptic="select"
-            scaleTo={0.95}
-            accessibilityRole="radio"
-            aria-checked={selected}
-            accessibilityLabel={o.label}
-            hitSlop={small ? { top: 8, bottom: 8 } : { top: 5, bottom: 5 }}
-            style={[segStyles.item, small && segStyles.itemSmall, selected && { backgroundColor: t.pop.sunshine, borderColor: t.pop.ink, borderWidth: t.stroke.thin }]}
-          >
-            <Text style={[t.type.footnote, { color: selected ? t.colors.label : t.colors.secondaryLabel, fontFamily: selected ? t.fonts.black : t.fonts.bold, fontSize: small ? 13 : 14 }]}>{o.label}</Text>
-          </PressableScale>
-        );
-      })}
-    </View>
+    <GestureDetector gesture={slide}>
+      <View style={[segStyles.wrap, { backgroundColor: t.colors.cell, borderColor: t.pop.ink }]} accessibilityRole="radiogroup" accessibilityLabel={label}>
+        {measured && first && (
+          <Animated.View
+            pointerEvents="none"
+            style={[segStyles.thumb, { top: first.y, height: first.h, backgroundColor: t.pop.sunshine, borderColor: t.pop.ink, borderWidth: t.stroke.thin }, thumbStyle]}
+          />
+        )}
+        {options.map((o, i) => {
+          const selected = o.value === value;
+          return (
+            <PressableScale
+              key={o.value}
+              onPress={() => {
+                if (clock() - slidAt.get() < 350) return;
+                onChange(o.value);
+              }}
+              haptic="select"
+              scaleTo={0.95}
+              accessibilityRole="radio"
+              aria-checked={selected}
+              accessibilityLabel={o.label}
+              hitSlop={small ? { top: 8, bottom: 8 } : { top: 5, bottom: 5 }}
+              onLayout={(e) => {
+                const { x, y, width: w, height: h } = e.nativeEvent.layout;
+                setSlots((prev) => {
+                  const p = prev[i];
+                  if (p && p.x === x && p.y === y && p.w === w && p.h === h) return prev;
+                  const next = [...prev];
+                  next[i] = { x, y, w, h };
+                  return next;
+                });
+              }}
+              // Until the thumb is ready, the chosen option draws its own yellow pill.
+              style={[segStyles.item, small && segStyles.itemSmall, { borderWidth: t.stroke.thin, borderColor: 'transparent' }, selected && !measured && { backgroundColor: t.pop.sunshine, borderColor: t.pop.ink }]}
+            >
+              <Text style={[t.type.footnote, { color: selected ? t.colors.label : t.colors.secondaryLabel, fontFamily: selected ? t.fonts.black : t.fonts.bold, fontSize: small ? 13 : 14 }]}>{o.label}</Text>
+            </PressableScale>
+          );
+        })}
+      </View>
+    </GestureDetector>
   );
 }
 
 const segStyles = StyleSheet.create({
   wrap: { flexDirection: 'row', borderRadius: 999, padding: 3, borderWidth: 2, borderCurve: 'continuous' },
+  // The yellow pill behind the chosen option (slides; childless, so animating its width is cheap).
+  thumb: { position: 'absolute', left: 0, borderRadius: 999, borderCurve: 'continuous' },
   // 34 + 2 × 3 padding + 2 × 2 border = 44 tall.
   itemSmall: { minHeight: 34, minWidth: 48, paddingHorizontal: 10 },
   // 38 + the 3pt padding above and below = 44 to tap.
