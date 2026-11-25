@@ -132,10 +132,10 @@ export default function PantryScreen() {
         // One calm card: no stacked photos, and its text never runs under the tab bar.
         <PopCard color={t.pop.lilacTint} contentStyle={styles.emptyCard}>
           <Text style={[t.type.title2, { color: t.colors.label }]} testID="pantry-empty">
-            Your pantry is empty
+            Your pantry’s a little lonely
           </Text>
           <Text style={[t.type.body, t.noWidows.style, { color: t.colors.label }]} {...t.noWidows.props}>
-            Add a few things you have at home. You’ll see which recipes you can cook right now, and what’s missing.
+            Add a few things you have. We’ll show what you can cook right now.
           </Text>
         </PopCard>
       ) : groups.length === 0 ? (
@@ -255,7 +255,7 @@ function MatchCard({ match, onAddMissing }: { match: PantryMatch; onAddMissing: 
         </View>
       </PressableScale>
       {missing.length > 0 && (
-        <Button label="Add missing to list" icon="cartAdd" size="medium" variant="tinted" onPress={onAddMissing} accessibilityLabel={`Add missing for ${recipe.title} to Groceries`} style={{ marginTop: 12, alignSelf: 'stretch' }} />
+        <Button label="Add missing" icon="cartAdd" size="medium" variant="tinted" onPress={onAddMissing} accessibilityLabel={`Add missing for ${recipe.title} to Groceries`} style={{ marginTop: 12, alignSelf: 'stretch' }} />
       )}
     </PopCard>
   );

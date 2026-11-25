@@ -26,7 +26,7 @@ export function useOpenLink() {
   const toast = useToast();
   return (url: string | undefined) => {
     if (!url) return;
-    Linking.openURL(url).catch(() => toast({ message: 'Couldn’t open that link', tone: 'warning' }));
+    Linking.openURL(url).catch(() => toast({ message: 'Oops, that link wouldn’t open', tone: 'warning' }));
   };
 }
 

@@ -470,10 +470,10 @@ export default function RecipesScreen() {
           {filtered.length === 0 ? (
             <EmptyState
               icon="search"
-              title="No recipes found"
-              message={profile.diets.length ? `Try another word, or clear the filters. Only recipes that fit your diet (${profile.diets.join(', ')}) are shown; change it in Settings.` : 'Try another word, or clear the filters to see everything.'}
+              title="No matches yet"
+              message={profile.diets.length ? `Try another word, or clear the filters. Only recipes that fit your diet (${profile.diets.join(', ')}) are shown; change it in Settings.` : 'Try fewer words or another dish.'}
               action={{
-                label: 'Clear search and filters',
+                label: 'Clear all',
                 icon: 'close',
                 onPress: () => {
                   haptics.tap();
@@ -501,7 +501,7 @@ export default function RecipesScreen() {
         label="Add a recipe"
         rows={[
           {
-            label: 'Save from a link',
+            label: 'Import a link',
             hint: 'TikTok, YouTube, Instagram or any recipe site',
             icon: 'link',
             onPress: () => {

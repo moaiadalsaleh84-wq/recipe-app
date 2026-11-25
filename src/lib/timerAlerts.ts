@@ -267,7 +267,7 @@ async function run(op: AlertOp, ctx: AlertContext) {
       await n.scheduleNotificationAsync({
         identifier: notifId(t.id),
         content: {
-          title: `Time’s up: ${t.label}`,
+          title: `Ding! Time’s up: ${t.label}`,
           body: `${t.recipeTitle}, step ${t.step}. ${ctx.doneLine}`,
           sound: TIMER_NOTIFICATION_SOUND,
           interruptionLevel: 'timeSensitive', // breaks through Focus when the user allows it

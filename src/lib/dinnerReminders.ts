@@ -57,7 +57,7 @@ export function reminderText(recipe: Recipe, have: number, needed: number) {
  * is 3+ days and you haven't cooked today. Warm, never a loss warning.
  */
 export function streakSaverText(streak: number, recipe: Recipe) {
-  return { title: `Keep your ${streak}-day run going?`, body: `A ${recipe.minutes}-minute idea: ${recipe.title}. Tap to start.` };
+  return { title: `Your ${streak}-day streak is sizzling`, body: `A ${recipe.minutes}-minute idea: ${recipe.title}. Tap to start.` };
 }
 const SAVER_ID = `${PREFIX}saver`;
 const SAVER_HOUR = 20;

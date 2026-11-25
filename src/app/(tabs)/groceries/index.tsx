@@ -53,7 +53,7 @@ export default function GroceriesScreen() {
       return items.length ? [aisleName(aisle), ...items.map((g) => `• ${g.name} (${showAmount(g.quantity, g.unit, g.name, units, g.aisle).text})`), ''] : [];
     });
     if (lines.length === 0) {
-      toast({ message: 'Nothing left to buy, nothing to share!', tone: 'info' });
+      toast({ message: 'Nothing to share yet. Add a few items first.', tone: 'info' });
       return;
     }
     try {
@@ -119,9 +119,9 @@ export default function GroceriesScreen() {
               {/* All done: the bar is full and green, and the message slides in. */}
               <Animated.View key={done === total ? 'all-done' : 'counting'} entering={done === total ? enter(0, reduceMotion) : undefined} style={{ flex: 1, gap: 2, minWidth: 0 }}>
                 <Text style={[t.type.title2, { color: t.colors.label }]} testID="grocery-progress">
-                  {done === total ? 'Everything’s in the\u00A0basket!' : `${done} of ${total} in your basket`}
+                  {done === total ? 'Everything’s in the\u00A0basket.' : `${done} of ${total} in your basket`}
                 </Text>
-                {done === total && <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{'Nice shopping. Clear the list when you’re ready.'}</Text>}
+                {done === total && <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{'Go get cooking!'}</Text>}
               </Animated.View>
             </View>
             <View style={styles.heroBar}>
@@ -160,9 +160,9 @@ export default function GroceriesScreen() {
       {total === 0 ? (
         <EmptyState
           icon="cart"
-          title="Your list is empty"
-          message={tonight ? `Tonight’s pick is ${tonight.recipe.title}. Add what you’re missing in one tap.` : 'Add items here, or add a recipe’s ingredients from its page or your weekly plan.'}
-          action={tonight ? { label: 'Add tonight’s pick ingredients', icon: 'cartAdd', onPress: addTonight } : { label: 'Browse recipes', icon: 'book', onPress: () => router.navigate('/') }}
+          title="Nothing to buy yet"
+          message={tonight ? `Tonight’s pick is ${tonight.recipe.title}. Add what you’re missing in one tap.` : 'Your fridge says thanks. Add items here, or from any recipe.'}
+          action={tonight ? { label: 'Add tonight’s pick', icon: 'cartAdd', onPress: addTonight } : { label: 'Browse recipes', icon: 'book', onPress: () => router.navigate('/') }}
         />
       ) : (
         <>

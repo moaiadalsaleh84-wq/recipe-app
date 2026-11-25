@@ -106,7 +106,7 @@ export default function RecipeScreen() {
   if (!recipe) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', backgroundColor: t.colors.background }}>
-        <EmptyState icon="fork" title="Recipe not found" message="It may have been removed." action={{ label: 'Back to recipes', onPress: goBack }} />
+        <EmptyState icon="fork" title="Oops, that recipe’s gone" message="It may have been removed." action={{ label: 'Back to recipes', onPress: goBack }} />
       </View>
     );
   }
@@ -188,7 +188,7 @@ export default function RecipeScreen() {
         toast({ message: 'Your photo is on this recipe', icon: 'camera' });
       }
     } catch {
-      toast({ message: 'Couldn’t open your photos', tone: 'warning' });
+      toast({ message: 'Oops, your photos wouldn’t open', tone: 'warning' });
     }
   };
   // A photo the user chose (not the imported one): no source sticker on it, and the ⋯ menu offers the imported one back.
@@ -198,7 +198,7 @@ export default function RecipeScreen() {
     if (patch) {
       updateRecipe(recipe.id, patch);
       toast({ message: patch.importedImage ? 'Got the photo.' : 'Found the creator. Still no photo.', icon: 'check' });
-    } else toast({ message: 'Still no photo. Try again later.', tone: 'warning' });
+    } else toast({ message: 'Still no photo. Try again in a bit.', tone: 'warning' });
   };
   const usingOwnPhoto = !!recipe.image && !(recipe.importedImage && typeof recipe.image === 'object' && recipe.image.uri === recipe.importedImage.card);
 
@@ -441,7 +441,7 @@ export default function RecipeScreen() {
             onBlur={() => {
               if ((notes[recipe.id] ?? '') !== noteDraft) {
                 setNote(recipe.id, noteDraft);
-                toast({ message: 'Note saved', icon: 'notes' });
+                toast({ message: 'Noted!', icon: 'notes' });
               }
             }}
             placeholder="Swaps, tweaks, who loved it…"
@@ -485,13 +485,13 @@ export default function RecipeScreen() {
         rows={[
           { label: 'Share recipe', icon: 'share', onPress: onShare },
           ...(fromDiscover
-            ? [{ label: 'Save to your recipes', icon: 'heart' as const, onPress: () => void onSaveDiscover() }]
+            ? [{ label: 'Save to recipes', icon: 'heart' as const, onPress: () => void onSaveDiscover() }]
             : [{ label: inCookbooks > 0 ? 'Saved to a cookbook' : 'Save to a cookbook', icon: inCookbooks > 0 ? ('bookmarkFill' as const) : ('bookmark' as const), onPress: () => router.push({ pathname: '/save-to-cookbook', params: { id: recipe.id } }) }]),
           ...(recipe.custom ? [{ label: 'Edit recipe', icon: 'edit' as const, onPress: () => router.push({ pathname: '/recipe/new', params: { edit: recipe.id } }) }] : []),
           ...(imported && recipe.creatorUrl ? [{ label: 'Open creator’s profile', icon: 'people' as const, onPress: () => openLink(recipe.creatorUrl) }] : []),
           ...(needsPhotoRetry(recipe) ? [{ label: 'Retry photo', icon: 'camera' as const, onPress: () => void retryPhoto() }] : []),
           ...(usingOwnPhoto && recipe.importedImage
-            ? [{ label: 'Use the imported photo', icon: 'undo' as const, onPress: () => setRecipeImage(recipe.id, { uri: recipe.importedImage!.card }) }]
+            ? [{ label: 'Use imported photo', icon: 'undo' as const, onPress: () => setRecipeImage(recipe.id, { uri: recipe.importedImage!.card }) }]
             : []),
           ...(discoverId ? [{ label: 'Report', icon: 'flag' as const, onPress: () => router.push({ pathname: '/report/[id]', params: { id: discoverId } }) }] : []),
         ]}

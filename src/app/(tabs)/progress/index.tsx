@@ -63,10 +63,12 @@ export default function ProgressScreen() {
   const [weekW, setWeekW] = useState(0);
   const dot = weekW ? weekDotSize(weekW) : 32;
   const streakLine = today.length > 0
-    ? `Done for today! Back tomorrow for\u00A0${streak + 1}`
+    ? streak <= 1
+      ? 'Day one, done. The pan’s warming\u00A0up.'
+      : 'Back again! Your streak is\u00A0sizzling.'
     : streak > 0
-      ? 'Cook today to keep it going'
-      : 'Cook anything today to start\u00A0one';
+      ? 'Cook anything today to keep it\u00A0going.'
+      : 'Fresh start today. Every chef takes a day\u00A0off.';
 
   // "Your kitchen" numbers and the photo gallery.
   const minutesCooked = history.reduce((n, c) => n + (getRecipe(c.recipeId)?.minutes ?? 0), 0);
@@ -306,7 +308,7 @@ export default function ProgressScreen() {
         <PopCard color={t.pop.lilacTint} contentStyle={[styles.emptyHistory, { flexDirection: 'column', alignItems: 'stretch' }]} testID="history-empty">
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <Icon name="pot" size={26} color={t.pop.ink} weight="bold" />
-            <Text style={[t.type.subhead, { color: t.colors.label, flex: 1 }]}>Every meal you finish in Cook Mode shows up here.</Text>
+            <Text style={[t.type.subhead, { color: t.colors.label, flex: 1 }]}>Your first dish lands here. Pick something tasty!</Text>
           </View>
           {tonight && (
             <PopButton

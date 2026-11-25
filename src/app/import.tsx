@@ -288,9 +288,9 @@ export default function ImportScreen() {
 
   const line: Line =
     phase.name === 'loading'
-      ? { text: 'Ooh, let me read this one…', mood: 'thinking' }
+      ? { text: 'Reading the recipe… so you don’t have to pause the video 40 times.', mood: 'thinking' }
       : phase.name === 'failed'
-        ? { text: 'Oops, that one slipped away!', mood: 'oops' }
+        ? { text: 'Oops, that recipe got away. Try another link, or type it in yourself.', mood: 'oops' }
         : { text: 'Paste a link. I’ll fetch the recipe!', mood: 'excited' };
   const failure = phase.name === 'failed' ? phase.failure : null;
   const network = !!failure && ['offline', 'timeout', 'server_error', 'fetch_failed', 'ai_unavailable'].includes(failure.code);
@@ -441,20 +441,20 @@ export default function ImportScreen() {
 function failureTitle(f: ImportFailure) {
   switch (f.code) {
     case 'no_text':
-      return 'No recipe in the text';
+      return 'No recipe in there';
     case 'blocked':
       return 'The site said no';
     case 'not_a_recipe':
-      return 'That isn’t a recipe';
+      return 'Hmm, that’s not a recipe';
     case 'offline':
-      return 'You’re offline';
+      return 'No internet right now';
     case 'rate_limited':
     case 'daily_cap':
-      return 'Slow down a little';
+      return 'Phew, that’s a lot';
     case 'invalid_input':
       return 'Check the link';
     default:
-      return 'Import didn’t work';
+      return 'Oops, that recipe got away';
   }
 }
 

@@ -159,7 +159,7 @@ export async function importRecipe(input: { url?: string; text?: string }, signa
         ? { ok: false, code: 'cancelled', message: 'Import cancelled.' }
         : { ok: false, code: 'timeout', message: 'That took too long. Try again, or paste the recipe text instead.' };
     }
-    return { ok: false, code: 'offline', message: 'You seem to be offline. Check your connection and try again.' };
+    return { ok: false, code: 'offline', message: 'No internet right now. Your saved recipes still work.' };
   } finally {
     clearTimeout(timer);
     signal?.removeEventListener('abort', onCancel);

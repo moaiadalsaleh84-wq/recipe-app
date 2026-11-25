@@ -38,7 +38,7 @@ export function ProgressWatcher() {
     }
     if (newlyEarned.length) {
       unlockBadges(newlyEarned.map((b) => b.id));
-      for (const b of newlyEarned) toast({ message: `Badge unlocked: ${b.title}! +25 XP`, icon: b.icon, queue: true });
+      for (const b of newlyEarned) toast({ message: `New badge: ${b.title}! Look at you go. +25 XP`, icon: b.icon, queue: true });
     }
     if (level > fun.lastLevel) {
       setLastLevel(level);

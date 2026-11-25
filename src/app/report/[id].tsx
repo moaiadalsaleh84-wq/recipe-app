@@ -31,7 +31,7 @@ export default function ReportScreen() {
     setBusy(false);
     if (!res.ok) return toast({ message: res.message, tone: 'warning' });
     haptics.success();
-    toast({ message: 'Thanks. It’s hidden until we’ve looked at it.', icon: 'check' });
+    toast({ message: 'Thanks for the heads-up. It’s hidden while we check.', icon: 'check' });
     close();
   };
 

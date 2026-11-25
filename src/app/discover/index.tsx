@@ -81,8 +81,8 @@ export default function DiscoverScreen() {
         ) : items.length === 0 ? (
           <EmptyState
             icon="search"
-            title={filtered ? 'No recipes match' : 'Nothing here yet'}
-            message={filtered ? 'Try fewer filters or another word.' : 'New recipes appear here soon.'}
+            title={filtered ? 'No matches yet' : 'Nothing here yet'}
+            message={filtered ? 'Try fewer words or another dish.' : 'Fresh recipes are on their way.'}
             action={filtered ? { label: 'Clear filters', onPress: () => { setQ(''); setFilters({}); } } : { label: 'Back to recipes', onPress: () => (router.canGoBack() ? router.back() : router.replace('/')) }}
           />
         ) : (

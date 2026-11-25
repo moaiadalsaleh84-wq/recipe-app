@@ -91,7 +91,7 @@ export default function PlanScreen() {
     dinnerPicks.forEach((p) => setMeal(p.day, p.meal, p.recipeId));
     haptics.success();
     toast({
-      message: `Planned ${dinnerPicks.length} dinners`,
+      message: `Planned ${dinnerPicks.length} dinners. Dinner’s sorted!`,
       icon: 'calendar',
       action: { label: 'Undo', onPress: () => dinnerPicks.forEach((p) => setMeal(p.day, p.meal, null)) },
     });
@@ -217,7 +217,7 @@ export default function PlanScreen() {
                 {weekRecipes.length} {weekRecipes.length === 1 ? 'meal' : 'meals'} planned. Shared ingredients are{'\u00A0'}combined.
               </Text>
             </View>
-            <PopButton label="Add all to list" icon="cartAdd" onPress={addWeek} accessibilityLabel="Add this week to groceries" />
+            <PopButton label="Shop the week" icon="cartAdd" onPress={addWeek} accessibilityLabel="Add this week to groceries" />
           </View>
         </Lift>
         </Reveal>

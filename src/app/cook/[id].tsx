@@ -62,7 +62,7 @@ export default function CookMode() {
   if (!recipe) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', backgroundColor: t.colors.background }}>
-        <EmptyState icon="fork" title="Recipe not found" message="It may have been removed." action={{ label: 'Close', onPress: () => router.back() }} />
+        <EmptyState icon="fork" title="Oops, that recipe’s gone" message="It may have been removed." action={{ label: 'Close', onPress: () => router.back() }} />
       </View>
     );
   }
@@ -498,7 +498,7 @@ function TimerCard({ seconds, timer: tm, now, first, onStart, onPause, onResume,
   const ready = !tm || isReady(tm);
   const running = tm?.status === 'running';
   const left = tm ? secondsLeft(tm, now) : seconds;
-  const status = done ? 'Done!' : ready ? 'Ready' : running ? 'Running' : 'Stopped';
+  const status = done ? 'Ding! Time’s up' : ready ? 'Ready' : running ? 'Running' : 'Stopped';
   const reduceMotion = useReducedMotion();
   // A bar that drains smoothly: each second it glides (linear, on the UI thread) to the next value.
   const drain = useSharedValue(left / seconds);
@@ -635,9 +635,9 @@ function Finish({
       setPhoto(uri);
       onPhoto(uri);
       haptics.success();
-      toast({ message: 'Photo saved to your cooking history', icon: 'camera' });
+      toast({ message: 'Looking good! Photo saved.', icon: 'camera' });
     } catch {
-      toast({ message: 'Couldn’t open the camera or your photos', tone: 'warning' });
+      toast({ message: 'Oops, the camera wouldn’t open. Try again?', tone: 'warning' });
     }
   };
 
