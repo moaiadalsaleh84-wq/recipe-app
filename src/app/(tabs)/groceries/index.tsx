@@ -14,9 +14,6 @@ import { CheckCircle, EmptyState, HeaderButton, IconButton, ProgressBar, Section
 import { PopCard, PopChip } from '../../../components/pop';
 import { aisleOrder, type GroceryItem } from '../../../data/mock';
 import { haptics } from '../../../lib/haptics';
-import { pantryHas } from '../../../lib/pantry';
-import { nb } from '../../../lib/text';
-import { useTonightPick } from '../../../lib/tonightPick';
 import { TabScreen } from '../../../components/TabScreen';
 import { useStore } from '../../../state/store';
 import { showAmount } from '../../../lib/scale';
@@ -28,7 +25,7 @@ const aisleName = (aisle: string) => (aisle === 'Pantry' ? 'Cupboard' : aisle);
 export default function GroceriesScreen() {
   const t = useTheme();
   const toast = useToast();
-  const { groceries, leftToBuy, toggleGrocery, removeGrocery, clearCompleted, addCustomItem, undoGroceries, addIngredients, pantry, profile, units } = useStore();
+  const { groceries, leftToBuy, toggleGrocery, removeGrocery, clearCompleted, addCustomItem, undoGroceries, units } = useStore();
   const [draft, setDraft] = useState('');
   // Confetti once, when the last item goes in the basket.
   const [party, setParty] = useState(0);
@@ -70,18 +67,6 @@ export default function GroceriesScreen() {
   // Nothing to share on an empty list: no share button then.
   const headerRight = groceries.length > 0 ? <HeaderButton icon="share" accessibilityLabel="Share grocery list" onPress={shareList} /> : undefined;
 
-  // The empty list's one-tap next step: what's missing for tonight's pick (sized for your household).
-  const { tonight } = useTonightPick();
-  const addTonight = () => {
-    if (!tonight) return;
-    const r = tonight.recipe;
-    const missing = r.ingredients.filter((i) => !pantryHas(pantry, i.name));
-    const items = missing.length ? missing : r.ingredients;
-    addIngredients(r.id, items, (profile.household ?? r.servings) / r.servings);
-    haptics.success();
-    toast({ message: `Added ${nb(items.length, items.length === 1 ? 'item' : 'items')} for ${r.title}`, icon: 'cart' });
-  };
-
   const toggle = (item: GroceryItem) => {
     toggleGrocery(item.key);
     if (item.checked) return;
@@ -91,12 +76,16 @@ export default function GroceriesScreen() {
     }
   };
 
+  // Several at once: "eggs, milk, butter" (or pasted lines) become separate items.
   const add = () => {
-    const name = draft.trim();
-    if (!name) return;
-    addCustomItem(name);
+    const names = draft
+      .split(/[,;\n]+/)
+      .map((n) => n.trim().slice(0, 60))
+      .filter(Boolean);
+    if (!names.length) return;
+    names.forEach((n) => addCustomItem(n));
     setDraft('');
-    toast({ message: `Added ${name}`, icon: 'cart' });
+    toast({ message: names.length === 1 ? `Added ${names[0]}` : `Added ${names.length} items`, icon: 'cart' });
   };
 
   const remove = (item: GroceryItem) => {
@@ -142,8 +131,8 @@ export default function GroceriesScreen() {
           value={draft}
           onChangeText={setDraft}
           onSubmitEditing={add}
-          placeholder="Add an item"
-          maxLength={60}
+          placeholder="Add items, e.g. eggs, milk"
+          maxLength={400}
           placeholderTextColor={t.colors.tertiaryLabel}
           returnKeyType="done"
           blurOnSubmit={false}
@@ -163,8 +152,8 @@ export default function GroceriesScreen() {
         <EmptyState
           icon="cart"
           title="Nothing to buy yet"
-          message={tonight ? `Tonight’s pick is ${tonight.recipe.title}. Add what you’re missing in one tap.` : 'Your fridge says thanks. Add items here, or from any recipe.'}
-          action={tonight ? { label: 'Add tonight’s pick', icon: 'cartAdd', onPress: addTonight } : { label: 'Browse recipes', icon: 'book', onPress: () => router.navigate('/') }}
+          message="Type what you need above (several at once, with commas), or tap the basket on any recipe and pick what you need."
+          action={{ label: 'Browse recipes', icon: 'book', onPress: () => router.navigate('/') }}
         />
       ) : (
         <>
