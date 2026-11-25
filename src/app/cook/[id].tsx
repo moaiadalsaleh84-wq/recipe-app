@@ -745,13 +745,16 @@ function Finish({
         {tomorrow && (
           <Animated.View entering={enter(7, reduceMotion)} style={{ alignSelf: 'stretch' }}>
             <PopCard color={pop.white} radius={20} contentStyle={styles.tomorrow} testID="finish-tomorrow">
-              <PhotoFrame recipe={tomorrow.recipe} radius={14} iconSize={20} square style={styles.tomorrowThumb} />
-              {/* The name needs room: when the button doesn't fit beside it, it moves underneath. */}
-              <View style={styles.tomorrowText}>
-                <Text style={[t.type.caption1, { color: pop.inkMuted }]}>Tomorrow</Text>
-                <Text style={[t.type.headline, { color: pop.ink }]} numberOfLines={3}>
-                  {tomorrow.recipe.title}
-                </Text>
+              {/* Photo and name share the first row (the name gets all the room left); the button
+                  has its own full-width row, so it can never squeeze the name. */}
+              <View style={styles.tomorrowRow}>
+                <PhotoFrame recipe={tomorrow.recipe} radius={14} iconSize={20} square style={styles.tomorrowThumb} />
+                <View style={styles.tomorrowText}>
+                  <Text style={[t.type.caption1, { color: pop.inkMuted }]}>Tomorrow</Text>
+                  <Text style={[t.type.headline, { color: pop.ink }]} numberOfLines={2}>
+                    {tomorrow.recipe.title}
+                  </Text>
+                </View>
               </View>
               <PopButton
                 label={planned ? 'Planned' : 'Add to plan'}
@@ -765,6 +768,7 @@ function Finish({
                   toast({ message: `${tomorrow.recipe.title} is in tomorrow’s plan`, icon: 'calendar' });
                 }}
                 testID="finish-add-tomorrow"
+                style={{ alignSelf: 'stretch' }}
               />
             </PopCard>
           </Animated.View>
@@ -892,9 +896,10 @@ const styles = StyleSheet.create({
   segment: { height: 12, borderRadius: 6, borderWidth: 2, borderColor: pop.ink },
   bonus: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
   bonusIcon: { width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: pop.ink, alignItems: 'center', justifyContent: 'center' },
-  tomorrow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 12, padding: 12 },
-  tomorrowText: { flexGrow: 1, flexShrink: 1, flexBasis: 160, minWidth: 0 },
-  tomorrowThumb: { width: 52, height: 52 },
+  tomorrow: { gap: 12, padding: 12 },
+  tomorrowRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  tomorrowText: { flex: 1, minWidth: 0 },
+  tomorrowThumb: { width: 64, height: 64 },
   drainTrack: { height: 10, borderRadius: 5, borderWidth: 2, borderColor: pop.ink, backgroundColor: pop.tomatoTint, overflow: 'hidden', marginVertical: 6 },
   drainFill: { flex: 1, backgroundColor: pop.white, transformOrigin: 'left' },
   pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 20, marginTop: 14 },

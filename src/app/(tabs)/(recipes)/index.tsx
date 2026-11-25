@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Linking, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Linking, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Text } from '../../../components/Text';
 import Animated, { FadeIn, FadeInRight, FadeOut, LinearTransition, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { enter } from '../../../motion';
@@ -29,6 +29,7 @@ import { fonts, pop, useTheme } from '../../../theme';
 import { nb } from '../../../lib/text';
 import { PhotoFrame } from '../../../components/PhotoFrame';
 import { DiscoverRow } from '../../../components/DiscoverRow';
+import { HorizontalList } from '../../../components/HorizontalList';
 
 
 type Sort = 'suggested' | 'az' | 'quickest' | 'cooked';
@@ -354,7 +355,7 @@ export default function RecipesScreen() {
 
           {/* 5. Cookbooks */}
           <SectionHeader title="Cookbooks" subtitle={books.length ? nb(books.length, books.length === 1 ? 'collection' : 'collections') : 'Save recipes you love in one place'} />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -margin }} contentContainerStyle={[styles.rail, { paddingHorizontal: margin, gap: t.spacing.sm }]}>
+          <HorizontalList gap={t.spacing.sm} contentStyle={styles.rail}>
             {books.map((b) => (
               <CookbookTile key={b.id} id={b.id} name={b.name} width={railWidth} recipes={b.recipeIds.map((id) => getRecipe(id)).filter((r): r is Recipe => !!r)} />
             ))}
@@ -377,7 +378,7 @@ export default function RecipesScreen() {
                 <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]}>{'Group recipes like ‘Weeknights’ or ‘Date night’'}</Text>
               </View>
             )}
-          </ScrollView>
+          </HorizontalList>
         </Animated.View>
       )}
 
@@ -416,14 +417,8 @@ export default function RecipesScreen() {
           )}
 
           {/* Filters: one category at a time, any number of tags. The row scrolls sideways. */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={{ marginHorizontal: -margin, marginTop: t.spacing.sm }}
-            contentContainerStyle={[styles.chips, { paddingHorizontal: margin }]}
-            accessibilityLabel="Filters"
-            keyboardShouldPersistTaps="handled"
-          >
+          <View style={{ marginTop: t.spacing.sm }} accessibilityLabel="Filters">
+          <HorizontalList gap={8} contentStyle={styles.chips} keyboardShouldPersistTaps="handled">
             {hasFilters && (
               <Chip
                 label="Clear"
@@ -443,7 +438,8 @@ export default function RecipesScreen() {
             {filterTags.map((tag) => (
               <Chip key={tag} label={tag} selected={tags.includes(tag)} onPress={() => toggleTag(tag)} />
             ))}
-          </ScrollView>
+          </HorizontalList>
+          </View>
 
           {filtered.length > 1 && (
             <PressableScale onPress={() => setSortOpen(true)} accessibilityLabel={`Sort recipes. Now: ${SORTS.find((s) => s.value === sort)?.label}`} style={styles.sortBtn} scaleTo={0.96}>
@@ -547,13 +543,13 @@ function Rail({ title, subtitle, recipes, width, action }: { title: string; subt
   return (
     <>
       <SectionHeader title={title} subtitle={subtitle} action={action} />
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -t.layout.screen }} contentContainerStyle={[styles.rail, { paddingHorizontal: t.layout.screen, gap: t.spacing.sm }]}>
+      <HorizontalList gap={t.spacing.sm} contentStyle={styles.rail}>
         {recipes.map((r, i) => (
           <Animated.View key={r.id} entering={FadeInRight.duration(360).delay(i * 60)}>
             <RecipeCard recipe={r} width={width} />
           </Animated.View>
         ))}
-      </ScrollView>
+      </HorizontalList>
     </>
   );
 }

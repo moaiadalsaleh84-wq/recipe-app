@@ -10,6 +10,7 @@ import { Text } from '../../components/Text';
 import { Chip, EmptyState, SearchField, Skeleton } from '../../components/ui';
 import { CUISINES, DIETS, INGREDIENT_CHIPS, MEAL_TYPES, discoverList, type DiscoverCardData, type DiscoverFilters } from '../../lib/discoverApi';
 import { useTheme } from '../../theme';
+import { HorizontalList } from '../../components/HorizontalList';
 
 export default function DiscoverScreen() {
   const t = useTheme();
@@ -49,11 +50,11 @@ export default function DiscoverScreen() {
   const chipRow = (label: string, chips: { label: string; selected: boolean; onPress: () => void }[]) => (
     <View style={{ gap: 6 }}>
       <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, fontFamily: t.fonts.semibold }]}>{label}</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -margin }} contentContainerStyle={{ paddingHorizontal: margin, gap: 8 }}>
+      <HorizontalList gap={8}>
         {chips.map((c) => (
           <Chip key={c.label} label={c.label} selected={c.selected} onPress={c.onPress} />
         ))}
-      </ScrollView>
+      </HorizontalList>
     </View>
   );
 

@@ -2,7 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import { Reveal } from '../../components/Reveal';
-import { Linking, Modal, PixelRatio, Pressable, ScrollView, Share, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
+import { Linking, Modal, PixelRatio, Pressable, Share, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
 import { MAX_FONT_SCALE, Text } from '../../components/Text';
 import Svg, { Path } from 'react-native-svg';
 import Animated, {
@@ -43,6 +43,7 @@ import { duration, keepTogether, nb } from '../../lib/text';
 import { PhotoFrame } from '../../components/PhotoFrame';
 import { AdminPublishCard } from '../../components/AdminPublish';
 import { useDiscoverSave } from '../../components/DiscoverCard';
+import { HorizontalList } from '../../components/HorizontalList';
 
 export default function RecipeScreen() {
   const reduceMotion = useReducedMotion();
@@ -456,11 +457,11 @@ export default function RecipeScreen() {
               <Text style={[t.type.title2, styles.h2, { color: t.colors.label }]} accessibilityRole="header">
                 You might also like
               </Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20 }} contentContainerStyle={{ paddingHorizontal: 20, gap: 12, paddingBottom: 6 }} testID="also-like">
+              <HorizontalList gap={12} contentStyle={{ paddingBottom: 6 }} testID="also-like">
                 {alsoLike.map((r) => (
                   <RecipeCard key={r.id} recipe={r} width={160} />
                 ))}
-              </ScrollView>
+              </HorizontalList>
             </>
           )}
 

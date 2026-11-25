@@ -17,7 +17,6 @@ import { haptics } from '../../../lib/haptics';
 import { pantryHas } from '../../../lib/pantry';
 import { nb } from '../../../lib/text';
 import { useTonightPick } from '../../../lib/tonightPick';
-import { plainFractions } from '../../../lib/qty';
 import { TabScreen } from '../../../components/TabScreen';
 import { useStore } from '../../../state/store';
 import { showAmount } from '../../../lib/scale';
@@ -29,7 +28,7 @@ const aisleName = (aisle: string) => (aisle === 'Pantry' ? 'Cupboard' : aisle);
 export default function GroceriesScreen() {
   const t = useTheme();
   const toast = useToast();
-  const { groceries, toggleGrocery, removeGrocery, clearCompleted, addCustomItem, undoGroceries, addIngredients, pantry, profile, units } = useStore();
+  const { groceries, leftToBuy, toggleGrocery, removeGrocery, clearCompleted, addCustomItem, undoGroceries, addIngredients, pantry, profile, units } = useStore();
   const [draft, setDraft] = useState('');
   // Confetti once, when the last item goes in the basket.
   const [party, setParty] = useState(0);
@@ -107,7 +106,7 @@ export default function GroceriesScreen() {
   };
 
 
-  const toBuy = total - done;
+  const toBuy = leftToBuy;
 
   return (
     <View style={{ flex: 1 }}>
@@ -236,6 +235,8 @@ function GroceryRow({ item, onToggle, onDelete }: { item: GroceryItem; onToggle:
   const t = useTheme();
   const { getRecipe, units } = useStore();
   const names = item.recipeIds.map((id) => getRecipe(id)?.title).filter((n): n is string => !!n);
+  // Amounts from two or more recipes, added up.
+  const combined = item.recipeIds.length > 1 && item.quantity > 0;
   // One recipe: its name. Several: "For 2 recipes", which opens the list of names.
   const [showSources, setShowSources] = useState(false);
   const tick = () => {
@@ -274,7 +275,7 @@ function GroceryRow({ item, onToggle, onDelete }: { item: GroceryItem; onToggle:
           scaleTo={0.96}
           accessibilityRole="checkbox"
           aria-checked={item.checked}
-          accessibilityLabel={`${item.name}, ${showAmount(item.quantity, item.unit, item.name, units, item.aisle).text}${item.total && item.quantity > 0 ? ' total' : ''}`}
+          accessibilityLabel={`${item.name}, ${showAmount(item.quantity, item.unit, item.name, units, item.aisle).text}${combined ? ' total' : ''}`}
           accessibilityActions={[{ name: 'delete', label: 'Delete' }]}
           onAccessibilityAction={(e) => e.nativeEvent.actionName === 'delete' && onDelete()}
           style={styles.checkTap}
@@ -310,8 +311,9 @@ function GroceryRow({ item, onToggle, onDelete }: { item: GroceryItem; onToggle:
           </View>
           {/* The amount fades and is crossed out together with the name. */}
           <Text style={[t.type.subhead, { color: item.checked ? t.colors.secondaryLabel : t.colors.label, fontVariant: ['tabular-nums'] }, item.checked && styles.struck]}>
-            {plainFractions(showAmount(item.quantity, item.unit, item.name, units, item.aisle).text)}
-            {item.total && item.quantity > 0 ? ' total' : ''}
+            {/* The same amounts as recipes ("⅔ cup"); "total" when 2+ recipes were added up. */}
+            {showAmount(item.quantity, item.unit, item.name, units, item.aisle).text}
+            {combined ? ' total' : ''}
           </Text>
         </PressableScale>
       </View>

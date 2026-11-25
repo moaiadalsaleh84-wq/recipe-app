@@ -5,11 +5,12 @@
  */
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { discoverHome, type DiscoverCardData } from '../lib/discoverApi';
 import { useTheme } from '../theme';
 import { DiscoverCard } from './DiscoverCard';
 import { SectionHeader } from './ui';
+import { HorizontalList } from './HorizontalList';
 
 export function DiscoverRow({ width }: { width: number }) {
   const t = useTheme();
@@ -34,11 +35,11 @@ export function DiscoverRow({ width }: { width: number }) {
         subtitle="Recipes from creators we love"
         action={{ label: 'See all', onPress: () => router.push('/discover') }}
       />
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -t.layout.screen }} contentContainerStyle={[styles.rail, { paddingHorizontal: t.layout.screen, gap: t.spacing.sm }]}>
+      <HorizontalList gap={t.spacing.sm} contentStyle={styles.rail}>
         {row.items.map((c) => (
           <DiscoverCard key={c.id} card={c} width={width} />
         ))}
-      </ScrollView>
+      </HorizontalList>
     </View>
   );
 }

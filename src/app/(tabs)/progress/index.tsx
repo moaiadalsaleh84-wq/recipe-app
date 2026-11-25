@@ -376,13 +376,12 @@ function GoalRow({ label, unit, eaten, goal, color, children }: { label: string;
   const t = useTheme();
   return (
     <View style={styles.goal}>
+      {/* The goal stepper beside the name; "520 of 2,200 kcal" on its own full-width line, never cut. */}
       <View style={styles.row}>
-        <View style={{ flex: 1 }}>
-          <Text style={[t.type.headline, { color: t.colors.label }]}>{label}</Text>
-          <AnimatedNumber value={eaten} suffix={` of ${nb(goal, unit)} today`} style={[t.type.footnote, { color: t.colors.secondaryLabel }]} />
-        </View>
+        <Text style={[t.type.headline, { color: t.colors.label, flex: 1, minWidth: 0 }]}>{label}</Text>
         {children}
       </View>
+      <AnimatedNumber value={eaten} suffix={` of ${nb(goal, unit)}`} style={[t.type.footnote, { color: t.colors.secondaryLabel }]} />
       <ProgressBar value={eaten / goal} color={color} height={10} label={`${label} today`} />
     </View>
   );

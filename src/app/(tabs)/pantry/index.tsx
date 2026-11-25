@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, View } from 'react-native';
 import { Text } from '../../../components/Text';
 import Animated, { FadeIn, FadeInDown, LinearTransition, useReducedMotion } from 'react-native-reanimated';
 import { enter } from '../../../motion';
@@ -20,6 +20,7 @@ import { TabScreen } from '../../../components/TabScreen';
 import { FREE_LIMITS, useStore } from '../../../state/store';
 import { popCycle, useTheme } from '../../../theme';
 import { PhotoFrame } from '../../../components/PhotoFrame';
+import { HorizontalList } from '../../../components/HorizontalList';
 
 /** What's in your kitchen, and what you can cook with it. */
 export default function PantryScreen() {
@@ -106,11 +107,11 @@ export default function PantryScreen() {
       {!query && common.length > 0 && (
         <>
           <Text style={[t.type.subhead, styles.label, { color: t.colors.secondaryLabel, fontFamily: t.fonts.bold }]}>Tap to add</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -t.layout.screen }} contentContainerStyle={[styles.quick, { paddingHorizontal: t.layout.screen }]} keyboardShouldPersistTaps="handled">
+          <HorizontalList gap={8} contentStyle={styles.quick} keyboardShouldPersistTaps="handled">
             {common.map((name) => (
               <Chip key={name} label={name} icon="plus" toggle={false} accessibilityLabel={`Add ${name}`} onPress={() => add(name)} />
             ))}
-          </ScrollView>
+          </HorizontalList>
         </>
       )}
 

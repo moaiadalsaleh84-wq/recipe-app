@@ -8,7 +8,7 @@
  *   Different kinds stay separate lines ("200 g flour" and "2 cups flour"), and a pinch or "to taste"
  *   never adds onto a number.
  * - The same ingredient twice in one recipe ("salt for the chicken", "salt for the flour") becomes
- *   one line named without the "for…" part, marked as a total ("Kosher salt · 1½ tsp total").
+ *   one line named without the "for…" part. The list shows "total" only when 2+ recipes were added up.
  * - Adding the week's plan is safe to repeat: each planned meal is added once per week.
  */
 import { combine, unitInfo } from './scale.ts';

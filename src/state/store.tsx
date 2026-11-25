@@ -125,6 +125,8 @@ type Store = Saved & {
   updateRecipe: (id: string, patch: Partial<Omit<Recipe, 'id' | 'custom'>>) => void;
   /** Your recipe saved from this link already (any form of the same link), if any. */
   findBySource: (url: string | null | undefined) => Recipe | undefined;
+  /** Shopping-list items not ticked yet: THE number for the List tab badge and "X left to buy". */
+  leftToBuy: number;
   /** A Discover recipe you opened (memory only, until you save it). */
   rememberDiscover: (r: Recipe) => void;
   /** Hand-written recipes, the ones the free limit counts. */
@@ -272,6 +274,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     },
     [saved.customRecipes],
   );
+  const leftToBuy = useMemo(() => saved.groceries.filter((g) => !g.checked).length, [saved.groceries]);
   const manualRecipeCount = useMemo(() => saved.customRecipes.filter((r) => r.origin !== 'import').length, [saved.customRecipes]);
   const countImport = useCallback(() => update((s) => ({ importsUsed: s.importsUsed + 1 })), [update]);
 
@@ -510,6 +513,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addRecipe,
       updateRecipe,
       findBySource,
+      leftToBuy,
       rememberDiscover,
       manualRecipeCount,
       deleteRecipe,
@@ -543,7 +547,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       undoGroceries,
     }),
     [
-      saved, hydrated, setBuddy, setProfile, completeOnboarding, setPro, addPet, claimBonus, addListDone, unlockBadges, setLastLevel, markImportHintSeen, markUpkeepDone, countImport, draft, addPantry, removePantry, restorePantry, allRecipes, getRecipe, addRecipe, updateRecipe, findBySource, rememberDiscover, manualRecipeCount, deleteRecipe, setRecipeImage, setNote, setUnits, setGoals, logCooked, rateCooked, setCookedPhoto,
+      saved, hydrated, setBuddy, setProfile, completeOnboarding, setPro, addPet, claimBonus, addListDone, unlockBadges, setLastLevel, markImportHintSeen, markUpkeepDone, countImport, draft, addPantry, removePantry, restorePantry, allRecipes, getRecipe, addRecipe, updateRecipe, findBySource, leftToBuy, rememberDiscover, manualRecipeCount, deleteRecipe, setRecipeImage, setNote, setUnits, setGoals, logCooked, rateCooked, setCookedPhoto,
       category, tags, toggleTag, showOnlyTag, clearFilters, isFavorite, toggleFavorite, addCookbook, renameCookbook,
       deleteCookbook, restoreCookbook, toggleInCookbook, setMeal, toggleGrocery, addIngredients, addWeekToGroceries, addCustomItem,
       removeGrocery, clearCompleted, undoGroceries,
