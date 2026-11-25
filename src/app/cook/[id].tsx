@@ -25,7 +25,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomBar } from '../../components/BottomBar';
 import { BottomSheet } from '../../components/BottomSheet';
 import { ConfettiBurst } from '../../components/ConfettiBurst';
-import { EASE_CUBIC, enter, pressIn, pressOut, pressSpring, spring, uiEase } from '../../motion';
+import { EASE_CUBIC, enter, pressIn, pressOut, spring, uiEase } from '../../motion';
 import { scheduleOnRN } from 'react-native-worklets';
 import { rollBonus, type Bonus } from '../../lib/bonus';
 import { stickers } from '../../data/stickers';
@@ -123,7 +123,7 @@ function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; serv
         scheduleOnRN(onSwipe, e.translationX < 0 ? 1 : -1);
       } else {
         // Not far enough: spring back, carrying the finger's speed.
-        drag.set(withSpring(0, pressSpring));
+        drag.set(withSpring(0, { duration: 300, dampingRatio: 1, velocity: e.velocityX }));
       }
     },
   });
