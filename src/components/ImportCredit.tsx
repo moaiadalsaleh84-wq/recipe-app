@@ -52,7 +52,7 @@ export function ImportedPhotoOverlay({ recipe, onOwnPhoto, ownPhoto }: { recipe:
     <>
       {!!recipe.imageCreditText && !ownPhoto && (
         <View style={styles.stickerSpot} pointerEvents="none" testID="source-sticker">
-          <Sticker label={recipe.imageCreditText} rotate={0} caps={false} color={pop.white} />
+          <Sticker label={recipe.imageCreditText} rotate={0} caps={false} color={pop.white} style={{ maxWidth: '100%' }} />
         </View>
       )}
       <View style={styles.cameraSpot}>
@@ -101,12 +101,13 @@ export function RecipeByRow({ recipe, onPress }: { recipe: Recipe; onPress: () =
           {letter}
         </Text>
       </View>
-      {/* One line: a long handle is shortened, never "Recipe by". */}
+      {/* "Recipe by" sits small above the name, so the whole handle fits on its own line (a very
+          long one shrinks a little rather than being cut off). */}
       <View style={styles.byText}>
-        <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, flexShrink: 0 }]} numberOfLines={1}>
-          {'Recipe\u00A0by\u00A0'}
+        <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]} numberOfLines={1}>
+          Recipe by
         </Text>
-        <Text style={[t.type.subhead, { color: t.colors.label, fontFamily: t.fonts.black, flexShrink: 1 }]} numberOfLines={1} testID="creator-handle">
+        <Text style={[t.type.subhead, { color: t.colors.label, fontFamily: t.fonts.black }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} testID="creator-handle">
           {name}
         </Text>
       </View>
@@ -134,12 +135,13 @@ export function ImportHint({ onClose, video }: { onClose: () => void; video: boo
 }
 
 const styles = StyleSheet.create({
-  stickerSpot: { position: 'absolute', left: 12, bottom: 12, maxWidth: '70%' },
+  // Up to the camera button (44 wide + 12 + a 12 gap), so "From @name on TikTok" fits.
+  stickerSpot: { position: 'absolute', left: 12, bottom: 12, right: 68, alignItems: 'flex-start' },
   cameraSpot: { position: 'absolute', right: 12, bottom: 12 },
   byRow: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48, marginTop: 12 },
   avatar: { width: 36, height: 36, borderRadius: 18, borderWidth: stroke.thick, alignItems: 'center', justifyContent: 'center' },
   avatarText: { fontFamily: fonts.black, fontSize: 16, lineHeight: 20, color: pop.ink },
-  byText: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center' },
+  byText: { flex: 1, minWidth: 0 },
   watch: { flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: stroke.thick, borderRadius: 999, paddingHorizontal: 12, minHeight: 32 },
   watchText: { fontFamily: fonts.black, fontSize: 14, lineHeight: 18, color: pop.ink },
   hintWrap: { marginTop: 12, alignSelf: 'flex-start', maxWidth: 300 },

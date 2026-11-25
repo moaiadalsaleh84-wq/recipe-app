@@ -25,7 +25,7 @@ export function Sticker({
     <View style={[styles.wrap, { transform: [{ rotate: `${rotate}deg` }] }, style]} shouldRasterizeIOS renderToHardwareTextureAndroid accessibilityRole="text" accessibilityLabel={label}>
       <View style={styles.shadow} />
       <View style={[styles.face, { backgroundColor: color }]}>
-        <Text style={[styles.text, !caps && styles.textPlain]} maxFontSizeMultiplier={1.3} numberOfLines={1}>
+        <Text style={[styles.text, !caps && styles.textPlain]} maxFontSizeMultiplier={1.3} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
           {caps ? label.toUpperCase() : label}
         </Text>
       </View>
