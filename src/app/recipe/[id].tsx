@@ -39,7 +39,7 @@ import { amountFor, ingredientLabel } from '../../lib/scale';
 import { useStore } from '../../state/store';
 import { macroPercents } from '../../lib/percent';
 import { fonts, pop, popCycle, useTheme } from '../../theme';
-import { duration, keepTogether, nb } from '../../lib/text';
+import { duration, keepTogether, nb, num } from '../../lib/text';
 import { PhotoFrame } from '../../components/PhotoFrame';
 import { AdminPublishCard } from '../../components/AdminPublish';
 import { useDiscoverSave } from '../../components/DiscoverCard';
@@ -326,7 +326,7 @@ export default function RecipeScreen() {
             <View style={styles.stats}>
               <StatTile color={t.pop.sunshine} icon="clock" value={duration(recipe.minutes)} label={recipe.estimated?.time ? 'total, est.' : 'total'} a11y={`${recipe.minutes} minutes total${recipe.estimated?.time ? ', estimated' : ''}`} />
               <StatTile color={t.pop.leaf} hats={level} value={recipe.difficulty} label={nb(recipe.steps.length, recipe.steps.length === 1 ? 'step' : 'steps')} a11y={`${recipe.difficulty}, ${recipe.steps.length} steps`} />
-              <StatTile color={t.pop.sky} icon="flame" value={`${recipe.calories}`} label={'kcal\u00A0each'} a11y={`${recipe.calories} calories per serving`} />
+              <StatTile color={t.pop.sky} icon="flame" value={num(recipe.calories)} label={'kcal\u00A0each'} a11y={`${recipe.calories} calories per serving`} />
             </View>
             {/* What one serving is, when the source says it. */}
             {!!recipe.servingSize && (
@@ -794,8 +794,8 @@ const styles = StyleSheet.create({
   nutrition: { gap: 16, padding: 16, overflow: 'visible' },
   kcal: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, marginVertical: -4 },
   split: { flexDirection: 'row', gap: 3, height: 16 },
-  macros: { flexDirection: 'row' },
-  macro: { flex: 1, gap: 2 },
+  macros: { flexDirection: 'row', gap: 12 },
+  macro: { flex: 1, minWidth: 0, gap: 2 },
   macroLabel: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   dot: { width: 10, height: 10, borderRadius: 5, borderWidth: 1.5, borderColor: pop.ink },
   ingredient: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, minHeight: 56, gap: 12 },
