@@ -198,8 +198,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (raw) {
           const parsed = JSON.parse(raw) as Partial<Saved>;
           const loaded: Saved = { ...initialSaved, ...parsed, fun: { ...initialSaved.fun, ...parsed.fun }, profile: { ...initialSaved.profile, ...parsed.profile } };
+          // One time only: the shopping list and meal plan start empty. Older versions could fill
+          // them for you ("Plan my dinners", "Shop the week" adding everything); now you add what you want.
+          const CLEAN_START = 'clean-list-plan-v1';
+          const upkeep = loaded.fun.upkeep ?? [];
+          const fresh = upkeep.includes(CLEAN_START) ? loaded : { ...loaded, groceries: [], plan: {}, planAdded: [], fun: { ...loaded.fun, upkeep: [...upkeep, CLEAN_START] } };
           // The same link imported twice (before imports checked for it): keep the newest copy.
-          setSaved(removeDuplicateImports(loaded).saved);
+          setSaved(removeDuplicateImports(fresh).saved);
         }
       })
       .catch(() => {
