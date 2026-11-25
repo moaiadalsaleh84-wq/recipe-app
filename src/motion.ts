@@ -74,6 +74,20 @@ export function enter(index = 0, reduceMotion = false) {
 }
 
 /**
+ * A one-time entrance (the welcome screen): rises `distance` pt while fading in, `ms` long, after
+ * `delay`. Strong ease-out, no overshoot. Reduce Motion: a plain short fade.
+ */
+export function riseIn(delay: number, reduceMotion = false, distance = 16, ms = 420) {
+  if (reduceMotion) return FadeIn.duration(duration.fast);
+  return new Keyframe({
+    0: { opacity: 0, transform: [{ translateY: distance }] },
+    100: { opacity: 1, transform: [{ translateY: 0 }], ...(Platform.OS === 'web' ? {} : { easing: EASE_OUT }) },
+  })
+    .duration(ms)
+    .delay(delay);
+}
+
+/**
  * A menu or popover opening from its button: fades in while sliding 6pt down into place, 180 ms
  * ease-out. No scaling. Reduce Motion: a fade.
  */

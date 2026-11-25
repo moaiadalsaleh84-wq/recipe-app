@@ -30,7 +30,7 @@ import { haptics } from '../lib/haptics';
 import { cookableCount, rankPicks, type Pick } from '../lib/onboardingPicks';
 import { restore } from '../lib/purchases';
 import { nb, noWidow, duration as cookTime } from '../lib/text';
-import { duration, uiEase } from '../motion';
+import { duration, riseIn, uiEase } from '../motion';
 import { useStore } from '../state/store';
 import { fonts, noWidows, pop, stroke } from '../theme';
 import { PhotoFrame } from '../components/PhotoFrame';
@@ -239,7 +239,8 @@ export default function Onboarding() {
       <ScreenBg.Provider value={bg}>
         <Animated.View
           key={screen}
-          entering={reduceMotion || screen === 'welcome' || screen === 'building' ? FadeIn.duration(duration.base) : uiEase((backwards ? SlideInLeft : SlideInRight).duration(duration.base))}
+          // The welcome screen choreographs its own entrance (see Welcome), so it doesn't fade as a whole.
+          entering={screen === 'welcome' ? undefined : reduceMotion || screen === 'building' ? FadeIn.duration(duration.base) : uiEase((backwards ? SlideInLeft : SlideInRight).duration(duration.base))}
           style={{ flex: 1 }}
         >
           {body}
@@ -333,25 +334,45 @@ function Welcome({ onStart, onRestore, restoring }: { onStart: () => void; onRes
   }, []);
   // Four photos in two staggered columns, sized to leave room for the words on short phones.
   const tile = Math.min((Math.min(width, 500) - 40 - 16) / 2, (height - 430) / 2.2, 170);
+  const reduceMotion = useReducedMotion();
+  // The first thing anyone sees, once: the photos rise in one after another (lead), then the
+  // promise, then the button (support); the time sticker just fades in last (decoration).
+  // Everything is tappable right away; the whole entrance is done in under a second.
   return (
     <View style={{ flex: 1, paddingTop: insets.top + 20, paddingBottom: Math.max(insets.bottom, 16), paddingHorizontal: 20 }}>
       <View style={styles.collage} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
         <View style={{ gap: 16 }}>
-          <PhotoTile recipe={photos[0]} size={tile} />
-          <PhotoTile recipe={photos[1]} size={tile} />
+          <Animated.View entering={riseIn(0, reduceMotion, 24)}>
+            <PhotoTile recipe={photos[0]} size={tile} />
+          </Animated.View>
+          <Animated.View entering={riseIn(110, reduceMotion, 24)}>
+            <PhotoTile recipe={photos[1]} size={tile} />
+          </Animated.View>
         </View>
         <View style={{ gap: 16, marginTop: tile * 0.28 }}>
-          <PhotoTile recipe={photos[2]} size={tile} />
-          <PhotoTile recipe={photos[3]} size={tile} />
+          <Animated.View entering={riseIn(60, reduceMotion, 24)}>
+            <PhotoTile recipe={photos[2]} size={tile} />
+          </Animated.View>
+          <Animated.View entering={riseIn(150, reduceMotion, 24)}>
+            <PhotoTile recipe={photos[3]} size={tile} />
+          </Animated.View>
         </View>
-        <Sticker label={nb(25, 'min')} color={pop.tomato} style={{ position: 'absolute', top: tile - 14, left: tile - 24 }} />
+        <Animated.View entering={reduceMotion ? undefined : FadeIn.duration(260).delay(520)} style={{ position: 'absolute', top: tile - 14, left: tile - 24 }}>
+          <Sticker label={nb(25, 'min')} color={pop.tomato} />
+        </Animated.View>
       </View>
       <View style={{ flex: 1 }} />
-      <Text style={styles.welcomeTitle} accessibilityRole="header">
-        Never wonder what’s for dinner{' '}again.
-      </Text>
-      <Text style={[styles.subtitle, { color: pop.ink, marginTop: 10 }]}>Save recipes from anywhere. Cook with what you already have.</Text>
-      <PopButton label="Let’s go" color={pop.ink} textColor={pop.white} onPress={onStart} style={{ marginTop: 24 }} testID="ob-start" />
+      <Animated.View entering={riseIn(220, reduceMotion, 12)}>
+        <Text style={styles.welcomeTitle} accessibilityRole="header">
+          Never wonder what’s for dinner{' '}again.
+        </Text>
+      </Animated.View>
+      <Animated.View entering={riseIn(290, reduceMotion, 8, 380)}>
+        <Text style={[styles.subtitle, { color: pop.ink, marginTop: 10 }]}>Save recipes from anywhere. Cook with what you already have.</Text>
+      </Animated.View>
+      <Animated.View entering={riseIn(350, reduceMotion, 6, 340)}>
+        <PopButton label="Let’s go" color={pop.ink} textColor={pop.white} onPress={onStart} style={{ marginTop: 24 }} testID="ob-start" />
+      </Animated.View>
       <Pressable onPress={onRestore} disabled={restoring} accessibilityRole="button" style={({ pressed }) => [styles.link, pressed && { opacity: 0.6 }]} hitSlop={6}>
         <Text style={styles.linkText}>{restoring ? 'Checking…' : 'I already have an account'}</Text>
       </Pressable>
