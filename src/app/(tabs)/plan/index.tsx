@@ -230,10 +230,12 @@ export default function PlanScreen() {
           <Section>
             {ideas.map(({ recipe, meal }, i) => (
               <View key={recipe.id}>
-                {i > 0 && <Separator inset={88} />}
+                {i > 0 && <Separator inset={96} />}
                 <RecipeRow
                   recipe={recipe}
-                  metaLines={[meal, `${nb(recipe.minutes, 'min')} · ${nb(recipe.calories, 'kcal')}`]}
+                  thumb={72}
+                  label={meal}
+                  subtitle={`${nb(recipe.minutes, 'min')} · ${nb(recipe.calories, 'kcal')}`}
                   trailing={
                     <PopIconButton
                       icon="plus"
@@ -267,12 +269,13 @@ function MealCard({ meal, recipe, onChange, onRemove }: { meal: string; recipe: 
     <PopCard radius={22} depth={4} contentStyle={styles.meal}>
       <PressableScale onPress={() => openRecipe(recipe.id)} scaleTo={0.98} accessibilityLabel={`${meal}: ${recipe.title}, ${recipe.minutes} min, ${recipe.calories} kcal`} accessibilityHint="Opens the recipe" style={styles.mealMain}>
         <PhotoFrame recipe={recipe} iconSize={24} radius={16} square style={styles.mealPhoto} />
-        <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
+        {/* The meal on top (left-aligned), the title (2 lines max), one meta line. */}
+        <View style={{ flex: 1, gap: 3, minWidth: 0, alignItems: 'flex-start' }}>
           <PopChip label={meal} color={MEAL_TINT[meal] ?? t.pop.sunshineTint} small />
-          <Text style={[t.type.title3, { color: t.colors.label }]}>
+          <Text style={[t.type.title3, { color: t.colors.label, fontSize: 18, lineHeight: 22, alignSelf: 'stretch' }]} numberOfLines={2}>
             {recipe.title}
           </Text>
-          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
+          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, alignSelf: 'stretch' }]} numberOfLines={1}>
             {nb(recipe.minutes, 'min')} · {nb(recipe.calories, 'kcal')}
           </Text>
         </View>
@@ -299,8 +302,9 @@ const styles = StyleSheet.create({
   slotIcon: { width: 52, height: 52, borderRadius: 16, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
   meal: { flexDirection: 'row', alignItems: 'center', padding: 8, paddingRight: 0 },
   mealMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14 },
-  mealPhoto: { width: 92, height: 92 },
-  mealActions: { alignItems: 'center' },
+  mealPhoto: { width: 72, height: 72 },
+  // Change and remove, centred against the whole card.
+  mealActions: { alignItems: 'center', justifyContent: 'center', alignSelf: 'center' },
   fillCard: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 24, borderCurve: 'continuous' },
   fillIcon: { width: 48, height: 48, borderRadius: 16, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
   weekCard: { padding: 18, gap: 16, borderRadius: 26, borderCurve: 'continuous' },

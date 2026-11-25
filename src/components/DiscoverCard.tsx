@@ -14,6 +14,7 @@ import { fonts, pop, stroke, useTheme } from '../theme';
 import { Icon } from './Icon';
 import { PhotoFrame } from './PhotoFrame';
 import { PopCard } from './pop/PopCard';
+import { CARD_DEPTH, CardText } from './RecipeCard';
 import { PressableScale } from './PressableScale';
 import { Text } from './Text';
 import { useToast } from './Toast';
@@ -83,7 +84,6 @@ export function CreatorLine({ handle, size = 'small' }: { handle: string; size?:
 }
 
 export function DiscoverCard({ card, width }: { card: DiscoverCardData; width: number }) {
-  const t = useTheme();
   const open = useOpenDiscover();
   const { save, saved, busy } = useDiscoverSave();
   const mine = saved(card.sourceUrl);
@@ -97,18 +97,14 @@ export function DiscoverCard({ card, width }: { card: DiscoverCardData; width: n
         // Ink behind the photo, so its soft edges never show a light hairline (see PhotoFrame).
         color={pop.ink}
         radius={24}
+        depth={CARD_DEPTH}
         style={{ flexGrow: 1 }}
         contentStyle={{ flexGrow: 1 }}
       >
         <PhotoFrame recipe={photoRecipe(card)} radius={21.5} corners="top" edge="bottom" style={styles.photo} />
+        {/* The same text as every recipe card: @creator, title, one meta line. */}
         <View style={[styles.body, { backgroundColor: pop.white }]}>
-          <CreatorLine handle={card.creatorHandle} />
-          <Text style={[styles.title, { color: t.colors.label }]} numberOfLines={2}>
-            {card.title}
-          </Text>
-          <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]} testID="discover-saves">
-            {savesLabel(count)}
-          </Text>
+          <CardText creator={card.creatorHandle} title={card.title} meta={savesLabel(count)} metaTestID="discover-saves" />
         </View>
       </PopCard>
       {/* The save button sits on top of the card, beside its button (not inside it). */}
@@ -125,8 +121,9 @@ export function DiscoverCard({ card, width }: { card: DiscoverCardData; width: n
         style={styles.saveTap}
         testID="discover-save"
       >
-        <View style={[styles.saveDot, { backgroundColor: mine ? t.pop.leaf : pop.white }]}>
-          <Icon name={mine ? 'bookmarkFill' : 'bookmark'} size={16} color={pop.ink} weight="bold" />
+        {/* The same white heart circle as every recipe card; a filled berry heart = saved. */}
+        <View style={styles.saveDot}>
+          <Icon name={mine ? 'heartFill' : 'heart'} size={17} color={mine ? pop.berry : pop.ink} weight="bold" />
         </View>
       </PressableScale>
     </View>
@@ -134,13 +131,11 @@ export function DiscoverCard({ card, width }: { card: DiscoverCardData; width: n
 }
 
 const styles = StyleSheet.create({
-  photo: { width: '100%', aspectRatio: 4 / 3 },
-  body: { flexGrow: 1, padding: 12, gap: 6, borderBottomLeftRadius: 21.5, borderBottomRightRadius: 21.5 },
-  // Fredoka, up to 2 lines; 2 lines of room so cards in a row line up.
-  title: { fontFamily: fonts.heading, fontSize: 17, lineHeight: 21, minHeight: 42 },
+  photo: { width: '100%', aspectRatio: 4 / 5 },
+  body: { flexGrow: 1, borderBottomLeftRadius: 21.5, borderBottomRightRadius: 21.5 },
   creator: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   letter: { borderWidth: stroke.thin, borderColor: pop.ink, alignItems: 'center', justifyContent: 'center' },
   letterText: { fontFamily: fonts.black, color: pop.ink },
   saveTap: { position: 'absolute', top: 2, right: 2, width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  saveDot: { width: 34, height: 34, borderRadius: 17, borderWidth: 2, borderColor: pop.ink, alignItems: 'center', justifyContent: 'center' },
+  saveDot: { width: 34, height: 34, borderRadius: 17, borderWidth: 2, borderColor: pop.ink, backgroundColor: pop.white, alignItems: 'center', justifyContent: 'center' },
 });

@@ -309,7 +309,7 @@ export default function RecipesScreen() {
           ) : (
             <View style={[styles.grid, { gap, rowGap: t.spacing.md }]}>
               {moodRecipes.map((r, i) => (
-                <Animated.View key={r.id} entering={enter(i, reduceMotion)}>
+                <Animated.View key={r.id} entering={enter(i, reduceMotion)} style={styles.cardSlot}>
                   <RecipeCard recipe={r} width={cardWidth} />
                 </Animated.View>
               ))}
@@ -468,7 +468,7 @@ export default function RecipesScreen() {
             <View style={[styles.grid, { gap, rowGap: t.spacing.md }]}>
               {sorted.map((r, i) => (
                 // Cards glide when the order changes, but not in long lists (over 20): too much motion.
-                <Animated.View key={r.id} layout={sorted.length <= 20 ? LinearTransition.duration(220) : undefined} entering={enter(i, reduceMotion)}>
+                <Animated.View key={r.id} layout={sorted.length <= 20 ? LinearTransition.duration(220) : undefined} entering={enter(i, reduceMotion)} style={styles.cardSlot}>
                   <RecipeCard recipe={r} width={cardWidth} />
                 </Animated.View>
               ))}
@@ -545,7 +545,8 @@ function Rail({ title, subtitle, recipes, width, action }: { title: string; subt
       <SectionHeader title={title} subtitle={subtitle} action={action} />
       <HorizontalList gap={t.spacing.sm} contentStyle={styles.rail}>
         {recipes.map((r, i) => (
-          <Animated.View key={r.id} entering={FadeInRight.duration(360).delay(i * 60)}>
+          // A row, so the card stretches to the tallest card's height.
+          <Animated.View key={r.id} entering={FadeInRight.duration(360).delay(i * 60)} style={styles.cardSlot}>
             <RecipeCard recipe={r} width={width} />
           </Animated.View>
         ))}
@@ -647,4 +648,6 @@ const styles = StyleSheet.create({
   chips: { gap: 8, paddingVertical: 4, alignItems: 'center', minHeight: 56 },
   chipDivider: { width: 2.5, height: 24, marginHorizontal: 4, borderRadius: 2 },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
+  // Holds one card; a row so the card fills the row's height (cards in a row are equally tall).
+  cardSlot: { flexDirection: 'row' },
 });

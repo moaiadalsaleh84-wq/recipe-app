@@ -13,7 +13,6 @@ import { PressableScale } from './PressableScale';
 import { PopButton } from './pop/PopButton';
 import { PopIconButton } from './pop/PopIconButton';
 import { PopCard } from './pop/PopCard';
-import { PopChip } from './pop/PopChip';
 import { Sticker } from './pop/Sticker';
 import { useToast } from './Toast';
 import { IconButton, Skeleton } from './ui';
@@ -71,7 +70,7 @@ export function FavoriteButton({ recipe, onPhoto }: { recipe: Recipe; onPhoto?: 
           <Spark key={i} dx={sp[0]} dy={sp[1]} burst={burst} />
         ))}
         <Animated.View style={[styles.favDot, popStyle]}>
-          <Icon name={fav ? 'heartFill' : 'heart'} size={17} color={fav ? pop.tomato : pop.ink} weight="bold" />
+          <Icon name={fav ? 'heartFill' : 'heart'} size={17} color={fav ? pop.berry : pop.ink} weight="bold" />
         </Animated.View>
       </PressableScale>
     );
@@ -100,20 +99,43 @@ function Spark({ dx, dy, burst }: { dx: number; dy: number; burst: ReturnType<ty
 
 const useMeta = () => (r: Recipe) => `${nb(r.minutes, 'min')} · ${nb(r.calories, 'kcal')}`;
 
-/** Difficulty chip colors on cards. */
-const DIFFICULTY_TINT = { Easy: pop.leafTint, Medium: pop.sunshineTint, Hard: pop.tomatoTint } as const;
+/** The one meta line under a card's title: "75 min · Easy". */
+export const cardMeta = (r: Pick<Recipe, 'minutes' | 'difficulty'>) => `${nb(r.minutes, 'min')}\u00A0·\u00A0${r.difficulty}`;
 
 /**
- * Grid and row card: a PopCard with the food photo on top (ink line under it), the full name (it
- * wraps, never "…"), the time, and the difficulty as a small chip. Cards in a row share the
- * tallest card's height.
+ * Under a card's photo: "@creator" for imported and Discover recipes (1 line), the title (2 lines,
+ * then "…"), then one meta line. Shared by recipe cards and Discover cards.
+ */
+export function CardText({ creator, title, meta, metaTestID }: { creator?: string; title: string; meta: string; metaTestID?: string }) {
+  const t = useTheme();
+  return (
+    <View style={styles.cardBody}>
+      <View style={{ gap: 2 }}>
+        {creator ? (
+          <Text style={[styles.cardCreator, { color: t.colors.secondaryLabel }]} numberOfLines={1}>
+            {creator}
+          </Text>
+        ) : null}
+        <Text style={[styles.cardTitle, { color: t.colors.label }]} numberOfLines={2}>
+          {title}
+        </Text>
+      </View>
+      <Text style={[styles.cardMetaText, { color: t.colors.secondaryLabel }]} numberOfLines={1} testID={metaTestID}>
+        {meta}
+      </Text>
+    </View>
+  );
+}
+
+/**
+ * Grid and row card, photo first: a 4:5 photo across the whole card (the shared ink frame), then
+ * the compact text. Cards in a row share the tallest card's height.
  */
 export function RecipeCard({ recipe, width, color }: { recipe: Recipe; width: number; /** Card color (white by default). */ color?: string }) {
-  const t = useTheme();
   return (
     // The heart sits on top of the card, beside its button (a button inside a button confuses
     // screen readers and the web).
-    <View style={{ width, flexGrow: 1 }}>
+    <View style={{ width }}>
       <PopCard
         onPress={() => openRecipe(recipe.id)}
         accessibilityLabel={`${recipe.title}, ${recipe.minutes} minutes, ${recipe.difficulty}`}
@@ -121,21 +143,15 @@ export function RecipeCard({ recipe, width, color }: { recipe: Recipe; width: nu
         // Ink behind the photo, so its soft edges never show a light hairline (see PhotoFrame).
         color={pop.ink}
         radius={24}
+        depth={CARD_DEPTH}
         style={{ flexGrow: 1 }}
         contentStyle={{ flexGrow: 1 }}
       >
         <PhotoFrame recipe={recipe} radius={21.5} corners="top" edge="bottom" style={styles.imageWrap}>
           <SourceMark recipe={recipe} />
         </PhotoFrame>
-        <View style={[styles.cardBody, { backgroundColor: color ?? pop.white }]}>
-          <Text style={[t.type.title3, styles.cardTitle, t.noWidows.balanced, { color: t.colors.label }]} {...t.noWidows.props}>{recipe.title}</Text>
-          <View style={styles.cardMeta}>
-            <View style={styles.meta}>
-              <Icon name="clock" size={14} color={t.colors.label} weight="bold" />
-              <Text style={[t.type.caption1, { color: t.colors.label }]}>{nb(recipe.minutes, 'min')}</Text>
-            </View>
-            <PopChip label={recipe.difficulty} color={DIFFICULTY_TINT[recipe.difficulty]} small />
-          </View>
+        <View style={[styles.cardWhite, { backgroundColor: color ?? pop.white }]}>
+          <CardText creator={recipe.creatorHandle && isImportedSource(recipe) ? recipe.creatorHandle : undefined} title={recipe.title} meta={cardMeta(recipe)} />
         </View>
       </PopCard>
       <View style={styles.favOnPhoto}>
@@ -144,6 +160,10 @@ export function RecipeCard({ recipe, width, color }: { recipe: Recipe; width: nu
     </View>
   );
 }
+
+/** A lighter card shadow (3pt) for recipe and Discover cards. */
+export const CARD_DEPTH = 3;
+const isImportedSource = (r: Recipe) => r.source === 'tiktok' || r.source === 'youtube' || r.source === 'instagram' || r.source === 'web';
 
 export function RecipeCardSkeleton({ width }: { width: number }) {
   const t = useTheme();
@@ -233,6 +253,8 @@ export function RecipeRow({
   trailing,
   accessibilityHint = 'Opens the recipe',
   metaLines,
+  label,
+  thumb = 64,
 }: {
   recipe: Recipe;
   onPress?: () => void;
@@ -241,15 +263,20 @@ export function RecipeRow({
   accessibilityHint?: string;
   /** Meta on its own lines instead of `subtitle` (Nunito 700, 15, muted), e.g. ["Breakfast", "40 min · 410 kcal"]. */
   metaLines?: string[];
+  /** A small label above the title ("Dinner"). */
+  label?: string;
+  /** Thumbnail size (64 by default). */
+  thumb?: number;
 }) {
   const t = useTheme();
   const meta = useMeta();
   return (
     <View style={styles.row}>
       <PressableScale onPress={onPress ?? (() => openRecipe(recipe.id))} scaleTo={0.98} accessibilityLabel={`${recipe.title}, ${metaLines ? metaLines.join(', ') : (subtitle ?? meta(recipe))}`} accessibilityHint={accessibilityHint} style={styles.rowMain}>
-        <PhotoFrame recipe={recipe} iconSize={24} radius={16} square style={styles.thumb} />
-        <View style={{ flex: 1, gap: 2 }}>
-          <Text style={[t.type.title3, t.noWidows.balanced, { color: t.colors.label, fontSize: 18, lineHeight: 22 }]} {...t.noWidows.props}>{recipe.title}</Text>
+        <PhotoFrame recipe={recipe} iconSize={24} radius={16} square style={{ width: thumb, height: thumb }} />
+        <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
+          {label ? <Text style={[styles.metaLine, { color: t.colors.secondaryLabel, fontSize: 13, lineHeight: 17 }]} numberOfLines={1}>{label}</Text> : null}
+          <Text style={[t.type.title3, t.noWidows.balanced, { color: t.colors.label, fontSize: 18, lineHeight: 22 }]} numberOfLines={2} {...t.noWidows.props}>{recipe.title}</Text>
           {metaLines ? (
             metaLines.map((line) => (
               <Text key={line} style={[styles.metaLine, { color: t.colors.secondaryLabel }]}>
@@ -257,7 +284,7 @@ export function RecipeRow({
               </Text>
             ))
           ) : (
-            <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]}>{subtitle ?? meta(recipe)}</Text>
+            <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]} numberOfLines={1}>{subtitle ?? meta(recipe)}</Text>
           )}
         </View>
         {!trailing && <Icon name="chevronRight" size={14} color={t.colors.tertiaryLabel} weight="semibold" />}
@@ -271,12 +298,17 @@ const styles = StyleSheet.create({
   // Photos (4:3) with a thick ink line underneath.
   // Flush with the card's top border (no gap): the photo's top corners follow the card's inner curve (24 − 2.5).
   sourceMark: { position: 'absolute', left: 8, bottom: 8, width: 24, height: 24, borderRadius: 12, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  imageWrap: { width: '100%', aspectRatio: 4 / 3 },
+  // Photo first: 4:5 portrait, the whole card's width.
+  imageWrap: { width: '100%', aspectRatio: 4 / 5 },
+  cardWhite: { flexGrow: 1, borderBottomLeftRadius: 21.5, borderBottomRightRadius: 21.5 },
   // 14pt inside on every side; the meta sits at the bottom so cards in a row line up.
-  cardBody: { flexGrow: 1, padding: 14, gap: 10, justifyContent: 'space-between', borderBottomLeftRadius: 21.5, borderBottomRightRadius: 21.5 },
-  // Fredoka 700, 19/23, up to 3 lines; 3 lines of room on every card so a row lines up.
-  cardTitle: { fontFamily: fonts.heading, fontSize: 19, lineHeight: 23, minHeight: 69 },
-  cardMeta: { gap: 8, alignItems: 'flex-start' },
+  cardBody: { flexGrow: 1, paddingHorizontal: 12, paddingTop: 10, paddingBottom: 12, gap: 6, justifyContent: 'space-between' },
+  // Fredoka 700, 17, up to 2 lines then "…".
+  cardTitle: { fontFamily: fonts.heading, fontSize: 17, lineHeight: 21 },
+  // Nunito 700, 13, one line.
+  cardCreator: { fontFamily: fonts.medium, fontSize: 13, lineHeight: 17 },
+  // Nunito 700, 14: "75 min · Easy".
+  cardMetaText: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 18 },
   meta: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   noPhoto: { alignItems: 'center', justifyContent: 'center' },
   favOnPhoto: { position: 'absolute', top: 2, right: 2 },
@@ -305,5 +337,4 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', paddingRight: 8 },
   metaLine: { fontFamily: fonts.medium, fontSize: 15, lineHeight: 20 },
   rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 10, paddingLeft: 12, paddingRight: 8, minHeight: 84 },
-  thumb: { width: 64, height: 64 },
 });

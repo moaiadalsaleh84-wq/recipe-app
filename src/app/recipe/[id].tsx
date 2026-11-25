@@ -222,7 +222,7 @@ export default function RecipeScreen() {
         <PopIconButton icon="back" accessibilityLabel="Back" onPress={goBack} />
         <View style={styles.controlsRight}>
           {fromDiscover ? (
-            <PopIconButton icon="bookmark" accessibilityLabel="Save to your recipes" onPress={() => void onSaveDiscover()} haptic={null} testID="discover-save-recipe" />
+            <PopIconButton icon="heart" accessibilityLabel="Save to your recipes" onPress={() => void onSaveDiscover()} haptic={null} testID="discover-save-recipe" />
           ) : (
             <PopIconButton icon={fav ? 'heartFill' : 'heart'} accessibilityLabel={fav ? 'Remove from Favorites' : 'Add to Favorites'} onPress={onFavorite} iconColor={fav ? t.pop.tomato : t.pop.ink} haptic={null} />
           )}
@@ -485,7 +485,7 @@ export default function RecipeScreen() {
         rows={[
           { label: 'Share recipe', icon: 'share', onPress: onShare },
           ...(fromDiscover
-            ? [{ label: 'Save to your recipes', icon: 'bookmark' as const, onPress: () => void onSaveDiscover() }]
+            ? [{ label: 'Save to your recipes', icon: 'heart' as const, onPress: () => void onSaveDiscover() }]
             : [{ label: inCookbooks > 0 ? 'Saved to a cookbook' : 'Save to a cookbook', icon: inCookbooks > 0 ? ('bookmarkFill' as const) : ('bookmark' as const), onPress: () => router.push({ pathname: '/save-to-cookbook', params: { id: recipe.id } }) }]),
           ...(recipe.custom ? [{ label: 'Edit recipe', icon: 'edit' as const, onPress: () => router.push({ pathname: '/recipe/new', params: { edit: recipe.id } }) }] : []),
           ...(imported && recipe.creatorUrl ? [{ label: 'Open creator’s profile', icon: 'people' as const, onPress: () => openLink(recipe.creatorUrl) }] : []),
