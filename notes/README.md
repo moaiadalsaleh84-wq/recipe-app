@@ -14,3 +14,7 @@ there and read here.
 - [How to Design an App So Addictive That People Can't Stop Using It](How%20to%20Design%20an%20App%20So%20Addictive%20That%20People%20Can't%20Stop%20Using%20It.md):
   the habit framework (trigger, one-step core action, defaults, rewards, no dead ends, personal
   investment), with what fits Pantry Pop's honesty rules and what doesn't.
+- [How to Make AI-Generated UI Look Professional](How%20to%20Make%20AI-Generated%20UI%20Look%20Professional.md):
+  use component libraries instead of hand-building everything (foundations, specialists like Sonner,
+  Vaul and Number Flow, design components), change radius, colors and fonts, and one impressive
+  moment per page; with how it maps to a React Native app.
