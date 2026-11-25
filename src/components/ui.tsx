@@ -674,6 +674,9 @@ export function Segmented<T extends string>({
   return (
     <GestureDetector gesture={slide}>
       <View style={[segStyles.wrap, { backgroundColor: t.colors.cell, borderColor: t.pop.ink }]} accessibilityRole="radiogroup" accessibilityLabel={label}>
+        {/* The thumb and the options share this inner box, so the thumb lines up exactly with the
+            option it sits behind (measured and placed from the same corner). */}
+        <View style={segStyles.track}>
         {measured && first && (
           <Animated.View
             pointerEvents="none"
@@ -712,6 +715,7 @@ export function Segmented<T extends string>({
             </PressableScale>
           );
         })}
+        </View>
       </View>
     </GestureDetector>
   );
@@ -719,6 +723,7 @@ export function Segmented<T extends string>({
 
 const segStyles = StyleSheet.create({
   wrap: { flexDirection: 'row', borderRadius: 999, padding: 3, borderWidth: 2, borderCurve: 'continuous' },
+  track: { flexDirection: 'row' },
   // The yellow pill behind the chosen option (slides; childless, so animating its width is cheap).
   thumb: { position: 'absolute', left: 0, borderRadius: 999, borderCurve: 'continuous' },
   // 34 + 2 × 3 padding + 2 × 2 border = 44 tall.
