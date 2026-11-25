@@ -40,6 +40,15 @@ export function useTabBarSpace() {
 
 // A slide ends with the finger lifting over some tab: that lift must not also count as a tap.
 // (There's one tab bar, so this lives here rather than in each render.)
+/** Tapping the tab you're already on: screens can listen (the Cook tab scrolls back to the top). */
+const reselectListeners = new Set<(tab: string) => void>();
+export function onTabReselect(fn: (tab: string) => void) {
+  reselectListeners.add(fn);
+  return () => {
+    reselectListeners.delete(fn);
+  };
+}
+
 let slidUntil = 0;
 const startSlide = () => {
   slidUntil = Number.MAX_SAFE_INTEGER;
@@ -91,6 +100,7 @@ export function TabBar({ state, emitter, navigateToTab, badges = {} }: BottomTab
     const route = routes[i];
     if (!route) return;
     const e = emitter.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+    if (state.routes[state.index]?.key === route.key && !e.defaultPrevented) reselectListeners.forEach((fn) => fn(route.name));
     if (state.routes[state.index]?.key !== route.key && !e.defaultPrevented) navigateToTab(route.key);
     else x.set(reduceMotion ? targets[active] : withSpring(targets[active], PILL_SPRING));
   };

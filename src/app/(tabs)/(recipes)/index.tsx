@@ -219,7 +219,7 @@ export default function RecipesScreen() {
   );
 
   return (
-    <TabScreen maxWidth={900} title="Cook" header={header} keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled">
+    <TabScreen maxWidth={900} title="Cook" header={header} scrollToTopTab="(recipes)" keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled">
       {showTrialReminder && (
         <View style={[styles.reminder, { backgroundColor: t.colors.rewardSoft, borderColor: t.pop.ink }]} accessibilityRole="alert">
           <Icon name="crown" size={18} color={t.colors.rewardText} />

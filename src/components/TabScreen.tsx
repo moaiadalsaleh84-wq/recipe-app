@@ -5,13 +5,13 @@
  *
  *   <TabScreen title="Pantry" kicker="8 things at home" right={<HeaderButton … />}>…</TabScreen>
  */
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { StyleSheet, View, type ScrollViewProps } from 'react-native';
 import { Text } from './Text';
-import Animated, { Extrapolation, interpolate, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import Animated, { Extrapolation, interpolate, useAnimatedRef, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme';
-import { useTabBarSpace } from './TabBar';
+import { onTabReselect, useTabBarSpace } from './TabBar';
 
 /** Height of the small bar under the status bar. */
 export const BAR = 44;
@@ -29,13 +29,22 @@ type Props = Omit<ScrollViewProps, 'children'> & {
   maxWidth?: number;
   /** A custom header in place of the kicker + title row (the title still shows in the small bar). */
   header?: ReactNode;
+  /** This screen's tab (e.g. "(recipes)"): tapping that tab again scrolls back to the top. */
+  scrollToTopTab?: string;
 };
 
-export function TabScreen({ title, kicker, right, children, maxWidth = 700, header, contentContainerStyle, ...rest }: Props) {
+export function TabScreen({ title, kicker, right, children, maxWidth = 700, header, scrollToTopTab, contentContainerStyle, ...rest }: Props) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const tabSpace = useTabBarSpace();
   const y = useSharedValue(0);
+  const scrollRef = useAnimatedRef<Animated.ScrollView>();
+  useEffect(() => {
+    if (!scrollToTopTab) return;
+    return onTabReselect((tab) => {
+      if (tab === scrollToTopTab) scrollRef.current?.scrollTo({ y: 0, animated: true });
+    });
+  }, [scrollToTopTab, scrollRef]);
   const onScroll = useAnimatedScrollHandler((e) => {
     y.set(e.contentOffset.y);
   });
@@ -58,6 +67,7 @@ export function TabScreen({ title, kicker, right, children, maxWidth = 700, head
     <View style={{ flex: 1, backgroundColor: t.colors.background }}>
       <Animated.ScrollView
         {...rest}
+        ref={scrollRef}
         onScroll={onScroll}
         scrollEventThrottle={16}
         contentInsetAdjustmentBehavior="never"
