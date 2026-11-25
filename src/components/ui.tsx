@@ -2,7 +2,7 @@
  * Small building blocks shared across screens.
  * All tappable pieces are at least 44pt and give press + haptic feedback.
  */
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native';
 import { Text } from './Text';
 import { noWidow, num } from '../lib/text';
@@ -18,6 +18,7 @@ import Animated, {
   useSharedValue,
   withDelay,
   withRepeat,
+  withSequence,
   withTiming,
 } from 'react-native-reanimated';
 import type { HapticKind } from '../lib/haptics';
@@ -158,8 +159,13 @@ export function IconButton({
   disabled,
   style,
   haptic = 'tap',
+  onLongPress,
+  onPressOut,
 }: {
   haptic?: HapticKind | null;
+  /** Held down (after 350 ms). */
+  onLongPress?: () => void;
+  onPressOut?: () => void;
   icon: IconName;
   onPress: () => void;
   accessibilityLabel: string;
@@ -174,6 +180,9 @@ export function IconButton({
   return (
     <PressableScale
       onPress={onPress}
+      onLongPress={onLongPress}
+      delayLongPress={350}
+      onPressOut={onPressOut}
       disabled={disabled}
       scaleTo={0.9}
       haptic={haptic}
@@ -190,8 +199,45 @@ export function IconButton({
   );
 }
 
-/* ---------- Stepper (servings) ---------- */
+/* ---------- Rolling number ---------- */
 
+/**
+ * A number that rolls when it changes: going up, the new value slides in from just below; going
+ * down, from just above (10pt, 200 ms, ease-out, with a quick fade). Reduce Motion: it just changes.
+ */
+export function RollingNumber({ value, style, format = num, testID }: { value: number; style?: StyleProp<TextStyle>; format?: (n: number) => string; testID?: string }) {
+  const reduceMotion = useReducedMotion();
+  const y = useSharedValue(0);
+  const fade = useSharedValue(1);
+  // Which way it last changed, noted during render (React's "previous value" pattern) and
+  // animated in the effect below.
+  const [roll, setRoll] = useState({ prev: value, dir: 0, n: 0 });
+  if (value !== roll.prev) setRoll({ prev: value, dir: value > roll.prev ? 1 : -1, n: roll.n + 1 });
+  useEffect(() => {
+    if (!roll.dir || reduceMotion) return;
+    const move = { duration: 200, easing: Easing.out(Easing.cubic) };
+    y.set(withSequence(withTiming(roll.dir * 10, { duration: 0 }), withTiming(0, move)));
+    fade.set(withSequence(withTiming(0.2, { duration: 0 }), withTiming(1, move)));
+  }, [roll, reduceMotion, y, fade]);
+  const rollStyle = useAnimatedStyle(() => ({ opacity: fade.get(), transform: [{ translateY: y.get() }] }));
+  return (
+    <View style={{ overflow: 'hidden' }}>
+      <Animated.View style={rollStyle}>
+        <Text style={style} testID={testID}>
+          {format(value)}
+        </Text>
+      </Animated.View>
+    </View>
+  );
+}
+
+/* ---------- Stepper (servings, goals) ---------- */
+
+/**
+ * "− 300 +": tap to change by one step; hold + or − to keep going (faster the longer you hold).
+ * With `editable`, tap the number (or set `editing` from outside) to type a value; it's kept within
+ * min…max. The number rolls when it changes.
+ */
 export function Stepper({
   value,
   onChange,
@@ -199,6 +245,9 @@ export function Stepper({
   max = 24,
   step = 1,
   label,
+  editable,
+  editing: editingProp,
+  onEditingChange,
 }: {
   value: number;
   onChange: (n: number) => void;
@@ -207,13 +256,55 @@ export function Stepper({
   label: string;
   /** Amount per tap. */
   step?: number;
+  /** Tap the number to type a value. */
+  editable?: boolean;
+  /** Typing mode, controlled from outside (e.g. an "Edit" button next to it). */
+  editing?: boolean;
+  onEditingChange?: (on: boolean) => void;
 }) {
   const t = useTheme();
+  const [editingOwn, setEditingOwn] = useState(false);
+  const editing = editingProp ?? editingOwn;
+  const setEditing = (on: boolean) => {
+    setEditingOwn(on);
+    onEditingChange?.(on);
+  };
+  // What's typed so far (null: nothing yet, the field starts with the current value).
+  const [draft, setDraft] = useState<string | null>(null);
+  const commit = () => {
+    const n = parseInt((draft ?? String(value)).replace(/[^0-9]/g, ''), 10);
+    if (Number.isFinite(n)) onChange(Math.min(max, Math.max(min, n)));
+    setDraft(null);
+    setEditing(false);
+  };
+
+  // Hold to repeat: the latest value and onChange, read by the timer between renders.
+  const latest = useRef({ value, onChange });
+  useEffect(() => {
+    latest.current = { value, onChange };
+  });
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const stopRepeat = () => clearTimeout(timer.current);
+  const startRepeat = (dir: 1 | -1) => {
+    let ticks = 0;
+    const tick = () => {
+      const { value: v, onChange: change } = latest.current;
+      const next = Math.min(max, Math.max(min, v + dir * step));
+      if (next === v) return;
+      change(next);
+      haptics.select();
+      ticks += 1;
+      timer.current = setTimeout(tick, ticks < 5 ? 150 : ticks < 15 ? 90 : 50);
+    };
+    tick();
+  };
+  useEffect(() => () => clearTimeout(timer.current), []);
+
   return (
     // Outline only, like a text input: it is a control you adjust, not a button to press.
     <View
       style={[styles.stepper, { backgroundColor: t.colors.cell, ...t.chunky.card, borderRadius: t.radius.pill }]}
-      accessible
+      accessible={!editing}
       accessibilityRole="adjustable"
       accessibilityLabel={label}
       accessibilityValue={{ min, max, now: value, text: num(value) }}
@@ -223,11 +314,54 @@ export function Stepper({
         if (e.nativeEvent.actionName === 'decrement' && value > min) onChange(Math.max(min, value - step));
       }}
     >
-      <IconButton icon="minus" haptic="select" accessibilityLabel={`Decrease ${label}`} disabled={value <= min} onPress={() => onChange(Math.max(min, value - step))} color={t.colors.label} />
-      <Text style={[t.type.headline, styles.stepperValue, { color: t.colors.label }]} testID="stepper-value">
-        {num(value)}
-      </Text>
-      <IconButton icon="plus" haptic="select" accessibilityLabel={`Increase ${label}`} disabled={value >= max} onPress={() => onChange(Math.min(max, value + step))} color={t.colors.label} />
+      <IconButton
+        icon="minus"
+        haptic="select"
+        accessibilityLabel={`Decrease ${label}`}
+        disabled={value <= min || editing}
+        onPress={() => onChange(Math.max(min, value - step))}
+        onLongPress={() => startRepeat(-1)}
+        onPressOut={stopRepeat}
+        color={t.colors.label}
+      />
+      {editing ? (
+        <TextInput
+          value={draft ?? String(value)}
+          onChangeText={(v) => setDraft(v.replace(/[^0-9]/g, ''))}
+          onSubmitEditing={commit}
+          onBlur={commit}
+          autoFocus
+          selectTextOnFocus
+          keyboardType="number-pad"
+          returnKeyType="done"
+          maxLength={5}
+          maxFontSizeMultiplier={1.3}
+          accessibilityLabel={`Type your ${label}`}
+          style={[t.type.headline, styles.stepperValue, styles.stepperInput, { color: t.colors.label, borderColor: t.pop.ink }]}
+          testID="stepper-input"
+        />
+      ) : editable ? (
+        <Pressable
+          onPress={() => setEditing(true)}
+          accessibilityRole="button"
+          accessibilityLabel={`${num(value)}. Tap to type your ${label}`}
+          hitSlop={8}
+        >
+          <RollingNumber value={value} style={[t.type.headline, styles.stepperValue, { color: t.colors.label }]} testID="stepper-value" />
+        </Pressable>
+      ) : (
+        <RollingNumber value={value} style={[t.type.headline, styles.stepperValue, { color: t.colors.label }]} testID="stepper-value" />
+      )}
+      <IconButton
+        icon="plus"
+        haptic="select"
+        accessibilityLabel={`Increase ${label}`}
+        disabled={value >= max || editing}
+        onPress={() => onChange(Math.min(max, value + step))}
+        onLongPress={() => startRepeat(1)}
+        onPressOut={stopRepeat}
+        color={t.colors.label}
+      />
     </View>
   );
 }
@@ -558,6 +692,7 @@ const styles = StyleSheet.create({
   stepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minWidth: 150, borderRadius: 999, borderCurve: 'continuous', paddingHorizontal: 2 },
   stepperDivider: { width: StyleSheet.hairlineWidth, height: 18 },
   stepperValue: { minWidth: 36, textAlign: 'center', fontVariant: ['tabular-nums'] },
+  stepperInput: { minWidth: 64, paddingVertical: 4, paddingHorizontal: 6, borderBottomWidth: 2 },
   // Rounded squares: the tick pops in on a basil fill.
   check: { width: 28, height: 28, borderRadius: 9, borderWidth: 2.5, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
   checkFill: { width: 28, height: 28, borderRadius: 9, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },

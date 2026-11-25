@@ -26,7 +26,7 @@ import { RecipeCard } from '../../components/RecipeCard';
 import { mainIngredient } from '../../lib/bonus';
 import { pantryMatch } from '../../lib/moods';
 import { useToast } from '../../components/Toast';
-import { Button, EmptyState, IconButton, Segmented } from '../../components/ui';
+import { Button, EmptyState, IconButton, RollingNumber, Segmented } from '../../components/ui';
 import { BottomBar } from '../../components/BottomBar';
 import { ImportHint, ImportedPhotoOverlay, RecipeByRow, chooseOwnPhoto, isImported, useOpenLink } from '../../components/ImportCredit';
 import { needsPhotoRetry, retryImportDetails } from '../../lib/importRetry';
@@ -593,9 +593,11 @@ function PeopleStepper({ value, onChange, min = 1, max = 24 }: { value: number; 
       }}
     >
       <IconButton icon="minus" haptic="select" accessibilityLabel="Fewer people" disabled={value <= min} onPress={() => onChange(Math.max(min, value - 1))} color={t.pop.ink} size={39} />
-      <Text style={[t.type.headline, styles.peopleText, { color: t.pop.ink }]} testID="servings-label">
-        <Text testID="stepper-value">{value}</Text> {value === 1 ? 'person' : 'people'}
-      </Text>
+      {/* The number rolls when it changes; the word stays put. */}
+      <View style={[styles.peopleText, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }]} testID="servings-label">
+        <RollingNumber value={value} style={[t.type.headline, { color: t.pop.ink }]} testID="stepper-value" />
+        <Text style={[t.type.headline, { color: t.pop.ink }]}>{value === 1 ? '\u00A0person' : '\u00A0people'}</Text>
+      </View>
       <IconButton icon="plus" haptic="select" accessibilityLabel="More people" disabled={value >= max} onPress={() => onChange(Math.min(max, value + 1))} color={t.pop.ink} size={39} />
     </View>
   );

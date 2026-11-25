@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/Text';
-import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut, useReducedMotion } from 'react-native-reanimated';
 import { enter } from '../../../motion';
 import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
@@ -12,7 +12,7 @@ import { stickers } from '../../../data/stickers';
 import { nb } from '../../../lib/text';
 import { weekDotSize } from '../../../lib/weekDots';
 import { useToast } from '../../../components/Toast';
-import { AnimatedNumber, Button, ProgressBar, Section, SectionHeader, Separator, Stepper } from '../../../components/ui';
+import { AnimatedNumber, Button, ProgressBar, Section, SectionHeader, Separator, Stepper, TextButton } from '../../../components/ui';
 import { Reveal } from '../../../components/Reveal';
 import { showPaywall, useProGate } from '../../../lib/pro';
 import { BADGES, levelFor, streakOf, xpFor } from '../../../lib/progress';
@@ -281,11 +281,12 @@ export default function ProgressScreen() {
       {/* A compact row: the 4 nearest stickers (found ones first, then the next to find). "See all"
           opens the whole book. */}
       <PopCard contentStyle={allStickers ? styles.stickerBook : styles.stickerRow} testID="sticker-book">
-        {(allStickers ? stickers : [...stickers].sort((a, b) => Number((fun.stickers ?? []).includes(b.id)) - Number((fun.stickers ?? []).includes(a.id))).slice(0, 4)).map((st) => {
+        {(allStickers ? stickers : [...stickers].sort((a, b) => Number((fun.stickers ?? []).includes(b.id)) - Number((fun.stickers ?? []).includes(a.id))).slice(0, 4)).map((st, i) => {
           const got = (fun.stickers ?? []).includes(st.id);
           return (
-            // Opening the whole book: the stickers that weren't shown yet fade in (the 4 already there stay put).
-            <Animated.View key={st.id} entering={allStickers && !reduceMotion ? FadeIn.duration(200) : undefined} style={allStickers ? styles.stickerCell : styles.stickerSmall} accessible accessibilityLabel={got ? `${st.name} sticker` : 'Sticker not found yet'}>
+            // Opening the whole book: the stickers that weren't shown yet drift up and fade in, one after
+            // another (a short, uneven stagger); the 4 already there stay put. Hiding fades them out.
+            <Animated.View key={st.id} entering={allStickers ? enter(i, reduceMotion) : undefined} exiting={allStickers ? FadeOut.duration(140) : undefined} style={allStickers ? styles.stickerCell : styles.stickerSmall} accessible accessibilityLabel={got ? `${st.name} sticker` : 'Sticker not found yet'}>
               <View style={[styles.stickerDisc, !allStickers && styles.stickerDiscSmall, got ? { backgroundColor: t.pop[st.color], borderColor: t.pop.ink } : { backgroundColor: t.pop.lilacTint, borderColor: t.pop.lilac, borderStyle: 'dashed' }]}>
                 <Icon name={st.icon} size={allStickers ? 22 : 18} color={got ? t.pop.ink : t.pop.lilac} weight="bold" />
               </View>
@@ -368,13 +369,9 @@ export default function ProgressScreen() {
         </PopCard>
       ) : (
         <Section footer="Meals you finish in Cook Mode count toward today, one serving each. Recipe nutrition is estimated.">
-          <GoalRow label="Protein" unit="g" eaten={eaten.protein} goal={goals.protein} color={t.colors.protein}>
-            <Stepper value={goals.protein} onChange={(v) => setGoals({ ...goals, protein: v })} min={40} max={300} step={5} label="protein goal" />
-          </GoalRow>
+          <GoalRow label="Protein" unit="g" eaten={eaten.protein} goal={goals.protein} color={t.colors.protein} goalName="protein goal" onGoal={(v) => setGoals({ ...goals, protein: v })} min={40} max={300} step={5} />
           <Separator />
-          <GoalRow label="Calories" unit="kcal" eaten={eaten.calories} goal={goals.calories} color={t.colors.carbs}>
-            <Stepper value={goals.calories} onChange={(v) => setGoals({ ...goals, calories: v })} min={1000} max={5000} step={50} label="calorie goal" />
-          </GoalRow>
+          <GoalRow label="Calories" unit="kcal" eaten={eaten.calories} goal={goals.calories} color={t.colors.carbs} goalName="calorie goal" onGoal={(v) => setGoals({ ...goals, calories: v })} min={1000} max={5000} step={50} />
         </Section>
       )}
     </TabScreen>
@@ -395,22 +392,32 @@ function KitchenStat({ value, label }: { value: number; label: string }) {
   );
 }
 
-function GoalRow({ label, unit, eaten, goal, color, children }: { label: string; unit: string; eaten: number; goal: number; color: string; children: React.ReactNode }) {
+/**
+ * One daily goal: the name with its stepper (tap ± or hold to keep going; tap the number or
+ * "Edit" to type it), then "33 of 285 g" and the progress bar.
+ */
+function GoalRow({ label, goalName, unit, eaten, goal, color, onGoal, min, max, step }: { label: string; goalName: string; unit: string; eaten: number; goal: number; color: string; onGoal: (v: number) => void; min: number; max: number; step: number }) {
   const t = useTheme();
+  const [editing, setEditing] = useState(false);
   return (
     <View style={styles.goal}>
       {/* The goal stepper beside the name; "520 of 2,200 kcal" on its own full-width line, never cut. */}
       <View style={styles.row}>
         <Text style={[t.type.headline, { color: t.colors.label, flex: 1, minWidth: 0 }]}>{label}</Text>
-        {children}
+        <Stepper value={goal} onChange={onGoal} min={min} max={max} step={step} label={goalName} editable editing={editing} onEditingChange={setEditing} />
       </View>
-      <AnimatedNumber value={eaten} suffix={` of ${nb(goal, unit)}`} style={[t.type.footnote, { color: t.colors.secondaryLabel }]} />
+      <View style={styles.goalLine}>
+        <AnimatedNumber value={eaten} suffix={` of ${nb(goal, unit)}`} style={[t.type.footnote, { color: t.colors.secondaryLabel, flexShrink: 1 }]} />
+        {!editing && <TextButton label="Edit" icon="edit" small onPress={() => setEditing(true)} accessibilityLabel={`Edit your ${goalName}`} />}
+      </View>
       <ProgressBar value={eaten / goal} color={color} height={10} label={`${label} today`} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  // "33 of 285 g" and the Edit button on one line (the button keeps its 44pt tap height without adding space).
+  goalLine: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginVertical: -10 },
   kitchen: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingVertical: 16, paddingHorizontal: 12 },
   // Three equal columns, each centered: a 40pt-high top (big number or the favorite's photo) and a one-line label.
   kitchenCol: { flex: 1, minWidth: 0, alignItems: 'center', gap: 4 },
