@@ -98,6 +98,7 @@ export default function RootLayout() {
                 <Stack.Screen name="cookbook/[id]" options={{ animation: 'slide_from_right' }} />
                 <Stack.Screen name="plan-picker" options={sheet} />
                 <Stack.Screen name="add-to-list" options={sheet} />
+                <Stack.Screen name="add-items" options={{ ...sheet, sheetAllowedDetents: [0.6, 1] }} />
                 <Stack.Screen name="save-to-cookbook" options={sheet} />
                 <Stack.Screen name="buddy-pick" options={{ ...sheet, sheetAllowedDetents: [0.85] }} />
                 <Stack.Screen name="cookbook-edit" options={{ ...sheet, sheetAllowedDetents: [0.45] }} />

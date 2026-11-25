@@ -31,9 +31,11 @@ type Props = Omit<ScrollViewProps, 'children'> & {
   header?: ReactNode;
   /** This screen's tab (e.g. "(recipes)"): tapping that tab again scrolls back to the top. */
   scrollToTopTab?: string;
+  /** Floats above the page and stays put while it scrolls (e.g. a round + button). */
+  overlay?: ReactNode;
 };
 
-export function TabScreen({ title, kicker, right, children, maxWidth = 700, header, scrollToTopTab, contentContainerStyle, ...rest }: Props) {
+export function TabScreen({ title, kicker, right, children, maxWidth = 700, header, scrollToTopTab, overlay, contentContainerStyle, ...rest }: Props) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const tabSpace = useTabBarSpace();
@@ -107,6 +109,7 @@ export function TabScreen({ title, kicker, right, children, maxWidth = 700, head
           {title}
         </Text>
       </Animated.View>
+      {overlay}
       {/* Behind the clock: always solid. */}
       <View style={[styles.status, { height: insets.top, backgroundColor: t.colors.background }]} testID="screen-status" />
     </View>

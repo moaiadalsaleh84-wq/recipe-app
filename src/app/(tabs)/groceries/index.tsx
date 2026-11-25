@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Share, StyleSheet, TextInput, View } from 'react-native';
+import { Share, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/Text';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Animated, { FadeIn, FadeOut, LinearTransition, FadeOutDown, FadeOutLeft, useAnimatedStyle, useReducedMotion, type SharedValue } from 'react-native-reanimated';
@@ -10,7 +10,9 @@ import { PressableScale } from '../../../components/PressableScale';
 import { Reveal } from '../../../components/Reveal';
 import { ConfettiBurst } from '../../../components/ConfettiBurst';
 import { useToast } from '../../../components/Toast';
-import { CheckCircle, EmptyState, HeaderButton, IconButton, ProgressBar, Section, Separator } from '../../../components/ui';
+import { CheckCircle, HeaderButton, IconButton, ProgressBar, Section, Separator } from '../../../components/ui';
+import { PopIconButton } from '../../../components/pop/PopIconButton';
+import { useTabBarHeight } from '../../../components/TabBar';
 import { PopCard, PopChip } from '../../../components/pop';
 import { aisleOrder, type GroceryItem } from '../../../data/mock';
 import { haptics } from '../../../lib/haptics';
@@ -25,8 +27,8 @@ const aisleName = (aisle: string) => (aisle === 'Pantry' ? 'Cupboard' : aisle);
 export default function GroceriesScreen() {
   const t = useTheme();
   const toast = useToast();
-  const { groceries, leftToBuy, toggleGrocery, removeGrocery, clearCompleted, addCustomItem, undoGroceries, units } = useStore();
-  const [draft, setDraft] = useState('');
+  const { groceries, leftToBuy, toggleGrocery, removeGrocery, clearCompleted, undoGroceries, units } = useStore();
+  const tabBarHeight = useTabBarHeight();
   // Confetti once, when the last item goes in the basket.
   const [party, setParty] = useState(0);
 
@@ -76,17 +78,6 @@ export default function GroceriesScreen() {
     }
   };
 
-  // Several at once: "eggs, milk, butter" (or pasted lines) become separate items.
-  const add = () => {
-    const names = draft
-      .split(/[,;\n]+/)
-      .map((n) => n.trim().slice(0, 60))
-      .filter(Boolean);
-    if (!names.length) return;
-    names.forEach((n) => addCustomItem(n));
-    setDraft('');
-    toast({ message: names.length === 1 ? `Added ${names[0]}` : `Added ${names.length} items`, icon: 'cart' });
-  };
 
   const remove = (item: GroceryItem) => {
     haptics.heavy();
@@ -99,7 +90,19 @@ export default function GroceriesScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-    <TabScreen title="Shopping list" kicker={total === 0 ? 'Nothing to buy yet' : toBuy === 0 ? 'All done' : `${toBuy} left to buy`} right={headerRight} keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled">
+    <TabScreen
+      title="Shopping list"
+      kicker={total === 0 ? 'Nothing to buy yet' : toBuy === 0 ? 'All done' : `${toBuy} left to buy`}
+      right={headerRight}
+      keyboardDismissMode="on-drag"
+      keyboardShouldPersistTaps="handled"
+      // The round + floats above the tab bar: it opens "Add to groceries" (type or paste a list).
+      overlay={
+        <View style={[styles.fab, { bottom: tabBarHeight + 16 }]}>
+          <PopIconButton icon="plus" size={60} iconSize={26} color={t.pop.sunshine} haptic="tap" accessibilityLabel="Add groceries" onPress={() => router.push('/add-items')} testID="add-items" />
+        </View>
+      }
+    >
       {/* Where you are: a leaf bar that fills as items go in the basket */}
       {total > 0 && (
         <Reveal index={0}>
@@ -124,37 +127,15 @@ export default function GroceriesScreen() {
         </Reveal>
       )}
 
-      {/* Quick add */}
-      <View style={[styles.addRow, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
-        <Icon name="plus" size={18} color={t.colors.tint} weight="bold" />
-        <TextInput maxFontSizeMultiplier={1.3}
-          value={draft}
-          onChangeText={setDraft}
-          onSubmitEditing={add}
-          placeholder="Add items, e.g. eggs, milk"
-          maxLength={400}
-          placeholderTextColor={t.colors.tertiaryLabel}
-          returnKeyType="done"
-          blurOnSubmit={false}
-          accessibilityLabel="New grocery item"
-          style={[t.type.input, styles.addInput, { color: t.colors.label }]}
-        />
-        {draft.trim().length > 0 && (
-          <Animated.View entering={FadeIn.duration(150)} exiting={FadeOut.duration(150)}>
-            <PressableScale onPress={add} accessibilityLabel="Add item to list" style={[styles.addButton, { backgroundColor: t.colors.tintFill, borderColor: t.pop.ink }]}>
-              <Text style={[t.type.subhead, { color: t.colors.onTint, fontFamily: t.fonts.black }]}>Add</Text>
-            </PressableScale>
-          </Animated.View>
-        )}
-      </View>
-
       {total === 0 ? (
-        <EmptyState
-          icon="cart"
-          title="Nothing to buy yet"
-          message="Type what you need above (several at once, with commas), or tap the basket on any recipe and pick what you need."
-          action={{ label: 'Browse recipes', icon: 'book', onPress: () => router.navigate('/') }}
-        />
+        // Empty: a calm, friendly hint pointing at the + button (nothing is ever added for you).
+        <Animated.View entering={enter(0, reduceMotion)} style={styles.empty} testID="list-empty">
+          <View style={[styles.emptyArt, { backgroundColor: t.pop.sunshineTint, borderColor: t.pop.ink }]}>
+            <Icon name="cart" size={52} color={t.pop.ink} weight="bold" />
+          </View>
+          <Text style={[t.type.title2, { color: t.colors.label, textAlign: 'center' }]}>No groceries yet</Text>
+          <Text style={[t.type.body, { color: t.colors.secondaryLabel, textAlign: 'center' }]}>Tap + to add what you need. Or tap the basket on any recipe to pick its ingredients.</Text>
+        </Animated.View>
       ) : (
         <>
           {/* Each aisle on its own outlined card, with its name and count above it */}
@@ -217,6 +198,8 @@ export default function GroceriesScreen() {
           <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, textAlign: 'center', marginTop: 16 }]}>{'Swipe left on an item to delete it.'}</Text>
         </>
       )}
+      {/* Room under the last item, so the + button never covers it. */}
+      <View style={{ height: 72 }} />
     </TabScreen>
     {party > 0 && done === total && <ConfettiBurst key={party} count={60} />}
     </View>
@@ -335,9 +318,9 @@ const styles = StyleSheet.create({
   heroBar: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   // Lined up with the card's edges: the name at its left, the count at its right.
   aisleHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 22, marginBottom: 8 },
-  addRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 16, paddingRight: 4, minHeight: 54, borderRadius: 18, marginTop: 14, borderCurve: 'continuous' },
-  addInput: { flex: 1, paddingVertical: 12, outlineStyle: 'none' } as never,
-  addButton: { minHeight: 42, paddingHorizontal: 18, borderRadius: 14, borderWidth: 2, justifyContent: 'center', borderCurve: 'continuous' },
+  fab: { position: 'absolute', right: 20 },
+  empty: { alignItems: 'center', gap: 12, paddingTop: 48, paddingHorizontal: 12 },
+  emptyArt: { width: 128, height: 128, borderRadius: 64, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   basketHead: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 56, paddingHorizontal: 16, borderRadius: 18, borderWidth: 2.5, marginTop: 24 },
   row: { flexDirection: 'row', alignItems: 'center', paddingLeft: 8, paddingRight: 16, minHeight: 60 },
   checkTap: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
