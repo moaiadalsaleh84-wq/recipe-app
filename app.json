@@ -11,6 +11,9 @@
       "bundleIdentifier": "com.moaiadalsaleh.pantrypop",
       "entitlements": {
         "com.apple.developer.usernotifications.time-sensitive": true
+      },
+      "infoPlist": {
+        "CADisableMinimumFrameDurationOnPhone": true
       }
     },
     "android": {

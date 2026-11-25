@@ -3,7 +3,7 @@ import { Modal, Pressable, StyleSheet, View, useWindowDimensions, type StyleProp
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import Animated, { Easing, interpolate, useAnimatedStyle, useReducedMotion, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
-import { pressSpring } from '../motion';
+
 import { pop, stroke, useTheme } from '../theme';
 
 /** iOS-like sheet curve: quick start, long soft landing. */
@@ -79,7 +79,8 @@ export function BottomSheet({ visible, onClose, children, style, accessibilityLa
           if (ok) scheduleOnRN(finish);
         }));
       } else {
-        drag.set(withSpring(0, pressSpring));
+        // Not far or fast enough: back home from the finger's own speed, no overshoot.
+        drag.set(withSpring(0, { duration: 300, dampingRatio: 1, velocity: e.velocityY }));
       }
     },
   });

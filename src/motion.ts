@@ -56,11 +56,15 @@ export const MAX_STAGGERED = 6;
 
 /**
  * The standard "arrive" animation for screens, sections, cards and rows: fade in while rising 8pt,
- * 220 ms, staggered 30 ms by index (max 6). Only on first open (it's an entering animation).
+ * 220 ms, staggered with shrinking gaps by index (max 6). Only on first open (it's an entering animation).
  * With Reduce Motion: a plain short fade.
  */
+/** Delays for the first 6 items: the gaps shrink (40, 30, 25, 20, 15 ms), so a group reads as one
+ * wave instead of a metronome. The rest arrive with the last one. */
+const STAGGER_DELAYS = [0, 40, 70, 95, 115, 130] as const;
+
 export function enter(index = 0, reduceMotion = false) {
-  const delay = Math.min(index, MAX_STAGGERED - 1) * STAGGER;
+  const delay = STAGGER_DELAYS[Math.min(index, MAX_STAGGERED - 1)];
   if (reduceMotion) return FadeIn.duration(duration.fast).delay(delay);
   const base = uiEase(FadeInDown.duration(220).delay(delay));
   // Phones: start 8pt lower (FadeInDown's default is 25). On web, custom start values make Reanimated

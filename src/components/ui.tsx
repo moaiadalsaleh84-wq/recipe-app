@@ -15,7 +15,6 @@ import Animated, {
   useSharedValue,
   withDelay,
   withRepeat,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import type { HapticKind } from '../lib/haptics';
@@ -310,7 +309,7 @@ export function ProgressBar({ value, color, track, height = 8, label }: { /** 0 
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
-/** A ring that fills clockwise with a spring when it appears or changes, with anything in the middle. */
+/** A ring that fills clockwise (500 ms, ease-out, no overshoot) when it appears or changes, with anything in the middle. */
 export function Ring({ value, size = 56, stroke = 6, color, track, children, label }: { /** 0 to 1 */ value: number; size?: number; stroke?: number; color?: string; track?: string; children?: ReactNode; label?: string }) {
   const t = useTheme();
   const reduceMotion = useReducedMotion();
@@ -319,7 +318,7 @@ export function Ring({ value, size = 56, stroke = 6, color, track, children, lab
   const pct = Math.max(0, Math.min(1, value));
   const shown = useSharedValue(reduceMotion ? pct : 0);
   useEffect(() => {
-    shown.set(reduceMotion ? withTiming(pct, { duration: 200 }) : withSpring(pct, { damping: 16, stiffness: 90, mass: 1 }));
+    shown.set(reduceMotion ? withTiming(pct, { duration: 200 }) : withTiming(pct, { duration: 500, easing: Easing.out(Easing.cubic) }));
   }, [pct, reduceMotion, shown]);
   // Only numbers in here (c is worked out above): this runs on the UI thread.
   const arc = useAnimatedProps(() => ({ strokeDashoffset: c * (1 - Math.max(0, Math.min(1, shown.get()))) }));
