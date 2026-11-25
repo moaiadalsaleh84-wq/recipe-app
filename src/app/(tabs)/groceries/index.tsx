@@ -124,7 +124,8 @@ export default function GroceriesScreen() {
                 {done === total && <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{'Go get cooking!'}</Text>}
               </Animated.View>
             </View>
-            <View style={styles.heroBar}>
+            {/* Room for the Clear done button only when it shows (no empty gap under the bar). */}
+            <View style={[styles.heroBar, done > 0 && { minHeight: 44 }]}>
               <View style={{ flex: 1 }}>
                 <ProgressBar value={done / total} color={t.pop.leaf} height={14} label="Shopping progress" />
               </View>
@@ -304,9 +305,9 @@ function GroceryRow({ item, onToggle, onDelete }: { item: GroceryItem; onToggle:
             <Text style={[t.type.body, { color: item.checked ? t.colors.secondaryLabel : t.colors.label }, item.checked && styles.struck]} numberOfLines={2}>
               {item.name}
             </Text>
-            {/* One line: "For <recipe>" (the name shortened with …) or "For 2 recipes". */}
+            {/* "For <recipe>" (up to 2 lines, so the name isn't cut short) or "For 2 recipes". */}
             {names.length === 1 && (
-              <Text style={[styles.sub, { color: t.colors.secondaryLabel }]} numberOfLines={1}>
+              <Text style={[styles.sub, { color: t.colors.secondaryLabel }]} numberOfLines={2}>
                 For {names[0]}
               </Text>
             )}
@@ -342,7 +343,7 @@ function DeleteAction({ progress, label, onPress }: { progress: SharedValue<numb
 const styles = StyleSheet.create({
   hero: { padding: 16, gap: 14 },
   heroTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  heroBar: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44 },
+  heroBar: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   // Lined up with the card's edges: the name at its left, the count at its right.
   aisleHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 22, marginBottom: 8 },
   addRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 16, paddingRight: 4, minHeight: 54, borderRadius: 18, marginTop: 14, borderCurve: 'continuous' },
