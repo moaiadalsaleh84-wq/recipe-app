@@ -18,13 +18,11 @@ import Animated, {
 import { enter, popoverIn } from '../../motion';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { pantryHas } from '../../lib/pantry';
 import { FoodIcon } from '../../components/FoodIcon';
 import { Icon, type IconName } from '../../components/Icon';
 import { PressableScale } from '../../components/PressableScale';
 import { HeartIcon, RecipeCard } from '../../components/RecipeCard';
 import { mainIngredient } from '../../lib/bonus';
-import { pantryMatch } from '../../lib/moods';
 import { useToast } from '../../components/Toast';
 import { Button, EmptyState, IconButton, RollingNumber, Segmented } from '../../components/ui';
 import { BottomBar } from '../../components/BottomBar';
@@ -54,7 +52,7 @@ export default function RecipeScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const {
     getRecipe, isFavorite, toggleFavorite, units, setUnits, notes, setNote,
-    cookbooks, favorites, deleteRecipe, setRecipeImage, goals, profile, isPro, pantry, allRecipes, fun, markImportHintSeen, updateRecipe,
+    cookbooks, favorites, deleteRecipe, setRecipeImage, goals, profile, isPro, allRecipes, fun, markImportHintSeen, updateRecipe,
   } = useStore();
   const recipe = getRecipe(id);
   const openLink = useOpenLink();
@@ -125,15 +123,12 @@ export default function RecipeScreen() {
   const discoverId = recipe.discover?.id ?? recipe.discoverId;
   const fav = isFavorite(recipe.id);
   const inCookbooks = cookbooks.filter((c) => c.recipeIds.includes(recipe.id)).length + (favorites.includes(recipe.id) ? 1 : 0);
-  // What you already have at home (from the Pantry tab), so you only buy the rest.
-  const have = new Set(pantry.length ? recipe.ingredients.filter((i) => pantryHas(pantry, i.name)).map((i) => i.id) : []);
-  const missing = recipe.ingredients.filter((i) => !have.has(i.id));
   // Checked recipe text already gives °C and °F ("200°C (400°F)"): shown exactly as written.
   const stepFor = (step: string) => (recipe.source === 'pantry-pop' ? step : convertStepText(step, units));
   const main = mainIngredient(recipe);
   const alsoLike = allRecipes
     .filter((r) => r.id !== recipe.id)
-    .map((r) => ({ r, score: (main !== 'any' && mainIngredient(r) === main ? 2 : 0) + (r.category === recipe.category ? 1 : 0) + pantryMatch(r, pantry).have / Math.max(1, r.ingredients.length) }))
+    .map((r) => ({ r, score: (main !== 'any' && mainIngredient(r) === main ? 2 : 0) + (r.category === recipe.category ? 1 : 0) }))
     .sort((a, b) => b.score - a.score || a.r.title.localeCompare(b.r.title))
     .slice(0, 3)
     .map((x) => x.r);
@@ -368,22 +363,15 @@ export default function RecipeScreen() {
               const shown = amountFor(ing, servings, recipe.servings, units);
               const amount = shown.text;
               const text = ingredientLabel(ing.name, shown, { lowercase: true });
-              const got = have.has(ing.id);
               return (
                 <Animated.View key={`${ing.id}-${i}`} entering={enter(i, reduceMotion)}>
                   <View
-                    style={[styles.ingredient, i > 0 && { borderTopWidth: 1.5, borderTopColor: t.colors.separator }, got && { backgroundColor: t.pop.leafTint }]}
+                    style={[styles.ingredient, i > 0 && { borderTopWidth: 1.5, borderTopColor: t.colors.separator }]}
                     accessible
-                    accessibilityLabel={`${amount} ${text}${got ? ', in pantry' : ''}`.trim()}
+                    accessibilityLabel={`${amount} ${text}`.trim()}
                     testID={`ing-row-${ing.id}`}
                   >
-                    {got ? (
-                      <View style={[styles.gotCheck, { backgroundColor: t.pop.leaf, borderColor: t.pop.ink }]}>
-                        <Icon name="check" size={13} color={t.pop.ink} weight="bold" />
-                      </View>
-                    ) : (
-                      <FoodIcon name={ing.name} aisle={ing.aisle} />
-                    )}
+                    <FoodIcon name={ing.name} aisle={ing.aisle} />
                     {/* "3/4 red pepper": the amount in bold, then what it is */}
                     <View style={{ flex: 1 }}>
                       <Text style={[t.type.body, { color: t.colors.label }]}>
@@ -400,7 +388,6 @@ export default function RecipeScreen() {
                           {ing.note ? <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, flexShrink: 1 }]}>{ing.note}</Text> : null}
                         </View>
                       ) : null}
-                      {got && <Text style={[t.type.caption1, { color: t.colors.label }]}>in pantry</Text>}
                     </View>
                   </View>
                 </Animated.View>
@@ -502,9 +489,8 @@ export default function RecipeScreen() {
           size={56}
           iconSize={24}
           color={t.pop.white}
-          badge={missing.length || undefined}
           accessibilityLabel="Add ingredients to your shopping list"
-          // Opens "Add to your list": you pick what to buy (pantry items start unticked).
+          // Opens "Add to your list": you pick what to buy.
           onPress={() => router.push({ pathname: '/add-to-list', params: { recipe: recipe.id, servings: String(servings) } })}
           testID="add-missing"
           haptic={null}
@@ -785,7 +771,6 @@ const styles = StyleSheet.create({
   statLabel: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 18 },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 18 },
   kicker: { flexDirection: 'row', gap: 8 },
-  gotCheck: { width: 32, height: 32, borderRadius: 16, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   h2: { marginTop: 32, marginBottom: 14 },
   // 39 + 2 × 2.5 border = 44 tall; only as wide as its content.
   people: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', borderWidth: 2.5, borderRadius: 999, paddingHorizontal: 2 },

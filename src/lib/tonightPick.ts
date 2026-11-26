@@ -21,8 +21,12 @@ export type TonightPick = Pick & {
   fromPlan: boolean;
 };
 
+const NO_PANTRY: string[] = [];
+
 export function useTonightPick() {
-  const { plan, getRecipe, allRecipes, pantry, profile, cooked } = useStore();
+  const { plan, getRecipe, allRecipes, profile, cooked } = useStore();
+  // The pantry feature was removed: picks no longer weigh what you have at home.
+  const pantry = NO_PANTRY;
   // Your latest rating of each recipe (history is newest first).
   const ratings = useMemo(() => {
     const out: Ratings = {};

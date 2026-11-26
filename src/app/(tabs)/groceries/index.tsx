@@ -13,7 +13,7 @@ import { useToast } from '../../../components/Toast';
 import { CheckCircle, HeaderButton, IconButton, ProgressBar, Section, Separator } from '../../../components/ui';
 import { PopIconButton } from '../../../components/pop/PopIconButton';
 import { useTabBarHeight } from '../../../components/TabBar';
-import { PopButton, PopCard, PopChip } from '../../../components/pop';
+import { PopCard, PopChip } from '../../../components/pop';
 import { aisleOrder, type GroceryItem } from '../../../data/mock';
 import { haptics } from '../../../lib/haptics';
 import { TabScreen } from '../../../components/TabScreen';
@@ -22,7 +22,7 @@ import { showAmount } from '../../../lib/scale';
 import { fonts, useTheme } from '../../../theme';
 import { FOX_READY, FoxMascot } from '../../../components/mascot/FoxMascot';
 
-/** How an aisle is named on screen. "Pantry" is shown as "Cupboard", so it doesn't clash with the Pantry tab (saved data keeps its name). */
+/** How an aisle is named on screen (saved data keeps the short names). */
 /** Grocery-store names for the aisles. */
 const AISLE_NAMES: Record<string, string> = { Produce: 'Produce', 'Meat & Fish': 'Meat, Poultry & Fish', 'Dairy & Eggs': 'Dairy & Refrigerated', Pantry: 'Pantry & Spices', Bakery: 'Bakery', Other: 'Other' };
 const aisleName = (aisle: string) => AISLE_NAMES[aisle] ?? aisle;
@@ -30,7 +30,7 @@ const aisleName = (aisle: string) => AISLE_NAMES[aisle] ?? aisle;
 export default function GroceriesScreen() {
   const t = useTheme();
   const toast = useToast();
-  const { groceries, leftToBuy, toggleGrocery, removeGrocery, clearCompleted, undoGroceries, units, addPantry, restorePantry, pantry } = useStore();
+  const { groceries, leftToBuy, toggleGrocery, removeGrocery, clearCompleted, undoGroceries, units } = useStore();
   const tabBarHeight = useTabBarHeight();
   // Confetti once, when the last item goes in the basket.
   const [party, setParty] = useState(0);
@@ -65,15 +65,6 @@ export default function GroceriesScreen() {
     }
   }, [groceries, toast, units]);
 
-  // Bought it: what's in the basket goes to the Pantry tab and off the list (one Undo for both).
-  const putAway = () => {
-    const before = pantry;
-    const names = groceries.filter((g) => g.checked).map((g) => g.name);
-    names.forEach((n) => addPantry(n));
-    clearCompleted();
-    haptics.success();
-    toast({ message: `Put ${names.length} ${names.length === 1 ? 'item' : 'items'} in your pantry`, icon: 'fridge', action: { label: 'Undo', onPress: () => { undoGroceries(); restorePantry(before); } } });
-  };
   const clearDone = () => {
     const n = clearCompleted();
     toast({ message: `Cleared ${n} completed ${n === 1 ? 'item' : 'items'}`, icon: 'trash', tone: 'info', action: { label: 'Undo', onPress: undoGroceries } });
@@ -133,11 +124,8 @@ export default function GroceriesScreen() {
               <View style={{ flex: 1 }}>
                 <ProgressBar value={done / total} color={t.pop.leaf} height={14} label="Shopping progress" />
               </View>
-              {done > 0 && <PopChip label="Clear done" icon="trash" color={t.pop.white} onPress={clearDone} accessibilityLabel={`Clear ${done} completed ${done === 1 ? 'item' : 'items'}`} />}
+              {done > 0 && <PopChip label="Clear done" icon="trash" color={done === total ? t.pop.sunshine : t.pop.white} onPress={clearDone} accessibilityLabel={`Clear ${done} completed ${done === 1 ? 'item' : 'items'}`} />}
             </View>
-            {done > 0 && (
-              <PopButton label={`Put ${done} in my pantry`} icon="fridge" size="small" color={done === total ? t.pop.sunshine : t.pop.leafTint} onPress={putAway} accessibilityLabel={`Move ${done} bought ${done === 1 ? 'item' : 'items'} to your pantry`} testID="put-away" />
-            )}
           </PopCard>
         </Reveal>
       )}

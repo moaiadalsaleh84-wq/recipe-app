@@ -43,7 +43,6 @@ import { levelFor, streakOf, xpFor } from '../../lib/progress';
 import { playSuccess } from '../../lib/sounds';
 import { keepTogether, nb } from '../../lib/text';
 import { ingredientsInStep, splitTip, warnStepProblems } from '../../lib/steps';
-import { pantryHas } from '../../lib/pantry';
 import { durationLabel, findTimers } from '../../lib/timers';
 import { convertStepText } from '../../lib/units';
 import { amountFor, ingredientLabel } from '../../lib/scale';
@@ -320,7 +319,7 @@ function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; serv
                 />
                 <View style={styles.grid}>
                   {gatherTiles.map(({ key, item, parts }) => (
-                    <GatherTile key={key} {...partsOf(item, parts > 1)} home={pantryHas(store.pantry, item.name)} checked={!!gathered[key]} onPress={() => toggleGathered(key)} />
+                    <GatherTile key={key} {...partsOf(item, parts > 1)} checked={!!gathered[key]} onPress={() => toggleGathered(key)} />
                   ))}
                 </View>
               </Animated.View>
@@ -468,7 +467,7 @@ function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; serv
  * One ingredient on the counter. Unchecked: white with a dashed empty circle, sitting high on a
  * 5px shadow. Checked: leaf green with a white check, pressed down to a 2px shadow. A small pop when tapped.
  */
-function GatherTile({ name, qty, home, checked, onPress }: { name: string; qty: string; /** In your pantry already. */ home: boolean; checked: boolean; onPress: () => void }) {
+function GatherTile({ name, qty, checked, onPress }: { name: string; qty: string; checked: boolean; onPress: () => void }) {
   const reduceMotion = useReducedMotion();
   const pressed = useSharedValue(checked ? 1 : 0);
   useEffect(() => {
@@ -487,7 +486,7 @@ function GatherTile({ name, qty, home, checked, onPress }: { name: string; qty: 
       }}
       accessibilityRole="checkbox"
       aria-checked={checked}
-      accessibilityLabel={`${qty ? `${qty} ${name}` : name}${home ? ', in your pantry' : ''}`}
+      accessibilityLabel={qty ? `${qty} ${name}` : name}
       style={{ width: tileWidth, paddingBottom: 5 }}
     >
       <View style={styles.tileShadow} />
@@ -510,13 +509,6 @@ function GatherTile({ name, qty, home, checked, onPress }: { name: string; qty: 
               {qty}
             </Text>
           ) : null}
-          {/* Already at home (Pantry tab): a small mint label, so you know where to look. */}
-          {home && (
-            <View style={[styles.homeTag, { backgroundColor: checked ? pop.white : pop.leafTint }]}>
-              <Icon name="fridge" size={11} color={pop.ink} weight="bold" />
-              <Text style={styles.homeTagText}>In pantry</Text>
-            </View>
-          )}
         </View>
       </Animated.View>
     </Pressable>
@@ -649,17 +641,7 @@ function Finish({
   const toast = useToast();
   const [rating, setRating] = useState<Rating | null>(null);
   const [photo, setPhoto] = useState<string | null>(null);
-  const { setMeal, pantry, removePantry, restorePantry } = useStore();
-  // Pantry items this recipe used: one tap takes them off the Pantry tab (with Undo).
-  const usedFromPantry = useMemo(() => pantry.filter((p) => recipe.ingredients.some((i) => pantryHas([p], i.name))), [pantry, recipe.ingredients]);
-  const [pantryDone, setPantryDone] = useState(false);
-  const clearUsed = () => {
-    const before = pantry;
-    usedFromPantry.forEach((p) => removePantry(p));
-    setPantryDone(true);
-    haptics.success();
-    toast({ message: `Took ${usedFromPantry.length} ${usedFromPantry.length === 1 ? 'item' : 'items'} off your pantry`, icon: 'check', action: { label: 'Undo', onPress: () => { restorePantry(before); setPantryDone(false); } } });
-  };
+  const { setMeal } = useStore();
   const { tomorrow: tomorrowPick, picks } = useTonightPick();
   // Tomorrow's idea, never the dish you just made.
   const tomorrow = [tomorrowPick, ...picks].find((p) => p && p.recipe.id !== recipe.id);
@@ -788,19 +770,6 @@ function Finish({
             ))}
           </View>
         </Animated.View>
-
-        {/* Used things from your pantry? Take them off in one tap (only when there are some). */}
-        {usedFromPantry.length > 0 && !pantryDone && (
-          <Animated.View entering={enter(6, reduceMotion)} style={{ alignSelf: 'stretch' }}>
-            <PopCard color={pop.leafTint} radius={20} contentStyle={styles.usedCard} testID="finish-pantry">
-              <Text style={[t.type.headline, { color: pop.ink }]}>Used up anything?</Text>
-              <Text style={[t.type.footnote, { color: pop.ink }]} numberOfLines={3}>
-                {usedFromPantry.join(', ')}
-              </Text>
-              <PopButton label={`Remove ${usedFromPantry.length} from Pantry`} icon="fridge" size="small" color={pop.white} onPress={clearUsed} />
-            </PopCard>
-          </Animated.View>
-        )}
 
         <Animated.View entering={enter(6, reduceMotion)} style={{ gap: 6, alignSelf: 'stretch' }}>
           <PopButton label={photo ? 'Change photo' : 'Snap your plate'} icon="camera" color={pop.ink} textColor={pop.white} onPress={snap} accessibilityLabel={photo ? 'Change the photo of your plate' : 'Snap a photo of your plate'} />
@@ -980,9 +949,6 @@ const styles = StyleSheet.create({
   tile: { flex: 1, height: 116, borderRadius: 20, borderWidth: 2.5, borderColor: pop.ink, padding: 12, justifyContent: 'flex-start', gap: 8, borderCurve: 'continuous' },
   tileEmpty: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderStyle: 'dashed', borderColor: pop.ink },
   tileCheck: { width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: pop.ink, backgroundColor: pop.white, alignItems: 'center', justifyContent: 'center' },
-  usedCard: { padding: 16, gap: 8 },
-  homeTag: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', borderWidth: 1.5, borderColor: pop.ink, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2, marginTop: 6 },
-  homeTagText: { fontFamily: fonts.bold, fontSize: 11, lineHeight: 14, color: pop.ink },
   tileName: { fontFamily: fonts.black, fontSize: 17, lineHeight: 21, color: pop.ink },
   tileQty: { fontFamily: fonts.body, fontSize: 14, lineHeight: 18, color: pop.inkMuted },
   stepCard: { paddingHorizontal: 20, paddingTop: 36, paddingBottom: 20, gap: 16 },

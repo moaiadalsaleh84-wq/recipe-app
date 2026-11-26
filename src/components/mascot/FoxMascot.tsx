@@ -10,7 +10,7 @@
  * each one then shows a dashed circle with its mood name.
  *
  * Spots (see docs/mascot-slots.md): welcome screen, "Setting up your kitchen", Cook Mode finish,
- * empty shopping list, empty pantry, You header, paywall.
+ * empty shopping list, You header, paywall.
  */
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { fonts, pop } from '../../theme';

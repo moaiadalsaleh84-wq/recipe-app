@@ -1,8 +1,8 @@
 /**
  * "Add to your list": a sheet where you pick what to buy before anything goes on the shopping list.
  * Opened from a recipe's basket button (`?recipe=<id>&servings=<n>`) or from "Shop the week" on the
- * Plan tab (`?week=1`). Every ingredient starts ticked, except the ones already in your pantry;
- * untick what you don't need, then "Add 8 items". Nothing is added until you tap it.
+ * Plan tab (`?week=1`). Every ingredient starts ticked; untick what you already have or don't
+ * need, then "Add 8 items". Nothing is added until you tap it.
  */
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
@@ -17,7 +17,6 @@ import { CheckCircle, EmptyState, Section, Separator, TextButton } from '../comp
 import { meals, type Ingredient, type Recipe } from '../data/mock';
 import { slotKey, weekId } from '../lib/groceries';
 import { haptics } from '../lib/haptics';
-import { pantryHas } from '../lib/pantry';
 import { amountFor } from '../lib/scale';
 import { isIOS } from '../navigation/screenOptions';
 import { useStore } from '../state/store';
@@ -32,7 +31,7 @@ export default function AddToList() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const toast = useToast();
-  const { getRecipe, plan, planAdded, pantry, units, addIngredients, addWeekToGroceries } = useStore();
+  const { getRecipe, plan, planAdded, units, addIngredients, addWeekToGroceries } = useStore();
   const params = useLocalSearchParams<{ recipe?: string; servings?: string; week?: string }>();
   const week = params.week === '1';
 
@@ -58,10 +57,8 @@ export default function AddToList() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Ticked to start: everything you don't already have at home.
-  const [ticked, setTicked] = useState<Set<string>>(
-    () => new Set(groups.flatMap((g) => g.recipe.ingredients.filter((i) => !pantryHas(pantry, i.name)).map((i) => keyOf(g.recipe.id, i.id)))),
-  );
+  // Everything starts ticked: untick what you already have.
+  const [ticked, setTicked] = useState<Set<string>>(() => new Set(groups.flatMap((g) => g.recipe.ingredients.map((i) => keyOf(g.recipe.id, i.id)))));
   const total = groups.reduce((n, g) => n + g.recipe.ingredients.length, 0);
   const count = ticked.size;
 
@@ -95,7 +92,6 @@ export default function AddToList() {
     const k = keyOf(g.recipe.id, i.id);
     const on = ticked.has(k);
     const shown = amountFor(i, g.servings, g.recipe.servings, units);
-    const home = pantryHas(pantry, i.name);
     return (
       <View key={k}>
         {index > 0 && <Separator inset={56} />}
@@ -105,13 +101,12 @@ export default function AddToList() {
           scaleTo={0.98}
           accessibilityRole="checkbox"
           aria-checked={on}
-          accessibilityLabel={`${i.name}${shown.text ? `, ${shown.text}` : ''}${home ? ', in your pantry' : ''}`}
+          accessibilityLabel={`${i.name}${shown.text ? `, ${shown.text}` : ''}`}
           style={styles.row}
         >
           <CheckCircle checked={on} color={t.pop.leaf} />
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={[t.type.body, { color: on ? t.colors.label : t.colors.secondaryLabel }]}>{i.name}</Text>
-            {home && <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]}>In your pantry</Text>}
           </View>
           {!!shown.text && <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, fontVariant: ['tabular-nums'] }]}>{shown.text}</Text>}
         </PressableScale>

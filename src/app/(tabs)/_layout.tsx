@@ -19,7 +19,6 @@ export default function TabsLayout() {
       <Tabs screenOptions={{ headerShown: false, animation: 'fade', sceneStyle: { backgroundColor: t.colors.background } }} tabBar={(props) => <TabBar {...props} badges={{ groceries: leftToBuy }} />}>
         <Tabs.Screen name="(recipes)" />
         <Tabs.Screen name="plan" />
-        <Tabs.Screen name="pantry" />
         <Tabs.Screen name="groceries" />
         <Tabs.Screen name="progress" />
       </Tabs>

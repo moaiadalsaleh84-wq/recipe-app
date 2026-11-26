@@ -8,7 +8,8 @@ import { useStore } from '../state/store';
  * the pantry, the diet or the cooking history changes (cooking today cancels today's). Renders nothing.
  */
 export function ReminderSync() {
-  const { profile, pantry, cooked, allRecipes, hydrated } = useStore();
+  const { profile, cooked, allRecipes, hydrated } = useStore();
+  const pantry: string[] = [];
   const { enabled, time } = profile.reminder ?? { enabled: false, time: '18:00' };
   const saver = !!profile.streakSaver;
   const streak = streakOf(cooked.map((c) => c.date));

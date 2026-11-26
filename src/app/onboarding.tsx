@@ -1,6 +1,6 @@
 /**
  * First launch, in about a minute:
- *   Welcome → Name → Goal → Cooking for → Diet → Dinner moment → Reminder → Pantry
+ *   Welcome → Name → Goal → Cooking for → Diet → Dinner moment → Reminder
  *   → Building (the first pick is worked out here) → First pick → Paywall → that recipe.
  *
  * Rules: one-answer questions move on by themselves (no checkboxes, no Continue); several-answer
@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppIcon } from '../components/AppIcon';
 import { BottomBar } from '../components/BottomBar';
 import { Chunky } from '../components/Chunky';
-import { AnimatedNumber, DrawnCheck } from '../components/ui';
+import { DrawnCheck } from '../components/ui';
 import { Icon, type IconName } from '../components/Icon';
 import { PopButton, PopCard, PopIconButton, Sticker } from '../components/pop';
 import { isImported } from '../components/ImportCredit';
@@ -27,7 +27,7 @@ import { dietOptions, dinnerMoments, goalOptions, householdOptions, timeLabel, t
 import { track } from '../lib/analytics';
 import { askReminderPermission, reminderText } from '../lib/dinnerReminders';
 import { haptics } from '../lib/haptics';
-import { cookableCount, rankPicks, type Pick } from '../lib/onboardingPicks';
+import { rankPicks, type Pick } from '../lib/onboardingPicks';
 import { restore } from '../lib/purchases';
 import { nb, noWidow, duration as cookTime } from '../lib/text';
 import { duration, riseIn, uiEase } from '../motion';
@@ -36,17 +36,14 @@ import { fonts, noWidows, pop, stroke } from '../theme';
 import { PhotoFrame } from '../components/PhotoFrame';
 import { FoxMascot } from '../components/mascot/FoxMascot';
 
-const SCREENS = ['welcome', 'name', 'goal', 'household', 'diet', 'dinner', 'reminder', 'pantry', 'building', 'pick'] as const;
+const SCREENS = ['welcome', 'name', 'goal', 'household', 'diet', 'dinner', 'reminder', 'building', 'pick'] as const;
 type Screen = (typeof SCREENS)[number];
-/** Which of the 8 progress segments each screen fills (0 = no bar). */
-const SEGMENT: Record<Screen, number> = { welcome: 0, name: 1, goal: 2, household: 3, diet: 4, dinner: 5, reminder: 6, pantry: 7, building: 0, pick: 8 };
-const SEGMENTS = 8;
+/** Which of the 7 progress segments each screen fills (0 = no bar). */
+const SEGMENT: Record<Screen, number> = { welcome: 0, name: 1, goal: 2, household: 3, diet: 4, dinner: 5, reminder: 6, building: 0, pick: 7 };
+const SEGMENTS = 7;
 
 /** Where the current step is kept, so a closed app resumes on it. */
 const STEP_KEY = 'pantry-pop-onboarding-step-v2';
-
-/** The quick-add pantry items. Each name matches ingredients in the bundled recipes. */
-export const QUICK_PANTRY = ['Eggs', 'Pasta', 'Rice', 'Garlic', 'Onions', 'Olive oil', 'Butter', 'Milk', 'Cheese', 'Tomatoes', 'Chicken', 'Potatoes', 'Bread', 'Flour', 'Peppers'];
 
 const ADVANCE_MS = 350;
 /** Space between the progress row and each step's title. */
@@ -54,7 +51,7 @@ const TITLE_GAP = 24;
 
 export default function Onboarding() {
   const insets = useSafeAreaInsets();
-  const { profile, setProfile, completeOnboarding, pantry, addPantry, removePantry, allRecipes, pro, setPro } = useStore();
+  const { profile, setProfile, completeOnboarding, allRecipes, pro, setPro } = useStore();
   const toast = useToast();
 
   const [screen, setScreen] = useState<Screen | null>(null);
@@ -93,7 +90,7 @@ export default function Onboarding() {
     setHistory((h) => h.slice(0, -1));
     setBackwards(true);
     // Never back into the "building" moment: straight to the step before it.
-    setScreen(prev === 'building' ? 'pantry' : prev);
+    setScreen(prev === 'building' ? 'reminder' : prev);
   };
 
   const name = profile.name.trim().split(/\s+/)[0] ?? '';
@@ -102,7 +99,7 @@ export default function Onboarding() {
   const dinnerTime = profile.dinnerTime ?? profile.reminder?.time ?? '18:00';
 
   // Imported recipes (and their pictures and credits) are never used in onboarding.
-  const computePicks = () => rankPicks({ recipes: allRecipes.filter((r) => !isImported(r)), pantry, diets: profile.diets, goal });
+  const computePicks = () => rankPicks({ recipes: allRecipes.filter((r) => !isImported(r)), pantry: [], diets: profile.diets, goal });
 
   const finish = async (recipeId: string | undefined) => {
     track('onboarding_step_completed', { step: 'pick' });
@@ -197,24 +194,6 @@ export default function Onboarding() {
           }}
           onNo={() => {
             setProfile({ reminder: { enabled: false, time: dinnerTime } });
-            next();
-          }}
-        />
-      );
-      break;
-    case 'pantry':
-      body = (
-        <PantryStep
-          pantry={pantry}
-          recipes={allRecipes}
-          diets={profile.diets}
-          onDone={(chosen) => {
-            const have = new Set(pantry.map((p) => p.toLowerCase()));
-            const want = new Set(chosen.map((p) => p.toLowerCase()));
-            chosen.filter((c) => !have.has(c.toLowerCase())).forEach((c) => addPantry(c));
-            // Quick-add items that were un-ticked come out of the pantry again.
-            pantry.filter((p) => QUICK_PANTRY.some((q) => q.toLowerCase() === p.toLowerCase()) && !want.has(p.toLowerCase())).forEach((p) => removePantry(p));
-            setPicks(null);
             next();
           }}
         />
@@ -633,67 +612,12 @@ function ReminderStep({ time, preview, onYes, onNo }: { time: string; preview: P
 }
 
 /* ------------------------------------------------------------------ */
-/* 7. Pantry quick add                                                  */
-/* ------------------------------------------------------------------ */
-
-function PantryStep({ pantry, recipes, diets, onDone }: { pantry: string[]; recipes: Recipe[]; diets: readonly string[]; onDone: (chosen: string[]) => void }) {
-  const [chosen, setChosen] = useState<string[]>(() => QUICK_PANTRY.filter((q) => pantry.some((p) => p.toLowerCase() === q.toLowerCase())));
-  // Count with everything already in the pantry, plus the ticked chips.
-  const others = pantry.filter((p) => !QUICK_PANTRY.some((q) => q.toLowerCase() === p.toLowerCase()));
-  const count = cookableCount(recipes, [...others, ...chosen], diets);
-  const toggle = (item: string) => {
-    haptics.tap();
-    setChosen((c) => (c.includes(item) ? c.filter((x) => x !== item) : [...c, item]));
-  };
-  return (
-    <Step title="Tap what’s in your kitchen" subtitle="Rough is fine. You can change it later." footer={<PopButton label="Continue" onPress={() => onDone(chosen)} testID="ob-pantry-next" />}>
-      <PopCard color={pop.leafTint} radius={20} contentStyle={styles.counter}>
-        {chosen.length === 0 && others.length === 0 ? (
-          // Never a discouraging 0: a nudge until the first tap.
-          <Text style={[styles.rowLabel, { flex: 1 }]}>Tap a few to see what you can cook</Text>
-        ) : (
-          <>
-            <AnimatedNumber value={count} style={styles.counterNum} testID="ob-count" />
-            <Text style={[styles.rowLabel, { flex: 1 }]} accessibilityLiveRegion="polite">
-              {count === 1 ? 'recipe' : 'recipes'} you can cook right now with what you have
-            </Text>
-          </>
-        )}
-      </PopCard>
-      <View style={[styles.wrap, { marginTop: 20 }]}>
-        {QUICK_PANTRY.map((item) => {
-          const on = chosen.includes(item);
-          return (
-            <Chunky
-              key={item}
-              face={on ? pop.leaf : pop.white}
-              depth={3}
-              radius={16}
-              haptic={null}
-              onPress={() => toggle(item)}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: on }}
-              accessibilityLabel={item}
-              faceStyle={styles.chip}
-            >
-              {on ? <CheckBadge /> : null}
-              <Text style={styles.chipText}>{item.replace(' ', ' ')}</Text>
-            </Chunky>
-          );
-        })}
-      </View>
-    </Step>
-  );
-}
-
-
-/* ------------------------------------------------------------------ */
 /* Building                                                             */
 /* ------------------------------------------------------------------ */
 
 function Building({ servings, onCompute, onDone }: { servings: number; onCompute: () => void; onDone: () => void }) {
   const [done, setDone] = useState(0);
-  const lines = ['Matching your goal', `Sizing recipes for ${servings === 1 ? nb(1, 'person') : nb(servings, 'people')}`, 'Checking your pantry'];
+  const lines = ['Matching your goal', `Sizing recipes for ${servings === 1 ? nb(1, 'person') : nb(servings, 'people')}`, 'Picking tonight’s dinner'];
   const finished = useRef(false);
   useEffect(() => {
     // The first pick is worked out here, while the lines tick off.
@@ -859,8 +783,6 @@ const styles = StyleSheet.create({
   notifApp: { fontFamily: fonts.black, fontSize: 12, lineHeight: 16, letterSpacing: 0.5, color: pop.inkMuted },
   notifTitle: { fontFamily: fonts.black, fontSize: 16, lineHeight: 21, color: pop.ink, marginTop: 2 },
   notifBody: { fontFamily: fonts.body, fontSize: 15, lineHeight: 20, color: pop.ink, marginTop: 2 },
-  counter: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingHorizontal: 16, paddingVertical: 14, minHeight: 78 },
-  counterNum: { fontFamily: fonts.heading, fontSize: 44, lineHeight: 50, color: pop.ink, textAlign: 'left', fontVariant: ['tabular-nums'] },
   cardTitle: { fontFamily: fonts.heading, fontSize: 20, lineHeight: 25, color: pop.ink },
   tag: { flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 2, borderColor: pop.ink, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 5 },
   tagText: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 18, color: pop.ink },

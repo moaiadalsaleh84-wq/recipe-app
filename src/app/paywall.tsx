@@ -241,7 +241,7 @@ export default function Paywall() {
 /** The onboarding headline and its subtitle, by the goal picked there (each says what Pro adds for it). */
 const GOAL_COPY: Partial<Record<Goal, { line: string; subtitle: string }>> = {
   muscle: { line: 'hit your protein goals with food you love', subtitle: 'Import high-protein recipes from TikTok and anywhere, cook them step by step, and track protein if you like.' },
-  save: { line: 'cook more and spend less', subtitle: 'Plan the week, shop once, waste less. Pro’s unlimited pantry shows what you can cook from it.' },
+  save: { line: 'cook more and spend less', subtitle: 'Plan the week, shop once and waste less, with every recipe you save in one place.' },
   healthier: { line: 'healthy dinners that actually taste good', subtitle: 'Save healthy recipes from anywhere and cook them step by step. Calorie and protein goals are there if you want them.' },
   home: { line: 'dinner sorted every night', subtitle: 'Save every recipe you find, from TikTok to blogs, and keep them in as many cookbooks as you like.' },
   learn: { line: 'learn to cook one easy win at a time', subtitle: 'Import the recipes you want to try and cook them step by step, with timers built in.' },
@@ -259,8 +259,6 @@ function headline(source: Source, goal: string, name: string, goalId?: Goal): { 
     }
     case 'imports':
       return { title: 'Import without limits', subtitle: `You’ve used your ${FREE_LIMITS.imports} free imports. Pro imports as many recipes as you like from TikTok, YouTube, Instagram and any website.` };
-    case 'pantry':
-      return { title: 'Your whole pantry, working for you', subtitle: `The free pantry holds ${FREE_LIMITS.pantry} items. Pro has no limit, and shows which one item would let you cook the most recipes.` };
     case 'recipes':
       return { title: 'Keep every recipe you love', subtitle: `You’ve written ${FREE_LIMITS.customRecipes} recipes by hand, the free limit. Pro saves as many as you like.` };
     case 'cookbooks':
@@ -274,7 +272,6 @@ function headline(source: Source, goal: string, name: string, goalId?: Goal): { 
 
 function mascotLine(source: Source): Line {
   if (source === 'recipes' || source === 'imports') return { text: 'Our recipe box is full!', mood: 'oops' };
-  if (source === 'pantry') return { text: 'The pantry shelf is full!', mood: 'watch' };
   return { text: 'Pro is the big kitchen!', mood: 'happy' };
 }
 

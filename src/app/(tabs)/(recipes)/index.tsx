@@ -55,10 +55,13 @@ const VIEWS: { id: HomeView; label: string }[] = [
   { id: 'Dinner', label: 'Dinner' },
 ];
 
+/** A tile's filter: a mood, or your hearted recipes. */
+type TileMood = Exclude<Mood, 'pantry'> | 'favorites';
+
 /** The four mood tiles. "Surprise me" opens a random pick instead of filtering. */
-const MOODS: { id: Mood | 'surprise'; label: string; hint: string; icon: IconName; color: string }[] = [
+const MOODS: { id: TileMood | 'surprise'; label: string; hint: string; icon: IconName; color: string }[] = [
   { id: 'quick', label: 'Quick', hint: '30 minutes or less', icon: 'timer', color: pop.sunshine },
-  { id: 'pantry', label: 'My pantry', hint: 'Uses what you have', icon: 'fridge', color: pop.leaf },
+  { id: 'favorites', label: 'Favorites', hint: 'Your hearted recipes', icon: 'heart', color: pop.leaf },
   { id: 'cozy', label: 'Cozy', hint: 'Comfort food', icon: 'pot', color: pop.sky },
   { id: 'surprise', label: 'Surprise me', hint: 'Opens a random recipe', icon: 'shuffle', color: pop.lilac },
 ];
@@ -67,13 +70,13 @@ export default function RecipesScreen() {
   const t = useTheme();
   const toast = useToast();
   const { width } = useWindowDimensions();
-  const { allRecipes, getRecipe, favorites, cookbooks, cooked, profile, pantry } = useStore();
+  const { allRecipes, getRecipe, favorites, cookbooks, cooked, profile } = useStore();
 
   const [query, setQuery] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const [sort, setSort] = useState<Sort>('suggested');
-  const [mood, setMood] = useState<Mood | null>(null);
+  const [mood, setMood] = useState<TileMood | null>(null);
   // The one chip bar above the grid: All, Cookbooks, Cook again, Under 30m, Breakfast, Lunch, Dinner.
   const [view, setView] = useState<HomeView>('all');
   // The tile lights up the instant you tap it (mood); the recipes below follow a moment later
@@ -123,7 +126,15 @@ export default function RecipesScreen() {
     return list;
   }, [filtered, sort, lastCooked, view]);
 
-  const moodRecipes = useMemo(() => (moodShown ? recipesForMood(moodShown, allRecipes, pantry) : []), [moodShown, allRecipes, pantry]);
+  const moodRecipes = useMemo(
+    () =>
+      !moodShown
+        ? []
+        : moodShown === 'favorites'
+          ? [...favorites].reverse().map((id) => getRecipe(id)).filter((r): r is Recipe => !!r)
+          : recipesForMood(moodShown, allRecipes, []),
+    [moodShown, allRecipes, favorites, getRecipe],
+  );
 
   // Searching or picking a chip shows only the results (DESIGN.md).
   const showExtras = view === 'all' && !moodShown && !q;
@@ -167,7 +178,7 @@ export default function RecipesScreen() {
     router.push('/import');
   };
 
-  const pickMood = (id: Mood | 'surprise') => {
+  const pickMood = (id: TileMood | 'surprise') => {
     if (id === 'surprise') {
       // Not a filter: opens one random recipe (never the same one twice in a row).
       const pick = randomRecipe(allRecipes, lastSurprise.current);
@@ -294,9 +305,9 @@ export default function RecipesScreen() {
           {moodRecipes.length === 0 ? (
             <EmptyState
               icon={moodInfo.icon}
-              title={moodShown === 'pantry' ? 'Nothing from your pantry yet' : 'Nothing here yet'}
-              message={moodShown === 'pantry' ? 'Add what you have on the Pantry tab and matching recipes show up here.' : 'Add a few more recipes and they’ll show up here.'}
-              action={moodShown === 'pantry' ? { label: 'Go to Pantry', onPress: () => router.navigate('/pantry') } : { label: 'Import a recipe', onPress: () => router.push('/import') }}
+              title={moodShown === 'favorites' ? 'No favorites yet' : 'Nothing here yet'}
+              message={moodShown === 'favorites' ? 'Tap the heart on any recipe and it shows up here.' : 'Add a few more recipes and they’ll show up here.'}
+              action={moodShown === 'favorites' ? { label: 'Browse recipes', onPress: () => setMood(null) } : { label: 'Import a recipe', onPress: () => router.push('/import') }}
             />
           ) : (
             <View style={[styles.grid, { gap, rowGap: t.spacing.md }]}>

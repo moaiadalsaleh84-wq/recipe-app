@@ -14,7 +14,6 @@ import { Icon, type IconName } from './Icon';
 const tabs: Record<string, { label: string; long: string; icon: IconName }> = {
   '(recipes)': { label: 'Cook', long: 'Cook', icon: 'pot' },
   plan: { label: 'Plan', long: 'Meal plan', icon: 'calendar' },
-  pantry: { label: 'Pantry', long: 'Pantry', icon: 'fridge' },
   groceries: { label: 'List', long: 'Shopping list', icon: 'cart' },
   progress: { label: 'You', long: 'You', icon: 'trophy' },
 };

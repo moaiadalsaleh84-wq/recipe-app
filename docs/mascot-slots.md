@@ -22,8 +22,7 @@ To see every slot while designing, set `SHOW_MASCOT_PLACEHOLDER = true` in
 | "Setting up your kitchen…" | `src/app/onboarding.tsx` (Building) | `studying` | 96 |
 | Cook Mode finish screen | `src/app/cook/[id].tsx` (Finish) | `celebration` | 120 |
 | Empty shopping list (replaces the basket circle) | `src/app/(tabs)/groceries/index.tsx` | `playful` | 128 |
-| Empty pantry card | `src/app/(tabs)/pantry/index.tsx` | `chef` | 88 |
 | You tab header, before your name | `src/app/(tabs)/progress/index.tsx` | `champion` | 64 |
 | Paywall, top | `src/app/paywall.tsx` | `loving` | 104 |
 
-`excited` is free for the streak moments (e.g. the streak card on You) when the art arrives.
+`chef` and `excited` are free: `chef` suits Cook Mode's "Grab your stuff", `excited` the streak moments (e.g. the streak card on You) when the art arrives.
