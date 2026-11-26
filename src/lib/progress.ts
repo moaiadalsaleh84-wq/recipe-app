@@ -139,19 +139,38 @@ export function levelFor(xp: number) {
 }
 
 const dayKey = (d: Date) => d.toDateString();
-/** Consecutive days with at least one cooked meal, ending today or yesterday. */
 /**
  * Days in a row with at least one meal finished in Cook Mode, in local time. The streak runs up to
- * today or yesterday: it isn't broken until today ends without a cook. `now` is for tests.
+ * today or yesterday: it isn't broken until today ends without a cook.
+ *
+ * Streak Freeze (the "Chef's Pass"): one single missed day is forgiven, at most once a week, so one
+ * off-day never wipes out a streak. Two missed days in a row still end it. Frozen days don't count
+ * as cooked days. Nothing to buy or switch on. `now` is for tests.
  */
-export function streakOf(dates: string[], now: Date = new Date()) {
+export function streakInfo(dates: string[], now: Date = new Date()): { days: number; frozen: string[] } {
   const days = new Set(dates.map((d) => dayKey(new Date(d))));
   const cursor = new Date(now);
   if (!days.has(dayKey(cursor))) cursor.setDate(cursor.getDate() - 1);
   let n = 0;
-  while (days.has(dayKey(cursor))) {
-    n += 1;
+  const frozen: string[] = [];
+  // Days walked back since the last freeze (a freeze is allowed again after 7).
+  let sinceFreeze = Infinity;
+  for (;;) {
+    if (days.has(dayKey(cursor))) {
+      n += 1;
+      sinceFreeze += 1;
+      cursor.setDate(cursor.getDate() - 1);
+      continue;
+    }
+    const before = new Date(cursor);
+    before.setDate(before.getDate() - 1);
+    if (sinceFreeze < 7 || !days.has(dayKey(before))) break;
+    frozen.push(cursor.toISOString());
+    sinceFreeze = 0;
     cursor.setDate(cursor.getDate() - 1);
   }
-  return n;
+  return { days: n, frozen };
 }
+
+/** The streak in days (see streakInfo for the Streak Freeze). */
+export const streakOf = (dates: string[], now: Date = new Date()) => streakInfo(dates, now).days;

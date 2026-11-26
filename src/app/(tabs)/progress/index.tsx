@@ -16,7 +16,7 @@ import { useToast } from '../../../components/Toast';
 import { AnimatedNumber, Button, ProgressBar, Section, SectionHeader, Separator, Stepper, TextButton } from '../../../components/ui';
 import { Reveal } from '../../../components/Reveal';
 import { showPaywall, useProGate } from '../../../lib/pro';
-import { BADGES, levelFor, streakOf, xpFor } from '../../../lib/progress';
+import { BADGES, levelFor, streakInfo, xpFor } from '../../../lib/progress';
 import { TabScreen } from '../../../components/TabScreen';
 import { totalsFor, useStore } from '../../../state/store';
 import { fonts, pop, popCycle, useTheme } from '../../../theme';
@@ -39,7 +39,7 @@ export default function ProgressScreen() {
   const [allHistory, setAllHistory] = useState(false);
 
   const now = new Date();
-  const streak = streakOf(cooked.map((c) => c.date));
+  const { days: streak, frozen } = streakInfo(cooked.map((c) => c.date));
   const input = { cooked, customRecipes, plan, favorites, fun, streak };
   const xp = xpFor(input);
   const lvl = levelFor(xp);
@@ -142,6 +142,12 @@ export default function ProgressScreen() {
                 </Text>
               )}
               <Text style={[t.type.subhead, { color: t.pop.ink }]}>{streakLine}</Text>
+              {/* The Streak Freeze kept it going over a missed day (once a week, automatic). */}
+              {streak > 0 && frozen.length > 0 && (
+                <Text style={[t.type.footnote, { color: t.pop.ink, fontFamily: t.fonts.bold, marginTop: 4 }]} testID="streak-freeze">
+                  {'❄️ Streak Freeze saved a missed day'}
+                </Text>
+              )}
             </View>
           </View>
           <View style={styles.week} onLayout={(e) => setWeekW(e.nativeEvent.layout.width)} accessibilityLabel={`This week: cooked on ${week.filter((d) => d.done).length} of 7 days`}>

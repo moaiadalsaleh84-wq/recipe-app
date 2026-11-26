@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 process.env.TZ = 'America/Los_Angeles';
-const { streakOf } = await import('../src/lib/progress.ts');
+const { streakOf, streakInfo } = await import('../src/lib/progress.ts');
 
 // Local noon on a given day of November 2026.
 const at = (day: number, h = 12, m = 0) => new Date(2026, 10, day, h, m);
@@ -23,9 +23,21 @@ test('cooked yesterday but not yet today: still alive', () => {
 
 test('a gap of two days breaks it', () => {
   const now = at(21, 18);
-  assert.equal(streakOf([iso(at(19)), iso(at(18))], now), 0);
-  // Today after a gap starts again at 1.
+  assert.equal(streakOf([iso(at(18)), iso(at(17))], now), 0);
+  // Today after a two-day gap starts again at 1.
   assert.equal(streakOf([iso(at(21, 8)), iso(at(18)), iso(at(17))], now), 1);
+});
+
+test('Streak Freeze: one missed day is forgiven, once a week', () => {
+  const now = at(21, 18);
+  // Missed yesterday (20), not cooked yet today: the freeze keeps 19 and 18 alive.
+  assert.equal(streakOf([iso(at(19)), iso(at(18))], now), 2);
+  // Cooked today, missed 20: 21 + 19 + 18.
+  assert.equal(streakOf([iso(at(21, 8)), iso(at(19)), iso(at(18))], now), 3);
+  // A second missed day within the same week ends it at the first gap that can't be frozen.
+  assert.equal(streakOf([iso(at(21, 8)), iso(at(19)), iso(at(17))], now), 2);
+  // The frozen day is reported (for "Streak Freeze saved your streak").
+  assert.equal(streakInfo([iso(at(21, 8)), iso(at(19))], now).frozen.length, 1);
 });
 
 test('local midnight decides the day, not UTC', () => {
