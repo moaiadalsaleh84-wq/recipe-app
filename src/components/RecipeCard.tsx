@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { Text } from './Text';
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withTiming, type SharedValue } from 'react-native-reanimated';
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import type { Recipe } from '../data/mock';
 import { useStore } from '../state/store';
 import { haptics } from '../lib/haptics';
@@ -76,26 +76,34 @@ export function HeartIcon({ on, size, offColor }: { on: boolean; size: number; o
   const squeeze = useSharedValue(1);
   const burst = useSharedValue(1);
   // Only a change to "liked" bursts (not the first render), noted during render, played below.
-  const [likes, setLikes] = useState({ was: on, n: 0 });
-  if (on !== likes.was) setLikes({ was: on, n: on ? likes.n + 1 : likes.n });
+  // The ring and dots only exist while they play (cards at rest stay light: just the heart).
+  const [likes, setLikes] = useState({ was: on, n: 0, bursting: false });
+  if (on !== likes.was) setLikes({ was: on, n: on ? likes.n + 1 : likes.n, bursting: on && !reduceMotion });
+  const bursting = likes.bursting;
   useEffect(() => {
     fill.set(reduceMotion ? (on ? 1 : 0) : withTiming(on ? 1 : 0, { duration: 200, easing: Easing.out(Easing.cubic) }));
   }, [on, reduceMotion, fill]);
   useEffect(() => {
     if (!likes.n || reduceMotion) return;
+    const done = setTimeout(() => setLikes((l) => ({ ...l, bursting: false })), 460);
     const out = Easing.out(Easing.cubic);
     squeeze.set(withSequence(withTiming(0.72, { duration: 90, easing: out }), withTiming(1, { duration: 240, easing: out })));
     burst.set(withSequence(withTiming(0, { duration: 0 }), withTiming(1, { duration: 420, easing: out })));
+    return () => clearTimeout(done);
   }, [likes.n, reduceMotion, squeeze, burst]);
   const filled = useAnimatedStyle(() => ({ opacity: fill.get() }));
   const heart = useAnimatedStyle(() => ({ transform: [{ scale: squeeze.get() }] }));
   const ring = useAnimatedStyle(() => ({ opacity: burst.get() < 1 ? 0.55 * (1 - burst.get()) : 0, transform: [{ scale: 0.5 + burst.get() * 1.3 }] }));
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-      <Animated.View pointerEvents="none" style={[styles.likeRing, { width: size * 1.4, height: size * 1.4, borderRadius: size, borderColor: pop.berry }, ring]} />
-      {BURST.map((angle) => (
-        <BurstDot key={angle} angle={angle} size={size} progress={burst} />
-      ))}
+      {bursting && (
+        <>
+          <Animated.View pointerEvents="none" style={[styles.likeRing, { width: size * 1.4, height: size * 1.4, borderRadius: size, borderColor: pop.berry }, ring]} />
+          {BURST.map((angle) => (
+            <BurstDot key={angle} angle={angle} size={size} progress={burst} />
+          ))}
+        </>
+      )}
       <Animated.View style={heart}>
         <Icon name="heart" size={size} color={offColor} weight="bold" />
         <Animated.View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, filled]}>
@@ -152,7 +160,10 @@ export function CardText({ creator, title, meta, metaTestID }: { creator?: strin
  * Grid and row card, photo first: a 4:5 photo across the whole card (the shared ink frame), then
  * the compact text. Cards in a row share the tallest card's height.
  */
-export function RecipeCard({ recipe, width, color }: { recipe: Recipe; width: number; /** Card color (white by default). */ color?: string }) {
+export const RecipeCard = memo(RecipeCardView);
+
+/** (Memoized above: a card redraws only when its recipe, width or color change.) */
+function RecipeCardView({ recipe, width, color }: { recipe: Recipe; width: number; /** Card color (white by default). */ color?: string }) {
   return (
     // The heart sits on top of the card, beside its button (a button inside a button confuses
     // screen readers and the web).
