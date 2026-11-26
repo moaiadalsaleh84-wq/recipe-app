@@ -21,6 +21,7 @@ import { FREE_LIMITS, useStore } from '../../../state/store';
 import { popCycle, useTheme } from '../../../theme';
 import { PhotoFrame } from '../../../components/PhotoFrame';
 import { HorizontalList } from '../../../components/HorizontalList';
+import { FoxMascot } from '../../../components/mascot/FoxMascot';
 
 /** What's in your kitchen, and what you can cook with it. */
 export default function PantryScreen() {
@@ -132,6 +133,8 @@ export default function PantryScreen() {
       {pantry.length === 0 ? (
         // One calm card: no stacked photos, and its text never runs under the tab bar.
         <PopCard color={t.pop.lilacTint} contentStyle={styles.emptyCard}>
+          {/* Fox slot (Phase 2): the chef, waiting for ingredients. */}
+          <FoxMascot mood="chef" size={88} />
           <Text style={[t.type.title2, { color: t.colors.label }]} testID="pantry-empty">
             Your pantry’s a little lonely
           </Text>

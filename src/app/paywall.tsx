@@ -48,6 +48,7 @@ import {
 import { FREE_LIMITS, useStore } from '../state/store';
 import { fonts, useTheme } from '../theme';
 import { Lift } from '../components/pop/Lift';
+import { FoxMascot } from '../components/mascot/FoxMascot';
 
 type Source = PaywallSource;
 
@@ -146,6 +147,8 @@ export default function Paywall() {
         contentContainerStyle={[styles.content, { paddingTop: 16, paddingBottom: 24 }]}
       >
         <MascotSays line={line} size={104} />
+        {/* Fox slot (Phase 2). */}
+        <FoxMascot mood="loving" size={104} />
 
         <Animated.Text entering={FadeInDown.duration(320)} style={[t.type.largeTitle, { color: t.colors.label, marginTop: 14 }]} accessibilityRole="header" maxFontSizeMultiplier={1.3}>
           {noWidow(copy.title)}

@@ -20,6 +20,7 @@ import { TabScreen } from '../../../components/TabScreen';
 import { useStore } from '../../../state/store';
 import { showAmount } from '../../../lib/scale';
 import { fonts, useTheme } from '../../../theme';
+import { FOX_READY, FoxMascot } from '../../../components/mascot/FoxMascot';
 
 /** How an aisle is named on screen. "Pantry" is shown as "Cupboard", so it doesn't clash with the Pantry tab (saved data keeps its name). */
 const aisleName = (aisle: string) => (aisle === 'Pantry' ? 'Cupboard' : aisle);
@@ -130,9 +131,14 @@ export default function GroceriesScreen() {
       {total === 0 ? (
         // Empty: a calm, friendly hint pointing at the + button (nothing is ever added for you).
         <Animated.View entering={enter(0, reduceMotion)} style={styles.empty} testID="list-empty">
-          <View style={[styles.emptyArt, { backgroundColor: t.pop.sunshineTint, borderColor: t.pop.ink }]}>
-            <Icon name="cart" size={52} color={t.pop.ink} weight="bold" />
-          </View>
+          {/* Fox slot (Phase 2): once the art is in, the fox replaces the basket circle. */}
+          {FOX_READY ? (
+            <FoxMascot mood="playful" size={128} />
+          ) : (
+            <View style={[styles.emptyArt, { backgroundColor: t.pop.sunshineTint, borderColor: t.pop.ink }]}>
+              <Icon name="cart" size={52} color={t.pop.ink} weight="bold" />
+            </View>
+          )}
           <Text style={[t.type.title2, { color: t.colors.label, textAlign: 'center' }]}>No groceries yet</Text>
           <Text style={[t.type.body, { color: t.colors.secondaryLabel, textAlign: 'center' }]}>Tap + to add what you need. Or tap the basket on any recipe to pick its ingredients.</Text>
         </Animated.View>

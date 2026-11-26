@@ -51,6 +51,7 @@ import { useStore } from '../../state/store';
 import { useTimers } from '../../state/timers';
 import { fonts, pop, popCycle, useTheme } from '../../theme';
 import { PhotoFrame } from '../../components/PhotoFrame';
+import { FoxMascot } from '../../components/mascot/FoxMascot';
 
 type FinishEntry = { date: string; xpBefore: number; levelBefore: number; bonus: Bonus };
 
@@ -664,6 +665,8 @@ function Finish({
             )}
           </Lift>
           {SHOW_MASCOT_PLACEHOLDER && <MascotSlot message="Chef’s kiss!" size={56} />}
+          {/* Fox slot (Phase 2): celebrates the finished dish. */}
+          <FoxMascot mood="celebration" size={120} style={{ alignSelf: 'center' }} />
         </Animated.View>
 
         <Animated.View entering={enter(1, reduceMotion)} style={{ alignItems: 'center', gap: 6 }}>

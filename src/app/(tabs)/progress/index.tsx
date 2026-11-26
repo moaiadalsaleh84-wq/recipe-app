@@ -7,6 +7,7 @@ import { enter } from '../../../motion';
 import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
 import { Lift, PopButton, PopCard, PopChip, PopIconButton } from '../../../components/pop';
+import { goalsOn } from '../../../data/mock';
 import { useTonightPick } from '../../../lib/tonightPick';
 import { stickers } from '../../../data/stickers';
 import { nb } from '../../../lib/text';
@@ -20,6 +21,7 @@ import { TabScreen } from '../../../components/TabScreen';
 import { totalsFor, useStore } from '../../../state/store';
 import { fonts, pop, popCycle, useTheme } from '../../../theme';
 import { PhotoFrame } from '../../../components/PhotoFrame';
+import { FoxMascot } from '../../../components/mascot/FoxMascot';
 
 const dayKey = (d: Date) => d.toDateString();
 const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -92,6 +94,8 @@ export default function ProgressScreen() {
 
   const header = (
     <View style={styles.header}>
+      {/* Fox slot (Phase 2): the champion, next to your name. */}
+      <FoxMascot mood="champion" size={64} />
       <View style={styles.row}>
         <View style={[styles.avatar, { backgroundColor: t.pop.berry }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
           <Text style={[t.type.title1, { color: t.pop.ink }]}>{(firstName[0] ?? '?').toUpperCase()}</Text>
@@ -352,9 +356,17 @@ export default function ProgressScreen() {
         </View>
       )}
 
-      {/* Pro goals: small, at the bottom */}
-      <SectionHeader title="Daily goals" />
-      {!isPro ? (
+      {/* Pro goals: small, at the bottom. Off until you turn them on (no numbers forced on you). */}
+      <SectionHeader
+        title="Daily goals"
+        right={isPro && goalsOn(goals) ? <PopChip label="Turn off" small onPress={() => setGoals({ ...goals, on: false })} accessibilityLabel="Stop tracking daily goals" /> : undefined}
+      />
+      {isPro && !goalsOn(goals) ? (
+        <PopCard color={t.pop.skyTint} radius={20} contentStyle={styles.goalsSmall}>
+          <Text style={[styles.goalsText, { color: t.colors.label }]}>Track protein and calories from the meals you cook. Optional.</Text>
+          <PopButton label="Set my goals" icon="target" size="small" color={t.pop.white} onPress={() => setGoals({ ...goals, on: true })} style={styles.goalsBtn} testID="goals-on" />
+        </PopCard>
+      ) : !isPro ? (
         <PopCard color={t.pop.skyTint} radius={20} contentStyle={styles.goalsSmall}>
           {/* Row 1: the crown and the text, using the full width. Row 2: the Pro button under the text. */}
           <View style={styles.goalsRow}>
@@ -369,9 +381,9 @@ export default function ProgressScreen() {
         </PopCard>
       ) : (
         <Section footer="Meals you finish in Cook Mode count toward today, one serving each. Recipe nutrition is estimated.">
-          <GoalRow label="Protein" unit="g" eaten={eaten.protein} goal={goals.protein} color={t.colors.protein} goalName="protein goal" onGoal={(v) => setGoals({ ...goals, protein: v })} min={40} max={300} step={5} />
+          <GoalRow label="Protein" unit="g" eaten={eaten.protein} goal={goals.protein} color={t.colors.protein} goalName="protein goal" onGoal={(v) => setGoals({ ...goals, protein: v, on: true })} min={40} max={300} step={5} />
           <Separator />
-          <GoalRow label="Calories" unit="kcal" eaten={eaten.calories} goal={goals.calories} color={t.colors.carbs} goalName="calorie goal" onGoal={(v) => setGoals({ ...goals, calories: v })} min={1000} max={5000} step={50} />
+          <GoalRow label="Calories" unit="kcal" eaten={eaten.calories} goal={goals.calories} color={t.colors.carbs} goalName="calorie goal" onGoal={(v) => setGoals({ ...goals, calories: v, on: true })} min={1000} max={5000} step={50} />
         </Section>
       )}
     </TabScreen>
