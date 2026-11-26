@@ -74,6 +74,13 @@ export default function RecipeScreen() {
   // Where the big title ends, so the small one appears only once it has scrolled away.
   const [titleBottom, setTitleBottom] = useState(0);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // The page opens with its top (photo, title, stats, ingredients) right away; the method, notes and
+  // "You might also like" follow one frame later, so opening a recipe never waits on the whole page.
+  const [rest, setRest] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setRest(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
   const [noteDraft, setNoteDraft] = useState(recipe ? notes[recipe.id] ?? '' : '');
   const deleteTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(
@@ -400,6 +407,8 @@ export default function RecipeScreen() {
               );
             })}
           </PopCard>
+          {rest && (
+          <>
           {/* Method */}
           <Text style={[t.type.title2, styles.h2, { color: t.colors.label }]} accessibilityRole="header">
             How to make it
@@ -448,6 +457,8 @@ export default function RecipeScreen() {
                 ))}
               </HorizontalList>
             </>
+          )}
+          </>
           )}
 
           {recipe.custom && (
