@@ -24,7 +24,8 @@ import { pop, useTheme } from '../theme';
 import { Icon } from './Icon';
 import { Skeleton } from './ui';
 
-export const PHOTO_BORDER = 2.5;
+/** Photos have no outline now (the flat design): 0. Kept as a name so callers still line up. */
+export const PHOTO_BORDER = 0;
 
 export type PhotoCorners = 'all' | 'top';
 
@@ -177,5 +178,6 @@ export function PhotoFrame({ radius, corners = 'all', edge = 'all', recipe, uri,
 
 const styles = StyleSheet.create({
   noPhoto: { alignItems: 'center', justifyContent: 'center' },
-  frame: { overflow: 'hidden', borderColor: pop.ink, backgroundColor: pop.ink, borderCurve: 'continuous' },
+  // No outline; a soft surface behind the photo while it loads.
+  frame: { overflow: 'hidden', borderColor: 'transparent', backgroundColor: pop.surface, borderCurve: 'continuous' },
 });

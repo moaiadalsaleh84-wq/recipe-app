@@ -160,7 +160,7 @@ export default function Paywall() {
           <View style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
             {benefits.map((b, k) => (
               <Animated.View key={b.title} entering={FadeInDown.delay(80 * k).duration(300)} style={styles.benefit}>
-                <View style={[styles.benefitIcon, { backgroundColor: t.colors.tintSoft, borderColor: t.pop.ink }]}>
+                <View style={[styles.benefitIcon, { backgroundColor: t.colors.tintSoft, borderColor: t.colors.border }]}>
                   <Icon name={b.icon} size={18} color={t.colors.tint} weight="bold" />
                 </View>
                 <View style={{ flex: 1 }}>
@@ -292,10 +292,10 @@ function PlanCard({ id, selected, onPress, title, price, note, badge }: { id: Pl
         aria-checked={selected}
         accessibilityLabel={`${title} plan, ${price}. ${note}${badge ? `. ${badge}` : ''}`}
         testID={`plan-${id}`}
-        style={[styles.plan, { backgroundColor: selected ? t.pop.sunshineTint : t.colors.cell, borderColor: t.pop.ink }]}
+        style={[styles.plan, { backgroundColor: selected ? t.pop.sunshineTint : t.colors.cell, borderColor: selected ? t.pop.ink : t.colors.border }]}
       >
-        <View style={[styles.radio, { borderColor: t.pop.ink, backgroundColor: t.colors.cell }]}>
-          {selected && <View style={[styles.radioDot, { backgroundColor: t.pop.sunshine, borderColor: t.pop.ink }]} />}
+        <View style={[styles.radio, { borderColor: t.colors.border, backgroundColor: t.colors.cell }]}>
+          {selected && <View style={[styles.radioDot, { backgroundColor: t.pop.sunshine, borderColor: t.colors.border }]} />}
         </View>
         <View style={{ flex: 1, gap: 2 }}>
           <View style={styles.planTop}>
@@ -319,8 +319,8 @@ function TimelineRow({ icon, title, detail, first, last }: { icon: IconName; tit
   return (
     <View style={styles.tlRow}>
       <View style={styles.tlRail}>
-        {!last && <View style={[styles.tlLine, { backgroundColor: t.pop.ink }]} />}
-        <View style={[styles.tlDot, { backgroundColor: first ? t.pop.sunshine : t.colors.cell, borderColor: t.pop.ink }]}>
+        {!last && <View style={[styles.tlLine, { backgroundColor: t.colors.border }]} />}
+        <View style={[styles.tlDot, { backgroundColor: first ? t.pop.sunshine : t.colors.cell, borderColor: t.colors.border }]}>
           <Icon name={icon} size={18} color={t.pop.ink} weight="bold" />
         </View>
       </View>
@@ -348,7 +348,7 @@ function Welcome({ onDone, trialEndsAt, name, benefits }: { onDone: () => void; 
       <ScrollView contentContainerStyle={{ paddingTop: insets.top + 48, paddingHorizontal: t.layout.screen, paddingBottom: 24, alignItems: 'center' }}>
         <Animated.View entering={crownIn}>
           <Lift radius={56}>
-            <View style={[styles.crown, { backgroundColor: t.pop.white, borderColor: t.pop.ink }]}>
+            <View style={[styles.crown, { backgroundColor: t.pop.white, borderColor: t.colors.border }]}>
               <Icon name="crown" size={54} color={t.pop.ink} weight="bold" />
             </View>
           </Lift>
@@ -362,8 +362,8 @@ function Welcome({ onDone, trialEndsAt, name, benefits }: { onDone: () => void; 
         <View style={{ alignSelf: 'stretch', gap: 12, marginTop: 28 }}>
           {benefits.slice(0, 3).map((b, i) => (
             <Animated.View key={b.title} entering={row(i)}>
-              <View style={[styles.unlocked, { backgroundColor: t.pop.white, borderColor: t.pop.ink }]}>
-                <View style={[styles.unlockedIcon, { backgroundColor: t.pop.leafTint, borderColor: t.pop.ink }]}>
+              <View style={[styles.unlocked, { backgroundColor: t.pop.white, borderColor: t.colors.border }]}>
+                <View style={[styles.unlockedIcon, { backgroundColor: t.pop.leafTint, borderColor: t.colors.border }]}>
                   <Icon name={b.icon} size={18} color={t.pop.ink} weight="bold" />
                 </View>
                 <Text style={[t.type.headline, { color: t.pop.ink, flex: 1 }]}>{b.title}</Text>

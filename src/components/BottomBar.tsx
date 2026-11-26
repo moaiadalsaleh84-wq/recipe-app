@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { View, type StyleProp, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { layout, pop, stroke } from '../theme';
+import { layout, pop } from '../theme';
 
 type Props = {
   children: ReactNode;
@@ -36,7 +36,7 @@ export function BottomBar({ children, color = pop.white, border = false, directi
           paddingBottom: insets.bottom + 12,
           backgroundColor: color,
         },
-        border && { borderTopWidth: stroke.thick, borderTopColor: pop.ink },
+        border && { borderTopWidth: 2, borderTopColor: pop.line },
         style,
       ]}
     >

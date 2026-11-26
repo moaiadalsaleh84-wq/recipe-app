@@ -10,10 +10,10 @@ import type { Recipe } from '../data/mock';
 import { discoverGet, discoverSave, discoverToRecipe, savedCopy, type DiscoverCardData } from '../lib/discoverApi';
 import { haptics } from '../lib/haptics';
 import { useStore } from '../state/store';
-import { fonts, pop, stroke, useTheme } from '../theme';
+import { fonts, pop, useTheme } from '../theme';
 import { PhotoFrame } from './PhotoFrame';
 import { PopCard } from './pop/PopCard';
-import { CARD_DEPTH, CardText, HeartIcon } from './RecipeCard';
+import { CardText, HeartIcon } from './RecipeCard';
 import { PressableScale } from './PressableScale';
 import { Text } from './Text';
 import { useToast } from './Toast';
@@ -94,13 +94,12 @@ export function DiscoverCard({ card, width }: { card: DiscoverCardData; width: n
         accessibilityLabel={`${card.title}, by ${card.creatorHandle}, ${savesLabel(count)}`}
         accessibilityHint="Opens the recipe"
         // Ink behind the photo, so its soft edges never show a light hairline (see PhotoFrame).
-        color={pop.ink}
-        radius={24}
-        depth={CARD_DEPTH}
+        color={pop.white}
+        radius={16}
         style={{ flexGrow: 1 }}
         contentStyle={{ flexGrow: 1 }}
       >
-        <PhotoFrame recipe={photoRecipe(card)} radius={21.5} corners="top" edge="bottom" style={styles.photo} />
+        <PhotoFrame recipe={photoRecipe(card)} radius={14} corners="top" edge="bottom" style={styles.photo} />
         {/* The same text as every recipe card: @creator, title, one meta line. */}
         <View style={[styles.body, { backgroundColor: pop.white }]}>
           <CardText creator={card.creatorHandle} title={card.title} meta={savesLabel(count)} metaTestID="discover-saves" />
@@ -131,10 +130,11 @@ export function DiscoverCard({ card, width }: { card: DiscoverCardData; width: n
 
 const styles = StyleSheet.create({
   photo: { width: '100%', aspectRatio: 4 / 5 },
-  body: { flexGrow: 1, borderBottomLeftRadius: 21.5, borderBottomRightRadius: 21.5 },
+  body: { flexGrow: 1, borderBottomLeftRadius: 14, borderBottomRightRadius: 14 },
   creator: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  letter: { borderWidth: stroke.thin, borderColor: pop.ink, alignItems: 'center', justifyContent: 'center' },
+  letter: { alignItems: 'center', justifyContent: 'center' },
   letterText: { fontFamily: fonts.black, color: pop.ink },
   saveTap: { position: 'absolute', top: 2, right: 2, width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  saveDot: { width: 34, height: 34, borderRadius: 17, borderWidth: 2, borderColor: pop.ink, backgroundColor: pop.white, alignItems: 'center', justifyContent: 'center' },
+  // The same white heart circle as recipe cards: a soft shadow, no outline.
+  saveDot: { width: 34, height: 34, borderRadius: 17, backgroundColor: pop.white, boxShadow: '0 2px 8px rgba(27, 19, 64, 0.18)', alignItems: 'center', justifyContent: 'center' },
 });

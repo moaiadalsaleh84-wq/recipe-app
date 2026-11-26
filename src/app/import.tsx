@@ -331,7 +331,7 @@ export default function ImportScreen() {
             )}
             {offer && !input.trim() && (
               <Lift radius={18} style={{ marginBottom: 14 }}>
-                <View style={[styles.offer, { backgroundColor: t.pop.sunshineTint, borderColor: t.pop.ink }]} testID="clipboard-offer">
+                <View style={[styles.offer, { backgroundColor: t.pop.sunshineTint, borderColor: t.colors.border }]} testID="clipboard-offer">
                   <Icon name="paste" size={20} color={t.pop.ink} />
                   <Text style={[t.type.headline, { color: t.pop.ink, flex: 1 }]}>{offer.label}</Text>
                   <Button label="Import" size="medium" onPress={takeOffer} accessibilityLabel={offer.label} />

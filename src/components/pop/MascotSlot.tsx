@@ -50,11 +50,11 @@ export function MascotSlot({ message, size = 64, layout = 'row', style }: Props)
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   column: { alignItems: 'center', gap: 14 },
-  slot: { borderWidth: stroke.thick, borderColor: pop.ink, borderStyle: 'dashed', backgroundColor: 'rgba(255,255,255,0.6)' },
+  slot: { borderWidth: stroke.thick, borderColor: pop.line, borderStyle: 'dashed', backgroundColor: 'rgba(255,255,255,0.6)' },
   bubble: {
     backgroundColor: pop.white,
     borderWidth: stroke.thick,
-    borderColor: pop.ink,
+    borderColor: pop.line,
     borderRadius: 18,
     paddingHorizontal: 14,
     paddingVertical: 10,
@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
   bubbleRow: { flexShrink: 1 },
   bubbleColumn: { alignSelf: 'center', maxWidth: 300 },
   // A small square turned 45°, tucked behind the bubble's edge, makes the pointer.
-  tail: { position: 'absolute', width: 14, height: 14, backgroundColor: pop.white, borderColor: pop.ink, transform: [{ rotate: '45deg' }] },
+  tail: { position: 'absolute', width: 14, height: 14, backgroundColor: pop.white, borderColor: pop.line, transform: [{ rotate: '45deg' }] },
   tailLeft: { left: -8.5, top: '50%', marginTop: -7, borderLeftWidth: stroke.thick, borderBottomWidth: stroke.thick },
   tailTop: { top: -8.5, left: '50%', marginLeft: -7, borderLeftWidth: stroke.thick, borderTopWidth: stroke.thick },
   text: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 20, color: pop.ink },

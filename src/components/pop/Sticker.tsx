@@ -1,6 +1,6 @@
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Text } from '../Text';
-import { fonts, pop, stroke } from '../../theme';
+import { fonts, pop } from '../../theme';
 
 /**
  * A small tilted label, like a sticker slapped on a card ("TONIGHT'S PICK").
@@ -35,8 +35,8 @@ export function Sticker({
 
 const styles = StyleSheet.create({
   wrap: { alignSelf: 'flex-start', paddingBottom: 3 },
-  shadow: { position: 'absolute', left: 0, right: 0, top: 3, bottom: 0, backgroundColor: pop.ink, borderRadius: 10 },
-  face: { borderWidth: stroke.thick, borderColor: pop.ink, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4 },
+  shadow: { position: 'absolute', left: 0, right: 0, top: 3, bottom: 0, backgroundColor: 'transparent', borderRadius: 10 },
+  face: { borderWidth: 0, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4 },
   text: { fontFamily: fonts.black, fontSize: 13, lineHeight: 17, letterSpacing: 0.6, color: pop.ink },
   textPlain: { letterSpacing: 0 },
 });

@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
 import { Text } from '../Text';
-import { pressIn, pressOut } from '../../motion';
+import { EASE_CUBIC, pressOut } from '../../motion';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { haptics, type HapticKind } from '../../lib/haptics';
-import { depth as DEPTH, pop, radius, stroke, type as typeScale } from '../../theme';
+import { depth as DEPTH, edge, pop, radius, type as typeScale } from '../../theme';
 import { Icon, type IconName } from '../Icon';
 
 type Props = Omit<PressableProps, 'style' | 'children'> & {
@@ -18,11 +18,11 @@ type Props = Omit<PressableProps, 'style' | 'children'> & {
   color?: string;
   /** Label color. Ink on every color; pass white only on an ink button. */
   textColor?: string;
-  /** large = 56 tall (main actions), small = 44 tall. */
+  /** large = 52 tall (main actions), small = 40 tall; plus the 4px edge. */
   size?: 'large' | 'small';
-  /** Corner radius (default 18). */
+  /** Corner radius (default 16). */
   radius?: number;
-  /** How far the solid shadow sits below (default: 4 for large, 3 for small). */
+  /** Height of the 3D edge (default 4). */
   depth?: number;
   /** Layout of the whole button (margins, flex, width). */
   style?: StyleProp<ViewStyle>;
@@ -33,9 +33,10 @@ type Props = Omit<PressableProps, 'style' | 'children'> & {
 };
 
 /**
- * The app's button: a colored face with a thick ink outline, sitting on a solid ink "shadow" (a
- * real View, so it looks the same on every phone). While your finger is down, the face moves down
- * onto the shadow, so the button looks physically pressed. Light haptic on press.
+ * The app's button, Duolingo style: a colored face sitting on a 4px "edge" in a darker shade of
+ * its own color (sunshine → #E2A400; a white secondary button has a 2px light border and a light
+ * edge). While your finger is down the face moves down 4px onto the edge and the edge disappears
+ * (100 ms in, 160 ms out, no bounce). Light haptic on primary actions.
  */
 export function PopButton({
   label,
@@ -60,14 +61,17 @@ export function PopButton({
   const reduceMotion = useReducedMotion();
   // A light tap only on primary actions (sunshine or ink); quieter buttons are silent unless asked.
   const haptic = hapticProp === undefined ? (color === pop.sunshine || color === pop.ink ? 'tap' : null) : hapticProp;
-  // 4pt under big buttons, 3pt under small ones.
-  const depth = depthProp ?? (size === 'small' ? DEPTH.small : DEPTH.button);
+  const depth = depthProp ?? DEPTH.button;
   const down = useSharedValue(0);
   // Only plain numbers in here: this runs on the UI thread.
   const faceMove = useAnimatedStyle(() => ({ transform: [{ translateY: down.get() * depth }] }));
   const large = size === 'large';
-  // Down onto the shadow in 120 ms, back up in 160 ms (ease-out cubic). No bounce.
-  const press = (to: number) => down.set(reduceMotion ? to : withTiming(to, to ? pressIn : pressOut));
+  // Down onto the edge in 100 ms, back up in 160 ms (ease-out cubic). No bounce.
+  const press = (to: number) => down.set(reduceMotion ? to : withTiming(to, to ? { duration: 100, easing: EASE_CUBIC } : pressOut));
+  // White (or very light) faces are "secondary": a light border and a light edge.
+  const light = color.toUpperCase() === pop.white || color.toUpperCase() === pop.surface.toUpperCase();
+  const face = disabled ? pop.surface : color;
+  const edgeColor = disabled ? pop.track : light ? pop.line : edge(color);
 
   return (
     <Pressable
@@ -90,12 +94,12 @@ export function PopButton({
       }}
       style={[{ paddingBottom: depth }, style]}
     >
-      <View style={[styles.shadow, { top: depth, borderRadius: r }]} />
+      <View style={[styles.edge, { top: depth, borderRadius: r, backgroundColor: edgeColor }]} />
       <Animated.View
         style={[
           styles.face,
-          // Disabled: solid muted colors, never see-through (that would tint the ink border).
-          { backgroundColor: disabled ? pop.lilacTint : color, borderRadius: r, minHeight: large ? 56 : 44, paddingHorizontal: large ? 22 : 16 },
+          // Disabled: solid muted colors, never see-through.
+          { backgroundColor: face, borderRadius: r, minHeight: large ? 52 : 40, paddingHorizontal: large ? 22 : 16, borderColor: light || disabled ? (disabled ? pop.track : pop.line) : face },
           faceStyle,
           faceMove,
         ]}
@@ -117,14 +121,13 @@ export function PopButton({
 }
 
 const styles = StyleSheet.create({
-  shadow: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: pop.ink, borderCurve: 'continuous' },
+  edge: { position: 'absolute', left: 0, right: 0, bottom: 0, borderCurve: 'continuous' },
   face: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    borderWidth: stroke.thick,
-    borderColor: pop.ink,
+    borderWidth: 2,
     borderCurve: 'continuous',
   },
 });

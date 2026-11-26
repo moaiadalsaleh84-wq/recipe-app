@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Text } from '../Text';
-import { pressIn, pressOut } from '../../motion';
+import { EASE_CUBIC, pressOut } from '../../motion';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { haptics } from '../../lib/haptics';
-import { fonts, pop, radius, stroke } from '../../theme';
+import { edge, fonts, pop, radius } from '../../theme';
 import { Icon, type IconName } from '../Icon';
 
 type Props = {
@@ -28,13 +28,13 @@ type Props = {
 };
 
 /**
- * A chip: tint background, 2px ink outline, radius 12. As a button it sits on a 3pt solid shadow
- * and presses down; a selected filter turns sunshine with a check (no bounce).
+ * A chip: 36 tall, radius 18, a 2px light border, flat. Pressed: dims and settles to 97% (100 ms).
+ * Selected: a sunshine fill with its darker sunshine edge and a check (no bounce).
  */
 export function PopChip({ label, color = pop.white, icon, leading, trailing, selected = false, onPress, toggle = false, accessibilityLabel, style, small }: Props) {
   const reduceMotion = useReducedMotion();
   const down = useSharedValue(0);
-  const faceMove = useAnimatedStyle(() => ({ transform: [{ translateY: down.get() * 3 }] }));
+  const faceMove = useAnimatedStyle(() => ({ opacity: 1 - down.get() * 0.15, transform: [{ scale: reduceMotion ? 1 : 1 - down.get() * 0.03 }] }));
 
   const content = (
     <>
@@ -45,7 +45,7 @@ export function PopChip({ label, color = pop.white, icon, leading, trailing, sel
       {trailing && <Icon name={trailing} size={12} color={pop.ink} weight="bold" />}
     </>
   );
-  const faceStyle = [styles.face, small && styles.faceSmall, { backgroundColor: selected ? pop.sunshine : color }];
+  const faceStyle = [styles.face, small && styles.faceSmall, { backgroundColor: selected ? pop.sunshine : color }, selected && styles.selected];
 
   if (!onPress) {
     return (
@@ -60,37 +60,34 @@ export function PopChip({ label, color = pop.white, icon, leading, trailing, sel
         haptics.select();
         onPress();
       }}
-      onPressIn={() => down.set(reduceMotion ? 1 : withTiming(1, pressIn))}
+      onPressIn={() => down.set(reduceMotion ? 1 : withTiming(1, { duration: 100, easing: EASE_CUBIC }))}
       onPressOut={() => down.set(reduceMotion ? 0 : withTiming(0, pressOut))}
       accessibilityRole={toggle ? 'togglebutton' : 'button'}
       aria-selected={toggle ? selected : undefined}
       accessibilityLabel={accessibilityLabel ?? label}
-      // The chip is 40 tall (small: 32 + its 3pt lip); the hit slop makes the tap area 44.
-      hitSlop={small ? { top: 4, bottom: 5, left: 4, right: 4 } : { top: 2, bottom: 4, left: 2, right: 2 }}
-      style={[styles.wrap, style]}
+      // The chip is 36 tall (small: 30); the hit slop makes the tap area 44.
+      hitSlop={small ? 7 : 4}
+      style={style}
     >
-      <View style={styles.shadow} />
       <Animated.View style={[faceStyle, faceMove]}>{content}</Animated.View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { paddingBottom: 3 },
-  shadow: { position: 'absolute', left: 0, right: 0, top: 3, bottom: 0, borderRadius: radius.sm, backgroundColor: pop.ink },
   face: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    // 41 + the 3pt shadow = a 44pt tap target.
-    minHeight: 41,
+    minHeight: 36,
     paddingHorizontal: 14,
-    borderRadius: radius.sm,
-    borderWidth: stroke.thin,
-    borderColor: pop.ink,
+    borderRadius: radius.chip,
+    borderWidth: 2,
+    borderColor: pop.line,
     borderCurve: 'continuous',
   },
-  faceSmall: { minHeight: 32, paddingHorizontal: 10, gap: 5 },
+  selected: { borderColor: pop.sunshine, borderBottomColor: edge(pop.sunshine), borderBottomWidth: 3 },
+  faceSmall: { minHeight: 30, paddingHorizontal: 10, gap: 5, borderRadius: 15 },
   tag: { alignSelf: 'flex-start' },
   label: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 20, color: pop.ink },
   labelSmall: { fontSize: 13, lineHeight: 17 },

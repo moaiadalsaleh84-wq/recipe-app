@@ -91,12 +91,12 @@ export function WelcomeChecklist({ onImport, onExample, onCookbook, onCook }: Pr
             </Text>
           </PressableScale>
           {allDone ? (
-            <PressableScale onPress={() => save('hidden')} accessibilityLabel="Hide the welcome card" hitSlop={4} style={[styles.round, { borderColor: t.pop.ink, backgroundColor: t.pop.white }]}>
+            <PressableScale onPress={() => save('hidden')} accessibilityLabel="Hide the welcome card" hitSlop={4} style={[styles.round, { borderColor: t.colors.border, backgroundColor: t.pop.white }]}>
               <Icon name="close" size={14} color={t.pop.ink} weight="bold" />
             </PressableScale>
           ) : (
             <PressableScale onPress={() => save(folded ? 'open' : 'folded')} haptic="select" accessibilityLabel={folded ? 'Show steps' : 'Hide steps'} hitSlop={4} style={styles.roundTap}>
-              <Animated.View style={[styles.round, { borderColor: t.pop.ink, backgroundColor: t.pop.white }, chevron]}>
+              <Animated.View style={[styles.round, { borderColor: t.colors.border, backgroundColor: t.pop.white }, chevron]}>
                 <Icon name="chevronDown" size={16} color={t.pop.ink} weight="bold" />
               </Animated.View>
             </PressableScale>
@@ -119,7 +119,7 @@ export function WelcomeChecklist({ onImport, onExample, onCookbook, onCook }: Pr
                 {s.done ? (
                   <CheckCircle checked color={t.pop.leaf} />
                 ) : (
-                  <View style={[styles.stepIcon, { backgroundColor: t.pop.sunshineTint, borderColor: t.pop.ink }]}>
+                  <View style={[styles.stepIcon, { backgroundColor: t.pop.sunshineTint, borderColor: t.colors.border }]}>
                     <Icon name={s.icon} size={16} color={t.pop.ink} weight="bold" />
                   </View>
                 )}

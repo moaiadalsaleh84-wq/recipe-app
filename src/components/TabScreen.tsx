@@ -104,7 +104,7 @@ export function TabScreen({ title, kicker, right, children, maxWidth = 700, head
       </Animated.ScrollView>
 
       {/* The small bar, once the big title has scrolled away: white, a 2pt ink line, the title on one line. */}
-      <Animated.View pointerEvents="none" style={[styles.bar, { top: insets.top, height: BAR, backgroundColor: t.colors.background, borderBottomColor: t.pop.ink }, barStyle]} testID="screen-bar" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <Animated.View pointerEvents="none" style={[styles.bar, { top: insets.top, height: BAR, backgroundColor: t.colors.background, borderBottomColor: t.colors.border }, barStyle]} testID="screen-bar" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
         <Text style={[t.type.title3, styles.barTitle, { color: t.colors.label }]} numberOfLines={1}>
           {title}
         </Text>

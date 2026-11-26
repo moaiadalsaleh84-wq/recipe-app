@@ -24,7 +24,7 @@ export default function PhotoCredits() {
           </Text>
         ) : (
           photoCredits.map((c) => (
-            <PressableScale key={c.recipeId} onPress={() => open(c.url)} accessibilityRole="link" accessibilityLabel={`${getRecipe(c.recipeId)?.title ?? c.recipeId}, photo by ${c.photographer} on ${c.site}`} style={[styles.row, { backgroundColor: t.colors.cell, borderColor: t.pop.ink }]} scaleTo={0.99}>
+            <PressableScale key={c.recipeId} onPress={() => open(c.url)} accessibilityRole="link" accessibilityLabel={`${getRecipe(c.recipeId)?.title ?? c.recipeId}, photo by ${c.photographer} on ${c.site}`} style={[styles.row, { backgroundColor: t.colors.cell, borderColor: t.colors.border }]} scaleTo={0.99}>
               <Text style={[t.type.headline, { color: t.colors.label }]}>{getRecipe(c.recipeId)?.title ?? c.recipeId}</Text>
               <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]}>
                 Photo by {c.photographer} on {c.site} · {c.license}

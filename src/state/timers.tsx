@@ -234,7 +234,7 @@ function RingingBanner({ timers, onStop }: { timers: engine.CookTimer[]; onStop:
   return (
     <Animated.View entering={FadeInUp.duration(220)} exiting={FadeOutUp.duration(180)} style={[styles.bannerPos, { top: insets.top + 8 }]} accessibilityRole="alert" testID="global-timer-done">
       <Lift radius={18}>
-      <View style={[styles.banner, { backgroundColor: t.pop.tomato, borderColor: t.pop.ink }]}>
+      <View style={[styles.banner, { backgroundColor: t.pop.tomato, borderColor: t.colors.border }]}>
         <PressableScale onPress={() => router.push({ pathname: '/cook/[id]', params: { id: first.recipeId } })} style={styles.bannerMain} accessibilityLabel={`Time’s up: ${first.label}, ${first.recipeTitle}. Open Cook Mode`}>
           <Icon name="timer" size={20} color={t.pop.ink} weight="bold" />
           <View style={{ flex: 1 }}>
@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
   bannerPos: { position: 'absolute', left: 12, right: 12, zIndex: 1000 },
   banner: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 18, borderWidth: 2.5, paddingLeft: 14, paddingRight: 8, minHeight: 60, borderCurve: 'continuous' },
   bannerMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 56 },
-  stopBtn: { minHeight: 44, minWidth: 76, paddingHorizontal: 16, borderRadius: 999, backgroundColor: pop.white, borderWidth: 2, borderColor: pop.ink, alignItems: 'center', justifyContent: 'center' },
+  stopBtn: { minHeight: 44, minWidth: 76, paddingHorizontal: 16, borderRadius: 999, backgroundColor: pop.white, borderWidth: 2, borderColor: pop.line, alignItems: 'center', justifyContent: 'center' },
   scrim: { flex: 1, justifyContent: 'center', padding: 20 },
   sheetLift: { width: '100%', maxWidth: 440, alignSelf: 'center' },
   sheet: { borderRadius: 26, padding: 20, gap: 8, borderCurve: 'continuous' },

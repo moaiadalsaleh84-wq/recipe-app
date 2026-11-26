@@ -368,7 +368,7 @@ function PhotoTile({ recipe, size }: { recipe: Recipe | undefined; size: number 
   const r = 22;
   return (
     <View style={{ width: size, height: size + 4 }}>
-      <View style={{ position: 'absolute', top: 4, left: 0, width: size, height: size, borderRadius: r, backgroundColor: pop.ink }} />
+      <View style={{ position: 'absolute', top: 4, left: 0, width: size, height: size, borderRadius: r, backgroundColor: 'transparent' }} />
       {recipe ? <PhotoFrame recipe={recipe} radius={r} square style={{ width: size, height: size }} /> : <PhotoFrame radius={r} placeholderColor={pop.sunshineTint} style={{ width: size, height: size }} />}
     </View>
   );
@@ -747,7 +747,7 @@ function Tag({ icon, label, color }: { icon: IconName; label: string; color: str
 const styles = StyleSheet.create({
   header: { paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', gap: 14 },
   bar: { flex: 1, flexDirection: 'row', gap: 4, height: 14 },
-  segment: { flex: 1, borderRadius: 7, borderWidth: 2, borderColor: pop.ink },
+  segment: { flex: 1, borderRadius: 7, borderWidth: 2, borderColor: pop.line },
   title: { fontFamily: fonts.heading, fontSize: 32, lineHeight: 38, color: pop.ink },
   subtitle: { fontFamily: fonts.body, fontSize: 16, lineHeight: 22, color: pop.inkMuted, marginTop: 8 },
   small: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 20, color: pop.inkMuted },
@@ -759,7 +759,7 @@ const styles = StyleSheet.create({
   input: {
     height: 60,
     borderWidth: stroke.thick,
-    borderColor: pop.ink,
+    borderColor: pop.line,
     borderRadius: 18,
     paddingHorizontal: 18,
     fontFamily: fonts.bold,
@@ -768,10 +768,10 @@ const styles = StyleSheet.create({
     backgroundColor: pop.white,
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 14, paddingVertical: 10 },
-  iconCircle: { width: 42, height: 42, borderRadius: 21, borderWidth: 2, borderColor: pop.ink, alignItems: 'center', justifyContent: 'center' },
+  iconCircle: { width: 42, height: 42, borderRadius: 21, borderWidth: 2, borderColor: pop.line, alignItems: 'center', justifyContent: 'center' },
   rowLabel: { fontFamily: fonts.bold, fontSize: 17, lineHeight: 22, color: pop.ink },
   rowDetail: { fontFamily: fonts.body, fontSize: 14, lineHeight: 19, color: pop.inkMuted, marginTop: 1 },
-  badge: { width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: pop.ink, alignItems: 'center', justifyContent: 'center' },
+  badge: { width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: pop.line, alignItems: 'center', justifyContent: 'center' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 14 },
   tile: { width: '47%', flexGrow: 1 },
   tileInner: { height: 150, alignItems: 'center', justifyContent: 'center', gap: 2 },
@@ -779,12 +779,12 @@ const styles = StyleSheet.create({
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 14 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, paddingHorizontal: 14, paddingVertical: 6 },
   chipText: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 21, color: pop.ink },
-  notif: { flexDirection: 'row', gap: 12, backgroundColor: pop.white, borderWidth: stroke.thick, borderColor: pop.ink, borderRadius: 20, padding: 14, borderCurve: 'continuous' },
+  notif: { flexDirection: 'row', gap: 12, backgroundColor: pop.white, borderWidth: stroke.thick, borderColor: pop.line, borderRadius: 20, padding: 14, borderCurve: 'continuous' },
   notifApp: { fontFamily: fonts.black, fontSize: 12, lineHeight: 16, letterSpacing: 0.5, color: pop.inkMuted },
   notifTitle: { fontFamily: fonts.black, fontSize: 16, lineHeight: 21, color: pop.ink, marginTop: 2 },
   notifBody: { fontFamily: fonts.body, fontSize: 15, lineHeight: 20, color: pop.ink, marginTop: 2 },
   cardTitle: { fontFamily: fonts.heading, fontSize: 20, lineHeight: 25, color: pop.ink },
-  tag: { flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 2, borderColor: pop.ink, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 5 },
+  tag: { flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 2, borderColor: pop.line, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 5 },
   tagText: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 18, color: pop.ink },
   moreRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 20 },
   thumb: { position: 'absolute', top: 0, width: 44, height: 44 },

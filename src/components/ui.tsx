@@ -337,7 +337,7 @@ export function Stepper({
           maxLength={5}
           maxFontSizeMultiplier={1.3}
           accessibilityLabel={`Type your ${label}`}
-          style={[t.type.headline, styles.stepperValue, styles.stepperInput, { color: t.colors.label, borderColor: t.pop.ink }]}
+          style={[t.type.headline, styles.stepperValue, styles.stepperInput, { color: t.colors.label, borderColor: t.pop.sky }]}
           testID="stepper-input"
         />
       ) : editable ? (
@@ -405,7 +405,7 @@ export function CheckCircle({ checked, color, checkColor = pop.ink }: { checked:
   const fillStyle = useAnimatedStyle(() => ({ opacity: fill.get() }));
 
   return (
-    <View style={[styles.check, { borderColor: t.pop.ink, backgroundColor: t.colors.cell }]}>
+    <View style={[styles.check, { borderColor: checked ? color : '#CFCBDA', backgroundColor: t.colors.cell }]}>
       <Animated.View style={[styles.checkFill, { backgroundColor: color }, fillStyle]}>{checked && <DrawnCheck size={16} color={checkColor} delay={60} />}</Animated.View>
     </View>
   );
@@ -417,6 +417,8 @@ export function ProgressBar({ value, color, track, height = 8, label }: { /** 0 
   const t = useTheme();
   const reduceMotion = useReducedMotion();
   const pct = Math.max(0, Math.min(1, value));
+  // Bars are 12 high everywhere (callers asking for more get 12 too, except a deliberate thin one).
+  const bar = Math.min(height, 12);
   const shown = useSharedValue(0);
   const trackW = useSharedValue(0);
   useEffect(() => {
@@ -427,17 +429,18 @@ export function ProgressBar({ value, color, track, height = 8, label }: { /** 0 
   const fill = useAnimatedStyle(() => {
     const v = shown.get();
     if (v <= 0.001) return { width: 0, opacity: 0 };
-    return { width: Math.min(trackW.get(), Math.max(height, v * trackW.get())), opacity: 1 };
+    return { width: Math.min(trackW.get(), Math.max(bar, v * trackW.get())), opacity: 1 };
   });
   return (
     <View
-      onLayout={(e) => trackW.set(e.nativeEvent.layout.width - 4)}
-      style={{ height: height + 4, borderRadius: (height + 4) / 2, backgroundColor: track ?? t.colors.cell, borderWidth: 2, borderColor: t.pop.ink, overflow: 'hidden' }}
+      onLayout={(e) => trackW.set(e.nativeEvent.layout.width)}
+      // Flat: a light track (#EDEBF3), the colored fill, no outline.
+      style={{ height: bar, borderRadius: bar / 2, backgroundColor: track ?? t.colors.track, overflow: 'hidden' }}
       accessibilityRole="progressbar"
       accessibilityLabel={label}
       accessibilityValue={{ min: 0, max: 100, now: Math.round(pct * 100) }}
     >
-      <Animated.View style={[{ height, borderRadius: height / 2, backgroundColor: color ?? t.colors.success }, fill]} />
+      <Animated.View style={[{ height: bar, borderRadius: bar / 2, backgroundColor: color ?? t.colors.success }, fill]} />
     </View>
   );
 }
@@ -585,13 +588,9 @@ export function EmptyState({
       {cat && MASCOT_ON ? (
         <Mascot mood={cat} size={132} />
       ) : (
-        <Lift radius={48} style={{ marginBottom: 8 }}>
-          <View style={[styles.emptyIcon, { backgroundColor: t.colors.cell, borderColor: t.colors.border }]}>
-            <View style={[styles.emptyIconInner, { backgroundColor: t.colors.tintSoft }]}>
-              <Icon name={icon} size={30} color={t.colors.tint} weight="semibold" />
-            </View>
-          </View>
-        </Lift>
+        <View style={[styles.emptyIcon, { backgroundColor: t.colors.tintSoft }]}>
+          <Icon name={icon} size={36} color={t.colors.tint} weight="semibold" />
+        </View>
       )}
       <Text style={[t.type.title2, { color: t.colors.label, textAlign: 'center' }]}>{title}</Text>
       <Text style={[t.type.callout, t.noWidows.style, { color: t.colors.secondaryLabel, textAlign: 'center', maxWidth: 290 }]} {...t.noWidows.props}>
@@ -640,10 +639,12 @@ export function Separator({ inset = 16 }: { inset?: number }) {
 
 /* ---------- Search field (Android and web; iOS uses the native header search bar) ---------- */
 
-export function SearchField({ value, onChangeText, placeholder, style, ...rest }: TextInputProps & { value: string; onChangeText: (s: string) => void }) {
+export function SearchField({ value, onChangeText, placeholder, style, onFocus, onBlur, ...rest }: TextInputProps & { value: string; onChangeText: (s: string) => void }) {
   const t = useTheme();
+  const [focused, setFocused] = useState(false);
   return (
-    <View style={[styles.search, { backgroundColor: t.colors.cell, ...t.chunky.card, borderRadius: t.radius.md }, style]}>
+    // 48 high, a soft fill and no border; a 2px sky border while you type.
+    <View style={[styles.search, { backgroundColor: t.colors.fill, borderRadius: t.radius.md, borderColor: focused ? t.pop.sky : 'transparent' }, style]}>
       <Icon name="search" size={18} color={t.colors.label} weight="semibold" />
       <TextInput maxFontSizeMultiplier={1.3}
         value={value}
@@ -655,6 +656,14 @@ export function SearchField({ value, onChangeText, placeholder, style, ...rest }
         clearButtonMode="never"
         autoCorrect={false}
         accessibilityLabel={placeholder}
+        onFocus={(e) => {
+          setFocused(true);
+          onFocus?.(e);
+        }}
+        onBlur={(e) => {
+          setFocused(false);
+          onBlur?.(e);
+        }}
         {...rest}
       />
       {value.length > 0 && (
@@ -694,7 +703,7 @@ const styles = StyleSheet.create({
   stepperValue: { minWidth: 36, textAlign: 'center', fontVariant: ['tabular-nums'] },
   stepperInput: { minWidth: 64, paddingVertical: 4, paddingHorizontal: 6, borderBottomWidth: 2 },
   // Rounded squares: the tick pops in on a basil fill.
-  check: { width: 28, height: 28, borderRadius: 9, borderWidth: 2.5, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
+  check: { width: 28, height: 28, borderRadius: 9, borderWidth: 2, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
   checkFill: { width: 28, height: 28, borderRadius: 9, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
   empty: { alignItems: 'center', gap: 8, paddingVertical: 40, paddingHorizontal: 24 },
   print: { borderRadius: 18, borderWidth: 1, padding: 5, paddingBottom: 14, borderCurve: 'continuous' },
@@ -703,13 +712,13 @@ const styles = StyleSheet.create({
   // 32 above every section, 12 between its title and its content. (Buttons on the right bring their own 44pt height.)
   sh: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginTop: 32, marginBottom: 12 },
   shAction: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 44, paddingLeft: 8 },
-  emptyIcon: { width: 96, height: 96, borderRadius: 48, borderWidth: 1, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  emptyIcon: { width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   emptyIconInner: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center' },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, minHeight: 28 },
   sectionBody: { borderCurve: 'continuous' },
   // Lines up with the card's left edge.
   sectionFooter: { paddingHorizontal: 0, marginTop: 8 },
-  search: { flexDirection: 'row', alignItems: 'center', gap: 10, borderCurve: 'continuous', paddingLeft: 16, minHeight: 54 },
+  search: { flexDirection: 'row', alignItems: 'center', gap: 10, borderCurve: 'continuous', paddingLeft: 14, minHeight: 48, borderWidth: 2 },
   searchInput: { flex: 1, alignSelf: 'stretch', minHeight: 44, paddingVertical: 0, outlineStyle: 'none' } as never,
 });
 
@@ -808,14 +817,14 @@ export function Segmented<T extends string>({
 
   return (
     <GestureDetector gesture={slide}>
-      <View style={[segStyles.wrap, { backgroundColor: t.colors.cell, borderColor: t.pop.ink }]} accessibilityRole="radiogroup" accessibilityLabel={label}>
+      <View style={[segStyles.wrap, { backgroundColor: t.colors.fill, borderColor: t.colors.border }]} accessibilityRole="radiogroup" accessibilityLabel={label}>
         {/* The thumb and the options share this inner box, so the thumb lines up exactly with the
             option it sits behind (measured and placed from the same corner). */}
         <View style={segStyles.track}>
         {measured && first && (
           <Animated.View
             pointerEvents="none"
-            style={[segStyles.thumb, { top: first.y, height: first.h, backgroundColor: t.pop.sunshine, borderColor: t.pop.ink, borderWidth: t.stroke.thin }, thumbStyle]}
+            style={[segStyles.thumb, { top: first.y, height: first.h, backgroundColor: t.pop.sunshine, borderColor: t.pop.sunshine, borderBottomColor: t.edge(t.pop.sunshine), borderWidth: 2 }, thumbStyle]}
           />
         )}
         {options.map((o, i) => {
@@ -844,7 +853,7 @@ export function Segmented<T extends string>({
                 });
               }}
               // Until the thumb is ready, the chosen option draws its own yellow pill.
-              style={[segStyles.item, small && segStyles.itemSmall, { borderWidth: t.stroke.thin, borderColor: 'transparent' }, selected && !measured && { backgroundColor: t.pop.sunshine, borderColor: t.pop.ink }]}
+              style={[segStyles.item, small && segStyles.itemSmall, { borderWidth: t.stroke.thin, borderColor: 'transparent' }, selected && !measured && { backgroundColor: t.pop.sunshine, borderColor: t.pop.sunshine }]}
             >
               <Text style={[t.type.footnote, { color: selected ? t.colors.label : t.colors.secondaryLabel, fontFamily: selected ? t.fonts.black : t.fonts.bold, fontSize: small ? 13 : 14 }]}>{o.label}</Text>
             </PressableScale>

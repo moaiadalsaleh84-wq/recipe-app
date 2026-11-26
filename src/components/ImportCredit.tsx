@@ -73,7 +73,7 @@ export function RecipeByRow({ recipe, onPress }: { recipe: Recipe; onPress: () =
   const name = recipe.creatorHandle?.trim() || (recipe.source === 'tiktok' ? tikTokHandle(recipe.sourceUrl) : null) || null;
   const video = recipe.source === 'tiktok' || recipe.source === 'youtube' || recipe.source === 'instagram';
   const watch = (
-    <View style={[styles.watch, { borderColor: t.pop.ink, backgroundColor: t.pop.sunshine }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+    <View style={[styles.watch, { borderColor: t.colors.border, backgroundColor: t.pop.sunshine }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       <Icon name={video ? 'play' : 'link'} size={12} color={t.pop.ink} weight="bold" />
       <Text style={styles.watchText}>{video ? 'Watch' : 'Open'}</Text>
     </View>
@@ -96,7 +96,7 @@ export function RecipeByRow({ recipe, onPress }: { recipe: Recipe; onPress: () =
       scaleTo={0.98}
       testID="recipe-by"
     >
-      <View style={[styles.avatar, { backgroundColor: t.pop.berry, borderColor: t.pop.ink }]}>
+      <View style={[styles.avatar, { backgroundColor: t.pop.berry, borderColor: t.colors.border }]}>
         <Text style={styles.avatarText} maxFontSizeMultiplier={1.2}>
           {letter}
         </Text>
@@ -129,7 +129,7 @@ export function ImportHint({ onClose, video }: { onClose: () => void; video: boo
         </PressableScale>
       </View>
       {/* The pointer, toward the row below. */}
-      <View style={[styles.hintTip, { borderTopColor: t.pop.ink }]} />
+      <View style={[styles.hintTip, { borderTopColor: t.colors.border }]} />
     </Animated.View>
   );
 }

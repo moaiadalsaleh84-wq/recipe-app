@@ -137,7 +137,7 @@ export default function GroceriesScreen() {
           {FOX_READY ? (
             <FoxMascot mood="playful" size={128} />
           ) : (
-            <View style={[styles.emptyArt, { backgroundColor: t.pop.sunshineTint, borderColor: t.pop.ink }]}>
+            <View style={[styles.emptyArt, { backgroundColor: t.pop.sunshineTint, borderColor: t.colors.border }]}>
               <Icon name="cart" size={52} color={t.pop.ink} weight="bold" />
             </View>
           )}
@@ -175,7 +175,7 @@ export default function GroceriesScreen() {
                 scaleTo={0.98}
                 aria-expanded={basketOpen}
                 accessibilityLabel={`In the basket, ${basket.length} ${basket.length === 1 ? 'item' : 'items'}. ${basketOpen ? 'Hide' : 'Show'}`}
-                style={[styles.basketHead, { backgroundColor: t.pop.leafTint, borderColor: t.pop.ink }]}
+                style={[styles.basketHead, { backgroundColor: t.pop.leafTint, borderColor: t.colors.border }]}
                 testID="basket-toggle"
               >
                 <Icon name="cart" size={18} color={t.pop.ink} weight="bold" />

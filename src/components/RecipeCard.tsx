@@ -26,7 +26,7 @@ function SourceMark({ recipe }: { recipe: Recipe }) {
   const t = useTheme();
   if (recipe.source !== 'web') return null;
   return (
-    <View style={[styles.sourceMark, { backgroundColor: t.pop.white, borderColor: t.pop.ink }]} accessible accessibilityLabel="Imported from a website" testID="source-mark">
+    <View style={[styles.sourceMark, { backgroundColor: t.pop.white, borderColor: t.pop.white }]} accessible accessibilityLabel="Imported from a website" testID="source-mark">
       <Icon name="link" size={11} color={t.pop.ink} weight="bold" />
     </View>
   );
@@ -144,12 +144,12 @@ export function CardText({ creator, title, meta, metaTestID }: { creator?: strin
             {creator}
           </Text>
         ) : null}
-        <Text style={[styles.cardTitle, { color: t.colors.label }]} numberOfLines={3}>
+        <Text style={[styles.cardTitle, { color: t.colors.label }]} numberOfLines={2}>
           {title}
         </Text>
       </View>
       {/* Never cut a time short: with large text the meta may take a second line. */}
-      <Text style={[styles.cardMetaText, { color: t.colors.secondaryLabel }]} numberOfLines={2} testID={metaTestID}>
+      <Text style={[styles.cardMetaText, { color: t.colors.secondaryLabel }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} testID={metaTestID}>
         {meta}
       </Text>
     </View>
@@ -173,13 +173,12 @@ function RecipeCardView({ recipe, width, color }: { recipe: Recipe; width: numbe
         accessibilityLabel={`${recipe.title}, ${recipe.minutes} minutes, ${recipe.difficulty}`}
         accessibilityHint="Opens the recipe"
         // Ink behind the photo, so its soft edges never show a light hairline (see PhotoFrame).
-        color={pop.ink}
-        radius={24}
-        depth={CARD_DEPTH}
+        color={pop.white}
+        radius={16}
         style={{ flexGrow: 1 }}
         contentStyle={{ flexGrow: 1 }}
       >
-        <PhotoFrame recipe={recipe} radius={21.5} corners="top" edge="bottom" style={styles.imageWrap}>
+        <PhotoFrame recipe={recipe} radius={14} corners="top" edge="bottom" style={styles.imageWrap}>
           <SourceMark recipe={recipe} />
         </PhotoFrame>
         <View style={[styles.cardWhite, { backgroundColor: color ?? pop.white }]}>
@@ -194,7 +193,8 @@ function RecipeCardView({ recipe, width, color }: { recipe: Recipe; width: numbe
 }
 
 /** A lighter card shadow (3pt) for recipe and Discover cards. */
-export const CARD_DEPTH = 3;
+/** Older name: cards are flat now (no shadow). */
+export const CARD_DEPTH = 0;
 const isImportedSource = (r: Recipe) => r.source === 'tiktok' || r.source === 'youtube' || r.source === 'instagram' || r.source === 'web';
 
 export function RecipeCardSkeleton({ width }: { width: number }) {
@@ -236,10 +236,10 @@ export function TonightCard({
   return (
     <View>
       {/* Ink behind the photo, so its soft edges never show a light hairline (see PhotoFrame). */}
-      <PopCard clip={false} color={pop.ink} contentStyle={{ overflow: 'hidden' }}>
+      <PopCard clip={false} color={pop.white} contentStyle={{ overflow: 'hidden' }}>
         {/* The photo and name open the recipe; the button below is its own tap (no button inside a button). */}
         <PressableScale onPress={() => openRecipe(recipe.id)} scaleTo={0.99} accessibilityLabel={`${label}: ${recipe.title}, ${recipe.minutes} minutes`} accessibilityHint="Opens the recipe">
-          <PhotoFrame recipe={recipe} iconSize={48} radius={21.5} corners="top" edge="bottom" style={styles.tonightPhoto}>
+          <PhotoFrame recipe={recipe} iconSize={48} radius={14} corners="top" edge="bottom" style={styles.tonightPhoto}>
             <SourceMark recipe={recipe} />
           </PhotoFrame>
           <View style={[styles.tonightText, styles.tonightWhite]}>
@@ -306,7 +306,7 @@ export function RecipeRow({
         <PhotoFrame recipe={recipe} iconSize={24} radius={16} square style={{ width: thumb, height: thumb }} />
         <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
           {label ? <Text style={[styles.metaLine, { color: t.colors.secondaryLabel, fontSize: 13, lineHeight: 17 }]} numberOfLines={1}>{label}</Text> : null}
-          <Text style={[t.type.title3, t.noWidows.balanced, { color: t.colors.label, fontSize: 18, lineHeight: 22 }]} numberOfLines={3} {...t.noWidows.props}>{recipe.title}</Text>
+          <Text style={[t.type.title3, t.noWidows.balanced, { color: t.colors.label }]} numberOfLines={2} {...t.noWidows.props}>{recipe.title}</Text>
           {metaLines ? (
             metaLines.map((line) => (
               <Text key={line} style={[styles.metaLine, { color: t.colors.secondaryLabel }]}>
@@ -332,15 +332,17 @@ const styles = StyleSheet.create({
   sourceMark: { position: 'absolute', left: 8, bottom: 8, width: 24, height: 24, borderRadius: 12, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   // Photo first: 4:5 portrait, the whole card's width.
   imageWrap: { width: '100%', aspectRatio: 4 / 5 },
-  cardWhite: { flexGrow: 1, borderBottomLeftRadius: 21.5, borderBottomRightRadius: 21.5 },
+  cardWhite: { flexGrow: 1, borderBottomLeftRadius: 14, borderBottomRightRadius: 14 },
   // 14pt inside on every side; the meta sits at the bottom so cards in a row line up.
   cardBody: { flexGrow: 1, paddingHorizontal: 12, paddingTop: 10, paddingBottom: 12, gap: 6, justifyContent: 'space-between' },
   // Fredoka 700, 17, up to 2 lines then "…".
-  cardTitle: { fontFamily: fonts.heading, fontSize: 17, lineHeight: 21 },
+  // Card title: Nunito 800, 16, max 2 lines.
+  cardTitle: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 21 },
   // Nunito 700, 13, one line.
   cardCreator: { fontFamily: fonts.medium, fontSize: 13, lineHeight: 17 },
   // Nunito 700, 14: "75 min · Easy".
-  cardMetaText: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 18 },
+  // Meta: Nunito 700, 13, muted, one line.
+  cardMetaText: { fontFamily: fonts.medium, fontSize: 13, lineHeight: 17 },
   meta: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   noPhoto: { alignItems: 'center', justifyContent: 'center' },
   favOnPhoto: { position: 'absolute', top: 2, right: 2 },
@@ -350,8 +352,8 @@ const styles = StyleSheet.create({
     height: 34,
     borderRadius: 17,
     backgroundColor: pop.white,
-    borderWidth: 2,
-    borderColor: pop.ink,
+    // A soft shadow lifts it off the photo (no outline).
+    boxShadow: '0 2px 8px rgba(27, 19, 64, 0.18)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -359,7 +361,7 @@ const styles = StyleSheet.create({
   tonightText: { paddingHorizontal: 16, paddingTop: 22, gap: 4 },
   // The white part of the card below the photo (the card's face is ink behind the photo).
   tonightWhite: { backgroundColor: pop.white },
-  tonightBottom: { backgroundColor: pop.white, borderBottomLeftRadius: 21.5, borderBottomRightRadius: 21.5 },
+  tonightBottom: { backgroundColor: pop.white, borderBottomLeftRadius: 14, borderBottomRightRadius: 14 },
   tonightBtn: { marginHorizontal: 16, marginTop: 12 },
   seeRecipe: { alignSelf: 'center', minHeight: 44, justifyContent: 'center', paddingHorizontal: 16, marginBottom: 4 },
   tonightSticker: { position: 'absolute', top: 134, left: 14 },

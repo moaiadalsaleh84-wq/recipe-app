@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Text } from '../Text';
-import { pressIn, pressOut } from '../../motion';
+import { EASE_CUBIC, pressOut } from '../../motion';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { haptics, type HapticKind } from '../../lib/haptics';
-import { fonts, pop, stroke } from '../../theme';
+import { edge, fonts, pop } from '../../theme';
 import { Icon, type IconName } from '../Icon';
 
 type Props = {
@@ -30,21 +30,26 @@ type Props = {
 };
 
 /**
- * A round icon button: white, thick ink outline, a 3px solid shadow. Presses down onto its shadow.
+ * A round icon button, 3D like every button: white with a 2px light border on a light 3px edge (a
+ * colored one sits on its darker shade). Presses down onto the edge in 100 ms. 40 to look at, 44+
+ * to tap.
  */
-export function PopIconButton({ icon, onPress, accessibilityLabel, accessibilityHint, color = pop.white, iconColor = pop.ink, size = 44, iconSize, badge, disabled, haptic = null, style, testID, children }: Props) {
+export function PopIconButton({ icon, onPress, accessibilityLabel, accessibilityHint, color = pop.white, iconColor = pop.ink, size = 40, iconSize, badge, disabled, haptic = null, style, testID, children }: Props) {
   const reduceMotion = useReducedMotion();
   const down = useSharedValue(0);
   const depth = 3;
   const move = useAnimatedStyle(() => ({ transform: [{ translateY: down.get() * depth }] }));
-  const d = Math.max(44, size);
+  const d = size;
+  const light = color.toUpperCase() === pop.white;
+  const face = disabled ? pop.surface : color;
+  const slop = Math.max(0, Math.ceil((44 - d) / 2));
   return (
     <Pressable
       onPress={() => {
         if (haptic) haptics[haptic]();
         onPress();
       }}
-      onPressIn={() => down.set(reduceMotion ? 1 : withTiming(1, pressIn))}
+      onPressIn={() => down.set(reduceMotion ? 1 : withTiming(1, { duration: 100, easing: EASE_CUBIC }))}
       onPressOut={() => down.set(reduceMotion ? 0 : withTiming(0, pressOut))}
       disabled={disabled}
       aria-disabled={!!disabled}
@@ -52,10 +57,11 @@ export function PopIconButton({ icon, onPress, accessibilityLabel, accessibility
       accessibilityLabel={badge ? `${accessibilityLabel}, ${badge}` : accessibilityLabel}
       accessibilityHint={accessibilityHint}
       testID={testID}
+      hitSlop={slop}
       style={[{ width: d, height: d + depth }, style]}
     >
-      <View style={[styles.shadow, { top: depth, width: d, height: d, borderRadius: d / 2 }]} />
-      <Animated.View style={[styles.face, { width: d, height: d, borderRadius: d / 2, backgroundColor: disabled ? pop.lilacTint : color }, move]}>
+      <View style={[styles.shadow, { top: depth, width: d, height: d, borderRadius: d / 2, backgroundColor: disabled ? pop.track : light ? pop.line : edge(color) }]} />
+      <Animated.View style={[styles.face, { width: d, height: d, borderRadius: d / 2, backgroundColor: face, borderColor: light || disabled ? pop.line : face }, move]}>
         {children ?? <Icon name={icon} size={iconSize ?? Math.round(d * 0.42)} color={disabled ? pop.inkMuted : iconColor} weight="bold" />}
       </Animated.View>
       {badge ? (
@@ -70,8 +76,8 @@ export function PopIconButton({ icon, onPress, accessibilityLabel, accessibility
 }
 
 const styles = StyleSheet.create({
-  shadow: { position: 'absolute', left: 0, backgroundColor: pop.ink },
-  face: { alignItems: 'center', justifyContent: 'center', borderWidth: stroke.thick, borderColor: pop.ink },
+  shadow: { position: 'absolute', left: 0 },
+  face: { alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
   badge: {
     position: 'absolute',
     top: -6,
@@ -81,8 +87,8 @@ const styles = StyleSheet.create({
     borderRadius: 11,
     paddingHorizontal: 5,
     backgroundColor: pop.tomato,
-    borderWidth: stroke.thin,
-    borderColor: pop.ink,
+    borderWidth: 2,
+    borderColor: pop.white,
     alignItems: 'center',
     justifyContent: 'center',
   },

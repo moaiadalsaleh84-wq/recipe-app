@@ -87,13 +87,13 @@ export default function PlanScreen() {
                 style={[
                   styles.day,
                   // Today sunshine; the day you're looking at lilac; every other day white. Past days sit flat (no shadow) with muted text.
-                  { backgroundColor: d.isToday ? t.pop.sunshine : selected ? t.pop.lilacTint : t.pop.white, borderColor: t.pop.ink },
+                  { backgroundColor: d.isToday ? t.pop.sunshine : selected ? t.pop.lilacTint : t.pop.white, borderColor: selected ? t.pop.ink : d.isToday ? t.pop.sunshine : t.colors.border },
                   past && { transform: [{ translateY: t.depth.small }] },
                 ]}
               >
                 <Text style={[styles.dayName, { color: past ? t.pop.inkMuted : t.pop.ink }]}>{narrowDays ? d.short.slice(0, 2) : d.short}</Text>
                 <Text style={[styles.dayNum, { color: past ? t.pop.inkMuted : t.pop.ink }]}>{d.date}</Text>
-                <View style={[styles.dot, count > 0 && { backgroundColor: t.pop.leaf, borderColor: t.pop.ink, borderWidth: 1.5 }]} />
+                <View style={[styles.dot, count > 0 && { backgroundColor: t.pop.leaf, borderColor: t.colors.border, borderWidth: 1.5 }]} />
               </PressableScale>
             </Lift>
           );
@@ -124,9 +124,9 @@ export default function PlanScreen() {
               onPress={() => addMeal(meal)}
               accessibilityLabel={`Add ${meal.toLowerCase()} for ${weekDays[day].long}`}
               scaleTo={0.98}
-              style={[styles.slot, { borderColor: t.pop.ink, backgroundColor: popCycle[i % popCycle.length].tint }]}
+              style={[styles.slot, { borderColor: t.colors.border, backgroundColor: popCycle[i % popCycle.length].tint }]}
             >
-              <View style={[styles.slotIcon, { backgroundColor: t.pop.white, borderColor: t.pop.ink }]}>
+              <View style={[styles.slotIcon, { backgroundColor: t.pop.white, borderColor: t.colors.border }]}>
                 <Icon name="plus" size={20} color={t.pop.ink} weight="bold" />
               </View>
               <View style={{ flex: 1 }}>

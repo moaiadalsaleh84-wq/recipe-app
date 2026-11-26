@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
     backgroundColor: pop.white,
     borderWidth: stroke.thick,
     borderBottomWidth: 0,
-    borderColor: pop.ink,
+    borderColor: pop.line,
   },
   // A full 44pt grab area around the handle.
   grab: { height: 44, marginBottom: -12, alignItems: 'center', justifyContent: 'center', marginHorizontal: -20 },

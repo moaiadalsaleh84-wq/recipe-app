@@ -227,7 +227,7 @@ export default function RecipeScreen() {
       >
         {/* Header: a tomato-tint band with the photo as a tilted card */}
         {/* Header: the buttons sit above the photo (12pt gap); the photo is straight, framed in ink. */}
-        <View style={[styles.header, { backgroundColor: t.pop.tomatoTint, paddingTop: 0, borderBottomColor: t.pop.ink }]} testID="hero" onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}>
+        <View style={[styles.header, { backgroundColor: t.pop.tomatoTint, paddingTop: 0, borderBottomColor: t.colors.border }]} testID="hero" onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}>
           <Lift radius={24}>
             <PhotoFrame recipe={recipe} iconSize={64} radius={24} style={{ width: photoWidth, height: Math.round(photoWidth * 0.75) }}>
               {/* Not on Discover recipes you haven't saved: there's nothing of yours to change yet. */}
@@ -289,7 +289,7 @@ export default function RecipeScreen() {
           )}
           {/* Admin mode only (checked by the server): publish this import to Discover. */}
           {estimatedNote && (
-            <View style={[styles.estBanner, { backgroundColor: t.pop.sunshineTint, borderColor: t.pop.ink }]} testID="estimated-banner" accessibilityRole="alert">
+            <View style={[styles.estBanner, { backgroundColor: t.pop.sunshineTint, borderColor: t.colors.border }]} testID="estimated-banner" accessibilityRole="alert">
               <Icon name="info" size={18} color={t.pop.ink} />
               <Text style={[t.type.subhead, { color: t.pop.ink, flex: 1, fontFamily: t.fonts.semibold }]}>{estimatedNote}</Text>
             </View>
@@ -402,7 +402,7 @@ export default function RecipeScreen() {
           </Text>
           {recipe.steps.map((step, i) => (
             <View key={i} style={styles.step} accessible accessibilityLabel={`Step ${i + 1}. ${stepFor(step)}`}>
-              <View style={[styles.stepNum, { backgroundColor: popCycle[i % popCycle.length].fill, borderColor: t.pop.ink }]}>
+              <View style={[styles.stepNum, { backgroundColor: popCycle[i % popCycle.length].fill, borderColor: t.colors.border }]}>
                 <Text style={[t.type.headline, { color: t.pop.ink, fontFamily: t.fonts.heading }]}>{i + 1}</Text>
               </View>
               <View style={{ flex: 1, gap: 4 }}>
@@ -523,7 +523,7 @@ const TAG_LOOK: Partial<Record<DietTag, { label: string; color: string }>> = {
 function EstTag() {
   const t = useTheme();
   return (
-    <View style={[styles.est, { backgroundColor: t.pop.sunshineTint, borderColor: t.pop.ink }]} accessible accessibilityLabel="Estimated">
+    <View style={[styles.est, { backgroundColor: t.pop.sunshineTint, borderColor: t.colors.border }]} accessible accessibilityLabel="Estimated">
       <Text style={[styles.estText, { color: t.pop.ink }]} maxFontSizeMultiplier={1.2}>
         est.
       </Text>
@@ -566,7 +566,7 @@ function PeopleStepper({ value, onChange, min = 1, max = 24 }: { value: number; 
   const t = useTheme();
   return (
     <View
-      style={[styles.people, { borderColor: t.pop.ink, backgroundColor: t.colors.cell }]}
+      style={[styles.people, { borderColor: t.colors.border, backgroundColor: t.colors.cell }]}
       accessible
       accessibilityRole="adjustable"
       accessibilityLabel="Servings"
@@ -646,7 +646,7 @@ function Nutrition({ recipe, proteinGoal }: { recipe: Recipe; proteinGoal?: numb
           <Animated.View entering={FadeIn.duration(200)} style={{ gap: 16 }} accessible accessibilityLabel={`${protein} grams protein, ${carbs} grams carbs, ${fat} grams fat per serving`}>
             <View style={styles.split}>
               {/* The bar uses the same rounded numbers as the labels. */}
-              {rows.map((r) => (pct[r.key] > 0 ? <View key={r.key} style={{ flex: pct[r.key], backgroundColor: r.color, borderRadius: 6, borderWidth: 2, borderColor: t.pop.ink }} /> : null))}
+              {rows.map((r) => (pct[r.key] > 0 ? <View key={r.key} style={{ flex: pct[r.key], backgroundColor: r.color, borderRadius: 6, borderWidth: 2, borderColor: t.colors.border }} /> : null))}
             </View>
             <View style={styles.macros}>
               {rows.map((r) => (
@@ -783,7 +783,7 @@ const styles = StyleSheet.create({
   macros: { flexDirection: 'row', gap: 12 },
   macro: { flex: 1, minWidth: 0, gap: 2 },
   macroLabel: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  dot: { width: 10, height: 10, borderRadius: 5, borderWidth: 1.5, borderColor: pop.ink },
+  dot: { width: 10, height: 10, borderRadius: 5, borderWidth: 1.5, borderColor: pop.line },
   ingredient: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, minHeight: 56, gap: 12 },
   step: { flexDirection: 'row', gap: 12, marginBottom: 16 },
   stepNum: { width: 34, height: 34, borderRadius: 17, borderWidth: 2, alignItems: 'center', justifyContent: 'center', marginTop: -4 },

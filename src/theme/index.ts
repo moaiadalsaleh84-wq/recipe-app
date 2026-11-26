@@ -1,8 +1,10 @@
 /**
  * The single source of design tokens for the app: "Pop".
  *
- * Look: bright, playful and friendly, like a sticker book in the kitchen. A white page, thick ink
- * outlines, a solid ink shadow under cards and buttons (no blur), and a box of bright colors:
+ * Look: bright, playful and clean (Duolingo-level polish). A white page; cards, photos, chips and
+ * rows are flat with a 2px light border (#E7E5EE) and no shadow. Only BUTTONS are 3D: a 4px bottom
+ * edge in a darker shade of the button's own color (see `edge`), and they press down onto it.
+ * Ink is for text and the selected state only. A box of bright colors:
  *   sunshine = THE main action, the selected tab and the streak
  *   tomato   = timers, badges and energy (and favorites)
  *   leaf     = success and checked items
@@ -26,8 +28,14 @@ import { popSpring, pressSpring, spring } from '../motion';
 
 export const pop = {
   ink: '#1B1340',
-  inkMuted: '#5B5478',
+  inkMuted: '#77738A',
   bg: '#FFFFFF',
+  /** Soft surface: inputs, quiet fills, photo placeholders. */
+  surface: '#F7F7FA',
+  /** The light border of cards, chips, rows and secondary buttons. */
+  line: '#E7E5EE',
+  /** Progress bar tracks. */
+  track: '#EDEBF3',
   sunshine: '#FFC83D',
   tomato: '#FF5A36',
   leaf: '#2BD67B',
@@ -42,6 +50,31 @@ export const pop = {
   lilacTint: '#ECE6FF',
   white: '#FFFFFF',
 } as const;
+
+/**
+ * The darker "edge" under a 3D button, per face color (Duolingo style). White and light faces get
+ * the light border color; any other color is darkened.
+ */
+const EDGES: Record<string, string> = {
+  [pop.sunshine]: '#E2A400',
+  [pop.tomato]: '#D9401F',
+  [pop.leaf]: '#1FA960',
+  [pop.sky]: '#1E94D6',
+  [pop.berry]: '#D9407F',
+  [pop.lilac]: '#9F8AE6',
+  [pop.white]: pop.line,
+  [pop.ink]: '#0B0726',
+};
+export function edge(color: string): string {
+  const known = EDGES[color.toUpperCase()] ?? EDGES[color];
+  if (known) return known;
+  // Unknown color: 18% darker.
+  const m = /^#?([0-9a-f]{6})$/i.exec(color);
+  if (!m) return pop.line;
+  const n = parseInt(m[1], 16);
+  const dark = (v: number) => Math.max(0, Math.round(v * 0.82));
+  return `#${[(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => dark(v).toString(16).padStart(2, '0')).join('')}`;
+}
 
 /** Ink at a given opacity (0 to 1): shades over photos and very soft fills. */
 export const inkAlpha = (a: number) => `rgba(27,19,64,${a})`;
@@ -72,8 +105,8 @@ export const brand = {
   berry: pop.berry,
 } as const;
 
-/** Lines between rows inside a card: ink, see-through. */
-const hairline = inkAlpha(0.14);
+/** Lines between rows inside a card: the light border color. */
+const hairline = '#EDEBF3';
 
 const colors = {
   /* The main action: sunshine with ink text */
@@ -110,18 +143,19 @@ const colors = {
   fat: pop.leaf,
 
   label: pop.ink,
-  secondaryLabel: pop.inkMuted, // 7:1 on white
+  secondaryLabel: pop.inkMuted, // 4.6:1 on white
   tertiaryLabel: pop.inkMuted, // placeholders and quiet icons
 
   background: pop.bg,
   groupedBackground: pop.bg,
   cell: pop.white,
   elevated: pop.white,
-  fill: pop.lilacTint, // quiet filled areas: tracks, input wells
+  fill: pop.surface, // quiet filled areas: input wells
   fillStrong: pop.lilac,
+  track: pop.track,
   separator: hairline,
-  /** Every card, button and chip has an ink outline. */
-  border: pop.ink,
+  /** The light 2px border of cards, chips, rows and secondary buttons. */
+  border: pop.line,
   lip: pop.ink,
   imagePlaceholder: pop.sunshineTint,
   scrim: inkAlpha(0.5),
@@ -157,17 +191,17 @@ export const cook = {
  * here and leave `fontWeight` as 'normal'.
  */
 export const fonts = {
-  /** Fredoka: screen, section and card titles. */
+  /** Fredoka 700: only screen titles, big numbers and hero moments. */
   heading: 'Fredoka_700Bold',
   headingSemi: 'Fredoka_600SemiBold',
-  /** Nunito: everything else. Body is 700, small text 800, buttons 900. */
-  body: 'Nunito_700Bold',
+  /** Nunito: everything else. Body is 600, meta 700, titles 800, buttons 900. */
+  body: 'Nunito_600SemiBold',
   black: 'Nunito_900Black',
   /** Older names, mapped onto the two families. */
   serif: 'Fredoka_700Bold',
   serifBold: 'Fredoka_700Bold',
   serifMedium: 'Fredoka_600SemiBold',
-  regular: 'Nunito_700Bold',
+  regular: 'Nunito_600SemiBold',
   medium: 'Nunito_700Bold',
   semibold: 'Nunito_700Bold',
   bold: 'Nunito_800ExtraBold',
@@ -203,28 +237,29 @@ export const noWidows = {
 };
 
 export const type = {
-  /** Screen title: Fredoka 700, 32. */
-  largeTitle: title(32, 38),
-  /** Big hero title (Home, Finish). */
-  hero: title(36, 42),
+  /** Screen title: Fredoka 700, 28. */
+  largeTitle: title(28, 34),
+  /** Hero moments (Home greeting, Finish): Fredoka 700. */
+  hero: title(32, 38),
+  /** Big Fredoka title (a screen title in a card or sheet). */
   title1: title(28, 34),
-  /** Section title: Fredoka 700, 22. */
-  title2: title(22, 27),
-  /** Card title: Fredoka 700, 20. */
-  title3: title(20, 25),
-  /** Row labels and small card titles. */
-  headline: face(17, 22, fonts.bold),
-  /** Button label: Nunito 900, 17. */
-  button: face(17, 22, fonts.black),
-  buttonLarge: face(19, 24, fonts.black),
-  /** Body: Nunito 700, 16. */
-  body: face(16, 23, fonts.body),
-  callout: face(16, 22, fonts.body),
+  /** Section title: Nunito 800, 20. */
+  title2: title(20, 26, fonts.bold),
+  /** Card title: Nunito 800, 16 (max 2 lines where it sits on a card). */
+  title3: title(16, 21, fonts.bold),
+  /** Row labels: Nunito 800, 16. */
+  headline: face(16, 21, fonts.bold),
+  /** Button label: Nunito 900, 16 (large 18). */
+  button: face(16, 21, fonts.black),
+  buttonLarge: face(18, 23, fonts.black),
+  /** Body: Nunito 600, 15. */
+  body: face(15, 21, fonts.body),
+  callout: face(15, 21, fonts.body),
   subhead: face(15, 20, fonts.body),
-  /** Small: Nunito 800, 13–14. */
-  footnote: face(14, 19, fonts.bold),
-  caption1: face(13, 17, fonts.bold),
-  caption2: face(11, 14, fonts.bold),
+  /** Meta: Nunito 700, 13 (muted). */
+  footnote: face(13, 18, fonts.medium),
+  caption1: face(13, 17, fonts.medium),
+  caption2: face(11, 14, fonts.medium),
   /**
    * Text you type into a one-line field. No letterSpacing and no lineHeight on purpose: on iPhone
    * either one can cut off the last letter of the hint text or push the text off center.
@@ -237,7 +272,7 @@ export const type = {
 /* Space, shape, motion                                                 */
 /* ------------------------------------------------------------------ */
 
-/** Gaps are 8 / 12 / 16. */
+/** An 8pt grid: gaps are 8 / 12 / 16, sections 28. */
 export const spacing = {
   xxs: 4,
   xs: 8,
@@ -252,28 +287,31 @@ export const spacing = {
 /** One set of numbers for every screen and card, so the whole app lines up. */
 export const layout = {
   /** Left and right margin of every screen. */
-  screen: 20,
-  gap: 16,
+  screen: 16,
+  /** Between cards. */
+  gap: 12,
+  /** Between sections. */
   section: 28,
   cardPadding: 16,
-  cardRadius: 22,
+  cardRadius: 16,
   bottom: 32,
 } as const;
 
 export const radius = {
   xs: 10,
-  /** Chips. */
   sm: 12,
   /** Buttons. */
-  md: 18,
-  /** Cards. */
-  lg: 22,
-  xl: 26,
+  md: 16,
+  /** Cards and photos. */
+  lg: 16,
+  xl: 20,
+  /** Chips (36 tall). */
+  chip: 18,
   pill: 999,
 } as const;
 
-/** The ink outline on cards and buttons, and the thinner one on chips. */
-export const stroke = { thick: 2.5, thin: 2 } as const;
+/** Borders are 2px everywhere (light #E7E5EE; ink only on a selected item). */
+export const stroke = { thick: 2, thin: 2 } as const;
 
 /** Apple's minimum tap target. */
 export const hitTarget = 44;
@@ -290,19 +328,19 @@ export const motion = {
   toastDuration: 3000,
 } as const;
 
-/** How far the solid ink shadow sits below: 4 for cards and big buttons, 3 for small buttons, chips and pills. */
-export const depth = { button: 4, small: 3, card: 4 } as const;
+/** The 3D edge under buttons (4px, Duolingo style). Cards, chips and pills are flat: no shadow. */
+export const depth = { button: 4, small: 4, card: 0 } as const;
 
 function makeTheme() {
   const c = colors;
   /** Face and label colors for each kind of button. Labels are always ink. */
   const buttons = {
-    primary: { face: pop.sunshine, lip: pop.ink, label: pop.ink, border: pop.ink },
-    success: { face: pop.leaf, lip: pop.ink, label: pop.ink, border: pop.ink },
-    reward: { face: pop.sunshine, lip: pop.ink, label: pop.ink, border: pop.ink },
-    info: { face: pop.sky, lip: pop.ink, label: pop.ink, border: pop.ink },
-    /** The quiet button: white with an ink outline. */
-    secondary: { face: pop.white, lip: pop.ink, label: pop.ink, border: pop.ink },
+    primary: { face: pop.sunshine, lip: edge(pop.sunshine), label: pop.ink, border: pop.sunshine },
+    success: { face: pop.leaf, lip: edge(pop.leaf), label: pop.ink, border: pop.leaf },
+    reward: { face: pop.sunshine, lip: edge(pop.sunshine), label: pop.ink, border: pop.sunshine },
+    info: { face: pop.sky, lip: edge(pop.sky), label: pop.ink, border: pop.sky },
+    /** The quiet button: white, a 2px light border and a light edge. */
+    secondary: { face: pop.white, lip: pop.line, label: pop.ink, border: pop.line },
   } as const;
   return {
     isDark: false as boolean,
@@ -320,6 +358,7 @@ function makeTheme() {
     layout,
     noWidows,
     buttons,
+    edge,
     /**
      * Outlines. Shadows are never a style: wrap the element in <Lift> (components/pop/Lift), or use
      * PopCard / PopButton, which draw the one solid ink shadow as a real View.
@@ -327,8 +366,8 @@ function makeTheme() {
     chunky: {
       /** Older name: nothing now (a shadow comes from <Lift>). */
       lip: {} as ViewStyle,
-      /** The ink outline of cards, inputs and controls. */
-      card: { borderWidth: stroke.thick, borderColor: pop.ink } as ViewStyle,
+      /** The light 2px border of cards and controls (no shadow). */
+      card: { borderWidth: 2, borderColor: pop.line } as ViewStyle,
       button: (_color?: string): ViewStyle => ({}),
     },
     /** Older names: nothing now. */

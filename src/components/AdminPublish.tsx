@@ -40,7 +40,7 @@ export function AdminPublishCard({ recipe }: { recipe: Recipe }) {
   };
 
   return (
-    <View style={[styles.card, { backgroundColor: t.pop.lilacTint, borderColor: t.pop.ink }]} testID="admin-publish">
+    <View style={[styles.card, { backgroundColor: t.pop.lilacTint, borderColor: t.colors.border }]} testID="admin-publish">
       <View style={styles.head}>
         <Icon name="crown" size={16} color={pop.ink} weight="bold" />
         <Text style={[t.type.footnote, { color: pop.ink, fontFamily: t.fonts.black, flex: 1 }]}>Admin · only you see this</Text>

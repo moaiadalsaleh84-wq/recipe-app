@@ -133,7 +133,7 @@ export default function ProgressScreen() {
       <Reveal index={0}>
         <PopCard color={t.pop.sunshine} contentStyle={styles.streakCard} testID="streak-card">
           <View style={styles.row} accessible accessibilityLabel={`${streak > 0 ? `${streak} day streak` : 'No streak yet'}. ${streakLine}`}>
-            <View style={[styles.flame, { backgroundColor: t.pop.white, borderColor: t.pop.ink }]}>
+            <View style={[styles.flame, { backgroundColor: t.pop.white, borderColor: t.colors.border }]}>
               <Icon name="flameFill" size={30} color={t.pop.tomato} />
             </View>
             <View style={{ flex: 1 }}>
@@ -164,7 +164,7 @@ export default function ProgressScreen() {
                     { width: dot, height: dot, borderRadius: dot / 2 },
                     // Solid colors only (no see-through): cooked = tomato with a check; missed = soft
                     // yellow; today, not cooked yet = dashed; still to come = white.
-                    { borderColor: t.pop.ink, backgroundColor: d.done ? t.pop.tomato : d.past ? t.pop.sunshineTint : t.pop.white },
+                    { borderColor: t.colors.border, backgroundColor: d.done ? t.pop.tomato : d.past ? t.pop.sunshineTint : t.pop.white },
                     d.today && !d.done && { borderStyle: 'dashed', backgroundColor: t.pop.white },
                   ]}
                 >
@@ -208,7 +208,7 @@ export default function ProgressScreen() {
               <View
                 style={[
                   styles.badgeCoin,
-                  got ? { backgroundColor: tone.fill, borderColor: t.pop.ink } : { backgroundColor: tone.tint, borderColor: t.pop.ink, borderStyle: 'dashed' },
+                  got ? { backgroundColor: tone.fill, borderColor: t.colors.border } : { backgroundColor: tone.tint, borderColor: t.colors.border, borderStyle: 'dashed' },
                 ]}
               >
                 <Icon name={b.icon} size={30} color={t.pop.ink} weight="bold" />
@@ -239,7 +239,7 @@ export default function ProgressScreen() {
                 <View key={b.id}>
                   {i > 0 && <Separator inset={64} />}
                   <View style={styles.badgeRow} accessible accessibilityLabel={`${b.title}. ${b.hint}. ${got ? 'Earned' : `${Math.min(done, needed)} of ${needed}`}.`}>
-                    <View style={[styles.badgeRowIcon, { backgroundColor: got ? t.pop.sunshine : t.pop.lilacTint, borderColor: t.pop.ink }]}>
+                    <View style={[styles.badgeRowIcon, { backgroundColor: got ? t.pop.sunshine : t.pop.lilacTint, borderColor: t.colors.border }]}>
                       <Icon name={got ? 'check' : b.icon} size={18} color={t.pop.ink} weight="bold" />
                     </View>
                     <View style={{ flex: 1 }}>
@@ -269,7 +269,7 @@ export default function ProgressScreen() {
             // Opening the whole book: the stickers that weren't shown yet drift up and fade in, one after
             // another (a short, uneven stagger); the 4 already there stay put. Hiding fades them out.
             <Animated.View key={st.id} entering={allStickers ? enter(i, reduceMotion) : undefined} exiting={allStickers ? FadeOut.duration(140) : undefined} style={allStickers ? styles.stickerCell : styles.stickerSmall} accessible accessibilityLabel={got ? `${st.name} sticker` : 'Sticker not found yet'}>
-              <View style={[styles.stickerDisc, !allStickers && styles.stickerDiscSmall, got ? { backgroundColor: t.pop[st.color], borderColor: t.pop.ink } : { backgroundColor: t.pop.lilacTint, borderColor: t.pop.lilac, borderStyle: 'dashed' }]}>
+              <View style={[styles.stickerDisc, !allStickers && styles.stickerDiscSmall, got ? { backgroundColor: t.pop[st.color], borderColor: t.colors.border } : { backgroundColor: t.pop.lilacTint, borderColor: t.pop.lilac, borderStyle: 'dashed' }]}>
                 <Icon name={st.icon} size={allStickers ? 22 : 18} color={got ? t.pop.ink : t.pop.lilac} weight="bold" />
               </View>
               {allStickers && (
@@ -385,7 +385,7 @@ export default function ProgressScreen() {
         <PopCard color={t.pop.skyTint} radius={20} contentStyle={styles.goalsSmall}>
           {/* Row 1: the crown and the text, using the full width. Row 2: the Pro button under the text. */}
           <View style={styles.goalsRow}>
-            <View style={[styles.crown, { backgroundColor: t.pop.white, borderColor: t.pop.ink }]}>
+            <View style={[styles.crown, { backgroundColor: t.pop.white, borderColor: t.colors.border }]}>
               <Icon name="crown" size={20} color={t.pop.ink} />
             </View>
             <Text style={[styles.goalsText, { color: t.colors.label }]} numberOfLines={2}>
@@ -460,7 +460,7 @@ const styles = StyleSheet.create({
   stickerDiscSmall: { width: 40, height: 40, borderRadius: 20 },
   stickerDisc: { width: 52, height: 52, borderRadius: 26, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   header: { marginBottom: 20 },
-  avatar: { width: 60, height: 60, borderRadius: 30, borderWidth: 2.5, borderColor: pop.ink, alignItems: 'center', justifyContent: 'center' },
+  avatar: { width: 60, height: 60, borderRadius: 30, borderWidth: 2.5, borderColor: pop.line, alignItems: 'center', justifyContent: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   streakCard: { padding: 18, gap: 18 },
   flame: { width: 60, height: 60, borderRadius: 30, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },

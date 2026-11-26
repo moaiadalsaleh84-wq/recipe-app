@@ -194,7 +194,7 @@ export default function RecipesScreen() {
         <PressableScale
           onPress={() => router.push('/progress')}
           accessibilityLabel={streak > 0 ? `${streak} day cooking streak. Opens You` : 'No streak yet. Opens You'}
-          style={[styles.streak, { backgroundColor: t.pop.sunshine, borderColor: t.pop.ink }]}
+          style={[styles.streak, { backgroundColor: t.pop.sunshine, borderColor: t.colors.border }]}
           testID="streak-pill"
         >
           <Flicker on={streak >= 1 && !cookedToday}>
@@ -210,7 +210,7 @@ export default function RecipesScreen() {
           <PressableScale
             onPress={() => showPaywall('imports')}
             accessibilityLabel={`${importsLeft} free ${importsLeft === 1 ? 'import' : 'imports'} left. Shows Pro`}
-            style={[styles.streak, { backgroundColor: t.pop.white, borderColor: t.pop.ink }]}
+            style={[styles.streak, { backgroundColor: t.pop.white, borderColor: t.colors.border }]}
             testID="imports-left"
           >
             <Icon name="link" size={15} color={t.pop.ink} weight="bold" />
@@ -234,7 +234,7 @@ export default function RecipesScreen() {
   return (
     <TabScreen maxWidth={900} title="Cook" header={header} scrollToTopTab="(recipes)" keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled">
       {showTrialReminder && (
-        <View style={[styles.reminder, { backgroundColor: t.colors.rewardSoft, borderColor: t.pop.ink }]} accessibilityRole="alert">
+        <View style={[styles.reminder, { backgroundColor: t.colors.rewardSoft, borderColor: t.colors.border }]} accessibilityRole="alert">
           <Icon name="crown" size={18} color={t.colors.rewardText} />
           <Text style={[t.type.subhead, { color: t.colors.label, flex: 1 }]} testID="trial-reminder">
             Your free trial ends {trialDaysLeft === 0 ? 'today' : `in ${trialDaysLeft} ${trialDaysLeft === 1 ? 'day' : 'days'}`}. Keep Pro, or cancel anytime before then.
@@ -275,7 +275,7 @@ export default function RecipesScreen() {
                 contentStyle={styles.moodFace}
                 testID={`mood-${m.id}`}
               >
-                <View style={[styles.moodIcon, { backgroundColor: t.pop.white, borderColor: t.pop.ink }]}>
+                <View style={[styles.moodIcon, { backgroundColor: t.pop.white, borderColor: t.colors.border }]}>
                   <Icon name={m.icon} size={20} color={t.pop.ink} weight="bold" />
                 </View>
                 <Text style={[t.type.title3, styles.moodLabel, { color: t.pop.ink }]}>{m.label}</Text>
@@ -405,7 +405,7 @@ export default function RecipesScreen() {
                 contentStyle={styles.newBookSlim}
                 testID="new-cookbook-slim"
               >
-                <View style={[styles.newIcon, { backgroundColor: t.pop.white, borderColor: t.pop.ink }]}>
+                <View style={[styles.newIcon, { backgroundColor: t.pop.white, borderColor: t.colors.border }]}>
                   <Icon name="plus" size={20} color={t.pop.ink} weight="bold" />
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
@@ -428,7 +428,7 @@ export default function RecipesScreen() {
                   style={{ width: cardWidth }}
                   contentStyle={styles.newBook}
                 >
-                  <View style={[styles.newIcon, { backgroundColor: t.pop.white, borderColor: t.pop.ink }]}>
+                  <View style={[styles.newIcon, { backgroundColor: t.pop.white, borderColor: t.colors.border }]}>
                     <Icon name="plus" size={20} color={t.pop.ink} weight="bold" />
                   </View>
                   <Text style={[styles.newLabel, { color: t.pop.ink }]}>{'New\u00A0cookbook'}</Text>
@@ -576,7 +576,7 @@ const COVER_H = 120;
 const styles = StyleSheet.create({
   header: { marginBottom: 20 },
   topRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  avatar: { width: 44, height: 44, borderRadius: 22, borderWidth: 2.5, borderColor: pop.ink, alignItems: 'center', justifyContent: 'center' },
+  avatar: { width: 44, height: 44, borderRadius: 22, borderWidth: 2.5, borderColor: pop.line, alignItems: 'center', justifyContent: 'center' },
   streak: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 44, paddingHorizontal: 12, borderRadius: 999, borderWidth: 2.5 },
   reminder: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 16, paddingRight: 4, paddingVertical: 8, borderRadius: 20, borderWidth: 2.5, marginBottom: 16, borderCurve: 'continuous' },
   reminderBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },

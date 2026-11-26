@@ -11,7 +11,7 @@ export function AppIcon({ size = 38 }: { size?: number }) {
     <View
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
-      style={{ width: size, height: size, borderRadius: size * 0.24, backgroundColor: pop.sunshine, borderWidth: stroke.thin, borderColor: pop.ink, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' }}
+      style={{ width: size, height: size, borderRadius: size * 0.24, backgroundColor: pop.sunshine, borderWidth: stroke.thin, borderColor: pop.line, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' }}
     >
       <Icon name="pot" size={size * 0.55} color={pop.ink} weight="bold" />
     </View>

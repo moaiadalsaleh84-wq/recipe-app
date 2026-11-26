@@ -43,6 +43,6 @@ export function FoxMascot({ mood, size = 96, style }: { mood: FoxMood; size?: nu
 }
 
 const styles = StyleSheet.create({
-  slot: { borderWidth: 2, borderStyle: 'dashed', borderColor: pop.inkMuted, alignItems: 'center', justifyContent: 'center' },
+  slot: { borderWidth: 2, borderStyle: 'dashed', borderColor: pop.line, alignItems: 'center', justifyContent: 'center' },
   label: { fontFamily: fonts.bold, fontSize: 11, color: pop.inkMuted },
 });

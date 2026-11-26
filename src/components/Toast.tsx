@@ -90,7 +90,7 @@ function ToastView({ toast, onDone }: { toast: ToastState; onDone: () => void })
         accessibilityRole="alert"
         style={[
           styles.toast,
-          { backgroundColor: t.pop.ink, borderColor: t.pop.ink, ...t.shadow.floating },
+          { backgroundColor: t.pop.ink, borderColor: t.colors.border, ...t.shadow.floating },
         ]}
       >
         <PressableScale onPress={onDone} haptic={null} style={styles.main} accessibilityLabel={`${toast.message}. Dismiss`}>

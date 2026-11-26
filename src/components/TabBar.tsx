@@ -7,7 +7,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { scheduleOnRN } from 'react-native-worklets';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { haptics } from '../lib/haptics';
-import { fonts, pop, stroke } from '../theme';
+import { edge, fonts, pop, stroke } from '../theme';
 import { Icon, type IconName } from './Icon';
 
 /** One entry per tab folder in src/app/(tabs). */
@@ -187,7 +187,7 @@ function TabIcon({ icon, selected, badge }: { icon: IconName; selected: boolean;
   return (
     <View style={styles.iconBox}>
       <View style={{ transform: [{ translateY: selected ? -2 : 0 }] }}>
-        <Icon name={icon} size={22} color={selected ? pop.ink : pop.inkMuted} weight={selected ? 'bold' : 'semibold'} />
+        <Icon name={icon} size={26} color={selected ? pop.ink : pop.inkMuted} weight={selected ? 'bold' : 'semibold'} />
       </View>
       {badge > 0 && (
         <View style={styles.badge} pointerEvents="none">
@@ -210,13 +210,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: pop.white,
     borderTopWidth: stroke.thick,
-    borderTopColor: pop.ink,
+    borderTopColor: pop.line,
     paddingTop: 6,
   },
   // Five equal tabs: the same width whether selected or not.
   tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3, height: TAB_BAR_HEIGHT - 8, minWidth: 0 },
   iconBox: { width: 52, height: 32, alignItems: 'center', justifyContent: 'center' },
-  pill: { position: 'absolute', width: PILL_W, height: 32, borderRadius: 16, backgroundColor: pop.sunshine, borderWidth: stroke.thin, borderColor: pop.ink },
+  pill: { position: 'absolute', width: PILL_W, height: 32, borderRadius: 16, backgroundColor: pop.sunshine, borderBottomWidth: 3, borderBottomColor: edge(pop.sunshine) },
   // Sits behind the selected tab's icon: the bar's 6pt top padding + the 3pt left over when the 50pt icon+label block is centered in the 56pt tab.
   slidingPill: { top: 6 + 3, left: 0 },
   label: { fontSize: 12, lineHeight: 15 },
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
     backgroundColor: pop.tomato,
     borderWidth: stroke.thin,
-    borderColor: pop.ink,
+    borderColor: pop.white,
     alignItems: 'center',
     justifyContent: 'center',
   },
