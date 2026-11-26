@@ -152,3 +152,10 @@ export function addWeekToList<T extends ListItem>(
   }
   return { list: next, added: [...done], meals, items };
 }
+
+/** "eggs\nmilk, butter" → ["eggs", "milk", "butter"] (each up to 60 characters). */
+export const splitItems = (text: string) =>
+  text
+    .split(/[\n,;]+/)
+    .map((n) => n.replace(/^[-•*\s]+/, '').trim().slice(0, 60))
+    .filter(Boolean);

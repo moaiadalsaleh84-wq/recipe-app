@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Share, StyleSheet, View } from 'react-native';
+import { Share, StyleSheet, TextInput, View } from 'react-native';
 import { Text } from '../../../components/Text';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Animated, { FadeIn, FadeOut, LinearTransition, FadeOutDown, FadeOutLeft, useAnimatedStyle, useReducedMotion, type SharedValue } from 'react-native-reanimated';
@@ -10,12 +10,12 @@ import { PressableScale } from '../../../components/PressableScale';
 import { Reveal } from '../../../components/Reveal';
 import { ConfettiBurst } from '../../../components/ConfettiBurst';
 import { useToast } from '../../../components/Toast';
-import { CheckCircle, HeaderButton, IconButton, ProgressBar, Section, Separator } from '../../../components/ui';
-import { PopIconButton } from '../../../components/pop/PopIconButton';
-import { useTabBarHeight } from '../../../components/TabBar';
-import { PopCard, PopChip } from '../../../components/pop';
+import { CheckCircle, HeaderButton, IconButton, ProgressBar, Section, Separator, TextButton } from '../../../components/ui';
+import { PopButton, PopCard, PopChip } from '../../../components/pop';
 import { aisleOrder, type GroceryItem } from '../../../data/mock';
+import { splitItems } from '../../../lib/groceries';
 import { haptics } from '../../../lib/haptics';
+import { useTonightPick } from '../../../lib/tonightPick';
 import { TabScreen } from '../../../components/TabScreen';
 import { useStore } from '../../../state/store';
 import { showAmount } from '../../../lib/scale';
@@ -31,7 +31,8 @@ export default function GroceriesScreen() {
   const t = useTheme();
   const toast = useToast();
   const { groceries, leftToBuy, toggleGrocery, removeGrocery, clearCompleted, undoGroceries, units } = useStore();
-  const tabBarHeight = useTabBarHeight();
+  // The empty list's one button adds what tonight's dinner needs.
+  const { tonight } = useTonightPick();
   // Confetti once, when the last item goes in the basket.
   const [party, setParty] = useState(0);
 
@@ -95,20 +96,18 @@ export default function GroceriesScreen() {
     <View style={{ flex: 1 }}>
     <TabScreen
       title="Shopping list"
-      kicker={total === 0 ? 'Nothing to buy yet' : toBuy === 0 ? 'All done' : `${toBuy} left to buy`}
+      kicker={total === 0 ? undefined : toBuy === 0 ? 'All done' : `${toBuy} left to buy`}
       right={headerRight}
       keyboardDismissMode="on-drag"
       keyboardShouldPersistTaps="handled"
-      // The round + floats above the tab bar: it opens "Add to groceries" (type or paste a list).
-      overlay={
-        <View style={[styles.fab, { bottom: tabBarHeight + 16 }]}>
-          <PopIconButton icon="plus" size={60} iconSize={26} color={t.pop.sunshine} haptic="tap" accessibilityLabel="Add groceries" onPress={() => router.push('/add-items')} testID="add-items" />
-        </View>
-      }
     >
-      {/* Where you are: a leaf bar that fills as items go in the basket */}
-      {total > 0 && (
-        <Reveal index={0}>
+      {/* Type an item and press return; it lands on the list and the box stays ready for the next. */}
+      <AddItemField />
+
+      {/* Where you are: a leaf bar that fills as items go in the basket (only once one is in, so a
+          new list never opens on "0 of 5"). */}
+      {total > 0 && done > 0 && (
+        <Reveal index={0} style={{ marginTop: 16 }}>
           <PopCard color={done === total ? t.pop.leafTint : t.pop.white} contentStyle={styles.hero}>
             <View style={styles.heroTop}>
               {/* All done: the bar is full and green, and the message slides in. */}
@@ -131,18 +130,26 @@ export default function GroceriesScreen() {
       )}
 
       {total === 0 ? (
-        // Empty: a calm, friendly hint pointing at the + button (nothing is ever added for you).
+        // Empty: a small picture, one line, and one next step (nothing is ever added for you).
         <Animated.View entering={enter(0, reduceMotion)} style={styles.empty} testID="list-empty">
-          {/* Fox slot (Phase 2): once the art is in, the fox replaces the basket circle. */}
           {FOX_READY ? (
-            <FoxMascot mood="playful" size={128} />
+            <FoxMascot mood="playful" size={96} />
           ) : (
-            <View style={[styles.emptyArt, { backgroundColor: t.pop.sunshineTint, borderColor: t.colors.border }]}>
-              <Icon name="cart" size={52} color={t.pop.ink} weight="bold" />
+            <View style={[styles.emptyArt, { backgroundColor: t.pop.sunshineTint }]}>
+              <Icon name="cart" size={36} color={t.pop.ink} weight="bold" />
             </View>
           )}
-          <Text style={[t.type.title2, { color: t.colors.label, textAlign: 'center' }]}>No groceries yet</Text>
-          <Text style={[t.type.body, { color: t.colors.secondaryLabel, textAlign: 'center' }]}>Tap + to add what you need. Or tap the basket on any recipe to pick its ingredients.</Text>
+          <Text style={[t.type.body, { color: t.colors.secondaryLabel, textAlign: 'center' }]}>Nothing on your list yet.</Text>
+          {tonight && (
+            <PopButton
+              label="Add tonight’s ingredients"
+              icon="cartAdd"
+              onPress={() => router.push({ pathname: '/add-to-list', params: { recipe: tonight.recipe.id, servings: String(tonight.recipe.servings) } })}
+              accessibilityLabel={`Add tonight’s ingredients: ${tonight.recipe.title}`}
+              style={{ alignSelf: 'stretch', marginTop: 8 }}
+              testID="list-empty-tonight"
+            />
+          )}
         </Animated.View>
       ) : (
         <>
@@ -206,10 +213,44 @@ export default function GroceriesScreen() {
           <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, textAlign: 'center', marginTop: 16 }]}>{'Swipe left on an item to delete it.'}</Text>
         </>
       )}
-      {/* Room under the last item, so the + button never covers it. */}
-      <View style={{ height: 72 }} />
     </TabScreen>
     {party > 0 && done === total && <ConfettiBurst key={party} count={60} />}
+    </View>
+  );
+}
+
+/** "Add an item": a 48-high box at the top of the list. Return adds it (commas add several). */
+function AddItemField() {
+  const t = useTheme();
+  const { addCustomItem } = useStore();
+  const [text, setText] = useState('');
+  const [focused, setFocused] = useState(false);
+  const add = () => {
+    const items = splitItems(text);
+    if (!items.length) return;
+    items.forEach((n) => addCustomItem(n));
+    haptics.select();
+    setText('');
+  };
+  return (
+    <View style={[styles.addField, { backgroundColor: t.colors.fill, borderColor: focused ? t.pop.sky : 'transparent' }]}>
+      <Icon name="plus" size={18} color={t.colors.label} weight="bold" />
+      <TextInput
+        maxFontSizeMultiplier={1.3}
+        value={text}
+        onChangeText={setText}
+        placeholder="Add an item"
+        placeholderTextColor={t.colors.secondaryLabel}
+        style={[t.type.input, styles.addInput, { color: t.colors.label }]}
+        returnKeyType="done"
+        submitBehavior="submit"
+        onSubmitEditing={add}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        accessibilityLabel="Add an item"
+        testID="add-item-input"
+      />
+      {text.trim().length > 0 && <TextButton label="Add" small onPress={add} accessibilityLabel={`Add ${text.trim()}`} />}
     </View>
   );
 }
@@ -326,10 +367,11 @@ const styles = StyleSheet.create({
   heroBar: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   // Lined up with the card's edges: the name at its left, the count at its right.
   aisleHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 22, marginBottom: 8 },
-  fab: { position: 'absolute', right: 20 },
-  empty: { alignItems: 'center', gap: 12, paddingTop: 48, paddingHorizontal: 12 },
-  emptyArt: { width: 128, height: 128, borderRadius: 64, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  basketHead: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 56, paddingHorizontal: 16, borderRadius: 18, borderWidth: 2.5, marginTop: 24 },
+  addField: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48, paddingLeft: 14, paddingRight: 4, borderRadius: 16, borderWidth: 2, borderCurve: 'continuous' },
+  addInput: { flex: 1, minHeight: 44, paddingVertical: 10 },
+  empty: { alignItems: 'center', gap: 12, paddingTop: 40, paddingHorizontal: 12 },
+  emptyArt: { width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center' },
+  basketHead: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 56, paddingHorizontal: 16, borderRadius: 16, borderWidth: 2, marginTop: 24 },
   row: { flexDirection: 'row', alignItems: 'center', paddingLeft: 8, paddingRight: 16, minHeight: 60 },
   checkTap: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, paddingLeft: 4, paddingVertical: 10, minHeight: 60 },

@@ -10,17 +10,11 @@ import { PopButton } from '../components/pop/PopButton';
 import { PressableScale } from '../components/PressableScale';
 import { Text } from '../components/Text';
 import { useToast } from '../components/Toast';
+import { splitItems } from '../lib/groceries';
 import { haptics } from '../lib/haptics';
 import { isIOS } from '../navigation/screenOptions';
 import { useStore } from '../state/store';
 import { useTheme } from '../theme';
-
-/** "eggs\nmilk, butter" → ["eggs", "milk", "butter"] (each up to 60 characters). */
-const splitItems = (text: string) =>
-  text
-    .split(/[\n,;]+/)
-    .map((n) => n.replace(/^[-•*\s]+/, '').trim().slice(0, 60))
-    .filter(Boolean);
 
 export default function AddItems() {
   const t = useTheme();
