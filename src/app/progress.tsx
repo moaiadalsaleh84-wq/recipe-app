@@ -1,27 +1,27 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Text } from '../../../components/Text';
+import { Text } from '../components/Text';
 import Animated, { FadeIn, FadeOut, useReducedMotion } from 'react-native-reanimated';
-import { enter } from '../../../motion';
-import { Icon } from '../../../components/Icon';
-import { PressableScale } from '../../../components/PressableScale';
-import { Lift, PopButton, PopCard, PopChip, PopIconButton } from '../../../components/pop';
-import { goalsOn } from '../../../data/mock';
-import { useTonightPick } from '../../../lib/tonightPick';
-import { stickers } from '../../../data/stickers';
-import { nb } from '../../../lib/text';
-import { weekDotSize } from '../../../lib/weekDots';
-import { useToast } from '../../../components/Toast';
-import { AnimatedNumber, Button, ProgressBar, Section, SectionHeader, Separator, Stepper, TextButton } from '../../../components/ui';
-import { Reveal } from '../../../components/Reveal';
-import { showPaywall, useProGate } from '../../../lib/pro';
-import { BADGES, levelFor, streakInfo, xpFor } from '../../../lib/progress';
-import { TabScreen } from '../../../components/TabScreen';
-import { totalsFor, useStore } from '../../../state/store';
-import { fonts, pop, popCycle, useTheme } from '../../../theme';
-import { PhotoFrame } from '../../../components/PhotoFrame';
-import { FoxMascot } from '../../../components/mascot/FoxMascot';
+import { enter } from '../motion';
+import { Icon } from '../components/Icon';
+import { PressableScale } from '../components/PressableScale';
+import { Lift, PopButton, PopCard, PopChip, PopIconButton } from '../components/pop';
+import { goalsOn } from '../data/mock';
+import { useTonightPick } from '../lib/tonightPick';
+import { stickers } from '../data/stickers';
+import { nb } from '../lib/text';
+import { weekDotSize } from '../lib/weekDots';
+import { useToast } from '../components/Toast';
+import { AnimatedNumber, Button, ProgressBar, Section, SectionHeader, Separator, Stepper, TextButton } from '../components/ui';
+import { Reveal } from '../components/Reveal';
+import { showPaywall, useProGate } from '../lib/pro';
+import { BADGES, levelFor, streakInfo, xpFor } from '../lib/progress';
+import { TabScreen } from '../components/TabScreen';
+import { totalsFor, useStore } from '../state/store';
+import { fonts, pop, popCycle, useTheme } from '../theme';
+import { PhotoFrame } from '../components/PhotoFrame';
+import { FoxMascot } from '../components/mascot/FoxMascot';
 
 const dayKey = (d: Date) => d.toDateString();
 const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -94,6 +94,11 @@ export default function ProgressScreen() {
 
   const header = (
     <View style={styles.header}>
+      {/* Opened from your avatar on Recipes: back on the left, settings on the right. */}
+      <View style={[styles.row, { justifyContent: 'space-between', marginBottom: 16 }]}>
+        <PopIconButton icon="back" accessibilityLabel="Back" onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} testID="you-back" />
+        <PopIconButton icon="gear" accessibilityLabel="Settings" onPress={() => router.push('/settings')} />
+      </View>
       {/* Fox slot (Phase 2): the champion, next to your name. */}
       <FoxMascot mood="champion" size={64} />
       <View style={styles.row}>
@@ -108,7 +113,6 @@ export default function ProgressScreen() {
             {`Lv\u00A0${lvl.level}\u00A0· ${lvl.title.replace(' ', '\u00A0')}`}
           </Text>
         </View>
-        <PopIconButton icon="gear" accessibilityLabel="Settings" onPress={() => router.push('/settings')} />
       </View>
       {/* A chunky XP bar toward the next level */}
       <View style={{ gap: 6, marginTop: 16 }} accessible accessibilityLabel={`${xp} XP. ${lvl.next ? `${lvl.toNext} XP to ${lvl.next.title}` : 'Top level'}`}>

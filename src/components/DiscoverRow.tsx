@@ -33,7 +33,7 @@ export function DiscoverRow({ width }: { width: number }) {
       <SectionHeader
         title={row.kind === 'popular' ? 'Most popular this week' : 'New in Discover'}
         subtitle="Recipes from creators we love"
-        action={{ label: 'See all', onPress: () => router.push('/discover') }}
+        action={{ label: 'See all', onPress: () => router.navigate('/discover') }}
       />
       <HorizontalList gap={t.spacing.sm} contentStyle={styles.rail}>
         {row.items.map((c) => (

@@ -102,7 +102,7 @@ export default function RootLayout() {
                 <Stack.Screen name="save-to-cookbook" options={sheet} />
                 <Stack.Screen name="buddy-pick" options={{ ...sheet, sheetAllowedDetents: [0.85] }} />
                 <Stack.Screen name="cookbook-edit" options={{ ...sheet, sheetAllowedDetents: [0.45] }} />
-                <Stack.Screen name="discover/index" options={{ animation: 'slide_from_right' }} />
+                <Stack.Screen name="progress" options={{ animation: 'slide_from_right' }} />
                 <Stack.Screen name="report/[id]" options={{ ...sheet, sheetAllowedDetents: [0.6] }} />
                 <Stack.Screen name="publish/[id]" options={{ presentation: 'modal', contentStyle: { backgroundColor: t.colors.groupedBackground } }} />
                 <Stack.Screen name="admin" options={{ presentation: 'modal', contentStyle: { backgroundColor: t.colors.groupedBackground } }} />

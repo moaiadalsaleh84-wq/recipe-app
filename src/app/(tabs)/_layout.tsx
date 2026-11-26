@@ -5,7 +5,7 @@ import { TabBar } from '../../components/TabBar';
 import { useStore } from '../../state/store';
 import { useTheme } from '../../theme';
 
-/** Five tabs with the app's own tab bar (see components/TabBar). */
+/** Four tabs with the app's own tab bar (see components/TabBar). You opens from the avatar on Recipes. */
 export default function TabsLayout() {
   const t = useTheme();
   // The same number as "X left to buy" on the list (one shared source).
@@ -20,7 +20,7 @@ export default function TabsLayout() {
         <Tabs.Screen name="(recipes)" />
         <Tabs.Screen name="plan" />
         <Tabs.Screen name="groceries" />
-        <Tabs.Screen name="progress" />
+        <Tabs.Screen name="discover" />
       </Tabs>
     </View>
   );

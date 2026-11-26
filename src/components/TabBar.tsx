@@ -12,10 +12,10 @@ import { Icon, type IconName } from './Icon';
 
 /** One entry per tab folder in src/app/(tabs). */
 const tabs: Record<string, { label: string; long: string; icon: IconName }> = {
-  '(recipes)': { label: 'Cook', long: 'Cook', icon: 'pot' },
+  '(recipes)': { label: 'Recipes', long: 'Recipes', icon: 'pot' },
   plan: { label: 'Plan', long: 'Meal plan', icon: 'calendar' },
   groceries: { label: 'List', long: 'Shopping list', icon: 'cart' },
-  progress: { label: 'You', long: 'You', icon: 'trophy' },
+  discover: { label: 'Discover', long: 'Discover', icon: 'sparkles' },
 };
 
 const PILL_W = 52;

@@ -4,15 +4,15 @@
  */
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
-import { DiscoverCard } from '../../components/DiscoverCard';
-import { PageHeader } from '../../components/PageHeader';
-import { Text } from '../../components/Text';
-import { Chip, EmptyState, SearchField, Skeleton } from '../../components/ui';
-import { CUISINES, DIETS, INGREDIENT_CHIPS, MEAL_TYPES, discoverList, type DiscoverCardData, type DiscoverFilters } from '../../lib/discoverApi';
-import { useTheme } from '../../theme';
-import { HorizontalList } from '../../components/HorizontalList';
+import { DiscoverCard } from '../../../components/DiscoverCard';
+import { TabScreen } from '../../../components/TabScreen';
+import { Text } from '../../../components/Text';
+import { Chip, EmptyState, SearchField, Skeleton } from '../../../components/ui';
+import { CUISINES, DIETS, INGREDIENT_CHIPS, MEAL_TYPES, discoverList, type DiscoverCardData, type DiscoverFilters } from '../../../lib/discoverApi';
+import { useTheme } from '../../../theme';
+import { HorizontalList } from '../../../components/HorizontalList';
 
 export default function DiscoverScreen() {
   const t = useTheme();
@@ -63,9 +63,7 @@ export default function DiscoverScreen() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: t.colors.background }}>
-      <PageHeader title="Discover" />
-      <ScrollView contentContainerStyle={{ padding: margin, paddingBottom: 32, gap: 16 }} keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled">
+    <TabScreen title="Discover" kicker="New recipes from creators" maxWidth={900} scrollToTopTab="discover" contentContainerStyle={{ gap: 16 }} keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled">
         <SearchField value={q} onChangeText={setQ} placeholder="What would you like to cook?" returnKeyType="search" accessibilityLabel="Search Discover" testID="discover-search" />
         {chipRow('Cuisine', CUISINES.map((c) => ({ label: c, selected: filters.cuisine === c, onPress: () => toggle('cuisine', c) })))}
         {chipRow('Meal', MEAL_TYPES.map((m) => ({ label: m.label, selected: filters.mealType === m.value, onPress: () => toggle('mealType', m.value) })))}
@@ -85,7 +83,7 @@ export default function DiscoverScreen() {
             icon="search"
             title={filtered ? 'No matches yet' : 'Nothing here yet'}
             message={filtered ? 'Try fewer words or another dish.' : 'Fresh recipes are on their way.'}
-            action={filtered ? { label: 'Clear filters', onPress: () => { setQ(''); setFilters({}); } } : { label: 'Back to recipes', onPress: () => (router.canGoBack() ? router.back() : router.replace('/')) }}
+            action={filtered ? { label: 'Clear filters', onPress: () => { setQ(''); setFilters({}); } } : { label: 'Browse my recipes', onPress: () => router.navigate('/') }}
           />
         ) : (
           // The cards fade in over the loading boxes once (one entrance for the whole grid).
@@ -95,8 +93,7 @@ export default function DiscoverScreen() {
             ))}
           </Animated.View>
         )}
-      </ScrollView>
-    </View>
+    </TabScreen>
   );
 }
 
