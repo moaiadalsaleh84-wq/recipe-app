@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useMemo, useRef, useState } from 'react';
+import { useDeferredValue, useMemo, useRef, useState } from 'react';
 import { Linking, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Text } from '../../../components/Text';
 import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
@@ -64,6 +64,9 @@ export default function RecipesScreen() {
   const [sortOpen, setSortOpen] = useState(false);
   const [sort, setSort] = useState<Sort>('suggested');
   const [mood, setMood] = useState<Mood | null>(null);
+  // The tile lights up the instant you tap it (mood); the recipes below follow a moment later
+  // (moodShown), so building that grid never makes the tap feel slow.
+  const moodShown = useDeferredValue(mood);
   const lastSurprise = useRef<string | null>(null);
   const { canAddRecipe, canAddCookbook, canImport, trialDaysLeft } = useProGate();
   const [reminderHidden, setReminderHidden] = useState(false);
@@ -108,11 +111,11 @@ export default function RecipesScreen() {
     return list;
   }, [filtered, sort, lastCooked]);
 
-  const moodRecipes = useMemo(() => (mood ? recipesForMood(mood, allRecipes, pantry) : []), [mood, allRecipes, pantry]);
+  const moodRecipes = useMemo(() => (moodShown ? recipesForMood(moodShown, allRecipes, pantry) : []), [moodShown, allRecipes, pantry]);
 
   const hasFilters = !!category || tags.length > 0;
   // Searching or filtering shows only the results (DESIGN.md).
-  const showExtras = !hasFilters && !mood && !q;
+  const showExtras = !hasFilters && !moodShown && !q;
   // Tonight's dinner from the plan, otherwise the day's pick: fits your diet and goal, 45 minutes or
   // less, best pantry match (the same pick as onboarding, the reminder and the empty states).
   const { tonight: dayPick, picks } = useTonightPick();
@@ -184,7 +187,7 @@ export default function RecipesScreen() {
     }
     setMood(mood === id ? null : id);
   };
-  const moodInfo = MOODS.find((m) => m.id === mood);
+  const moodInfo = MOODS.find((m) => m.id === moodShown);
 
   const header = (
     <View style={styles.header}>
@@ -290,8 +293,8 @@ export default function RecipesScreen() {
       </Reveal>
 
       {/* 2. A mood is on: its recipes, right here. */}
-      {mood && moodInfo && (
-        <Animated.View entering={FadeIn.duration(220)} key={mood}>
+      {moodShown && moodInfo && (
+        <Animated.View entering={FadeIn.duration(220)} key={moodShown}>
           <SectionHeader
             title={moodInfo.label}
             subtitle={`${moodRecipes.length} ${moodRecipes.length === 1 ? 'recipe' : 'recipes'} · ${moodInfo.hint.toLowerCase()}`}
@@ -301,9 +304,9 @@ export default function RecipesScreen() {
           {moodRecipes.length === 0 ? (
             <EmptyState
               icon={moodInfo.icon}
-              title={mood === 'pantry' ? 'Nothing from your pantry yet' : 'Nothing here yet'}
-              message={mood === 'pantry' ? 'Add what you have on the Pantry tab and matching recipes show up here.' : 'Add a few more recipes and they’ll show up here.'}
-              action={mood === 'pantry' ? { label: 'Go to Pantry', onPress: () => router.navigate('/pantry') } : { label: 'Import a recipe', onPress: () => router.push('/import') }}
+              title={moodShown === 'pantry' ? 'Nothing from your pantry yet' : 'Nothing here yet'}
+              message={moodShown === 'pantry' ? 'Add what you have on the Pantry tab and matching recipes show up here.' : 'Add a few more recipes and they’ll show up here.'}
+              action={moodShown === 'pantry' ? { label: 'Go to Pantry', onPress: () => router.navigate('/pantry') } : { label: 'Import a recipe', onPress: () => router.push('/import') }}
             />
           ) : (
             <View style={[styles.grid, { gap, rowGap: t.spacing.md }]}>
@@ -400,7 +403,7 @@ export default function RecipesScreen() {
       )}
 
       {/* 6. All recipes: search, filters, sort and the grid */}
-      {!mood && (
+      {!moodShown && (
         <>
           <SectionHeader
             // Your diet from onboarding always applies (change it in Settings); "Clear" only removes
