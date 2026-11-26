@@ -97,11 +97,11 @@ export default function RecipeScreen() {
   });
 
   // The top bar (back, heart, more) is a solid row above the page: tomato tint like the photo band,
-  // turning white with an ink line once the title has scrolled under it. Nothing shows through.
+  // turning white with the light 2px line once the title has scrolled under it. Nothing shows through.
   const barThreshold = Math.max(80, titleBottom - 40);
   const barStyle = useAnimatedStyle(() => {
     const p = interpolate(scrollY.get(), [barThreshold - 40, barThreshold], [0, 1], Extrapolation.CLAMP);
-    return { backgroundColor: interpolateColor(p, [0, 1], [pop.tomatoTint, pop.white]), borderBottomColor: interpolateColor(p, [0, 1], [pop.tomatoTint, pop.ink]) };
+    return { backgroundColor: interpolateColor(p, [0, 1], [pop.tomatoTint, pop.white]), borderBottomColor: interpolateColor(p, [0, 1], [pop.tomatoTint, pop.line]) };
   });
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/'));
@@ -227,7 +227,7 @@ export default function RecipeScreen() {
       >
         {/* Header: a tomato-tint band with the photo as a tilted card */}
         {/* Header: the buttons sit above the photo (12pt gap); the photo is straight, framed in ink. */}
-        <View style={[styles.header, { backgroundColor: t.pop.tomatoTint, paddingTop: 0, borderBottomColor: t.colors.border }]} testID="hero" onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}>
+        <View style={[styles.header, { backgroundColor: t.pop.tomatoTint, paddingTop: 16, borderBottomColor: t.colors.border }]} testID="hero" onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}>
           <Lift radius={24}>
             <PhotoFrame recipe={recipe} iconSize={64} radius={24} style={{ width: photoWidth, height: Math.round(photoWidth * 0.75) }}>
               {/* Not on Discover recipes you haven't saved: there's nothing of yours to change yet. */}
@@ -311,7 +311,7 @@ export default function RecipeScreen() {
           {/* Three colored stat tiles: time, difficulty + steps, kcal */}
           <Reveal index={1}>
             <View style={styles.stats}>
-              <StatTile color={t.pop.sunshine} icon="clock" value={duration(recipe.minutes)} label={recipe.estimated?.time ? 'total, est.' : 'total'} a11y={`${recipe.minutes} minutes total${recipe.estimated?.time ? ', estimated' : ''}`} />
+              <StatTile color={t.pop.sunshine} icon="clock" value={duration(recipe.minutes)} label="total" est={!!recipe.estimated?.time} a11y={`${recipe.minutes} minutes total${recipe.estimated?.time ? ', estimated' : ''}`} />
               <StatTile color={t.pop.leaf} hats={level} value={recipe.difficulty} label={nb(recipe.steps.length, recipe.steps.length === 1 ? 'step' : 'steps')} a11y={`${recipe.difficulty}, ${recipe.steps.length} steps`} />
               <StatTile color={t.pop.sky} icon="flame" value={num(recipe.calories)} label={'kcal\u00A0each'} a11y={`${recipe.calories} calories per serving`} />
             </View>
@@ -344,7 +344,7 @@ export default function RecipeScreen() {
           {/* One row: servings on the left, units on the right. Both 44 tall. */}
           <View style={styles.needRow}>
             <PeopleStepper value={servings} onChange={setServings} />
-            <View style={{ marginLeft: 'auto' }}>
+            <View style={{ marginLeft: 'auto', flexShrink: 0 }}>
               <Segmented small label="Units" value={units} onChange={(u: Units) => setUnits(u)} options={[{ label: 'Metric', value: 'metric' }, { label: 'US', value: 'us' }]} />
             </View>
           </View>
@@ -532,7 +532,7 @@ function EstTag() {
 }
 
 /** One colored stat tile: an icon (or chef hats), the value and a label. All three are the same height and size. */
-function StatTile({ color, icon, hats, value, label, a11y }: { color: string; icon?: IconName; hats?: number; value: string; label: string; a11y?: string }) {
+function StatTile({ color, icon, hats, value, label, est, a11y }: { color: string; icon?: IconName; hats?: number; value: string; label: string; /** Show a small "est." tag after the label. */ est?: boolean; a11y?: string }) {
   const t = useTheme();
   // The value always shows in full on one line ("1 h 5 min"): the font shrinks to fit the tile
   // (Fredoka is about 0.56 em per letter, 0.28 per space) instead of cutting it off.
@@ -553,9 +553,13 @@ function StatTile({ color, icon, hats, value, label, a11y }: { color: string; ic
         >
           {value}
         </Text>
-        <Text style={[styles.statLabel, { color: t.pop.ink }]} numberOfLines={1}>
-          {label}
-        </Text>
+        {/* "total", then a small "est." tag when the time was estimated (never "total, e…"). */}
+        <View style={styles.statLabelRow}>
+          <Text style={[styles.statLabel, { color: t.pop.ink, flexShrink: 1 }]} numberOfLines={1}>
+            {label}
+          </Text>
+          {est && <EstTag />}
+        </View>
       </View>
     </Lift>
   );
@@ -755,9 +759,9 @@ function shareText(r: Recipe, servings: number, units: Units) {
 }
 
 const styles = StyleSheet.create({
-  header: { alignItems: 'center', paddingBottom: 24, borderBottomWidth: 2.5 },
+  header: { alignItems: 'center', paddingBottom: 24, borderBottomWidth: 2 },
   // The frame carries the ink border and clips; the photo inside has corners 2.5 smaller.
-  body: { paddingHorizontal: 20, paddingTop: 20 },
+  body: { paddingHorizontal: 20, paddingTop: 16 },
   source: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, alignSelf: 'flex-start' },
   stats: { flexDirection: 'row', marginTop: 18, gap: 10 },
   statLift: { flex: 1 },
@@ -769,13 +773,15 @@ const styles = StyleSheet.create({
   statValue: { fontFamily: fonts.heading, fontSize: 22, lineHeight: 27 },
   statIcon: { height: 20, justifyContent: 'center' },
   statLabel: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 18 },
+  statLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'stretch' },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 18 },
   kicker: { flexDirection: 'row', gap: 8 },
   h2: { marginTop: 32, marginBottom: 14 },
   // 39 + 2 × 2.5 border = 44 tall; only as wide as its content.
-  people: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', borderWidth: 2.5, borderRadius: 999, paddingHorizontal: 2 },
-  needRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  peopleText: { minWidth: 84, textAlign: 'center', fontVariant: ['tabular-nums'] },
+  people: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', flexShrink: 0, borderWidth: 2, borderRadius: 999, paddingHorizontal: 2 },
+  // Servings on the left, Metric/US on the right: always one row (it never wraps).
+  needRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  peopleText: { minWidth: 76, textAlign: 'center', fontVariant: ['tabular-nums'] },
   card: { overflow: 'hidden', borderCurve: 'continuous' },
   nutrition: { gap: 16, padding: 16, overflow: 'visible' },
   kcal: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, marginVertical: -4 },
@@ -789,7 +795,7 @@ const styles = StyleSheet.create({
   stepNum: { width: 34, height: 34, borderRadius: 17, borderWidth: 2, alignItems: 'center', justifyContent: 'center', marginTop: -4 },
   notes: { minHeight: 96, borderRadius: 20, padding: 16, textAlignVertical: 'top', borderCurve: 'continuous', outlineStyle: 'none' } as never,
   resetServings: { minHeight: 44, justifyContent: 'center' },
-  controls: { paddingHorizontal: 16, paddingBottom: 12, flexDirection: 'row', justifyContent: 'space-between', borderBottomWidth: 2 },
+  controls: { paddingHorizontal: 16, paddingBottom: 8, flexDirection: 'row', justifyContent: 'space-between', borderBottomWidth: 2 },
   controlsRight: { flexDirection: 'row', gap: 10 },
   menu: { position: 'absolute', right: 16, width: 260, maxWidth: '90%' },
   menuFace: { borderRadius: 20, overflow: 'hidden', borderCurve: 'continuous' },
