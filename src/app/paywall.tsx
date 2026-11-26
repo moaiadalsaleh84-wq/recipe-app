@@ -240,9 +240,9 @@ export default function Paywall() {
 
 /** The onboarding headline and its subtitle, by the goal picked there (each says what Pro adds for it). */
 const GOAL_COPY: Partial<Record<Goal, { line: string; subtitle: string }>> = {
-  muscle: { line: 'hit your protein goals with food you love', subtitle: 'Track protein from every meal you cook, and import recipes without limits.' },
+  muscle: { line: 'hit your protein goals with food you love', subtitle: 'Import high-protein recipes from TikTok and anywhere, cook them step by step, and track protein if you like.' },
   save: { line: 'cook more and spend less', subtitle: 'Plan the week, shop once, waste less. Pro’s unlimited pantry shows what you can cook from it.' },
-  healthier: { line: 'healthy dinners that actually taste good', subtitle: 'Set calorie and protein goals and watch them fill up from the meals you cook.' },
+  healthier: { line: 'healthy dinners that actually taste good', subtitle: 'Save healthy recipes from anywhere and cook them step by step. Calorie and protein goals are there if you want them.' },
   home: { line: 'dinner sorted every night', subtitle: 'Save every recipe you find, from TikTok to blogs, and keep them in as many cookbooks as you like.' },
   learn: { line: 'learn to cook one easy win at a time', subtitle: 'Import the recipes you want to try and cook them step by step, with timers built in.' },
 };
@@ -268,7 +268,7 @@ function headline(source: Source, goal: string, name: string, goalId?: Goal): { 
     case 'goals':
       return { title: 'Set goals you can see', subtitle: 'Set daily protein and calorie targets and see your progress from every meal you cook.' };
     default:
-      return { title: 'Cook with everything unlocked', subtitle: 'Unlimited imports, pantry and cookbooks, plus nutrition goals.' };
+      return { title: 'Cook with everything unlocked', subtitle: 'Unlimited recipe imports from TikTok, YouTube, Instagram and any website, with step-by-step Cook Mode and meal planning.' };
   }
 }
 

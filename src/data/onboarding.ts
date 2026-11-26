@@ -77,8 +77,10 @@ export const proBenefits: Benefit[] = [
   { icon: 'bookmark', title: 'Unlimited cookbooks and recipes', detail: 'Organize everything you love (free: 3 cookbooks, 5 handwritten recipes)', for: ['learn', 'home'] },
 ];
 
+/** Unlimited imports always leads (the app's core); the rest follow your goals. */
 export function benefitsFor(p: Profile): Benefit[] {
-  return [...proBenefits].sort((a, b) => Number(b.for.some((x) => p.goals.includes(x))) - Number(a.for.some((x) => p.goals.includes(x))));
+  const [imports, ...rest] = proBenefits;
+  return [imports, ...rest.sort((a, b) => Number(b.for.some((x) => p.goals.includes(x))) - Number(a.for.some((x) => p.goals.includes(x))))];
 }
 
 /** A short phrase echoing their goal back, e.g. "get in shape". */
