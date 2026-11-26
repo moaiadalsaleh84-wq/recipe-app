@@ -5,14 +5,14 @@ import { Text } from '../../../components/Text';
 import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { Icon, type IconName } from '../../../components/Icon';
 import { Menu } from '../../../components/Menu';
-import { PopButton, PopCard, PopChip, PopIconButton } from '../../../components/pop';
+import { PopButton, PopCard, PopChip } from '../../../components/pop';
 import { PressableScale } from '../../../components/PressableScale';
 import { Reveal } from '../../../components/Reveal';
 import { RecipeCard, RecipePhoto, TonightCard } from '../../../components/RecipeCard';
 import { TabScreen } from '../../../components/TabScreen';
 import { useToast } from '../../../components/Toast';
 import { Chip, EmptyState, IconButton, SearchField, SectionHeader } from '../../../components/ui';
-import { FAVORITES_ID, QUICK_FILTER, categories, filterTags, matchesFilter, type Recipe } from '../../../data/mock';
+import { FAVORITES_ID, QUICK_FILTER, matchesFilter, type Recipe } from '../../../data/mock';
 import { fitsDiet } from '../../../lib/onboardingPicks';
 import { useImportTip } from '../../../lib/appOpens';
 import { haptics } from '../../../lib/haptics';
@@ -22,10 +22,8 @@ import { showPaywall, useProGate } from '../../../lib/pro';
 import { streakOf } from '../../../lib/progress';
 import { MANAGE_SUBSCRIPTIONS_URL } from '../../../lib/purchases';
 import { useTonightPick } from '../../../lib/tonightPick';
-import { useFlip } from '../../../components/useFlip';
 import { useStore } from '../../../state/store';
 import { fonts, pop, useTheme } from '../../../theme';
-import { nb } from '../../../lib/text';
 import { PhotoFrame } from '../../../components/PhotoFrame';
 import { DiscoverRow } from '../../../components/DiscoverRow';
 import { HorizontalList } from '../../../components/HorizontalList';
@@ -45,6 +43,18 @@ function randomRecipe(list: Recipe[], avoid: string | null): Recipe | undefined 
   return pool[Math.floor(Math.random() * pool.length)] ?? list[0];
 }
 
+/** The chip bar above the recipe grid. */
+type HomeView = 'all' | 'cookbooks' | 'again' | 'quick' | 'Breakfast' | 'Lunch' | 'Dinner';
+const VIEWS: { id: HomeView; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'cookbooks', label: 'Cookbooks' },
+  { id: 'again', label: 'Cook again' },
+  { id: 'quick', label: 'Under 30m' },
+  { id: 'Breakfast', label: 'Breakfast' },
+  { id: 'Lunch', label: 'Lunch' },
+  { id: 'Dinner', label: 'Dinner' },
+];
+
 /** The four mood tiles. "Surprise me" opens a random pick instead of filtering. */
 const MOODS: { id: Mood | 'surprise'; label: string; hint: string; icon: IconName; color: string }[] = [
   { id: 'quick', label: 'Quick', hint: '30 minutes or less', icon: 'timer', color: pop.sunshine },
@@ -57,13 +67,15 @@ export default function RecipesScreen() {
   const t = useTheme();
   const toast = useToast();
   const { width } = useWindowDimensions();
-  const { category, setCategory, tags, toggleTag, showOnlyTag, clearFilters, allRecipes, getRecipe, favorites, cookbooks, cooked, profile, pantry } = useStore();
+  const { allRecipes, getRecipe, favorites, cookbooks, cooked, profile, pantry } = useStore();
 
   const [query, setQuery] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const [sort, setSort] = useState<Sort>('suggested');
   const [mood, setMood] = useState<Mood | null>(null);
+  // The one chip bar above the grid: All, Cookbooks, Cook again, Under 30m, Breakfast, Lunch, Dinner.
+  const [view, setView] = useState<HomeView>('all');
   // The tile lights up the instant you tap it (mood); the recipes below follow a moment later
   // (moodShown), so building that grid never makes the tap feel slow.
   const moodShown = useDeferredValue(mood);
@@ -84,18 +96,6 @@ export default function RecipesScreen() {
       }).slice(0, 6),
     [allRecipes],
   );
-  const filtered = useMemo(
-    () =>
-      allRecipes.filter(
-        (r) =>
-          fitsDiet(r, profile.diets) &&
-          (!category || r.category === category) &&
-          tags.every((tag) => matchesFilter(r, tag)) &&
-          (!q || r.title.toLowerCase().includes(q) || r.ingredients.some((i) => i.name.toLowerCase().includes(q))),
-      ),
-    [allRecipes, profile.diets, category, tags, q],
-  );
-
   // When each recipe was last cooked (ISO dates sort as text).
   const lastCooked = useMemo(() => {
     const m = new Map<string, string>();
@@ -103,49 +103,41 @@ export default function RecipesScreen() {
     return m;
   }, [cooked]);
 
+  // Your diet always applies; then the search words and the chip you picked.
+  const filtered = useMemo(
+    () =>
+      allRecipes.filter(
+        (r) =>
+          fitsDiet(r, profile.diets) &&
+          (view === 'all' || view === 'cookbooks' || (view === 'again' ? lastCooked.has(r.id) : view === 'quick' ? matchesFilter(r, QUICK_FILTER) : r.category === view)) &&
+          (!q || r.title.toLowerCase().includes(q) || r.ingredients.some((i) => i.name.toLowerCase().includes(q))),
+      ),
+    [allRecipes, profile.diets, view, lastCooked, q],
+  );
+
   const sorted = useMemo(() => {
     const list = [...filtered];
     if (sort === 'az') list.sort((a, b) => a.title.localeCompare(b.title));
     if (sort === 'quickest') list.sort((a, b) => a.minutes - b.minutes);
-    if (sort === 'cooked') list.sort((a, b) => (lastCooked.get(b.id) ?? '').localeCompare(lastCooked.get(a.id) ?? ''));
+    if (sort === 'cooked' || (view === 'again' && sort === 'suggested')) list.sort((a, b) => (lastCooked.get(b.id) ?? '').localeCompare(lastCooked.get(a.id) ?? ''));
     return list;
-  }, [filtered, sort, lastCooked]);
+  }, [filtered, sort, lastCooked, view]);
 
   const moodRecipes = useMemo(() => (moodShown ? recipesForMood(moodShown, allRecipes, pantry) : []), [moodShown, allRecipes, pantry]);
 
-  const hasFilters = !!category || tags.length > 0;
-  // Searching or filtering shows only the results (DESIGN.md).
-  const showExtras = !hasFilters && !moodShown && !q;
+  // Searching or picking a chip shows only the results (DESIGN.md).
+  const showExtras = view === 'all' && !moodShown && !q;
   // Tonight's dinner from the plan, otherwise the day's pick: fits your diet and goal, 45 minutes or
   // less, best pantry match (the same pick as onboarding, the reminder and the empty states).
-  const { tonight: dayPick, picks } = useTonightPick();
-  // "Show me another" flips through the top 5 picks (not when tonight's dinner is already planned).
-  const [shuffled, setShuffled] = useState(0);
-  const others = dayPick && !dayPick.fromPlan ? [dayPick, ...picks.filter((p) => p.recipe.id !== dayPick.recipe.id).slice(0, 4)] : [];
-  const pick = others.length > 1 ? others[shuffled % others.length] : dayPick;
+  const { tonight: dayPick } = useTonightPick();
+  // One Tonight's Pick (no shuffle button: "Surprise me" is the randomizer).
+  const pick = dayPick;
   const tonight = dayPick?.fromPlan ? dayPick.recipe : undefined;
   const featured = pick?.recipe;
   const featuredMatch = pick ? { have: pick.have, needed: pick.needed } : { have: 0, needed: 0 };
-  const card = useFlip();
   const firstName = profile.name.trim().split(/\s+/)[0] ?? '';
   const streak = streakOf(cooked.map((c) => c.date));
   const cookedToday = cooked.some((c) => new Date(c.date).toDateString() === new Date().toDateString());
-
-  // Rows built only from real data: nothing shows until there's something to show.
-  const cookAgain = [...lastCooked.entries()]
-    .sort((a, b) => b[1].localeCompare(a[1]))
-    .map(([id]) => getRecipe(id))
-    .filter((r): r is Recipe => !!r)
-    .slice(0, 8);
-  // Each recipe shows up in one row only, so the screen never repeats itself.
-  const shown = new Set([featured?.id, ...cookAgain.map((r) => r.id)]);
-  const quick = allRecipes.filter((r) => matchesFilter(r, QUICK_FILTER) && !shown.has(r.id)).slice(0, 8);
-  quick.forEach((r) => shown.add(r.id));
-  const recentlySaved = [...favorites]
-    .reverse()
-    .map((id) => getRecipe(id))
-    .filter((r): r is Recipe => !!r && !shown.has(r.id))
-    .slice(0, 8);
 
   const margin = t.layout.screen;
   const contentWidth = Math.min(width, 900);
@@ -195,13 +187,7 @@ export default function RecipesScreen() {
         <View style={[styles.avatar, { backgroundColor: t.pop.berry }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
           <Text style={[t.type.title3, { color: t.pop.ink }]}>{(firstName[0] ?? '?').toUpperCase()}</Text>
         </View>
-        {/* One line: a very long name is shortened ("Hey Maximilia…"), never "Hey". */}
-        <View style={styles.greeting} testID="screen-kicker" accessible accessibilityLabel={firstName ? `Hey ${firstName}!` : 'Hey there!'}>
-          <Text style={[t.type.headline, { color: t.colors.secondaryLabel }]}>{'Hey\u00A0'}</Text>
-          <Text style={[t.type.headline, { color: t.colors.secondaryLabel, flexShrink: 1 }]} numberOfLines={1}>
-            {`${firstName || 'there'}!`}
-          </Text>
-        </View>
+        <View style={{ flex: 1 }} />
         <PressableScale
           onPress={() => router.navigate('/progress')}
           accessibilityLabel={streak > 0 ? `${streak} day cooking streak. Opens You` : 'No streak yet. Opens You'}
@@ -211,12 +197,16 @@ export default function RecipesScreen() {
           <Flicker on={streak >= 1 && !cookedToday}>
             <Icon name="flameFill" size={16} color={t.pop.tomato} />
           </Flicker>
-          <Text style={[t.type.headline, { color: t.pop.ink, fontFamily: t.fonts.black }]}>{streak > 0 ? streak : 'Start'}</Text>
+          {/* Always a real number: 🔥 0 before your first dish. */}
+          <Text style={[t.type.headline, { color: t.pop.ink, fontFamily: t.fonts.black }]} testID="streak-count-home">
+            {streak}
+          </Text>
         </PressableScale>
-        <PopIconButton icon="plus" onPress={() => setMenuOpen(true)} accessibilityLabel="Add a recipe" accessibilityHint="Save one from a link, or write your own" />
+        <PopButton label="Import" icon="plus" size="small" color={t.pop.white} onPress={() => setMenuOpen(true)} accessibilityLabel="Import a recipe" accessibilityHint="Save one from a link, or write your own" testID="home-import" />
       </View>
-      <Text style={[t.type.hero, { color: t.colors.label, marginTop: 18 }]} accessibilityRole="header">
-        {'Hungry?\nLet’s cook!'}
+      {/* The greeting is the headline: it wraps, so a long name is never cut off. */}
+      <Text style={[t.type.hero, { color: t.colors.label, marginTop: 18 }]} accessibilityRole="header" testID="screen-kicker">
+        {firstName ? `Hey ${firstName}!\nWhat’s cooking?` : 'Hungry?\nLet’s cook!'}
       </Text>
     </View>
   );
@@ -326,79 +316,20 @@ export default function RecipesScreen() {
           {/* 3. Tonight's dinner from the plan, or the pick of the day */}
           {featured && (
             <Reveal index={2} style={{ marginTop: 22 }}>
-              <Animated.View style={card.style}>
               <TonightCard
                 note={pick?.because ? `Picked for you because ${pick.because}` : undefined}
-                onShuffle={others.length > 1 ? () => card.flip(() => setShuffled((n) => n + 1)) : undefined}
                 recipe={featured}
                 label={tonight ? 'On the menu tonight' : 'Recipe of the day'}
                 have={featuredMatch.have}
                 needed={featuredMatch.needed}
                 onCook={() => router.push({ pathname: '/cook/[id]', params: { id: featured.id } })}
               />
-              </Animated.View>
             </Reveal>
-          )}
-
-          {/* 4. Rows */}
-          {quick.length > 1 && <Rail title="Under 30 minutes" subtitle="Dinner without the wait" recipes={quick} width={railWidth} action={{ label: 'See all', onPress: () => showOnlyTag(QUICK_FILTER) }} />}
-          {cookAgain.length > 0 && <Rail title="Cook again" subtitle="Dishes you’ve made before" recipes={cookAgain} width={railWidth} />}
-          {recentlySaved.length > 0 && (
-            <Rail
-              title="Recently saved"
-              subtitle="Your newest favorites"
-              recipes={recentlySaved}
-              width={railWidth}
-              action={{ label: 'See all', onPress: () => router.push({ pathname: '/cookbook/[id]', params: { id: FAVORITES_ID } }) }}
-            />
           )}
 
           {/* Discover: recipes the owner published (hidden when there are none) */}
           <DiscoverRow width={railWidth} />
 
-          {/* 5. Cookbooks */}
-          <SectionHeader title="Cookbooks" subtitle={books.length ? nb(books.length, books.length === 1 ? 'collection' : 'collections') : 'Save recipes you love in one place'} />
-          {books.length === 0 ? (
-            // No cookbooks yet: one slim row, not a big empty square.
-            <PopCard
-              onPress={() => (canAddCookbook ? router.push('/cookbook-edit') : showPaywall('cookbooks'))}
-              accessibilityLabel="New cookbook"
-              color={t.pop.lilacTint}
-              radius={20}
-              depth={3}
-              contentStyle={styles.newBookSlim}
-              testID="new-cookbook-slim"
-            >
-              <View style={[styles.newIcon, { backgroundColor: t.pop.white, borderColor: t.pop.ink }]}>
-                <Icon name="plus" size={20} color={t.pop.ink} weight="bold" />
-              </View>
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={[styles.newLabel, { color: t.pop.ink }]}>New cookbook</Text>
-                <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]} numberOfLines={1}>
-                  {'Like ‘Weeknights’ or ‘Date night’'}
-                </Text>
-              </View>
-            </PopCard>
-          ) : (
-            <HorizontalList gap={t.spacing.sm} contentStyle={styles.rail}>
-              {books.map((b) => (
-                <CookbookTile key={b.id} id={b.id} name={b.name} width={railWidth} recipes={b.recipeIds.map((id) => getRecipe(id)).filter((r): r is Recipe => !!r)} />
-              ))}
-              <PopCard
-                onPress={() => (canAddCookbook ? router.push('/cookbook-edit') : showPaywall('cookbooks'))}
-                accessibilityLabel="New cookbook"
-                color={t.pop.lilacTint}
-                radius={24}
-                style={{ width: railWidth }}
-                contentStyle={styles.newBook}
-              >
-                <View style={[styles.newIcon, { backgroundColor: t.pop.white, borderColor: t.pop.ink }]}>
-                  <Icon name="plus" size={20} color={t.pop.ink} weight="bold" />
-                </View>
-                <Text style={[styles.newLabel, { color: t.pop.ink }]}>{'New\u00A0cookbook'}</Text>
-              </PopCard>
-            </HorizontalList>
-          )}
         </Animated.View>
       )}
 
@@ -408,12 +339,14 @@ export default function RecipesScreen() {
           <SectionHeader
             // Your diet from onboarding always applies (change it in Settings); "Clear" only removes
             // the filters tapped here.
-            title={q ? 'Results' : hasFilters ? 'Filtered' : profile.diets.length ? 'For you' : 'All recipes'}
+            title={q ? 'Results' : view === 'all' ? (profile.diets.length ? 'For you' : 'All recipes') : VIEWS.find((v) => v.id === view)!.label}
             subtitle={profile.diets.length ? profile.diets.join(' · ') : undefined}
             right={
-              <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, marginBottom: 4 }]} testID="result-count">
-                {countLabel}
-              </Text>
+              view === 'cookbooks' ? undefined : (
+                <Text style={[t.type.subhead, { color: t.colors.secondaryLabel, marginBottom: 4 }]} testID="result-count">
+                  {countLabel}
+                </Text>
+              )
             }
           />
           <SearchField
@@ -436,32 +369,16 @@ export default function RecipesScreen() {
             </Animated.View>
           )}
 
-          {/* Filters: one category at a time, any number of tags. The row scrolls sideways. */}
-          <View style={{ marginTop: t.spacing.sm }} accessibilityLabel="Filters">
-          <HorizontalList gap={8} contentStyle={styles.chips} keyboardShouldPersistTaps="handled">
-            {hasFilters && (
-              <Chip
-                label="Clear"
-                icon="close"
-                toggle={false}
-                accessibilityLabel="Clear filter"
-                onPress={() => {
-                  clearFilters();
-                  toast({ message: 'Filters cleared', tone: 'info' });
-                }}
-              />
-            )}
-            {categories.map((c) => (
-              <Chip key={c} label={c} selected={category === c} onPress={() => setCategory(category === c ? null : c)} />
-            ))}
-            <View style={[styles.chipDivider, { backgroundColor: t.pop.ink }]} />
-            {filterTags.map((tag) => (
-              <Chip key={tag} label={tag} selected={tags.includes(tag)} onPress={() => toggleTag(tag)} />
-            ))}
-          </HorizontalList>
+          {/* One chip bar: what the grid below shows. The row scrolls sideways. */}
+          <View style={{ marginTop: t.spacing.sm }} accessibilityLabel="Show">
+            <HorizontalList gap={8} contentStyle={styles.chips} keyboardShouldPersistTaps="handled">
+              {VIEWS.map((v) => (
+                <Chip key={v.id} label={v.label} selected={view === v.id} onPress={() => setView(v.id === view && v.id !== 'all' ? 'all' : v.id)} />
+              ))}
+            </HorizontalList>
           </View>
 
-          {filtered.length > 1 && (
+          {view !== 'cookbooks' && filtered.length > 1 && (
             <PressableScale onPress={() => setSortOpen(true)} accessibilityLabel={`Sort recipes. Now: ${SORTS.find((s) => s.value === sort)?.label}`} style={styles.sortBtn} scaleTo={0.96}>
               <Icon name="sort" size={15} color={t.colors.tint} weight="bold" />
               <Text style={[t.type.subhead, { color: t.colors.tint, fontFamily: t.fonts.black }]}>{SORTS.find((s) => s.value === sort)?.label}</Text>
@@ -469,7 +386,51 @@ export default function RecipesScreen() {
             </PressableScale>
           )}
 
-          {filtered.length === 0 ? (
+          {view === 'cookbooks' ? (
+            <View style={{ marginTop: t.spacing.sm }}>
+            {books.length === 0 ? (
+              // No cookbooks yet: one slim row, not a big empty square.
+              <PopCard
+                onPress={() => (canAddCookbook ? router.push('/cookbook-edit') : showPaywall('cookbooks'))}
+                accessibilityLabel="New cookbook"
+                color={t.pop.lilacTint}
+                radius={20}
+                depth={3}
+                contentStyle={styles.newBookSlim}
+                testID="new-cookbook-slim"
+              >
+                <View style={[styles.newIcon, { backgroundColor: t.pop.white, borderColor: t.pop.ink }]}>
+                  <Icon name="plus" size={20} color={t.pop.ink} weight="bold" />
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={[styles.newLabel, { color: t.pop.ink }]}>New cookbook</Text>
+                  <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]} numberOfLines={2}>
+                    {'Like ‘Weeknights’ or ‘Date night’'}
+                  </Text>
+                </View>
+              </PopCard>
+            ) : (
+              <View style={[styles.grid, { gap, rowGap: t.spacing.md, marginTop: t.spacing.md }]}>
+                {books.map((b) => (
+                  <CookbookTile key={b.id} id={b.id} name={b.name} width={cardWidth} recipes={b.recipeIds.map((id) => getRecipe(id)).filter((r): r is Recipe => !!r)} />
+                ))}
+                <PopCard
+                  onPress={() => (canAddCookbook ? router.push('/cookbook-edit') : showPaywall('cookbooks'))}
+                  accessibilityLabel="New cookbook"
+                  color={t.pop.lilacTint}
+                  radius={24}
+                  style={{ width: cardWidth }}
+                  contentStyle={styles.newBook}
+                >
+                  <View style={[styles.newIcon, { backgroundColor: t.pop.white, borderColor: t.pop.ink }]}>
+                    <Icon name="plus" size={20} color={t.pop.ink} weight="bold" />
+                  </View>
+                  <Text style={[styles.newLabel, { color: t.pop.ink }]}>{'New\u00A0cookbook'}</Text>
+                </PopCard>
+              </View>
+            )}
+            </View>
+          ) : filtered.length === 0 ? (
             <EmptyState
               icon="search"
               title="No matches yet"
@@ -479,7 +440,7 @@ export default function RecipesScreen() {
                 icon: 'close',
                 onPress: () => {
                   haptics.tap();
-                  clearFilters();
+                  setView('all');
                   setQuery('');
                 },
               }}
@@ -550,24 +511,6 @@ function Flicker({ children }: { on: boolean; children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-function Rail({ title, subtitle, recipes, width, action }: { title: string; subtitle?: string; recipes: Recipe[]; width: number; action?: { label: string; onPress: () => void } }) {
-  const t = useTheme();
-  return (
-    <>
-      <SectionHeader title={title} subtitle={subtitle} action={action} />
-      <HorizontalList gap={t.spacing.sm} contentStyle={styles.rail}>
-        {recipes.map((r, i) => (
-          // A row, so the card stretches to the tallest card's height. No entrance of its own: the
-          // section around it carries the motion (one entrance per container).
-          <View key={r.id} style={styles.cardSlot}>
-            <RecipeCard recipe={r} width={width} />
-          </View>
-        ))}
-      </HorizontalList>
-    </>
-  );
-}
-
 /** A cookbook cover: up to four food photos as a collage, then its name and size. */
 function CookbookTile({ id, name, recipes, width }: { id: string; name: string; recipes: Recipe[]; width: number }) {
   const t = useTheme();
@@ -631,7 +574,6 @@ const styles = StyleSheet.create({
   // 36 to look at, 44 to tap (hitSlop 4).
   tipClose: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   header: { marginBottom: 20 },
-  greeting: { flex: 1, flexDirection: 'row', minWidth: 0 },
   topRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   avatar: { width: 44, height: 44, borderRadius: 22, borderWidth: 2.5, borderColor: pop.ink, alignItems: 'center', justifyContent: 'center' },
   streak: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 44, paddingHorizontal: 12, borderRadius: 999, borderWidth: 2.5 },
