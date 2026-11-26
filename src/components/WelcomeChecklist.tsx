@@ -74,31 +74,34 @@ export function WelcomeChecklist({ onImport, onExample, onCookbook, onCook }: Pr
   return (
     <Animated.View layout={reduceMotion ? undefined : LinearTransition.duration(220)} exiting={reduceMotion ? undefined : FadeOut.duration(160)} style={{ marginBottom: t.spacing.lg }}>
       <PopCard color={pop.sunshineTint} radius={24} contentStyle={styles.card} testID="welcome-checklist">
-        {/* Header: tap to fold or unfold. */}
-        <PressableScale
-          onPress={() => save(folded ? 'open' : 'folded')}
-          haptic="select"
-          scaleTo={0.99}
-          accessibilityLabel={`Let’s get cooking: ${doneCount} of ${steps.length} done. ${folded ? 'Show steps' : 'Hide steps'}`}
-          style={styles.head}
-        >
-          <View style={{ flex: 1, gap: 2 }}>
+        {/* Header: tap the words (or the chevron) to fold or unfold; once all done, ✕ hides it.
+            Two separate buttons side by side (never one inside the other). */}
+        <View style={styles.head}>
+          <PressableScale
+            onPress={() => save(folded ? 'open' : 'folded')}
+            haptic="select"
+            scaleTo={0.99}
+            accessibilityLabel={`Let’s get cooking: ${doneCount} of ${steps.length} done. ${folded ? 'Show steps' : 'Hide steps'}`}
+            style={{ flex: 1, gap: 2 }}
+          >
             <Text style={[t.type.caption1, { color: t.colors.secondaryLabel, fontFamily: t.fonts.black, letterSpacing: 0.4 }]}>WELCOME</Text>
             <Text style={[t.type.title2, { color: t.colors.label }]}>{allDone ? 'You’re all set!' : 'Let’s get cooking!'}</Text>
             <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]} testID="welcome-count">
               {doneCount} of {steps.length} done
             </Text>
-          </View>
+          </PressableScale>
           {allDone ? (
-            <PressableScale onPress={() => save('hidden')} accessibilityLabel="Hide the welcome card" style={[styles.round, { borderColor: t.pop.ink, backgroundColor: t.pop.white }]}>
+            <PressableScale onPress={() => save('hidden')} accessibilityLabel="Hide the welcome card" hitSlop={4} style={[styles.round, { borderColor: t.pop.ink, backgroundColor: t.pop.white }]}>
               <Icon name="close" size={14} color={t.pop.ink} weight="bold" />
             </PressableScale>
           ) : (
-            <Animated.View style={[styles.round, { borderColor: t.pop.ink, backgroundColor: t.pop.white }, chevron]}>
-              <Icon name="chevronDown" size={16} color={t.pop.ink} weight="bold" />
-            </Animated.View>
+            <PressableScale onPress={() => save(folded ? 'open' : 'folded')} haptic="select" accessibilityLabel={folded ? 'Show steps' : 'Hide steps'} hitSlop={4} style={styles.roundTap}>
+              <Animated.View style={[styles.round, { borderColor: t.pop.ink, backgroundColor: t.pop.white }, chevron]}>
+                <Icon name="chevronDown" size={16} color={t.pop.ink} weight="bold" />
+              </Animated.View>
+            </PressableScale>
           )}
-        </PressableScale>
+        </View>
 
         {/* The steps: done ones are ticked and struck through; open ones lead somewhere. */}
         {!folded && (
@@ -138,6 +141,7 @@ export function WelcomeChecklist({ onImport, onExample, onCookbook, onCook }: Pr
 const styles = StyleSheet.create({
   card: { padding: 16, gap: 14 },
   head: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  roundTap: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   round: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16, borderWidth: 2, borderCurve: 'continuous' },
   stepIcon: { width: 32, height: 32, borderRadius: 16, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
