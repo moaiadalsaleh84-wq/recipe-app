@@ -97,7 +97,7 @@ export default function RootLayout() {
                 <Stack.Screen name="cook/[id]" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
                 <Stack.Screen name="cookbook/[id]" options={{ animation: 'slide_from_right' }} />
                 <Stack.Screen name="plan-picker" options={sheet} />
-                <Stack.Screen name="add-to-list" options={sheet} />
+                <Stack.Screen name="add-to-list" options={{ ...sheet, sheetGrabberVisible: false }} />
                 <Stack.Screen name="add-items" options={{ ...sheet, sheetAllowedDetents: [0.6, 1] }} />
                 <Stack.Screen name="save-to-cookbook" options={sheet} />
                 <Stack.Screen name="buddy-pick" options={{ ...sheet, sheetAllowedDetents: [0.85] }} />

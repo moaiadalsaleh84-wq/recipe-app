@@ -72,6 +72,15 @@ export default function AddToList() {
   const allOn = count === total;
   const setAll = (on: boolean) => setTicked(on ? new Set(groups.flatMap((g) => g.recipe.ingredients.map((i) => keyOf(g.recipe.id, i.id)))) : new Set());
 
+  // One recipe: "Butter Chicken · 4 servings". The week: "This week · 3 meals".
+  const subtitle = week
+    ? groups.length
+      ? `This week · ${groups.length} ${groups.length === 1 ? 'meal' : 'meals'}`
+      : ''
+    : groups[0]
+      ? `${groups[0].recipe.title} · ${groups[0].servings} ${groups[0].servings === 1 ? 'serving' : 'servings'}`
+      : '';
+
   const close = () => (router.canGoBack() ? router.back() : router.replace('/groceries'));
 
   const add = () => {
@@ -116,19 +125,28 @@ export default function AddToList() {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.groupedBackground }}>
-      <View style={[styles.header, { paddingTop: isIOS ? 14 : insets.top + 8, borderBottomColor: t.colors.separator }]}>
-        <PressableScale onPress={close} style={styles.side} accessibilityLabel="Cancel">
-          <Text style={[t.type.body, { color: t.colors.tint }]}>Cancel</Text>
-        </PressableScale>
-        <View style={styles.titleWrap} pointerEvents="none">
-          <Text style={[t.type.headline, { color: t.colors.label }]} accessibilityRole="header">
+      {/* Our own grab handle (the system one floated over the header), then one 44pt row: Cancel,
+          the title, All/None. The recipe name sits on its own muted line under it. */}
+      <View style={[styles.top, { paddingTop: isIOS ? 8 : insets.top + 8, borderBottomColor: t.colors.separator }]}>
+        <View style={[styles.handle, { backgroundColor: t.colors.border }]} />
+        <View style={styles.header}>
+          <PressableScale onPress={close} style={styles.side} accessibilityLabel="Cancel">
+            <Text style={[t.type.body, { color: t.colors.tint }]} numberOfLines={1}>
+              Cancel
+            </Text>
+          </PressableScale>
+          <Text style={[t.type.headline, styles.title, { color: t.colors.label }]} accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
             Add to your list
           </Text>
-          <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]}>Untick what you already have</Text>
+          <View style={[styles.side, { alignItems: 'flex-end' }]}>
+            {total > 0 && <TextButton label={allOn ? 'None' : 'All'} small onPress={() => setAll(!allOn)} accessibilityLabel={allOn ? 'Untick everything' : 'Tick everything'} />}
+          </View>
         </View>
-        <View style={[styles.side, { alignItems: 'flex-end' }]}>
-          {total > 0 && <TextButton label={allOn ? 'None' : 'All'} small onPress={() => setAll(!allOn)} accessibilityLabel={allOn ? 'Untick everything' : 'Tick everything'} />}
-        </View>
+        {!!subtitle && (
+          <Text style={[t.type.footnote, styles.subtitle, { color: t.colors.secondaryLabel }]} numberOfLines={1} testID="add-to-list-subtitle">
+            {subtitle}
+          </Text>
+        )}
       </View>
 
       {groups.length === 0 ? (
@@ -136,7 +154,7 @@ export default function AddToList() {
       ) : (
         <ScrollView contentContainerStyle={[styles.content, { paddingBottom: 24 }]}>
           {groups.map((g) => (
-            <Section key={g.recipe.id} title={groups.length > 1 || week ? g.recipe.title : `${g.recipe.title} · ${g.servings} ${g.servings === 1 ? 'serving' : 'servings'}`}>
+            <Section key={g.recipe.id} title={week ? g.recipe.title : undefined} footer={week ? undefined : 'Untick what you already have.'}>
               {g.recipe.ingredients.map((i, index) => row(g, i, index))}
             </Section>
           ))}
@@ -160,9 +178,13 @@ export default function AddToList() {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingBottom: 10, borderBottomWidth: StyleSheet.hairlineWidth },
-  side: { minWidth: 72, minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
-  titleWrap: { flex: 1, alignItems: 'center' },
+  top: { paddingBottom: 10, borderBottomWidth: StyleSheet.hairlineWidth },
+  handle: { alignSelf: 'center', width: 36, height: 5, borderRadius: 3, marginBottom: 6 },
+  // Cancel and All/None get equal widths, so the title is truly centred and never runs into them.
+  header: { flexDirection: 'row', alignItems: 'center', height: 44, paddingHorizontal: 8 },
+  side: { width: 84, height: 44, justifyContent: 'center', paddingHorizontal: 8 },
+  title: { flex: 1, textAlign: 'center' },
+  subtitle: { textAlign: 'center', paddingHorizontal: 24 },
   content: { padding: 16, gap: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 52, paddingHorizontal: 16, paddingVertical: 8 },
 });
