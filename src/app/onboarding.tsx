@@ -277,7 +277,7 @@ function Step({ title, subtitle, children, footer, contentStyle }: { title: stri
   const bg = useContext(ScreenBg);
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={[{ paddingTop: TITLE_GAP, paddingHorizontal: 20, paddingBottom: footer ? 24 : insets.bottom + 24 }, contentStyle]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[{ paddingTop: TITLE_GAP, paddingHorizontal: 20, paddingBottom: footer ? 32 : insets.bottom + 32 }, contentStyle]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <Text style={[styles.title, noWidows.style]} {...noWidows.props} accessibilityRole="header">
           {noWidow(title)}
         </Text>
@@ -285,7 +285,9 @@ function Step({ title, subtitle, children, footer, contentStyle }: { title: stri
         <View style={{ marginTop: 24 }}>{children}</View>
       </ScrollView>
       {footer ? (
-        <BottomBar color={bg} direction="column" style={{ gap: 4 }}>
+        // A line above the button: when the options scroll, they slide under it cleanly instead of
+        // looking cut off.
+        <BottomBar color={bg} border direction="column" style={{ gap: 4 }}>
           {footer}
         </BottomBar>
       ) : null}
