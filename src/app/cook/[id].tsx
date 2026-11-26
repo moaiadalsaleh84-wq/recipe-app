@@ -261,7 +261,10 @@ function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; serv
                       Everything’s ready
                     </Text>
                   ) : (
-                    <AnimatedNumber value={setOut} suffix={` of ${gatherTiles.length} ready`} style={[t.type.headline, { color: pop.ink, fontFamily: fonts.black }]} testID="gather-count" />
+                    // Plain centred text (the animated number field could sit off-centre on iPhone).
+                    <Text style={[t.type.headline, { color: pop.ink, fontFamily: fonts.black, textAlign: 'center', fontVariant: ['tabular-nums'] }]} testID="gather-count">
+                      {setOut} of {gatherTiles.length} ready
+                    </Text>
                   )}
                 </View>
               ) : (
@@ -927,7 +930,7 @@ const NOTE_KEY = 'pantry-pop-timer-note-seen';
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingBottom: 10, gap: 10 },
   headerCenter: { bottom: 13, alignItems: 'center', justifyContent: 'center' },
-  readyPill: { minHeight: 40, paddingHorizontal: 16, borderRadius: 999, borderWidth: 2.5, borderColor: pop.line, justifyContent: 'center' },
+  readyPill: { alignSelf: 'center', minHeight: 40, paddingHorizontal: 16, borderRadius: 999, borderWidth: 2, borderColor: pop.line, alignItems: 'center', justifyContent: 'center' },
   segments: { flexDirection: 'row', gap: 6, paddingHorizontal: 20, marginBottom: 4 },
   // A full 44pt tap area around each 12pt segment.
   segmentTap: { flex: 1, height: 44, marginVertical: -12, justifyContent: 'center' },
