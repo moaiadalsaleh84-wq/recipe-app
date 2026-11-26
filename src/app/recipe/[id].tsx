@@ -31,7 +31,7 @@ import { BottomBar } from '../../components/BottomBar';
 import { ImportHint, ImportedPhotoOverlay, RecipeByRow, chooseOwnPhoto, isImported, useOpenLink } from '../../components/ImportCredit';
 import { needsPhotoRetry, retryImportDetails } from '../../lib/importRetry';
 import { Lift, PopButton, PopCard, PopChip, PopIconButton } from '../../components/pop';
-import { type DietTag, type Recipe, type Units } from '../../data/mock';
+import { goalsOn, type DietTag, type Recipe, type Units } from '../../data/mock';
 import { haptics } from '../../lib/haptics';
 import { pickPhoto } from '../../lib/photos';
 import { convertStepText } from '../../lib/units';
@@ -41,7 +41,7 @@ import { macroPercents } from '../../lib/percent';
 import { fonts, pop, popCycle, useTheme } from '../../theme';
 import { duration, keepTogether, nb, num } from '../../lib/text';
 import { PhotoFrame } from '../../components/PhotoFrame';
-import { AdminPublishCard } from '../../components/AdminPublish';
+import { useAdminMode } from '../../lib/discoverApi';
 import { useDiscoverSave } from '../../components/DiscoverCard';
 import { HorizontalList } from '../../components/HorizontalList';
 
@@ -73,6 +73,7 @@ export default function RecipeScreen() {
   const [menuOpen, setMenuOpen] = useState(false);
   // Where the big title ends, so the small one appears only once it has scrolled away.
   const [titleBottom, setTitleBottom] = useState(0);
+  const admin = useAdminMode();
   const [confirmDelete, setConfirmDelete] = useState(false);
   // The page opens with its top (photo, title, stats, ingredients) right away; the method, notes and
   // "You might also like" follow one frame later, so opening a recipe never waits on the whole page.
@@ -292,7 +293,6 @@ export default function RecipeScreen() {
             </>
           )}
           {/* Admin mode only (checked by the server): publish this import to Discover. */}
-          {imported && recipe.custom && <AdminPublishCard recipe={recipe} />}
           {estimatedNote && (
             <View style={[styles.estBanner, { backgroundColor: t.pop.sunshineTint, borderColor: t.pop.ink }]} testID="estimated-banner" accessibilityRole="alert">
               <Icon name="info" size={18} color={t.pop.ink} />
@@ -339,7 +339,7 @@ export default function RecipeScreen() {
 
           {/* Nutrition: a one-line summary that opens into the details */}
           <Reveal index={2}>
-            <Nutrition recipe={recipe} proteinGoal={isPro ? goals.protein : undefined} />
+            <Nutrition recipe={recipe} proteinGoal={isPro && goalsOn(goals) ? goals.protein : undefined} />
           </Reveal>
 
           {/* You'll need: servings in an outlined pill, units as a small switch */}
@@ -480,6 +480,8 @@ export default function RecipeScreen() {
         top={insets.top + 60}
         rows={[
           { label: 'Share recipe', icon: 'share', onPress: onShare },
+          // Admin mode only: publishing lives here, never on the page itself.
+          ...(admin && imported && recipe.custom && recipe.sourceUrl ? [{ label: 'Publish to Discover (admin)', icon: 'crown' as const, onPress: () => router.push({ pathname: '/publish/[id]', params: { id: recipe.id } }) }] : []),
           ...(fromDiscover
             ? [{ label: 'Save to recipes', icon: 'heart' as const, onPress: () => void onSaveDiscover() }]
             : [{ label: inCookbooks > 0 ? 'Saved to a cookbook' : 'Save to a cookbook', icon: inCookbooks > 0 ? ('bookmarkFill' as const) : ('bookmark' as const), onPress: () => router.push({ pathname: '/save-to-cookbook', params: { id: recipe.id } }) }]),

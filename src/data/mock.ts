@@ -511,7 +511,10 @@ export const initialCookbooks: Cookbook[] = [
 export type Rating = 'meh' | 'yum' | 'amazing';
 /** One cooked meal. `date` (an ISO time) also identifies the entry. Rating and photo are optional. */
 export type CookedEntry = { recipeId: string; date: string; servings: number; rating?: Rating; photo?: string };
-export type Goals = { calories: number; protein: number };
+/** Daily goals. `on`: you chose to track them (older saves: on when you changed them from the defaults). */
+export type Goals = { calories: number; protein: number; on?: boolean };
+/** True when daily goals should show (you turned them on, or changed them before `on` existed). */
+export const goalsOn = (g: Goals) => g.on ?? (g.protein !== 140 || g.calories !== 2200);
 export const defaultGoals: Goals = { calories: 2200, protein: 140 };
 export type Units = 'metric' | 'us';
 
