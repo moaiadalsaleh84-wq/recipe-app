@@ -5,7 +5,7 @@ import { Text } from '../../../components/Text';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Animated, { FadeIn, FadeOut, LinearTransition, FadeOutDown, FadeOutLeft, useAnimatedStyle, useReducedMotion, type SharedValue } from 'react-native-reanimated';
 import { enter, uiEase } from '../../../motion';
-import { Icon } from '../../../components/Icon';
+import { Icon, type IconName } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
 import { Reveal } from '../../../components/Reveal';
 import { ConfettiBurst } from '../../../components/ConfettiBurst';
@@ -213,7 +213,7 @@ export default function GroceriesScreen() {
               )}
             </Animated.View>
           )}
-          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, textAlign: 'center', marginTop: 16 }]}>{'Swipe left on an item to delete it.'}</Text>
+          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, textAlign: 'center', marginTop: 16 }]}>{'Swipe right to tick an item, left to delete it.'}</Text>
         </>
       )}
     </TabScreen>
@@ -286,17 +286,27 @@ function GroceryRow({ item, onToggle, onDelete }: { item: GroceryItem; onToggle:
   };
 
   return (
+    // Swipe right to tick it (green), swipe left to delete it (red, with Undo). The row follows the
+    // finger and the colored panel shows underneath; letting go past the threshold does it.
     <ReanimatedSwipeable
       friction={1.6}
-      rightThreshold={44}
+      leftThreshold={72}
+      rightThreshold={72}
+      overshootLeft={false}
       overshootRight={false}
       onSwipeableOpenStartDrag={startSwipe}
       onSwipeableCloseStartDrag={startSwipe}
       onSwipeableWillOpen={() => haptics.select()}
-      onSwipeableOpen={endSwipe}
+      onSwipeableOpen={(direction) => {
+        endSwipe();
+        // No close() first: the row moves to the basket (or is removed), and closing a gesture
+        // mid-unmount errors.
+        if (direction === 'right') onToggle();
+        else onDelete();
+      }}
       onSwipeableClose={endSwipe}
-      // No close() before deleting: the row unmounts, and closing a gesture mid-unmount errors.
-      renderRightActions={(progress) => <DeleteAction progress={progress} label={`Delete ${item.name}`} onPress={onDelete} />}
+      renderLeftActions={(progress) => <SwipeAction progress={progress} side="left" color={t.pop.leaf} icon={item.checked ? 'close' : 'check'} label={item.checked ? `Untick ${item.name}` : `Tick ${item.name}`} onPress={onToggle} />}
+      renderRightActions={(progress) => <SwipeAction progress={progress} side="right" color={t.pop.tomato} icon="trash" label={`Delete ${item.name}`} onPress={onDelete} />}
     >
       {/* The checkbox only ticks. The rest of the row ticks too, unless the item is for several
           recipes: then it opens the list of recipe names. */}
@@ -358,13 +368,16 @@ function GroceryRow({ item, onToggle, onDelete }: { item: GroceryItem; onToggle:
   );
 }
 
-/** Red delete button revealed by swiping. Hidden until the swipe starts so it never peeks past rounded corners. */
-function DeleteAction({ progress, label, onPress }: { progress: SharedValue<number>; label: string; onPress: () => void }) {
+/**
+ * The colored panel under a swiped row: green with a check on the left (tick), red with a bin on
+ * the right (delete). Hidden until the swipe starts so it never peeks past rounded corners.
+ */
+function SwipeAction({ progress, side, color, icon, label, onPress }: { progress: SharedValue<number>; side: 'left' | 'right'; color: string; icon: IconName; label: string; onPress: () => void }) {
   const t = useTheme();
   const style = useAnimatedStyle(() => ({ opacity: progress.get() > 0.01 ? 1 : 0 }));
   return (
-    <Animated.View style={[styles.delete, { backgroundColor: t.pop.tomato }, style]}>
-      <IconButton icon="trash" accessibilityLabel={label} color={t.pop.ink} haptic={null} onPress={onPress} style={{ width: '100%', height: '100%', borderRadius: 0 }} />
+    <Animated.View style={[styles.swipeAction, { backgroundColor: color, alignItems: side === 'left' ? 'flex-start' : 'flex-end' }, style]}>
+      <IconButton icon={icon} accessibilityLabel={label} color={t.pop.ink} haptic={null} onPress={onPress} style={{ width: 80, height: '100%', borderRadius: 0 }} />
     </Animated.View>
   );
 }
@@ -386,5 +399,5 @@ const styles = StyleSheet.create({
   // Under the name: the same style for one recipe or "For 2 recipes ›".
   sub: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 19, marginTop: 1 },
   struck: { textDecorationLine: 'line-through' },
-  delete: { width: 80, height: '100%' },
+  swipeAction: { width: 96, height: '100%', justifyContent: 'center' },
 });
