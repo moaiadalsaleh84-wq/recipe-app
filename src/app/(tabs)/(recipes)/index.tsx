@@ -14,7 +14,6 @@ import { useToast } from '../../../components/Toast';
 import { Chip, EmptyState, IconButton, SearchField, SectionHeader } from '../../../components/ui';
 import { FAVORITES_ID, QUICK_FILTER, matchesFilter, type Recipe } from '../../../data/mock';
 import { fitsDiet } from '../../../lib/onboardingPicks';
-import { useImportTip } from '../../../lib/appOpens';
 import { haptics } from '../../../lib/haptics';
 import { EXAMPLE_URL } from '../../../lib/importApi';
 import { recipesForMood, type Mood } from '../../../lib/moods';
@@ -22,11 +21,12 @@ import { showPaywall, useProGate } from '../../../lib/pro';
 import { streakOf } from '../../../lib/progress';
 import { MANAGE_SUBSCRIPTIONS_URL } from '../../../lib/purchases';
 import { useTonightPick } from '../../../lib/tonightPick';
-import { useStore } from '../../../state/store';
+import { FREE_LIMITS, useStore } from '../../../state/store';
 import { fonts, pop, useTheme } from '../../../theme';
 import { PhotoFrame } from '../../../components/PhotoFrame';
 import { DiscoverRow } from '../../../components/DiscoverRow';
 import { HorizontalList } from '../../../components/HorizontalList';
+import { WelcomeChecklist } from '../../../components/WelcomeChecklist';
 
 
 type Sort = 'suggested' | 'az' | 'quickest' | 'cooked';
@@ -70,7 +70,8 @@ export default function RecipesScreen() {
   const t = useTheme();
   const toast = useToast();
   const { width } = useWindowDimensions();
-  const { allRecipes, getRecipe, favorites, cookbooks, cooked, profile } = useStore();
+  const { allRecipes, getRecipe, favorites, cookbooks, cooked, profile, isPro, importsUsed } = useStore();
+  const importsLeft = Math.max(0, FREE_LIMITS.imports - importsUsed);
 
   const [query, setQuery] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
@@ -164,9 +165,7 @@ export default function RecipesScreen() {
   const books = favorites.length ? [{ id: FAVORITES_ID, name: 'Favorites', recipeIds: favorites }, ...cookbooks] : cookbooks;
 
   // First 3 opens: show how importing works, with a one-tap example.
-  const importTip = useImportTip();
   const tryExample = () => {
-    importTip.dismiss();
     router.push({ pathname: '/import', params: { url: EXAMPLE_URL, auto: '1' } });
   };
 
@@ -195,12 +194,8 @@ export default function RecipesScreen() {
   const header = (
     <View style={styles.header}>
       <View style={styles.topRow}>
-        <View style={[styles.avatar, { backgroundColor: t.pop.berry }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-          <Text style={[t.type.title3, { color: t.pop.ink }]}>{(firstName[0] ?? '?').toUpperCase()}</Text>
-        </View>
-        <View style={{ flex: 1 }} />
         <PressableScale
-          onPress={() => router.navigate('/progress')}
+          onPress={() => router.push('/progress')}
           accessibilityLabel={streak > 0 ? `${streak} day cooking streak. Opens You` : 'No streak yet. Opens You'}
           style={[styles.streak, { backgroundColor: t.pop.sunshine, borderColor: t.pop.ink }]}
           testID="streak-pill"
@@ -213,7 +208,24 @@ export default function RecipesScreen() {
             {streak}
           </Text>
         </PressableScale>
+        {/* Free version: how many imports are left (like ReciMe's "⚡ 5 left"). Tapping it shows Pro. */}
+        {!isPro && (
+          <PressableScale
+            onPress={() => showPaywall('imports')}
+            accessibilityLabel={`${importsLeft} free ${importsLeft === 1 ? 'import' : 'imports'} left. Shows Pro`}
+            style={[styles.streak, { backgroundColor: t.pop.white, borderColor: t.pop.ink }]}
+            testID="imports-left"
+          >
+            <Icon name="link" size={15} color={t.pop.ink} weight="bold" />
+            <Text style={[t.type.headline, { color: t.pop.ink, fontFamily: t.fonts.black }]}>{`${importsLeft}\u00A0left`}</Text>
+          </PressableScale>
+        )}
+        <View style={{ flex: 1 }} />
         <PopButton label="Import" icon="plus" size="small" color={t.pop.white} onPress={() => setMenuOpen(true)} accessibilityLabel="Import a recipe" accessibilityHint="Save one from a link, or write your own" testID="home-import" />
+        {/* Your avatar opens You: level, streak, achievements, history, goals and settings. */}
+        <PressableScale onPress={() => router.push('/progress')} accessibilityLabel="You: your level, streak and settings" style={[styles.avatar, { backgroundColor: t.pop.berry }]} testID="home-avatar">
+          <Text style={[t.type.title3, { color: t.pop.ink }]}>{(firstName[0] ?? '?').toUpperCase()}</Text>
+        </PressableScale>
       </View>
       {/* The greeting is the headline: it wraps, so a long name is never cut off. */}
       <Text style={[t.type.hero, { color: t.colors.label, marginTop: 18 }]} accessibilityRole="header" testID="screen-kicker">
@@ -241,25 +253,13 @@ export default function RecipesScreen() {
         </View>
       )}
 
-      {importTip.show && (
-        <Animated.View exiting={FadeOut.duration(160)} style={{ marginBottom: t.spacing.lg }}>
-          <PopCard color={t.pop.skyTint} contentStyle={styles.tip} testID="import-tip">
-            {/* Icon row (icon left, small ✕ right), then the text full width, then the button full width. */}
-            <View style={styles.tipTop}>
-              <View style={[styles.tipIcon, { borderColor: t.pop.ink, backgroundColor: t.pop.white }]}>
-                <Icon name="link" size={18} color={t.pop.ink} weight="bold" />
-              </View>
-              <PressableScale onPress={importTip.dismiss} hitSlop={4} accessibilityLabel="Dismiss tip" style={[styles.tipClose, { borderColor: t.pop.ink, backgroundColor: t.pop.white }]}>
-                <Icon name="close" size={13} color={t.pop.ink} weight="bold" />
-              </PressableScale>
-            </View>
-            <Text style={[t.type.headline, { color: t.pop.ink }]} numberOfLines={3}>
-              Got a recipe on TikTok or a blog? Paste the link and cook from it.
-            </Text>
-            <PopButton label="Try an example" icon="sparkles" size="small" color={t.pop.white} onPress={tryExample} testID="import-example" />
-          </PopCard>
-        </Animated.View>
-      )}
+      {/* First steps (ReciMe-style welcome card): ticks itself, folds away, hides when done. */}
+      <WelcomeChecklist
+        onImport={() => setMenuOpen(true)}
+        onExample={tryExample}
+        onCookbook={() => (canAddCookbook ? router.push('/cookbook-edit') : showPaywall('cookbooks'))}
+        onCook={() => (featured ? router.push({ pathname: '/cook/[id]', params: { id: featured.id } }) : router.push('/import'))}
+      />
 
       {/* 1. Mood tiles: a 2x2 grid of bold color blocks. */}
       <Reveal index={0}>
@@ -579,11 +579,6 @@ const POPULAR_SEARCHES = ['Chicken', 'Pasta', 'Rice', 'Cheese', 'Potato', 'Mushr
 const COVER_H = 120;
 
 const styles = StyleSheet.create({
-  tip: { padding: 14, gap: 12 },
-  tipTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  tipIcon: { width: 40, height: 40, borderRadius: 20, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  // 36 to look at, 44 to tap (hitSlop 4).
-  tipClose: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   header: { marginBottom: 20 },
   topRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   avatar: { width: 44, height: 44, borderRadius: 22, borderWidth: 2.5, borderColor: pop.ink, alignItems: 'center', justifyContent: 'center' },
