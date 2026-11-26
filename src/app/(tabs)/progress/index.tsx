@@ -173,11 +173,20 @@ export default function ProgressScreen() {
         </PopCard>
       </Reveal>
 
-      {/* Badges: three round ones; locked ones show how close you are */}
+      {/* Achievements: badges and stickers together, one See all / Hide for both. */}
       <SectionHeader
-        title="Badges"
-        subtitle={`${earned.length} of ${BADGES.length} earned`}
-        right={<PopChip label={showAll ? 'Hide' : `See all ${BADGES.length}`} onPress={() => setShowAll((v) => !v)} accessibilityLabel={showAll ? 'Hide all badges' : `See all ${BADGES.length} badges`} />}
+        title="Achievements"
+        subtitle={`${earned.length} of ${BADGES.length} badges · ${(fun.stickers ?? []).length} of ${stickers.length} stickers`}
+        right={
+          <PopChip
+            label={showAll ? 'Hide' : 'See all'}
+            onPress={() => {
+              setShowAll((v) => !v);
+              setAllStickers(!showAll);
+            }}
+            accessibilityLabel={showAll ? 'Hide all badges and stickers' : 'See all badges and stickers'}
+          />
+        }
       />
       <View style={styles.badges}>
         {badgeRow.map((b, i) => {
@@ -246,6 +255,29 @@ export default function ProgressScreen() {
         </Animated.View>
       )}
 
+      {/* Sticker book: 12 to find, one sometimes turns up after cooking. Locked ones are silhouettes. */}
+      {/* A compact row: the 4 nearest stickers (found ones first, then the next to find). "See all"
+          opens the whole book. */}
+      <PopCard style={{ marginTop: 16 }} contentStyle={allStickers ? styles.stickerBook : styles.stickerRow} testID="sticker-book">
+        {(allStickers ? stickers : [...stickers].sort((a, b) => Number((fun.stickers ?? []).includes(b.id)) - Number((fun.stickers ?? []).includes(a.id))).slice(0, 4)).map((st, i) => {
+          const got = (fun.stickers ?? []).includes(st.id);
+          return (
+            // Opening the whole book: the stickers that weren't shown yet drift up and fade in, one after
+            // another (a short, uneven stagger); the 4 already there stay put. Hiding fades them out.
+            <Animated.View key={st.id} entering={allStickers ? enter(i, reduceMotion) : undefined} exiting={allStickers ? FadeOut.duration(140) : undefined} style={allStickers ? styles.stickerCell : styles.stickerSmall} accessible accessibilityLabel={got ? `${st.name} sticker` : 'Sticker not found yet'}>
+              <View style={[styles.stickerDisc, !allStickers && styles.stickerDiscSmall, got ? { backgroundColor: t.pop[st.color], borderColor: t.pop.ink } : { backgroundColor: t.pop.lilacTint, borderColor: t.pop.lilac, borderStyle: 'dashed' }]}>
+                <Icon name={st.icon} size={allStickers ? 22 : 18} color={got ? t.pop.ink : t.pop.lilac} weight="bold" />
+              </View>
+              {allStickers && (
+                <Text style={[t.type.caption2, { color: got ? t.pop.ink : t.pop.inkMuted, textAlign: 'center' }]} numberOfLines={2}>
+                  {got ? st.name : '?'}
+                </Text>
+              )}
+            </Animated.View>
+          );
+        })}
+      </PopCard>
+
       {/* Your kitchen: what you've built up so far (only real numbers, nothing invented). */}
       {history.length > 0 && (
         <>
@@ -282,33 +314,6 @@ export default function ProgressScreen() {
         </>
       )}
 
-      {/* Sticker book: 12 to find, one sometimes turns up after cooking. Locked ones are silhouettes. */}
-      <SectionHeader
-        title="Sticker book"
-        subtitle={`${(fun.stickers ?? []).length} of ${stickers.length} found`}
-        right={<PopChip label={allStickers ? 'Hide' : 'See all'} onPress={() => setAllStickers((v) => !v)} accessibilityLabel={allStickers ? 'Hide the sticker book' : `See all ${stickers.length} stickers`} />}
-      />
-      {/* A compact row: the 4 nearest stickers (found ones first, then the next to find). "See all"
-          opens the whole book. */}
-      <PopCard contentStyle={allStickers ? styles.stickerBook : styles.stickerRow} testID="sticker-book">
-        {(allStickers ? stickers : [...stickers].sort((a, b) => Number((fun.stickers ?? []).includes(b.id)) - Number((fun.stickers ?? []).includes(a.id))).slice(0, 4)).map((st, i) => {
-          const got = (fun.stickers ?? []).includes(st.id);
-          return (
-            // Opening the whole book: the stickers that weren't shown yet drift up and fade in, one after
-            // another (a short, uneven stagger); the 4 already there stay put. Hiding fades them out.
-            <Animated.View key={st.id} entering={allStickers ? enter(i, reduceMotion) : undefined} exiting={allStickers ? FadeOut.duration(140) : undefined} style={allStickers ? styles.stickerCell : styles.stickerSmall} accessible accessibilityLabel={got ? `${st.name} sticker` : 'Sticker not found yet'}>
-              <View style={[styles.stickerDisc, !allStickers && styles.stickerDiscSmall, got ? { backgroundColor: t.pop[st.color], borderColor: t.pop.ink } : { backgroundColor: t.pop.lilacTint, borderColor: t.pop.lilac, borderStyle: 'dashed' }]}>
-                <Icon name={st.icon} size={allStickers ? 22 : 18} color={got ? t.pop.ink : t.pop.lilac} weight="bold" />
-              </View>
-              {allStickers && (
-                <Text style={[t.type.caption2, { color: got ? t.pop.ink : t.pop.inkMuted, textAlign: 'center' }]} numberOfLines={2}>
-                  {got ? st.name : '?'}
-                </Text>
-              )}
-            </Animated.View>
-          );
-        })}
-      </PopCard>
 
       {/* Cooking history: one outlined row per dish */}
       <SectionHeader title="Cooking history" subtitle={dishes.length ? 'Your dishes, newest first' : undefined} />
