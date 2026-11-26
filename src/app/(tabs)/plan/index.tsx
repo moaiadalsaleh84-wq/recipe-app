@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { StyleSheet, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/Text';
 import Animated, { FadeOut, useReducedMotion } from 'react-native-reanimated';
 import { enter } from '../../../motion';
@@ -8,13 +8,13 @@ import { Icon } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
 import { Reveal } from '../../../components/Reveal';
 import { openRecipe } from '../../../components/RecipeCard';
-import { Lift, PopButton, PopCard, PopChip } from '../../../components/pop';
+import { Lift, PopButton } from '../../../components/pop';
 import { useToast } from '../../../components/Toast';
-import { IconButton, SectionHeader } from '../../../components/ui';
+import { IconButton, SectionHeader, Separator } from '../../../components/ui';
 import { goalsOn, meals, type Meal, type Recipe } from '../../../data/mock';
 import { TabScreen } from '../../../components/TabScreen';
 import { totalsFor, useStore } from '../../../state/store';
-import { fonts, pop, popCycle, useTheme } from '../../../theme';
+import { fonts, pop, useTheme } from '../../../theme';
 import { weekDays } from '../../../lib/week';
 import { nb, duration } from '../../../lib/text';
 import { PhotoFrame } from '../../../components/PhotoFrame';
@@ -59,46 +59,36 @@ export default function PlanScreen() {
   // You pick every meal yourself: nothing is planned for you.
   const todayIndex = weekDays.find((d) => d.isToday)?.index ?? 0;
 
-  // On narrow phones the weekday is two letters ("Mo"), so there's always room around it.
-  const { width } = useWindowDimensions();
-  const narrowDays = (Math.min(width, 700) - 40 - 36) / 7 - 5 < 40;
 
 
   return (
     <TabScreen title="Meal plan" kicker={weekDays[day].isToday ? weekDays[day].full : `Today is ${weekDays.find((d) => d.isToday)?.long ?? ''}`}>
-      {/* The week as 7 equal date pills. Today: sunshine on a 3pt shadow. Days to come: white on a 3pt
-          shadow. Past days: muted, no shadow. The chosen day (if not today) is lilac. A centered dot
-          means the day has meals. */}
-      <Reveal index={0} style={styles.week}>
-      <View style={styles.weekInner} accessibilityRole="tablist">
-        {weekDays.map((d) => {
-          const selected = d.index === day;
-          const count = meals.filter((m) => plan[d.index]?.[m]).length;
-          const past = d.index < todayIndex;
-          return (
-            <Lift key={d.index} radius={14} offset={t.depth.small} pressed={past} style={{ flex: 1 }}>
+      {/* A compact week strip: 7 day pills (44 wide, no borders). Today is sunshine; the day you're
+          looking at gets a soft fill; a small dot means the day has meals. */}
+      <Reveal index={0}>
+        <View style={styles.weekInner} accessibilityRole="tablist">
+          {weekDays.map((d) => {
+            const selected = d.index === day;
+            const count = meals.filter((m) => plan[d.index]?.[m]).length;
+            const past = d.index < todayIndex;
+            return (
               <PressableScale
+                key={d.index}
                 haptic="select"
                 scaleTo={0.94}
                 onPress={() => setDay(d.index)}
                 accessibilityRole="tab"
                 aria-selected={selected}
                 accessibilityLabel={`${d.long}${d.isToday ? ', today' : ''}, ${count} ${count === 1 ? 'meal' : 'meals'} planned`}
-                style={[
-                  styles.day,
-                  // Today sunshine; the day you're looking at lilac; every other day white. Past days sit flat (no shadow) with muted text.
-                  { backgroundColor: d.isToday ? t.pop.sunshine : selected ? t.pop.lilacTint : t.pop.white, borderColor: selected ? t.pop.ink : d.isToday ? t.pop.sunshine : t.colors.border },
-                  past && { transform: [{ translateY: t.depth.small }] },
-                ]}
+                style={[styles.day, { backgroundColor: d.isToday ? t.pop.sunshine : selected ? t.colors.fill : 'transparent' }]}
               >
-                <Text style={[styles.dayName, { color: past ? t.pop.inkMuted : t.pop.ink }]}>{narrowDays ? d.short.slice(0, 2) : d.short}</Text>
-                <Text style={[styles.dayNum, { color: past ? t.pop.inkMuted : t.pop.ink }]}>{d.date}</Text>
-                <View style={[styles.dot, count > 0 && { backgroundColor: t.pop.leaf, borderColor: t.colors.border, borderWidth: 1.5 }]} />
+                <Text style={[styles.dayName, { color: past && !d.isToday ? t.colors.secondaryLabel : t.colors.label }]}>{d.short.slice(0, 2)}</Text>
+                <Text style={[styles.dayNum, { color: past && !d.isToday ? t.colors.secondaryLabel : t.colors.label }]}>{d.date}</Text>
+                <View style={[styles.dot, count > 0 && { backgroundColor: d.isToday ? t.pop.ink : t.pop.leaf }]} />
               </PressableScale>
-            </Lift>
-          );
-        })}
-      </View>
+            );
+          })}
+        </View>
       </Reveal>
 
       <SectionHeader
@@ -110,30 +100,28 @@ export default function PlanScreen() {
         {plannedToday} of 3 planned
       </Text>
 
-      {/* Breakfast, lunch and dinner: a photo card when planned, a dashed slot when not. */}
-      <View style={{ gap: 12 }}>
+      {/* Breakfast, lunch and dinner: three simple rows (64 high) in one card. A planned meal shows
+          its photo, name and meta; an empty one is "+ Breakfast". */}
+      <View style={[styles.mealList, { borderColor: t.colors.border }]}>
         {meals.map((meal, i) => {
           const recipe = getRecipe(dayPlan[meal]);
-          return recipe ? (
-            <Animated.View key={`${meal}-${recipe.id}`} entering={enter(i, reduceMotion)} exiting={FadeOut.duration(150)}>
-              <MealCard meal={meal} recipe={recipe} onChange={() => addMeal(meal)} onRemove={() => remove(meal, recipe.id)} />
-            </Animated.View>
-          ) : (
-            <PressableScale
-              key={meal}
-              onPress={() => addMeal(meal)}
-              accessibilityLabel={`Add ${meal.toLowerCase()} for ${weekDays[day].long}`}
-              scaleTo={0.98}
-              style={[styles.slot, { borderColor: t.colors.border, backgroundColor: popCycle[i % popCycle.length].tint }]}
-            >
-              <View style={[styles.slotIcon, { backgroundColor: t.pop.white, borderColor: t.colors.border }]}>
-                <Icon name="plus" size={20} color={t.pop.ink} weight="bold" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]}>{meal}</Text>
-                <Text style={[t.type.title3, { color: t.colors.label }]}>Add {meal.toLowerCase()}</Text>
-              </View>
-            </PressableScale>
+          return (
+            <View key={meal}>
+              {i > 0 && <Separator inset={recipe ? 72 : 64} />}
+              {recipe ? (
+                <Animated.View key={`${meal}-${recipe.id}`} entering={enter(i, reduceMotion)} exiting={FadeOut.duration(150)}>
+                  <MealRow meal={meal} recipe={recipe} onChange={() => addMeal(meal)} onRemove={() => remove(meal, recipe.id)} />
+                </Animated.View>
+              ) : (
+                <PressableScale key={meal} onPress={() => addMeal(meal)} accessibilityLabel={`Add ${meal.toLowerCase()} for ${weekDays[day].long}`} scaleTo={0.98} style={styles.mealRow} testID={`add-${meal.toLowerCase()}`}>
+                  <View style={[styles.plus, { backgroundColor: MEAL_TINT[meal] ?? t.pop.sunshineTint }]}>
+                    <Icon name="plus" size={18} color={t.pop.ink} weight="bold" />
+                  </View>
+                  <Text style={[t.type.headline, { color: t.colors.label, flex: 1 }]}>{meal}</Text>
+                  <Icon name="chevronRight" size={14} color={t.colors.secondaryLabel} weight="bold" />
+                </PressableScale>
+              )}
+            </View>
           );
         })}
       </View>
@@ -164,51 +152,44 @@ export default function PlanScreen() {
   );
 }
 
-/** A planned meal: a wide food photo with the meal and recipe over a soft fade, and change or remove. */
 /** Each meal has its own tint, like a sticker on the card. */
 const MEAL_TINT: Record<string, string> = { Breakfast: pop.sunshineTint, Lunch: pop.skyTint, Dinner: pop.berryTint };
 
-function MealCard({ meal, recipe, onChange, onRemove }: { meal: string; recipe: Recipe; onChange: () => void; onRemove: () => void }) {
+/** A planned meal: photo, name (one line) and "Dinner · 45 min · 520 kcal"; swap and remove on the right. */
+function MealRow({ meal, recipe, onChange, onRemove }: { meal: string; recipe: Recipe; onChange: () => void; onRemove: () => void }) {
   const t = useTheme();
   return (
-    <PopCard radius={22} depth={4} contentStyle={styles.meal}>
+    <View style={styles.mealRow}>
       <PressableScale onPress={() => openRecipe(recipe.id)} scaleTo={0.98} accessibilityLabel={`${meal}: ${recipe.title}, ${recipe.minutes} min, ${recipe.calories} kcal`} accessibilityHint="Opens the recipe" style={styles.mealMain}>
-        <PhotoFrame recipe={recipe} iconSize={24} radius={16} square style={styles.mealPhoto} />
-        {/* The meal on top (left-aligned), the title (2 lines max), one meta line. */}
-        <View style={{ flex: 1, gap: 3, minWidth: 0, alignItems: 'flex-start' }}>
-          <PopChip label={meal} color={MEAL_TINT[meal] ?? t.pop.sunshineTint} small />
-          <Text style={[t.type.title3, { color: t.colors.label, fontSize: 18, lineHeight: 22, alignSelf: 'stretch' }]} numberOfLines={3}>
+        <PhotoFrame recipe={recipe} iconSize={20} radius={12} square style={styles.mealPhoto} />
+        <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+          <Text style={[t.type.headline, { color: t.colors.label }]} numberOfLines={1}>
             {recipe.title}
           </Text>
-          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, alignSelf: 'stretch' }]} numberOfLines={1}>
-            {duration(recipe.minutes)} · {nb(recipe.calories, 'kcal')}
+          <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]} numberOfLines={1}>
+            {meal} · {duration(recipe.minutes)} · {nb(recipe.calories, 'kcal')}
           </Text>
         </View>
       </PressableScale>
-      <View style={styles.mealActions}>
-        <IconButton icon="shuffle" accessibilityLabel={`Change ${meal.toLowerCase()}: ${recipe.title}`} color={t.pop.ink} iconSize={15} onPress={onChange} />
-        <IconButton icon="close" accessibilityLabel={`Remove ${recipe.title} from ${meal}`} color={t.pop.ink} iconSize={14} onPress={onRemove} />
-      </View>
-    </PopCard>
+      <IconButton icon="shuffle" accessibilityLabel={`Change ${meal.toLowerCase()}: ${recipe.title}`} color={t.colors.secondaryLabel} iconSize={15} size={40} onPress={onChange} />
+      <IconButton icon="close" accessibilityLabel={`Remove ${recipe.title} from ${meal}`} color={t.colors.secondaryLabel} iconSize={14} size={40} onPress={onRemove} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   week: {},
-  // A 4pt gap keeps each day at least 44pt wide on a 375pt phone.
-  weekInner: { flexDirection: 'row', justifyContent: 'space-between', gap: 4 },
-  // At least 6pt between the text and the border, even on a 375pt-wide phone.
-  day: { alignItems: 'center', gap: 2, paddingTop: 8, paddingBottom: 8, paddingHorizontal: 3, borderRadius: 14, borderWidth: 2.5, minHeight: 76, borderCurve: 'continuous' },
+  weekInner: { flexDirection: 'row', justifyContent: 'space-between' },
+  day: { width: 44, alignItems: 'center', gap: 2, paddingTop: 8, paddingBottom: 6, borderRadius: 14, borderCurve: 'continuous' },
   dayName: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 16 },
-  dayNum: { fontFamily: fonts.heading, fontSize: 20, lineHeight: 24, fontVariant: ['tabular-nums'] },
-  dot: { width: 8, height: 8, borderRadius: 4, alignSelf: 'center' },
+  dayNum: { fontFamily: fonts.bold, fontSize: 17, lineHeight: 22, fontVariant: ['tabular-nums'] },
+  dot: { width: 6, height: 6, borderRadius: 3, alignSelf: 'center' },
   hidden: { position: 'absolute', width: 1, height: 1, opacity: 0 },
-  slot: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14, minHeight: 84, borderRadius: 22, borderWidth: 2.5, borderStyle: 'dashed', borderCurve: 'continuous' },
-  slotIcon: { width: 52, height: 52, borderRadius: 16, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' },
-  meal: { flexDirection: 'row', alignItems: 'center', padding: 8, paddingRight: 0 },
-  mealMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14 },
-  mealPhoto: { width: 72, height: 72 },
-  // Change and remove, centred against the whole card.
-  mealActions: { alignItems: 'center', justifyContent: 'center', alignSelf: 'center' },
+  // Breakfast, lunch and dinner: one flat card of 64-high rows.
+  mealList: { marginTop: 20, borderWidth: 2, borderRadius: 16, borderCurve: 'continuous', overflow: 'hidden' },
+  mealRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 64, paddingLeft: 12, paddingRight: 6, paddingVertical: 8 },
+  plus: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  mealMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, minWidth: 0 },
+  mealPhoto: { width: 48, height: 48 },
   weekCard: { padding: 18, gap: 16, borderRadius: 26, borderCurve: 'continuous' },
 });
