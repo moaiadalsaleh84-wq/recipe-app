@@ -1,5 +1,5 @@
-import { router } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { Link, router } from 'expo-router';
+import { Platform, StyleSheet, View } from 'react-native';
 import { Text } from './Text';
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withTiming, type SharedValue } from 'react-native-reanimated';
 import { memo, useEffect, useState } from 'react';
@@ -15,6 +15,9 @@ import { PopButton } from './pop/PopButton';
 import { PopIconButton } from './pop/PopIconButton';
 import { Sticker } from './pop/Sticker';
 import { Skeleton } from './ui';
+import { useToast } from './Toast';
+import { weekDays } from '../lib/week';
+import { todayIndex } from '../lib/tonightPick';
 
 export const openRecipe = (id: string) => router.push({ pathname: '/recipe/[id]', params: { id } });
 
@@ -156,21 +159,75 @@ export const RecipeCard = memo(RecipeCardView);
 
 /** (Memoized above: a card redraws only when its recipe or width change.) */
 function RecipeCardView({ recipe, width }: { recipe: Recipe; width: number; /** Older prop: cards have no box now. */ color?: string }) {
+  const actions = useCardActions(recipe);
+  const label = `${recipe.title}, ${recipe.minutes} minutes, ${recipe.difficulty}`;
+  const face = (
+    <>
+      <PhotoFrame recipe={recipe} radius={16} style={styles.imageWrap}>
+        <SourceMark recipe={recipe} />
+      </PhotoFrame>
+      <CardText title={recipe.title} meta={cardMeta(recipe)} />
+    </>
+  );
   return (
     // The heart sits beside the card's button, not inside it (a button inside a button confuses
     // screen readers and the web).
     <View style={{ width }}>
-      <PressableScale onPress={() => openRecipe(recipe.id)} haptic={null} accessibilityLabel={`${recipe.title}, ${recipe.minutes} minutes, ${recipe.difficulty}`} accessibilityHint="Opens the recipe">
-        <PhotoFrame recipe={recipe} radius={16} style={styles.imageWrap}>
-          <SourceMark recipe={recipe} />
-        </PhotoFrame>
-        <CardText title={recipe.title} meta={cardMeta(recipe)} />
-      </PressableScale>
+      {Platform.OS === 'ios' ? (
+        // iPhone: tap opens the recipe; press and hold for the system menu (Cook, Add to plan, Favorite).
+        <Link href={{ pathname: '/recipe/[id]', params: { id: recipe.id } }} asChild>
+          <Link.Trigger>
+            <PressableScale haptic={null} accessibilityLabel={label} accessibilityHint="Opens the recipe. Press and hold for more">
+              {face}
+            </PressableScale>
+          </Link.Trigger>
+          <Link.Menu>
+            <Link.MenuAction icon="frying.pan" onPress={actions.cook}>
+              Cook
+            </Link.MenuAction>
+            <Link.MenuAction icon="calendar.badge.plus" onPress={actions.addToPlan}>
+              Add to plan
+            </Link.MenuAction>
+            <Link.MenuAction icon={actions.fav ? 'heart.slash' : 'heart'} onPress={actions.favorite}>
+              {actions.fav ? 'Remove from Favorites' : 'Favorite'}
+            </Link.MenuAction>
+          </Link.Menu>
+        </Link>
+      ) : (
+        <PressableScale onPress={() => openRecipe(recipe.id)} haptic={null} accessibilityLabel={label} accessibilityHint="Opens the recipe">
+          {face}
+        </PressableScale>
+      )}
       <View style={styles.favOnPhoto}>
         <FavoriteButton recipe={recipe} onPhoto />
       </View>
     </View>
   );
+}
+
+/** The card's press-and-hold menu: cook it, put it on the plan (the next free dinner), favorite it. */
+function useCardActions(recipe: Recipe) {
+  const { isFavorite, toggleFavorite, plan, setMeal } = useStore();
+  const toast = useToast();
+  const fav = isFavorite(recipe.id);
+  return {
+    fav,
+    cook: () => router.push({ pathname: '/cook/[id]', params: { id: recipe.id } }),
+    addToPlan: () => {
+      // The next dinner without a meal, from today to Sunday (or tonight when the week is full).
+      const today = todayIndex();
+      const day = [0, 1, 2, 3, 4, 5, 6].find((d) => d >= today && !plan[d]?.Dinner) ?? today;
+      const before = plan[day]?.Dinner ?? null;
+      setMeal(day, 'Dinner', recipe.id);
+      haptics.success();
+      toast({ message: `Added to ${day === today ? 'tonight' : `${weekDays[day].long}’s dinner`}`, icon: 'calendar', action: { label: 'Undo', onPress: () => setMeal(day, 'Dinner', before) } });
+    },
+    favorite: () => {
+      const now = toggleFavorite(recipe.id);
+      if (now) haptics.success();
+      else haptics.tap();
+    },
+  };
 }
 
 /** A lighter card shadow (3pt) for recipe and Discover cards. */
