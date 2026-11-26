@@ -250,7 +250,12 @@ function AddItemField() {
         accessibilityLabel="Add an item"
         testID="add-item-input"
       />
-      {text.trim().length > 0 && <TextButton label="Add" small onPress={add} accessibilityLabel={`Add ${text.trim()}`} />}
+      {/* Empty: "Paste a list" opens the paste screen (one item per line). Typing: "Add". */}
+      {text.trim().length > 0 ? (
+        <TextButton label="Add" small onPress={add} accessibilityLabel={`Add ${text.trim()}`} />
+      ) : (
+        <TextButton label="Paste a list" small onPress={() => router.push('/add-items')} accessibilityLabel="Paste a list of groceries" testID="paste-list" />
+      )}
     </View>
   );
 }
