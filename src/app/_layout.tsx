@@ -6,6 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useMemo, type ReactNode } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { EntitlementSync } from '../components/EntitlementSync';
+import { CelebrationProvider } from '../components/Celebration';
 import { ProgressWatcher } from '../components/ProgressWatcher';
 import { ReminderSync } from '../components/ReminderSync';
 import { SoundSync } from '../components/SoundSync';
@@ -80,6 +81,7 @@ export default function RootLayout() {
             <StatusBar style={t.isDark ? 'light' : 'dark'} />
             <Hydrated>
               <TimersProvider>
+              <CelebrationProvider>
               <ProgressWatcher />
               <ReminderSync />
               <SoundSync />
@@ -109,6 +111,7 @@ export default function RootLayout() {
                 <Stack.Screen name="publish/[id]" options={{ presentation: 'modal', contentStyle: { backgroundColor: t.colors.groupedBackground } }} />
                 <Stack.Screen name="admin" options={{ presentation: 'modal', contentStyle: { backgroundColor: t.colors.groupedBackground } }} />
               </Stack>
+              </CelebrationProvider>
               </TimersProvider>
             </Hydrated>
           </ToastProvider>
