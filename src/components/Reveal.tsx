@@ -4,9 +4,9 @@ import { EASE_CUBIC, enter } from '../motion';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 
 /**
- * A section that fades in and rises 8pt when the screen first opens (not on re-renders or when you
+ * A section that fades in and rises 12pt when the screen first opens (not on re-renders or when you
  * come back to a tab: entering animations run once, on mount). Give each section its order (0, 1,
- * 2…): 30 ms apart, at most 6 staggered. With Reduce Motion: a short fade.
+ * 2…): 40 ms apart, at most 6 staggered. With Reduce Motion: a short fade.
  */
 export function Reveal({ index = 0, children, style }: { index?: number; children: ReactNode; style?: StyleProp<ViewStyle> }) {
   const reduceMotion = useReducedMotion();

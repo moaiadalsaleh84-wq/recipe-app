@@ -51,27 +51,26 @@ export function uiEase<T extends { easing: (e: typeof EASE_OUT) => T }>(builder:
 }
 
 /** Stagger between items appearing one after another. */
-export const STAGGER = 30;
+export const STAGGER = 40;
 /** Only the first few items of a list are staggered; the rest appear with the last one. */
 export const MAX_STAGGERED = 6;
 
 /**
- * The standard "arrive" animation for screens, sections, cards and rows: fade in while rising 8pt,
- * 220 ms, staggered with shrinking gaps by index (max 6). Only on first open (it's an entering animation).
+ * The standard "arrive" animation for screens, sections, cards and rows: fade in while rising 12pt,
+ * 220 ms, staggered 40 ms by index (max 6). Only on first open (it's an entering animation).
  * With Reduce Motion: a plain short fade.
  */
-/** Delays for the first 6 items: the gaps shrink (40, 30, 25, 20, 15 ms), so a group reads as one
- * wave instead of a metronome. The rest arrive with the last one. */
-const STAGGER_DELAYS = [0, 40, 70, 95, 115, 130] as const;
+/** Delays for the first 6 items, 40 ms apart. The rest arrive with the last one. */
+const STAGGER_DELAYS = [0, 40, 80, 120, 160, 200] as const;
 
 export function enter(index = 0, reduceMotion = false) {
   const delay = STAGGER_DELAYS[Math.min(index, MAX_STAGGERED - 1)];
   if (reduceMotion) return FadeIn.duration(duration.fast).delay(delay);
   const base = uiEase(FadeInDown.duration(220).delay(delay));
-  // Phones: start 8pt lower (FadeInDown's default is 25). On web, custom start values make Reanimated
+  // Phones: start 12pt lower (FadeInDown's default is 25). On web, custom start values make Reanimated
   // position the element absolutely (sections then overlap), so web keeps the default. Custom easing
   // isn't supported by web layout animations either, so the default ease is used everywhere.
-  return Platform.OS === 'web' ? base : base.withInitialValues({ opacity: 0, transform: [{ translateY: 8 }] });
+  return Platform.OS === 'web' ? base : base.withInitialValues({ opacity: 0, transform: [{ translateY: 12 }] });
 }
 
 /**
