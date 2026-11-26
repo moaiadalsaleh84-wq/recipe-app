@@ -113,8 +113,8 @@ export default function DiscoverScreen() {
         <SearchField value={q} onChangeText={setQ} placeholder="What would you like to cook?" returnKeyType="search" accessibilityLabel="Search Discover" testID="discover-search" />
 
         {/* One row: Filters (with how many are on), then your three most-used filters. */}
-        <HorizontalList gap={8}>
-          <Chip label={active ? `Filters · ${active}` : 'Filters'} icon="sort" toggle={false} selected={active > 0} onPress={() => setSheetOpen(true)} accessibilityLabel={active ? `Filters, ${active} on` : 'Filters'} />
+        <HorizontalList gap={8} contentStyle={{ paddingHorizontal: 16 }}>
+          <Chip label={active ? `Filters · ${active}` : 'Filters'} icon="sliders" toggle={false} selected={active > 0} onPress={() => setSheetOpen(true)} accessibilityLabel={active ? `Filters, ${active} on` : 'Filters'} />
           {top.map((c) => (
             <Chip key={id(c)} label={c.label} selected={filters[c.key] === c.value} onPress={() => toggle(c)} />
           ))}

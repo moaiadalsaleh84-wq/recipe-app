@@ -64,6 +64,7 @@ const icons = {
   sun: { ios: 'sun.max.fill', md: 'light_mode' },
   moon: { ios: 'moon.fill', md: 'dark_mode' },
   sort: { ios: 'arrow.up.arrow.down', md: 'swap_vert' },
+  sliders: { ios: 'slider.horizontal.3', md: 'tune' },
   chevronDown: { ios: 'chevron.down', md: 'expand_more' },
   paste: { ios: 'doc.on.clipboard', md: 'content_paste' },
 } as const satisfies Record<string, { ios: SFSymbol; md: string }>;
