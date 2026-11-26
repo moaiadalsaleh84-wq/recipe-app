@@ -179,8 +179,9 @@ function MealRow({ meal, recipe, onChange, onRemove }: { meal: string; recipe: R
 
 const styles = StyleSheet.create({
   week: {},
-  weekInner: { flexDirection: 'row', justifyContent: 'space-between' },
-  day: { width: 44, alignItems: 'center', gap: 2, paddingTop: 8, paddingBottom: 6, borderRadius: 14, borderCurve: 'continuous' },
+  // Seven equal pills that always fit between the 16pt margins (about 45pt each at 375pt).
+  weekInner: { flexDirection: 'row', gap: 4 },
+  day: { flex: 1, minWidth: 0, alignItems: 'center', gap: 2, paddingTop: 8, paddingBottom: 6, borderRadius: 14, borderCurve: 'continuous' },
   dayName: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 16 },
   dayNum: { fontFamily: fonts.bold, fontSize: 17, lineHeight: 22, fontVariant: ['tabular-nums'] },
   dot: { width: 6, height: 6, borderRadius: 3, alignSelf: 'center' },
