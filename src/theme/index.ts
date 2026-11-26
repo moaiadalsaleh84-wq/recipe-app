@@ -325,7 +325,7 @@ export const motion = {
   pop: popSpring,
   settle: spring,
   /** Toasts hide on their own after 3 seconds (or a tap). */
-  toastDuration: 3000,
+  toastDuration: 4000,
 } as const;
 
 /** The 3D edge under buttons (4px, Duolingo style). Cards, chips and pills are flat: no shadow. */

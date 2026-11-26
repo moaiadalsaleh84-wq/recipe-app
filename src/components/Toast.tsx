@@ -1,13 +1,15 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from './Text';
-import Animated, { FadeInDown, FadeOutUp } from 'react-native-reanimated';
+import { useSegments } from 'expo-router';
+import Animated, { FadeIn, FadeInUp, FadeOut, useReducedMotion } from 'react-native-reanimated';
 import { uiEase } from '../motion';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { haptics } from '../lib/haptics';
 import { useTheme } from '../theme';
 import { Icon, type IconName } from './Icon';
 import { PressableScale } from './PressableScale';
+import { useTabBarHeight } from './TabBar';
 
 type ToastOptions = {
   message: string;
@@ -70,6 +72,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 function ToastView({ toast, onDone }: { toast: ToastState; onDone: () => void }) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
+  const reduceMotion = useReducedMotion();
+  // At the bottom: 12pt above the tab bar on the tabs, above the bottom button bar elsewhere.
+  const segments = useSegments();
+  const tabBar = useTabBarHeight();
+  const bottom = segments[0] === '(tabs)' ? tabBar + 12 : insets.bottom + 88;
 
   useEffect(() => {
     const timer = setTimeout(onDone, t.motion.toastDuration);
@@ -81,11 +88,11 @@ function ToastView({ toast, onDone }: { toast: ToastState; onDone: () => void })
   const icon: IconName = toast.icon ?? (toast.tone === 'warning' ? 'warning' : toast.tone === 'info' ? 'info' : 'checkCircle');
 
   return (
-    <View pointerEvents="box-none" style={[StyleSheet.absoluteFill, { paddingTop: insets.top + t.spacing.xs }]}>
+    <View pointerEvents="box-none" style={[StyleSheet.absoluteFill, { justifyContent: 'flex-end', paddingBottom: bottom }]}>
       <Animated.View
-        // A short drop-in from just above, no spring, so it never bounces.
-        entering={uiEase(FadeInDown.duration(220))}
-        exiting={uiEase(FadeOutUp.duration(160))}
+        // Slides up a little and fades in (no spring, never bounces); fades out. Reduce Motion: fades only.
+        entering={reduceMotion ? FadeIn.duration(160) : uiEase(FadeInUp.duration(240))}
+        exiting={FadeOut.duration(200)}
         accessibilityLiveRegion="polite"
         accessibilityRole="alert"
         style={[
