@@ -22,6 +22,8 @@ export type Profile = {
   reminder: { enabled: boolean; time: string };
   /** Optional 8 pm nudge when a 3+ day streak hasn't had today's cook yet. Off unless turned on. */
   streakSaver?: boolean;
+  /** Soft app sounds (ticks, celebrations). On unless turned off in Settings. */
+  sounds?: boolean;
 };
 
 export const emptyProfile: Profile = { name: '', goals: [], diets: [], household: null, dinnerTime: null, reminder: { enabled: false, time: '18:00' } };

@@ -75,6 +75,25 @@ export default function Settings() {
             <Segmented label="Units" value={units} onChange={(u: Units) => setUnits(u)} options={[{ label: 'Metric', value: 'metric' }, { label: 'US', value: 'us' }]} />
           </View>
         </Section>
+        {/* Soft sounds for ticks and celebrations (they follow the silent switch). On by default. */}
+        <Section>
+          <View style={styles.row}>
+            <Icon name="sound" size={18} color={t.colors.label} />
+            <View style={{ flex: 1 }}>
+              <Text style={[t.type.body, { color: t.colors.label }]}>Sounds</Text>
+              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{noWidow('Soft sounds for ticks and celebrations. They follow the silent switch.')}</Text>
+            </View>
+            <Switch
+              value={profile.sounds !== false}
+              onValueChange={(on) => setProfile({ sounds: on })}
+              trackColor={{ true: pop.leaf, false: pop.lilacTint }}
+              thumbColor={pop.white}
+              ios_backgroundColor={pop.lilacTint}
+              accessibilityLabel="Sounds"
+              testID="sounds-switch"
+            />
+          </View>
+        </Section>
         {/* Your diet from onboarding: Home and every pick only show recipes that fit it. */}
         <Section>
           <View style={styles.dietRow} testID="diet-setting">

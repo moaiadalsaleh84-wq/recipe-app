@@ -15,6 +15,7 @@ import { PopButton, PopCard, PopChip } from '../../../components/pop';
 import { aisleOrder, type GroceryItem } from '../../../data/mock';
 import { splitItems } from '../../../lib/groceries';
 import { haptics } from '../../../lib/haptics';
+import { playSound } from '../../../lib/sounds';
 import { useTonightPick } from '../../../lib/tonightPick';
 import { TabScreen } from '../../../components/TabScreen';
 import { useStore } from '../../../state/store';
@@ -76,6 +77,8 @@ export default function GroceriesScreen() {
   const toggle = (item: GroceryItem) => {
     toggleGrocery(item.key);
     if (item.checked) return;
+    // A soft tick when something goes in the basket (Settings → Sounds; follows the silent switch).
+    playSound('tick');
     if (done + 1 === total) {
       haptics.success();
       setParty((n) => n + 1);

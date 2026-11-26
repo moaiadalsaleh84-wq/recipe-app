@@ -8,6 +8,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { EntitlementSync } from '../components/EntitlementSync';
 import { ProgressWatcher } from '../components/ProgressWatcher';
 import { ReminderSync } from '../components/ReminderSync';
+import { SoundSync } from '../components/SoundSync';
 import { NotificationTaps } from '../components/NotificationTaps';
 import { ToastProvider } from '../components/Toast';
 import { ImportUpkeep } from '../components/ImportUpkeep';
@@ -81,6 +82,7 @@ export default function RootLayout() {
               <TimersProvider>
               <ProgressWatcher />
               <ReminderSync />
+              <SoundSync />
               <NotificationTaps />
               <EntitlementSync />
               <ImportUpkeep />

@@ -1,6 +1,7 @@
 import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-audio';
 import { useCallback, useEffect, useRef } from 'react';
 import { haptics } from './haptics';
+import { markAlarmRinging } from './sounds';
 
 const CHIME = require('../../assets/sounds/timer-chime.wav');
 /** Stop ringing on its own after this long, in case nobody is in the kitchen. */
@@ -36,6 +37,7 @@ export function useAlarm() {
   }, []);
 
   const stop = useCallback(() => {
+    markAlarmRinging(false);
     clearInterval(buzz.current);
     clearTimeout(autoStop.current);
     try {
@@ -46,6 +48,7 @@ export function useAlarm() {
   }, []);
 
   const start = useCallback(() => {
+    markAlarmRinging(true);
     setAudioModeAsync({ playsInSilentMode: true, interruptionMode: 'duckOthers' }).catch(() => {});
     const p = player.current;
     if (p) {
