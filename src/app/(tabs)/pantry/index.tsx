@@ -117,6 +117,56 @@ export default function PantryScreen() {
         </>
       )}
 
+      {/* What can I cook: right under adding, so what your pantry unlocks is the first thing you see. */}
+      {pantry.length > 0 && (
+        <>
+          <View style={[styles.cookBand, { backgroundColor: t.pop.leafTint, borderColor: t.pop.ink, marginHorizontal: -t.layout.screen, paddingHorizontal: t.layout.screen }]}>
+          <SectionHeader title="What can I cook?" style={{ marginTop: 0 }} />
+          <Text style={[t.type.headline, { color: t.colors.label, marginBottom: 2 }]} testID="ready-count">
+            {ready ? `You can cook ${ready} ${ready === 1 ? 'recipe' : 'recipes'} right now` : 'You’re a few items away from these'}
+          </Text>
+          <Text style={[t.type.footnote, { color: t.colors.label, marginBottom: 14 }]}>Sorted by how much you already have. Salt, pepper and water are assumed.</Text>
+
+          {/* Smart suggestions */}
+          {suggestions.length > 0 &&
+            (isPro ? (
+              <Lift radius={20} style={{ marginBottom: 16 }}>
+                <View style={[styles.card, { backgroundColor: t.colors.cell, borderRadius: 20, ...t.chunky.card }]} testID="smart-suggestions">
+                  <Text style={[t.type.headline, { color: t.colors.label, marginBottom: 6 }]}>Buy one thing, cook more</Text>
+                  {suggestions.map((s) => (
+                    <Text key={s.name} style={[t.type.subhead, { color: t.colors.secondaryLabel, paddingVertical: 3 }]}>
+                      <Text style={{ color: t.colors.label, fontFamily: t.fonts.bold }}>{s.name}</Text> → {s.completes.map((r) => r.title).join(', ')}
+                    </Text>
+                  ))}
+                </View>
+              </Lift>
+            ) : (
+              <Lift radius={20} style={{ marginBottom: 14 }}>
+                <PressableScale onPress={() => showPaywall('pantry')} accessibilityLabel="Smart suggestions, Pro" style={[styles.card, styles.locked, { backgroundColor: t.colors.cell, borderRadius: 20, ...t.chunky.card }]}>
+                  <Icon name="lock" size={18} color={t.colors.tint} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[t.type.headline, { color: t.colors.label }]}>Buy one thing, cook more</Text>
+                    <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
+                      With Pro, see which single item would let you cook {suggestions[0].completes.length === 1 ? 'another recipe' : `${suggestions[0].completes.length} more recipes`}.
+                    </Text>
+                  </View>
+                </PressableScale>
+              </Lift>
+            ))}
+
+          {matches.length === 0 ? (
+            <EmptyState icon="pot" title="No matches yet" message="None of your recipes use these items. Add a few more, or import a recipe you love." action={{ label: 'Import a recipe', onPress: () => router.push('/import') }} />
+          ) : (
+            matches.map((m, i) => (
+              <Animated.View key={m.recipe.id} entering={enter(i, reduceMotion)}>
+                <MatchCard match={m} onAddMissing={() => addMissing(m)} />
+              </Animated.View>
+            ))
+          )}
+          </View>
+        </>
+      )}
+
       {/* Your items */}
       <SectionHeader
         title="In your pantry"
@@ -177,55 +227,6 @@ export default function PantryScreen() {
         </PressableScale>
       )}
 
-      {/* What can I cook */}
-      {pantry.length > 0 && (
-        <>
-          <View style={[styles.cookBand, { backgroundColor: t.pop.leafTint, borderColor: t.pop.ink, marginHorizontal: -t.layout.screen, paddingHorizontal: t.layout.screen }]}>
-          <SectionHeader title="What can I cook?" style={{ marginTop: 0 }} />
-          <Text style={[t.type.headline, { color: t.colors.label, marginBottom: 2 }]} testID="ready-count">
-            {ready ? `You can cook ${ready} ${ready === 1 ? 'recipe' : 'recipes'} right now` : 'You’re a few items away from these'}
-          </Text>
-          <Text style={[t.type.footnote, { color: t.colors.label, marginBottom: 14 }]}>Sorted by how much you already have. Salt, pepper and water are assumed.</Text>
-
-          {/* Smart suggestions */}
-          {suggestions.length > 0 &&
-            (isPro ? (
-              <Lift radius={20} style={{ marginBottom: 16 }}>
-                <View style={[styles.card, { backgroundColor: t.colors.cell, borderRadius: 20, ...t.chunky.card }]} testID="smart-suggestions">
-                  <Text style={[t.type.headline, { color: t.colors.label, marginBottom: 6 }]}>Buy one thing, cook more</Text>
-                  {suggestions.map((s) => (
-                    <Text key={s.name} style={[t.type.subhead, { color: t.colors.secondaryLabel, paddingVertical: 3 }]}>
-                      <Text style={{ color: t.colors.label, fontFamily: t.fonts.bold }}>{s.name}</Text> → {s.completes.map((r) => r.title).join(', ')}
-                    </Text>
-                  ))}
-                </View>
-              </Lift>
-            ) : (
-              <Lift radius={20} style={{ marginBottom: 14 }}>
-                <PressableScale onPress={() => showPaywall('pantry')} accessibilityLabel="Smart suggestions, Pro" style={[styles.card, styles.locked, { backgroundColor: t.colors.cell, borderRadius: 20, ...t.chunky.card }]}>
-                  <Icon name="lock" size={18} color={t.colors.tint} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={[t.type.headline, { color: t.colors.label }]}>Buy one thing, cook more</Text>
-                    <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>
-                      With Pro, see which single item would let you cook {suggestions[0].completes.length === 1 ? 'another recipe' : `${suggestions[0].completes.length} more recipes`}.
-                    </Text>
-                  </View>
-                </PressableScale>
-              </Lift>
-            ))}
-
-          {matches.length === 0 ? (
-            <EmptyState icon="pot" title="No matches yet" message="None of your recipes use these items. Add a few more, or import a recipe you love." action={{ label: 'Import a recipe', onPress: () => router.push('/import') }} />
-          ) : (
-            matches.map((m, i) => (
-              <Animated.View key={m.recipe.id} entering={enter(i, reduceMotion)}>
-                <MatchCard match={m} onAddMissing={() => addMissing(m)} />
-              </Animated.View>
-            ))
-          )}
-          </View>
-        </>
-      )}
     </TabScreen>
   );
 }

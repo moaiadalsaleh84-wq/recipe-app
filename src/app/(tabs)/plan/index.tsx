@@ -151,10 +151,10 @@ export default function PlanScreen() {
             <View style={{ gap: 2 }}>
               <Text style={[t.type.title2, { color: t.colors.onTint }]}>This week</Text>
               <Text style={[t.type.subhead, { color: t.colors.onTint }]}>
-                {weekRecipes.length} {weekRecipes.length === 1 ? 'meal' : 'meals'} planned. Shared ingredients are{'\u00A0'}combined.
+                {weekRecipes.length} {weekRecipes.length === 1 ? 'meal' : 'meals'} planned. You pick what to buy; pantry items are{'\u00A0'}skipped.
               </Text>
             </View>
-            <PopButton label="Shop the week" icon="cartAdd" onPress={addWeek} accessibilityLabel="Pick what to buy for this week" />
+            <PopButton label="Add missing to List" icon="cartAdd" onPress={addWeek} accessibilityLabel="Pick what to buy for this week" />
           </View>
         </Lift>
         </Reveal>
