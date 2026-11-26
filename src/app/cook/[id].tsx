@@ -43,6 +43,7 @@ import { levelFor, streakOf, xpFor } from '../../lib/progress';
 import { playSuccess } from '../../lib/sounds';
 import { keepTogether, nb } from '../../lib/text';
 import { ingredientsInStep, splitTip, warnStepProblems } from '../../lib/steps';
+import { pantryHas } from '../../lib/pantry';
 import { durationLabel, findTimers } from '../../lib/timers';
 import { convertStepText } from '../../lib/units';
 import { amountFor, ingredientLabel } from '../../lib/scale';
@@ -72,6 +73,12 @@ export default function CookMode() {
   return <CookSession key={recipe.id} recipe={recipe} servings={Number(params.servings) || profile.household || recipe.servings || 1} startStep={Number(params.step) || 0} />;
 }
 
+/** A step's text as separate sentences ("Heat the oil. Add the onion." → two lines). */
+function stepLines(text: string) {
+  const lines = text.split(/(?<=[.!?])\s+(?=[A-Z0-9“"(])/).map((l) => l.trim()).filter(Boolean);
+  return lines.length ? lines : [text];
+}
+
 function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; servings: number; startStep?: number }) {
   // The screen stays on while you cook. Leaving quickly can deactivate before activation finishes; that's harmless.
   useKeepAwake(undefined, { suppressDeactivateWarnings: true });
@@ -91,7 +98,7 @@ function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; serv
   // The cooking-history entry made when you finish, and your XP and level just before it.
   const [entry, setEntry] = useState<FinishEntry | null>(null);
   // Timers live app-wide (src/state/timers.tsx): they keep going outside Cook Mode and ring when the app is closed.
-  const { timers, now, support, start, pause, resume, reset, stop } = useTimers();
+  const { timers, now, support, start, pause, resume, reset, stop, addTime } = useTimers();
 
   const steps = recipe?.steps ?? [];
   const last = steps.length + 1;
@@ -194,6 +201,15 @@ function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; serv
     if (!gathered[key] && gatherTiles.every((g) => next[g.key])) haptics.success();
   };
   const setOut = gatherTiles.filter((g) => gathered[g.key]).length;
+  const allOut = setOut === gatherTiles.length;
+  // Ingredient pills ticked off as they go in the pan (any step).
+  const [used, setUsed] = useState<Record<string, boolean>>({});
+  // "I've got everything": ticks every tile at once (or unticks them all again).
+  const gatherAll = () => {
+    setGathered(Object.fromEntries(gatherTiles.map((g) => [g.key, !allOut])));
+    if (allOut) haptics.tap();
+    else haptics.success();
+  };
 
   const onStep = page >= 1 && page <= steps.length;
   // Checked recipe text already gives °C and °F: shown exactly as written.
@@ -292,6 +308,7 @@ function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; serv
                   </Text>
                   <Text style={[t.type.body, { color: pop.inkMuted }]}>Tap each one as it lands on the counter.</Text>
                 </View>
+                <PopChip label={allOut ? 'Untick all' : 'I’ve got everything'} icon={allOut ? 'undo' : 'check'} onPress={gatherAll} accessibilityLabel={allOut ? 'Untick every ingredient' : 'Tick every ingredient'} style={{ alignSelf: 'flex-start' }} />
                 <MascotSlot
                   message={
                     setOut === gatherTiles.length
@@ -303,7 +320,7 @@ function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; serv
                 />
                 <View style={styles.grid}>
                   {gatherTiles.map(({ key, item, parts }) => (
-                    <GatherTile key={key} {...partsOf(item, parts > 1)} checked={!!gathered[key]} onPress={() => toggleGathered(key)} />
+                    <GatherTile key={key} {...partsOf(item, parts > 1)} home={pantryHas(store.pantry, item.name)} checked={!!gathered[key]} onPress={() => toggleGathered(key)} />
                   ))}
                 </View>
               </Animated.View>
@@ -318,13 +335,27 @@ function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; serv
                   <View style={[styles.stepBadge, { backgroundColor: color.fill }]} accessibilityElementsHidden>
                     <Text style={[t.type.title2, { color: pop.ink }]}>{page}</Text>
                   </View>
-                  <Text style={[styles.stepText, main.length > 120 && styles.stepTextLong, t.noWidows.style, { color: pop.ink }]} {...t.noWidows.props} testID="cook-step" accessibilityRole="header">
-                    {keepTogether(main)}
-                  </Text>
+                  {/* One sentence per line: easy to find your place at arm's length. */}
+                  <View style={{ gap: 10 }} testID="cook-step" accessible accessibilityRole="header" accessibilityLabel={main}>
+                    {stepLines(main).map((line, i) => (
+                      <Text key={i} style={[styles.stepText, main.length > 120 && styles.stepTextLong, t.noWidows.style, { color: pop.ink }]} {...t.noWidows.props}>
+                        {keepTogether(line)}
+                      </Text>
+                    ))}
+                  </View>
                   {inStep.length > 0 && (
                     <View style={styles.stepChips} testID="in-step" accessibilityLabel={`In this step: ${inStep.map(amountOf).join(', ')}`}>
+                      {/* Tap one once it's in the pan: it gets a check (tap again to undo). */}
                       {inStep.map((ing) => (
-                        <PopChip key={ing.id} label={amountOf(ing)} color={color.tint} small />
+                        <PopChip
+                          key={ing.id}
+                          label={amountOf(ing)}
+                          color={color.tint}
+                          small
+                          selected={!!used[ing.id]}
+                          onPress={() => setUsed((u) => ({ ...u, [ing.id]: !u[ing.id] }))}
+                          accessibilityLabel={`${amountOf(ing)}${used[ing.id] ? ', used' : ''}. Tap to mark ${used[ing.id] ? 'not used' : 'as used'}`}
+                        />
                       ))}
                     </View>
                   )}
@@ -354,6 +385,7 @@ function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; serv
                       onPause={() => tm && pause(tm.id)}
                       onResume={() => tm && resume(tm.id)}
                       onReset={() => tm && reset(tm.id)}
+                      onAddMinute={() => tm && addTime(tm.id, 60)}
                       onStop={() => {
                         if (!tm) return;
                         stop(tm.id);
@@ -436,7 +468,7 @@ function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; serv
  * One ingredient on the counter. Unchecked: white with a dashed empty circle, sitting high on a
  * 5px shadow. Checked: leaf green with a white check, pressed down to a 2px shadow. A small pop when tapped.
  */
-function GatherTile({ name, qty, checked, onPress }: { name: string; qty: string; checked: boolean; onPress: () => void }) {
+function GatherTile({ name, qty, home, checked, onPress }: { name: string; qty: string; /** In your pantry already. */ home: boolean; checked: boolean; onPress: () => void }) {
   const reduceMotion = useReducedMotion();
   const pressed = useSharedValue(checked ? 1 : 0);
   useEffect(() => {
@@ -455,7 +487,7 @@ function GatherTile({ name, qty, checked, onPress }: { name: string; qty: string
       }}
       accessibilityRole="checkbox"
       aria-checked={checked}
-      accessibilityLabel={qty ? `${qty} ${name}` : name}
+      accessibilityLabel={`${qty ? `${qty} ${name}` : name}${home ? ', in your pantry' : ''}`}
       style={{ width: tileWidth, paddingBottom: 5 }}
     >
       <View style={styles.tileShadow} />
@@ -478,6 +510,13 @@ function GatherTile({ name, qty, checked, onPress }: { name: string; qty: string
               {qty}
             </Text>
           ) : null}
+          {/* Already at home (Pantry tab): a small mint label, so you know where to look. */}
+          {home && (
+            <View style={[styles.homeTag, { backgroundColor: checked ? pop.white : pop.leafTint }]}>
+              <Icon name="fridge" size={11} color={pop.ink} weight="bold" />
+              <Text style={styles.homeTagText}>In pantry</Text>
+            </View>
+          )}
         </View>
       </Animated.View>
     </Pressable>
@@ -493,7 +532,7 @@ function GatherTile({ name, qty, checked, onPress }: { name: string; qty: string
  * Done!), always in full. Row 2: the controls, 48pt each: Play, or Stop while it runs (freezes the time
  * left; Play carries on), Reset, and Stop to silence the alarm when it's done. It never starts on its own.
  */
-function TimerCard({ seconds, timer: tm, now, first, onStart, onPause, onResume, onReset, onStop }: { seconds: number; timer?: CookTimer; now: number; first: boolean; onStart: () => void; onPause: () => void; onResume: () => void; onReset: () => void; onStop: () => void }) {
+function TimerCard({ seconds, timer: tm, now, first, onStart, onPause, onResume, onReset, onStop, onAddMinute }: { seconds: number; timer?: CookTimer; now: number; first: boolean; onStart: () => void; onPause: () => void; onResume: () => void; onReset: () => void; onStop: () => void; onAddMinute: () => void }) {
   const t = useTheme();
   const length = durationLabel(seconds);
   const done = tm?.status === 'ringing' || tm?.status === 'done';
@@ -503,11 +542,13 @@ function TimerCard({ seconds, timer: tm, now, first, onStart, onPause, onResume,
   const status = done ? 'Ding! Time’s up' : ready ? 'Ready' : running ? 'Running' : 'Stopped';
   const reduceMotion = useReducedMotion();
   // A bar that drains smoothly: each second it glides (linear, on the UI thread) to the next value.
-  const drain = useSharedValue(left / seconds);
+  // Against the timer's own length (it grows with "+1 min").
+  const full = tm?.total ?? seconds;
+  const drain = useSharedValue(left / full);
   useEffect(() => {
-    const to = done ? 0 : Math.max(0, Math.min(1, left / seconds));
+    const to = done ? 0 : Math.max(0, Math.min(1, left / full));
     drain.set(running && !reduceMotion ? withTiming(to, { duration: 1000, easing: Easing.linear }) : to);
-  }, [left, seconds, running, done, reduceMotion, drain]);
+  }, [left, full, running, done, reduceMotion, drain]);
   const drainStyle = useAnimatedStyle(() => ({ transform: [{ scaleX: drain.get() }] }));
   // Time's up: a success buzz and the card glows softly once (opacity, no scaling).
   const pulse = useSharedValue(1);
@@ -541,6 +582,8 @@ function TimerCard({ seconds, timer: tm, now, first, onStart, onPause, onResume,
           {!done && !running && <PopIconButton icon="play" size={48} accessibilityLabel={ready ? `Start a ${length} timer` : 'Resume timer'} onPress={!tm ? onStart : onResume} haptic={ready ? null : 'select'} />}
           {running && <PopButton label="Stop" icon="pause" size="small" color={pop.white} onPress={onPause} accessibilityLabel="Stop timer" accessibilityHint="Keeps the time left. Play carries on." haptic="select" faceStyle={styles.stopFace} />}
           {tm && !done && !ready && <PopIconButton icon="restart" size={48} accessibilityLabel="Reset timer" onPress={onReset} haptic="select" />}
+          {/* +1 min: running, stopped or just rung (it starts again with one more minute). */}
+          {tm && !ready && <PopButton label="+1 min" size="small" color={pop.white} onPress={onAddMinute} accessibilityLabel="Add one minute" haptic="select" testID={first ? 'timer-plus-minute' : undefined} />}
           {/* Time's up: Stop silences the alarm. */}
           {done && <PopButton label="Stop" size="small" color={pop.white} onPress={onStop} accessibilityLabel={tm?.status === 'ringing' ? 'Stop alarm' : 'Clear timer'} haptic="select" faceStyle={styles.stopFace} />}
         </View>
@@ -606,7 +649,17 @@ function Finish({
   const toast = useToast();
   const [rating, setRating] = useState<Rating | null>(null);
   const [photo, setPhoto] = useState<string | null>(null);
-  const { setMeal } = useStore();
+  const { setMeal, pantry, removePantry, restorePantry } = useStore();
+  // Pantry items this recipe used: one tap takes them off the Pantry tab (with Undo).
+  const usedFromPantry = useMemo(() => pantry.filter((p) => recipe.ingredients.some((i) => pantryHas([p], i.name))), [pantry, recipe.ingredients]);
+  const [pantryDone, setPantryDone] = useState(false);
+  const clearUsed = () => {
+    const before = pantry;
+    usedFromPantry.forEach((p) => removePantry(p));
+    setPantryDone(true);
+    haptics.success();
+    toast({ message: `Took ${usedFromPantry.length} ${usedFromPantry.length === 1 ? 'item' : 'items'} off your pantry`, icon: 'check', action: { label: 'Undo', onPress: () => { restorePantry(before); setPantryDone(false); } } });
+  };
   const { tomorrow: tomorrowPick, picks } = useTonightPick();
   // Tomorrow's idea, never the dish you just made.
   const tomorrow = [tomorrowPick, ...picks].find((p) => p && p.recipe.id !== recipe.id);
@@ -735,6 +788,19 @@ function Finish({
             ))}
           </View>
         </Animated.View>
+
+        {/* Used things from your pantry? Take them off in one tap (only when there are some). */}
+        {usedFromPantry.length > 0 && !pantryDone && (
+          <Animated.View entering={enter(6, reduceMotion)} style={{ alignSelf: 'stretch' }}>
+            <PopCard color={pop.leafTint} radius={20} contentStyle={styles.usedCard} testID="finish-pantry">
+              <Text style={[t.type.headline, { color: pop.ink }]}>Used up anything?</Text>
+              <Text style={[t.type.footnote, { color: pop.ink }]} numberOfLines={3}>
+                {usedFromPantry.join(', ')}
+              </Text>
+              <PopButton label={`Remove ${usedFromPantry.length} from Pantry`} icon="fridge" size="small" color={pop.white} onPress={clearUsed} />
+            </PopCard>
+          </Animated.View>
+        )}
 
         <Animated.View entering={enter(6, reduceMotion)} style={{ gap: 6, alignSelf: 'stretch' }}>
           <PopButton label={photo ? 'Change photo' : 'Snap your plate'} icon="camera" color={pop.ink} textColor={pop.white} onPress={snap} accessibilityLabel={photo ? 'Change the photo of your plate' : 'Snap a photo of your plate'} />
@@ -914,6 +980,9 @@ const styles = StyleSheet.create({
   tile: { flex: 1, height: 116, borderRadius: 20, borderWidth: 2.5, borderColor: pop.ink, padding: 12, justifyContent: 'flex-start', gap: 8, borderCurve: 'continuous' },
   tileEmpty: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderStyle: 'dashed', borderColor: pop.ink },
   tileCheck: { width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: pop.ink, backgroundColor: pop.white, alignItems: 'center', justifyContent: 'center' },
+  usedCard: { padding: 16, gap: 8 },
+  homeTag: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', borderWidth: 1.5, borderColor: pop.ink, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2, marginTop: 6 },
+  homeTagText: { fontFamily: fonts.bold, fontSize: 11, lineHeight: 14, color: pop.ink },
   tileName: { fontFamily: fonts.black, fontSize: 17, lineHeight: 21, color: pop.ink },
   tileQty: { fontFamily: fonts.body, fontSize: 14, lineHeight: 18, color: pop.inkMuted },
   stepCard: { paddingHorizontal: 20, paddingTop: 36, paddingBottom: 20, gap: 16 },

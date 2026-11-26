@@ -38,6 +38,8 @@ type TimersApi = {
   pause: (id: string) => void;
   resume: (id: string) => void;
   restart: (id: string) => void;
+  /** Adds `seconds` ("+1 min"). */
+  addTime: (id: string, seconds: number) => void;
   /** Back to the full length, not running. */
   reset: (id: string) => void;
   /** Stops a ringing timer or cancels a running one. */
@@ -180,6 +182,15 @@ export function TimersProvider({ children }: { children: ReactNode }) {
     },
     [alarm],
   );
+  const addTime = useCallback(
+    (id: string, seconds: number) => {
+      alarm.stop();
+      const at = Date.now();
+      setNow(at);
+      setTimers((l) => engine.addTime(l, id, seconds, at));
+    },
+    [alarm],
+  );
   const stop = useCallback((id: string) => setTimers((l) => engine.stop(l, id)), []);
 
   // Notification taps open Cook Mode; Lock Screen buttons pause, resume or stop.
@@ -202,7 +213,7 @@ export function TimersProvider({ children }: { children: ReactNode }) {
     if (allow) await requestNotificationPermission();
   };
 
-  const value = useMemo<TimersApi>(() => ({ timers, now, support, start, pause, resume, restart, reset, stop }), [timers, now, support, start, pause, resume, restart, reset, stop]);
+  const value = useMemo<TimersApi>(() => ({ timers, now, support, start, pause, resume, restart, addTime, reset, stop }), [timers, now, support, start, pause, resume, restart, addTime, reset, stop]);
 
   return (
     <TimersContext.Provider value={value}>

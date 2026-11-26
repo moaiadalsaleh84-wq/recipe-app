@@ -101,6 +101,20 @@ export const reset = (list: CookTimer[], id: string) =>
 export const restart = (list: CookTimer[], id: string, now: number) =>
   update(list, id, (t) => ({ ...t, status: 'running', endsAt: now + t.total * 1000, remaining: t.total, remainingMs: undefined, finishedAt: null }));
 
+/**
+ * "+1 min": adds time to a timer. Running or paused, it simply gets longer; one that already rang
+ * starts again with just the extra time.
+ */
+export const addTime = (list: CookTimer[], id: string, seconds: number, now: number) =>
+  update(list, id, (t) => {
+    if (t.status === 'running' && t.endsAt != null) return { ...t, endsAt: t.endsAt + seconds * 1000, total: t.total + seconds };
+    if (t.status === 'paused') {
+      const ms = (t.remainingMs ?? t.remaining * 1000) + seconds * 1000;
+      return { ...t, remaining: Math.ceil(ms / 1000), remainingMs: ms, total: t.total + seconds };
+    }
+    return { ...t, status: 'running', endsAt: now + seconds * 1000, total: seconds, remaining: seconds, remainingMs: undefined, finishedAt: null };
+  });
+
 /** Stop a ringing timer, or cancel a running/paused one. Either way it's removed. */
 export const stop = (list: CookTimer[], id: string) => list.filter((t) => t.id !== id);
 
