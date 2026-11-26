@@ -337,7 +337,7 @@ function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; serv
                   {/* One sentence per line: easy to find your place at arm's length. */}
                   <View style={{ gap: 10 }} testID="cook-step" accessible accessibilityRole="header" accessibilityLabel={main}>
                     {stepLines(main).map((line, i) => (
-                      <Text key={i} style={[styles.stepText, main.length > 120 && styles.stepTextLong, t.noWidows.style, { color: pop.ink }]} {...t.noWidows.props}>
+                      <Text key={i} style={[styles.stepText, stepSize(main), t.noWidows.style, { color: pop.ink }]} {...t.noWidows.props}>
                         {keepTogether(line)}
                       </Text>
                     ))}
@@ -914,6 +914,9 @@ function Flare({ active, children }: { active: boolean; children: ReactNode }) {
 const uniqueTimers = (list: { label: string; seconds: number }[]) => list.filter((x, i) => list.findIndex((y) => y.label === x.label) === i);
 
 /** First sentence of a step, short enough for the Lock Screen. */
+/** Step text size by length: under 80 characters 28, up to 160 22, longer 19 (the page scrolls). */
+const stepSize = (text: string) => (text.length < 80 ? null : text.length <= 160 ? { fontSize: 22, lineHeight: 29 } : { fontSize: 19, lineHeight: 26 });
+
 const shortStep = (step: string) => {
   const first = step.split(/(?<=[.!?])\s/)[0] ?? step;
   return first.length > 48 ? `${first.slice(0, 46).trimEnd()}…` : first;
@@ -953,9 +956,8 @@ const styles = StyleSheet.create({
   tileQty: { fontFamily: fonts.body, fontSize: 14, lineHeight: 18, color: pop.inkMuted },
   stepCard: { paddingHorizontal: 20, paddingTop: 36, paddingBottom: 20, gap: 16 },
   stepBadge: { position: 'absolute', top: -26, left: 18, width: 50, height: 50, borderRadius: 25, borderWidth: 2.5, borderColor: pop.line, alignItems: 'center', justifyContent: 'center' },
-  stepText: { fontFamily: fonts.headingSemi, fontSize: 30, lineHeight: 38 },
+  stepText: { fontFamily: fonts.headingSemi, fontSize: 28, lineHeight: 35 },
   // Long steps (over 120 characters) a little smaller; the step area scrolls if it still doesn't fit.
-  stepTextLong: { fontSize: 26, lineHeight: 33 },
   stepChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tip: { borderWidth: 2, borderStyle: 'dashed', borderColor: pop.line, borderRadius: 18, padding: 14 },
   timerFace: { gap: 12, paddingHorizontal: 16, paddingVertical: 14 },
