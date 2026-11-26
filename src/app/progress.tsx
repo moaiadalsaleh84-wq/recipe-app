@@ -6,14 +6,16 @@ import Animated, { FadeIn, FadeOut, useReducedMotion } from 'react-native-reanim
 import { enter } from '../motion';
 import { Icon } from '../components/Icon';
 import { PressableScale } from '../components/PressableScale';
-import { Lift, PopButton, PopCard, PopChip, PopIconButton } from '../components/pop';
+import { PopButton, PopCard, PopChip, PopIconButton } from '../components/pop';
+import { BottomSheet } from '../components/BottomSheet';
+import { HorizontalList } from '../components/HorizontalList';
 import { goalsOn } from '../data/mock';
 import { useTonightPick } from '../lib/tonightPick';
 import { stickers } from '../data/stickers';
 import { nb } from '../lib/text';
 import { weekDotSize } from '../lib/weekDots';
 import { useToast } from '../components/Toast';
-import { AnimatedNumber, Button, ProgressBar, Section, SectionHeader, Separator, Stepper, TextButton } from '../components/ui';
+import { AnimatedNumber, Button, IconButton, ProgressBar, Ring, Section, SectionHeader, Separator, Stepper } from '../components/ui';
 import { Reveal } from '../components/Reveal';
 import { showPaywall, useProGate } from '../lib/pro';
 import { BADGES, levelFor, streakInfo, xpFor } from '../lib/progress';
@@ -37,6 +39,7 @@ export default function ProgressScreen() {
   const [showAll, setShowAll] = useState(false);
   const [allStickers, setAllStickers] = useState(false);
   const [allHistory, setAllHistory] = useState(false);
+  const [goalsSheet, setGoalsSheet] = useState(false);
 
   const now = new Date();
   const { days: streak, frozen } = streakInfo(cooked.map((c) => c.date));
@@ -88,8 +91,10 @@ export default function ProgressScreen() {
     return history.filter((c) => (seen.has(c.recipeId) ? false : (seen.add(c.recipeId), true)));
   }, [history]);
   const shownDishes = allHistory ? dishes : dishes.slice(0, 5);
-  // Three round badges: the ones you have first, then the next ones to earn.
-  const badgeRow = [...earned, ...BADGES.filter((b) => !fun.badges.includes(b.id))].slice(0, 3);
+  // The badges you have, then the next two to earn as progress rings.
+  const nextBadges = BADGES.filter((b) => !fun.badges.includes(b.id)).slice(0, 2);
+  const badgeRow = [...earned, ...nextBadges];
+  const stickersFound = (fun.stickers ?? []).length;
   const firstName = profile.name.trim().split(/\s+/)[0] ?? '';
 
   const header = (
@@ -116,11 +121,12 @@ export default function ProgressScreen() {
       </View>
       {/* A chunky XP bar toward the next level */}
       <View style={{ gap: 6, marginTop: 16 }} accessible accessibilityLabel={`${xp} XP. ${lvl.next ? `${lvl.toNext} XP to ${lvl.next.title}` : 'Top level'}`}>
-        <ProgressBar value={lvl.progress} color={t.pop.lilac} height={14} label="Level progress" />
+        <ProgressBar value={lvl.progress} color={t.pop.lilac} height={6} label="Level progress" />
+        {/* "40 XP · 60 XP to Prep Cook"; before your first XP, just the next step. */}
         <View style={{ flexDirection: 'row', alignItems: 'center' }} testID="xp-label">
-          <AnimatedNumber value={xp} suffix={'\u00A0XP'} style={[t.type.caption1, { color: t.colors.secondaryLabel }]} />
+          {xp > 0 && <AnimatedNumber value={xp} suffix={'\u00A0XP\u00A0·\u00A0'} style={[t.type.caption1, { color: t.colors.secondaryLabel }]} />}
           <Text style={[t.type.caption1, { color: t.colors.secondaryLabel, flexShrink: 1 }]} numberOfLines={1}>
-            {lvl.next ? `\u00A0·\u00A0${nb(lvl.toNext, 'XP')} to ${lvl.next.title}` : '\u00A0·\u00A0Top level!'}
+            {lvl.next ? `${nb(lvl.toNext, 'XP')} to ${lvl.next.title}` : 'Top level!'}
           </Text>
         </View>
       </View>
@@ -177,10 +183,15 @@ export default function ProgressScreen() {
         </PopCard>
       </Reveal>
 
-      {/* Achievements: badges and stickers together, one See all / Hide for both. */}
+      {/* Achievements: the badges you have, then the next two as progress rings. Stickers show up
+          once you find your first one. */}
       <SectionHeader
         title="Achievements"
-        subtitle={`${earned.length} of ${BADGES.length} badges · ${(fun.stickers ?? []).length} of ${stickers.length} stickers`}
+        subtitle={
+          earned.length
+            ? `${earned.length} of ${BADGES.length} badges${stickersFound ? ` · ${stickersFound} of ${stickers.length} stickers` : ''}`
+            : nextBadges[0]?.hint
+        }
         right={
           <PopChip
             label={showAll ? 'Hide' : 'See all'}
@@ -188,11 +199,11 @@ export default function ProgressScreen() {
               setShowAll((v) => !v);
               setAllStickers(!showAll);
             }}
-            accessibilityLabel={showAll ? 'Hide all badges and stickers' : 'See all badges and stickers'}
+            accessibilityLabel={showAll ? 'Hide all badges' : 'See all badges'}
           />
         }
       />
-      <View style={styles.badges}>
+      <HorizontalList gap={8} testID="badge-row">
         {badgeRow.map((b, i) => {
           const got = fun.badges.includes(b.id);
           const [done, needed] = b.count(input);
@@ -204,31 +215,23 @@ export default function ProgressScreen() {
               accessibilityLabel={got ? `${b.title}, earned` : `${b.title}, not earned yet. ${Math.min(done, needed)} of ${needed}. ${b.hint}.`}
               style={styles.badgeCell}
             >
-              <Lift radius={42} pressed={!got}>
-              <View
-                style={[
-                  styles.badgeCoin,
-                  got ? { backgroundColor: tone.fill, borderColor: t.colors.border } : { backgroundColor: tone.tint, borderColor: t.colors.border, borderStyle: 'dashed' },
-                ]}
-              >
-                <Icon name={b.icon} size={30} color={t.pop.ink} weight="bold" />
-                {!got && (
-                  <View style={[styles.badgeTag, { backgroundColor: t.pop.ink }]}>
-                    <Text style={[t.type.caption2, { color: t.pop.white, fontFamily: t.fonts.black }]}>
-                      {Math.min(done, needed)}/{needed}
-                    </Text>
-                  </View>
-                )}
-              </View>
-              </Lift>
+              {got ? (
+                <View style={[styles.badgeCoin, { backgroundColor: tone.fill }]}>
+                  <Icon name={b.icon} size={26} color={t.pop.ink} weight="bold" />
+                </View>
+              ) : (
+                <Ring value={Math.min(done, needed) / needed} size={64} stroke={5} color={t.pop.lilac} track={t.colors.track}>
+                  <Icon name={b.icon} size={24} color={t.pop.inkMuted} weight="bold" />
+                </Ring>
+              )}
               {/* Two lines of room for every name, so the row stays level. */}
-              <Text style={[t.type.caption1, styles.badgeName, { color: t.colors.label }]} numberOfLines={2}>
+              <Text style={[t.type.caption1, styles.badgeName, { color: got ? t.colors.label : t.colors.secondaryLabel }]} numberOfLines={2}>
                 {b.title}
               </Text>
             </PressableScale>
           );
         })}
-      </View>
+      </HorizontalList>
       {showAll && (
         <Animated.View entering={FadeIn.duration(200)} style={{ marginTop: 16 }}>
           <Section>
@@ -239,14 +242,14 @@ export default function ProgressScreen() {
                 <View key={b.id}>
                   {i > 0 && <Separator inset={64} />}
                   <View style={styles.badgeRow} accessible accessibilityLabel={`${b.title}. ${b.hint}. ${got ? 'Earned' : `${Math.min(done, needed)} of ${needed}`}.`}>
-                    <View style={[styles.badgeRowIcon, { backgroundColor: got ? t.pop.sunshine : t.pop.lilacTint, borderColor: t.colors.border }]}>
+                    <View style={[styles.badgeRowIcon, { backgroundColor: got ? t.pop.sunshine : t.pop.lilacTint }]}>
                       <Icon name={got ? 'check' : b.icon} size={18} color={t.pop.ink} weight="bold" />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={[t.type.headline, { color: t.colors.label }]}>{b.title}</Text>
                       <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{b.hint}</Text>
                     </View>
-                    {!got && needed > 1 && (
+                    {!got && needed > 1 && done > 0 && (
                       <Text style={[t.type.footnote, { color: t.colors.label, fontVariant: ['tabular-nums'] }]}>
                         {Math.min(done, needed)}/{needed}
                       </Text>
@@ -259,28 +262,27 @@ export default function ProgressScreen() {
         </Animated.View>
       )}
 
-      {/* Sticker book: 12 to find, one sometimes turns up after cooking. Locked ones are silhouettes. */}
-      {/* A compact row: the 4 nearest stickers (found ones first, then the next to find). "See all"
-          opens the whole book. */}
-      <PopCard style={{ marginTop: 16 }} contentStyle={allStickers ? styles.stickerBook : styles.stickerRow} testID="sticker-book">
-        {(allStickers ? stickers : [...stickers].sort((a, b) => Number((fun.stickers ?? []).includes(b.id)) - Number((fun.stickers ?? []).includes(a.id))).slice(0, 4)).map((st, i) => {
-          const got = (fun.stickers ?? []).includes(st.id);
-          return (
-            // Opening the whole book: the stickers that weren't shown yet drift up and fade in, one after
-            // another (a short, uneven stagger); the 4 already there stay put. Hiding fades them out.
-            <Animated.View key={st.id} entering={allStickers ? enter(i, reduceMotion) : undefined} exiting={allStickers ? FadeOut.duration(140) : undefined} style={allStickers ? styles.stickerCell : styles.stickerSmall} accessible accessibilityLabel={got ? `${st.name} sticker` : 'Sticker not found yet'}>
-              <View style={[styles.stickerDisc, !allStickers && styles.stickerDiscSmall, got ? { backgroundColor: t.pop[st.color], borderColor: t.colors.border } : { backgroundColor: t.pop.lilacTint, borderColor: t.pop.lilac, borderStyle: 'dashed' }]}>
-                <Icon name={st.icon} size={allStickers ? 22 : 18} color={got ? t.pop.ink : t.pop.lilac} weight="bold" />
-              </View>
-              {allStickers && (
-                <Text style={[t.type.caption2, { color: got ? t.pop.ink : t.pop.inkMuted, textAlign: 'center' }]} numberOfLines={2}>
-                  {got ? st.name : '?'}
-                </Text>
-              )}
-            </Animated.View>
-          );
-        })}
-      </PopCard>
+      {/* Sticker book: one sometimes turns up after cooking. Hidden until you find your first. */}
+      {stickersFound > 0 && (
+        <PopCard style={{ marginTop: 16 }} contentStyle={allStickers ? styles.stickerBook : styles.stickerRow} testID="sticker-book">
+          {(allStickers ? stickers : [...stickers].sort((a, b) => Number((fun.stickers ?? []).includes(b.id)) - Number((fun.stickers ?? []).includes(a.id))).slice(0, 4)).map((st, i) => {
+            const got = (fun.stickers ?? []).includes(st.id);
+            return (
+              // Opening the whole book: the new stickers drift up and fade in (a short stagger); hiding fades them out.
+              <Animated.View key={st.id} entering={allStickers ? enter(i, reduceMotion) : undefined} exiting={allStickers ? FadeOut.duration(140) : undefined} style={allStickers ? styles.stickerCell : styles.stickerSmall} accessible accessibilityLabel={got ? `${st.name} sticker` : 'Sticker not found yet'}>
+                <View style={[styles.stickerDisc, !allStickers && styles.stickerDiscSmall, got ? { backgroundColor: t.pop[st.color], borderColor: t.colors.border } : { backgroundColor: t.pop.lilacTint, borderColor: t.pop.lilac, borderStyle: 'dashed' }]}>
+                  <Icon name={st.icon} size={allStickers ? 22 : 18} color={got ? t.pop.ink : t.pop.lilac} weight="bold" />
+                </View>
+                {allStickers && (
+                  <Text style={[t.type.caption2, { color: got ? t.pop.ink : t.pop.inkMuted, textAlign: 'center' }]} numberOfLines={2}>
+                    {got ? st.name : '?'}
+                  </Text>
+                )}
+              </Animated.View>
+            );
+          })}
+        </PopCard>
+      )}
 
       {/* Your kitchen: what you've built up so far (only real numbers, nothing invented). */}
       {history.length > 0 && (
@@ -322,23 +324,30 @@ export default function ProgressScreen() {
       {/* Cooking history: one outlined row per dish */}
       <SectionHeader title="Cooking history" subtitle={dishes.length ? 'Your dishes, newest first' : undefined} />
       {dishes.length === 0 ? (
-        // One card, with the obvious next step pre-picked: tonight's pick.
-        <PopCard color={t.pop.lilacTint} contentStyle={[styles.emptyHistory, { flexDirection: 'column', alignItems: 'stretch' }]} testID="history-empty">
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <Icon name="pot" size={26} color={t.pop.ink} weight="bold" />
-            <Text style={[t.type.subhead, { color: t.colors.label, flex: 1 }]}>Your first dish lands here. Pick something tasty!</Text>
+        // One compact row with the next step: cook tonight's pick.
+        <PressableScale
+          onPress={() => tonight && router.push({ pathname: '/cook/[id]', params: { id: tonight.recipe.id } })}
+          disabled={!tonight}
+          scaleTo={0.98}
+          accessibilityLabel={tonight ? `Your first dish lands here. Cook tonight’s pick: ${tonight.recipe.title}` : 'Your first dish lands here'}
+          style={[styles.emptyHistory, { backgroundColor: t.pop.lilacTint }]}
+          testID="history-empty"
+        >
+          <View style={[styles.emptyHistoryIcon, { backgroundColor: t.pop.white }]}>
+            <Icon name="pot" size={18} color={t.pop.ink} weight="bold" />
           </View>
-          {tonight && (
-            <PopButton
-              label="Cook tonight’s pick"
-              icon="pot"
-              size="small"
-              onPress={() => router.push({ pathname: '/cook/[id]', params: { id: tonight.recipe.id } })}
-              accessibilityHint={`Cooks ${tonight.recipe.title}`}
-              testID="history-cook-pick"
-            />
-          )}
-        </PopCard>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={[t.type.headline, { color: t.colors.label }]} numberOfLines={2}>
+              Your first dish lands here
+            </Text>
+            {tonight && (
+              <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]} numberOfLines={1} testID="history-cook-pick">
+                Cook tonight’s pick: {tonight.recipe.title}
+              </Text>
+            )}
+          </View>
+          {tonight && <Icon name="chevronRight" size={14} color={t.colors.secondaryLabel} weight="bold" />}
+        </PressableScale>
       ) : (
         <View style={{ gap: 12 }}>
           {shownDishes.map((c) => {
@@ -371,11 +380,8 @@ export default function ProgressScreen() {
         </View>
       )}
 
-      {/* Pro goals: small, at the bottom. Off until you turn them on (no numbers forced on you). */}
-      <SectionHeader
-        title="Daily goals"
-        right={isPro && goalsOn(goals) ? <PopChip label="Turn off" small onPress={() => setGoals({ ...goals, on: false })} accessibilityLabel="Stop tracking daily goals" /> : undefined}
-      />
+      {/* Pro goals: small, at the bottom. Off until you turn them on (turn them off in Settings). */}
+      <SectionHeader title="Daily goals" />
       {isPro && !goalsOn(goals) ? (
         <PopCard color={t.pop.skyTint} radius={20} contentStyle={styles.goalsSmall}>
           <Text style={[styles.goalsText, { color: t.colors.label }]}>Track protein and calories from the meals you cook. Optional.</Text>
@@ -395,12 +401,31 @@ export default function ProgressScreen() {
           <PopButton label="Pro" icon="lock" size="small" color={t.pop.white} onPress={() => showPaywall('goals')} accessibilityLabel="Unlock daily goals with Pro" style={styles.goalsBtn} />
         </PopCard>
       ) : (
-        <Section footer="Meals you finish in Cook Mode count toward today, one serving each. Recipe nutrition is estimated.">
-          <GoalRow label="Protein" unit="g" eaten={eaten.protein} goal={goals.protein} color={t.colors.protein} goalName="protein goal" onGoal={(v) => setGoals({ ...goals, protein: v, on: true })} min={40} max={300} step={5} />
+        <Section>
+          <GoalRow label="Protein" unit="g" eaten={eaten.protein} goal={goals.protein} color={t.colors.protein} goalName="protein goal" onEdit={() => setGoalsSheet(true)} />
           <Separator />
-          <GoalRow label="Calories" unit="kcal" eaten={eaten.calories} goal={goals.calories} color={t.colors.carbs} goalName="calorie goal" onGoal={(v) => setGoals({ ...goals, calories: v, on: true })} min={1000} max={5000} step={50} />
+          <GoalRow label="Calories" unit="kcal" eaten={eaten.calories} goal={goals.calories} color={t.colors.carbs} goalName="calorie goal" onEdit={() => setGoalsSheet(true)} />
         </Section>
       )}
+
+      {/* Changing the goals: a sheet with a stepper for each (tap ± or hold; tap the number to type). */}
+      <BottomSheet visible={goalsSheet} onClose={() => setGoalsSheet(false)} accessibilityLabel="Daily goals">
+        {(close) => (
+          <View style={styles.sheet}>
+            <Text style={[t.type.title2, { color: t.colors.label }]}>Daily goals</Text>
+            <View style={styles.row}>
+              <Text style={[t.type.headline, { color: t.colors.label, flex: 1 }]}>Protein (g)</Text>
+              <Stepper value={goals.protein} onChange={(v) => setGoals({ ...goals, protein: v, on: true })} min={40} max={300} step={5} label="protein goal" editable />
+            </View>
+            <View style={styles.row}>
+              <Text style={[t.type.headline, { color: t.colors.label, flex: 1 }]}>Calories (kcal)</Text>
+              <Stepper value={goals.calories} onChange={(v) => setGoals({ ...goals, calories: v, on: true })} min={1000} max={5000} step={50} label="calorie goal" editable />
+            </View>
+            <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>Meals you finish in Cook Mode count toward today, one serving each. Recipe nutrition is estimated.</Text>
+            <PopButton label="Done" onPress={close} testID="goals-done" />
+          </View>
+        )}
+      </BottomSheet>
     </TabScreen>
   );
 }
@@ -419,32 +444,25 @@ function KitchenStat({ value, label }: { value: number; label: string }) {
   );
 }
 
-/**
- * One daily goal: the name with its stepper (tap ± or hold to keep going; tap the number or
- * "Edit" to type it), then "33 of 285 g" and the progress bar.
- */
-function GoalRow({ label, goalName, unit, eaten, goal, color, onGoal, min, max, step }: { label: string; goalName: string; unit: string; eaten: number; goal: number; color: string; onGoal: (v: number) => void; min: number; max: number; step: number }) {
+/** One daily goal: "Protein   33 of 170 g ✎", then its progress bar. The pencil opens the goals sheet. */
+function GoalRow({ label, goalName, unit, eaten, goal, color, onEdit }: { label: string; goalName: string; unit: string; eaten: number; goal: number; color: string; onEdit: () => void }) {
   const t = useTheme();
-  const [editing, setEditing] = useState(false);
   return (
     <View style={styles.goal}>
-      {/* The goal stepper beside the name; "520 of 2,200 kcal" on its own full-width line, never cut. */}
-      <View style={styles.row}>
-        <Text style={[t.type.headline, { color: t.colors.label, flex: 1, minWidth: 0 }]}>{label}</Text>
-        <Stepper value={goal} onChange={onGoal} min={min} max={max} step={step} label={goalName} editable editing={editing} onEditingChange={setEditing} />
-      </View>
       <View style={styles.goalLine}>
-        <AnimatedNumber value={eaten} suffix={` of ${nb(goal, unit)}`} style={[t.type.footnote, { color: t.colors.secondaryLabel, flexShrink: 1 }]} />
-        {!editing && <TextButton label="Edit" icon="edit" small onPress={() => setEditing(true)} accessibilityLabel={`Edit your ${goalName}`} />}
+        <Text style={[t.type.headline, { color: t.colors.label, flex: 1, minWidth: 0 }]}>{label}</Text>
+        <AnimatedNumber value={eaten} suffix={` of ${nb(goal, unit)}`} style={[t.type.footnote, { color: t.colors.secondaryLabel }]} />
+        <IconButton icon="edit" accessibilityLabel={`Edit your ${goalName}`} color={t.colors.secondaryLabel} iconSize={14} size={36} onPress={onEdit} />
       </View>
-      <ProgressBar value={eaten / goal} color={color} height={10} label={`${label} today`} />
+      <ProgressBar value={eaten / goal} color={color} height={8} label={`${label} today`} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   // "33 of 285 g" and the Edit button on one line (the button keeps its 44pt tap height without adding space).
-  goalLine: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginVertical: -10 },
+  goalLine: { flexDirection: 'row', alignItems: 'center', gap: 6, marginVertical: -6 },
+  sheet: { paddingHorizontal: 16, paddingTop: 8, gap: 16 },
   kitchen: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingVertical: 16, paddingHorizontal: 12 },
   // Three equal columns, each centered: a 40pt-high top (big number or the favorite's photo) and a one-line label.
   kitchenCol: { flex: 1, minWidth: 0, alignItems: 'center', gap: 4 },
@@ -468,14 +486,13 @@ const styles = StyleSheet.create({
   day: { alignItems: 'center', gap: 5 },
   dayDot: { borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   level: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 20 },
-  badges: { flexDirection: 'row', justifyContent: 'space-between', gap: 10 },
-  badgeCell: { flex: 1, alignItems: 'center', gap: 8, minHeight: 44 },
+  badgeCell: { width: 80, alignItems: 'center', gap: 6, minHeight: 44 },
   badgeName: { textAlign: 'center', minHeight: 34 },
-  badgeCoin: { width: 84, height: 84, borderRadius: 42, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
-  badgeTag: { position: 'absolute', bottom: -10, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 },
+  badgeCoin: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center' },
   badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12, minHeight: 60 },
-  badgeRowIcon: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  emptyHistory: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16 },
+  badgeRowIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  emptyHistory: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 64, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 16, borderCurve: 'continuous' },
+  emptyHistoryIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   historyRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 12 },
   historyMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, minHeight: 76 },
   historyThumb: { width: 56, height: 56 },
@@ -484,5 +501,5 @@ const styles = StyleSheet.create({
   goalsBtn: { alignSelf: 'flex-start', marginLeft: 56 },
   crown: { width: 44, height: 44, borderRadius: 22, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
   goalsText: { flex: 1, fontFamily: fonts.bold, fontSize: 17, lineHeight: 22 },
-  goal: { padding: 16, gap: 10 },
+  goal: { paddingHorizontal: 16, paddingVertical: 12, gap: 8 },
 });

@@ -7,7 +7,7 @@ import { PressableScale } from '../components/PressableScale';
 import { useToast } from '../components/Toast';
 import { Chip, Section, Segmented } from '../components/ui';
 import { PopIconButton } from '../components/pop';
-import type { Units } from '../data/mock';
+import { goalsOn, type Units } from '../data/mock';
 import { dietOptions, timeLabel } from '../data/onboarding';
 import { askReminderPermission } from '../lib/dinnerReminders';
 import { showPaywall, useProGate } from '../lib/pro';
@@ -29,7 +29,7 @@ export default function Settings() {
   const t = useTheme();
   const admin = useAdminMode();
   const toast = useToast();
-  const { units, setUnits, pro, profile, setProfile } = useStore();
+  const { units, setUnits, pro, profile, setProfile, goals, setGoals } = useStore();
   const reminder = profile.reminder ?? { enabled: false, time: '18:00' };
   const setReminderOn = async (on: boolean) => {
     if (!on) return setProfile({ reminder: { ...reminder, enabled: false } });
@@ -94,6 +94,27 @@ export default function Settings() {
             </View>
           </View>
         </Section>
+        {/* Pro: daily protein and calorie goals on the You page (moved here from You). */}
+        {isPro && (
+          <Section>
+            <View style={styles.row}>
+              <Icon name="target" size={18} color={t.colors.label} />
+              <View style={{ flex: 1 }}>
+                <Text style={[t.type.body, { color: t.colors.label }]}>Daily goals</Text>
+                <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{noWidow('Protein and calories from the meals you cook')}</Text>
+              </View>
+              <Switch
+                value={goalsOn(goals)}
+                onValueChange={(on) => setGoals({ ...goals, on })}
+                trackColor={{ true: pop.leaf, false: pop.lilacTint }}
+                thumbColor={pop.white}
+                ios_backgroundColor={pop.lilacTint}
+                accessibilityLabel="Daily goals"
+                testID="goals-switch"
+              />
+            </View>
+          </Section>
+        )}
         <Section>
           <View style={styles.row}>
             <Icon name="clock" size={18} color={t.colors.label} />
