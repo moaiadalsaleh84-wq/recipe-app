@@ -143,6 +143,7 @@ export default function RecipesScreen() {
   const { tonight: dayPick } = useTonightPick();
   // One Tonight's Pick (no shuffle button: "Surprise me" is the randomizer).
   const pick = dayPick;
+  const quickTonight = useMemo(() => allRecipes.filter((r) => matchesFilter(r, QUICK_FILTER) && r.id !== dayPick?.recipe.id && fitsDiet(r, profile.diets)).slice(0, 8), [allRecipes, dayPick, profile.diets]);
   const tonight = dayPick?.fromPlan ? dayPick.recipe : undefined;
   const featured = pick?.recipe;
   const featuredMatch = pick ? { have: pick.have, needed: pick.needed } : { have: 0, needed: 0 };
@@ -156,6 +157,10 @@ export default function RecipesScreen() {
   // Two columns with a 12pt gap; carousels use exactly the same card width.
   const gap = t.spacing.sm;
   const cardWidth = Math.floor((contentWidth - margin * 2 - gap * (columns - 1)) / columns);
+  // Sideways rows: a bit narrower than the grid, so the next card peeks in.
+  const railWidth = Math.round(cardWidth * 0.82);
+  // Four mood tiles in a row (at least 80 wide each; the row scrolls on narrow phones).
+  const moodWidth = Math.max(80, Math.floor((contentWidth - margin * 2 - 8 * 3) / 4));
   const countLabel = `${filtered.length} ${filtered.length === 1 ? 'recipe' : 'recipes'}`;
 
   // Favorites only shows up once you've hearted something, so it never opens to an empty page.
@@ -188,45 +193,38 @@ export default function RecipesScreen() {
   };
   const moodInfo = MOODS.find((m) => m.id === moodShown);
 
+  // One line, by time of day: "Good evening, Moaiad".
+  const hour = new Date().getHours();
+  const greet = hour < 5 ? 'Good evening' : hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
   const header = (
     <View style={styles.header}>
+      {/* 44 high: streak, then Import and your avatar on the right. */}
       <View style={styles.topRow}>
         <PressableScale
           onPress={() => router.push('/progress')}
           accessibilityLabel={streak > 0 ? `${streak} day cooking streak. Opens You` : 'No streak yet. Opens You'}
-          style={[styles.streak, { backgroundColor: t.pop.sunshine, borderColor: t.colors.border }]}
+          style={[styles.streak, { backgroundColor: streak > 0 ? t.pop.sunshineTint : t.colors.fill }]}
           testID="streak-pill"
         >
           <Flicker on={streak >= 1 && !cookedToday}>
-            <Icon name="flameFill" size={16} color={t.pop.tomato} />
+            {/* No streak yet: a quiet gray flame and no "0". From day one: a colored flame and the number. */}
+            <Icon name="flameFill" size={18} color={streak > 0 ? t.pop.tomato : '#B9B5C6'} />
           </Flicker>
-          {/* Always a real number: 🔥 0 before your first dish. */}
-          <Text style={[t.type.headline, { color: t.pop.ink, fontFamily: t.fonts.black }]} testID="streak-count-home">
-            {streak}
-          </Text>
+          {streak > 0 && (
+            <Text style={[t.type.headline, { color: t.pop.ink, fontFamily: t.fonts.black }]} testID="streak-count-home">
+              {streak}
+            </Text>
+          )}
         </PressableScale>
-        {/* Free version: how many imports are left (like ReciMe's "⚡ 5 left"). Tapping it shows Pro. */}
-        {!isPro && (
-          <PressableScale
-            onPress={() => showPaywall('imports')}
-            accessibilityLabel={`${importsLeft} free ${importsLeft === 1 ? 'import' : 'imports'} left. Shows Pro`}
-            style={[styles.streak, { backgroundColor: t.pop.white, borderColor: t.colors.border }]}
-            testID="imports-left"
-          >
-            <Icon name="link" size={15} color={t.pop.ink} weight="bold" />
-            <Text style={[t.type.headline, { color: t.pop.ink, fontFamily: t.fonts.black }]}>{`${importsLeft}\u00A0left`}</Text>
-          </PressableScale>
-        )}
         <View style={{ flex: 1 }} />
         <PopButton label="Import" icon="plus" size="small" color={t.pop.white} onPress={() => setMenuOpen(true)} accessibilityLabel="Import a recipe" accessibilityHint="Save one from a link, or write your own" testID="home-import" />
         {/* Your avatar opens You: level, streak, achievements, history, goals and settings. */}
         <PressableScale onPress={() => router.push('/progress')} accessibilityLabel="You: your level, streak and settings" style={[styles.avatar, { backgroundColor: t.pop.berry }]} testID="home-avatar">
-          <Text style={[t.type.title3, { color: t.pop.ink }]}>{(firstName[0] ?? '?').toUpperCase()}</Text>
+          <Text style={[t.type.headline, { color: t.pop.ink, fontFamily: t.fonts.black }]}>{(firstName[0] ?? '?').toUpperCase()}</Text>
         </PressableScale>
       </View>
-      {/* The greeting is the headline: it wraps, so a long name is never cut off. */}
-      <Text style={[t.type.hero, { color: t.colors.label, marginTop: 18 }]} accessibilityRole="header" testID="screen-kicker">
-        {firstName ? `Hey ${firstName}!\nWhat’s cooking?` : 'Hungry?\nLet’s cook!'}
+      <Text style={[styles.greeting, { color: t.colors.label }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} accessibilityRole="header" testID="screen-kicker">
+        {firstName ? `${greet}, ${firstName}` : `${greet}!`}
       </Text>
     </View>
   );
@@ -258,36 +256,31 @@ export default function RecipesScreen() {
         onCook={() => (featured ? router.push({ pathname: '/cook/[id]', params: { id: featured.id } }) : router.push('/import'))}
       />
 
-      {/* 1. Mood tiles: a 2x2 grid of bold color blocks. */}
+      {/* 1. Mood tiles: one row of four compact tiles (80 high: icon + label); scrolls if it must. */}
       <Reveal index={0}>
-        <View style={styles.moods} accessibilityLabel="What are you in the mood for?">
+        <HorizontalList gap={8} contentStyle={{ paddingBottom: 2 }}>
           {MOODS.map((m) => {
             const on = mood === m.id;
             return (
               <PopCard
                 key={m.id}
                 color={m.color}
-                radius={20}
                 pressed={on}
                 onPress={() => pickMood(m.id)}
                 accessibilityLabel={`${m.label}. ${m.hint}${on ? '. Selected, tap to show all recipes' : ''}`}
-                style={styles.moodTile}
+                style={{ width: moodWidth }}
                 contentStyle={styles.moodFace}
                 testID={`mood-${m.id}`}
               >
-                <View style={[styles.moodIcon, { backgroundColor: t.pop.white, borderColor: t.colors.border }]}>
-                  <Icon name={m.icon} size={20} color={t.pop.ink} weight="bold" />
-                </View>
-                <Text style={[t.type.title3, styles.moodLabel, { color: t.pop.ink }]}>{m.label}</Text>
-                {on && (
-                  <View style={[styles.moodCheck, { backgroundColor: t.pop.ink }]} accessibilityElementsHidden>
-                    <Icon name="check" size={13} color={t.pop.white} weight="bold" />
-                  </View>
-                )}
+                <Icon name={on ? 'check' : m.icon} size={22} color={t.pop.ink} weight="bold" />
+                {/* Small fixed tiles: the label grows only a little with large text and never splits a word. */}
+                <Text style={[styles.moodLabel, { color: t.pop.ink }]} numberOfLines={2} maxFontSizeMultiplier={1.1}>
+                  {m.label}
+                </Text>
               </PopCard>
             );
           })}
-        </View>
+        </HorizontalList>
       </Reveal>
 
       {/* 2. A mood is on: its recipes, right here. */}
@@ -323,7 +316,7 @@ export default function RecipesScreen() {
         <Animated.View entering={FadeIn.duration(250)}>
           {/* 3. Tonight's dinner from the plan, or the pick of the day */}
           {featured && (
-            <Reveal index={2} style={{ marginTop: 22 }}>
+            <Reveal index={2} style={{ marginTop: t.layout.section }}>
               <TonightCard
                 note={pick?.because ? `Picked for you because ${pick.because}` : undefined}
                 recipe={featured}
@@ -335,7 +328,17 @@ export default function RecipesScreen() {
             </Reveal>
           )}
 
-
+          {/* "Quick tonight": 30 minutes or less, as a row (not the pick above). */}
+          {quickTonight.length > 1 && (
+            <View style={{ marginTop: t.layout.section }}>
+              <SectionHeader title="Quick tonight" subtitle="30 minutes or less" action={{ label: 'See all', onPress: () => setView('quick') }} style={{ marginTop: 0 }} />
+              <HorizontalList gap={12}>
+                {quickTonight.map((r) => (
+                  <RecipeCard key={r.id} recipe={r} width={railWidth} />
+                ))}
+              </HorizontalList>
+            </View>
+          )}
         </Animated.View>
       )}
 
@@ -473,7 +476,8 @@ export default function RecipesScreen() {
         rows={[
           {
             label: 'Import a link',
-            hint: 'TikTok, YouTube, Instagram or any recipe site',
+            // Free version: how many imports are left, right where you import.
+            hint: isPro ? 'TikTok, YouTube, Instagram or any recipe site' : `TikTok, YouTube, Instagram or any site · ${importsLeft} free ${importsLeft === 1 ? 'import' : 'imports'} left`,
             icon: 'link',
             onPress: () => {
               setMenuOpen(false);
@@ -574,19 +578,17 @@ const POPULAR_SEARCHES = ['Chicken', 'Pasta', 'Rice', 'Cheese', 'Potato', 'Mushr
 const COVER_H = 120;
 
 const styles = StyleSheet.create({
-  header: { marginBottom: 20 },
-  topRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  avatar: { width: 44, height: 44, borderRadius: 22, borderWidth: 2.5, borderColor: pop.line, alignItems: 'center', justifyContent: 'center' },
-  streak: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 44, paddingHorizontal: 12, borderRadius: 999, borderWidth: 2.5 },
+  header: { marginBottom: 24 },
+  greeting: { fontFamily: fonts.heading, fontSize: 26, lineHeight: 32, marginTop: 16 },
+  topRow: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44 },
+  avatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  // A small pill: 36 high (44 to tap).
+  streak: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 36, minWidth: 44, justifyContent: 'center', paddingHorizontal: 12, borderRadius: 999 },
   reminder: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 16, paddingRight: 4, paddingVertical: 8, borderRadius: 20, borderWidth: 2.5, marginBottom: 16, borderCurve: 'continuous' },
   reminderBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
-  moods: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 },
-  moodTile: { width: '48.4%' },
   // Icon in a circle at the top left, the label underneath on one line.
-  moodFace: { height: 96, padding: 12, justifyContent: 'space-between' },
-  moodIcon: { width: 40, height: 40, borderRadius: 20, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
-  moodLabel: { fontSize: 19, lineHeight: 23 },
-  moodCheck: { position: 'absolute', top: 10, right: 10, width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  moodFace: { height: 80, paddingHorizontal: 4, paddingVertical: 10, alignItems: 'center', justifyContent: 'center', gap: 6 },
+  moodLabel: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 16, textAlign: 'center' },
   sortBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', minHeight: 44, marginBottom: 4 },
   rail: { paddingBottom: 4 },
   book: { minHeight: 168 },

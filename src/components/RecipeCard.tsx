@@ -13,9 +13,8 @@ import { PhotoFrame, RecipePhoto } from './PhotoFrame';
 import { PressableScale } from './PressableScale';
 import { PopButton } from './pop/PopButton';
 import { PopIconButton } from './pop/PopIconButton';
-import { PopCard } from './pop/PopCard';
 import { Sticker } from './pop/Sticker';
-import { Skeleton, TextButton } from './ui';
+import { Skeleton } from './ui';
 
 export const openRecipe = (id: string) => router.push({ pathname: '/recipe/[id]', params: { id } });
 
@@ -215,42 +214,35 @@ export function TonightCard({
 }) {
   const t = useTheme();
   return (
-    <View>
-      {/* Ink behind the photo, so its soft edges never show a light hairline (see PhotoFrame). */}
-      <PopCard clip={false} color={pop.white} contentStyle={{ overflow: 'hidden' }}>
-        {/* The photo and name open the recipe; the button below is its own tap (no button inside a button). */}
-        <PressableScale onPress={() => openRecipe(recipe.id)} scaleTo={0.99} accessibilityLabel={`${label}: ${recipe.title}, ${recipe.minutes} minutes`} accessibilityHint="Opens the recipe">
-          <PhotoFrame recipe={recipe} iconSize={48} radius={14} corners="top" edge="bottom" style={styles.tonightPhoto}>
+    // No box: a big 16:10 photo (it opens the recipe), the title, one meta line and ONE button.
+    <View style={{ gap: 12 }}>
+      <View>
+        <PressableScale onPress={() => openRecipe(recipe.id)} haptic={null} accessibilityLabel={`${label}: ${recipe.title}, ${recipe.minutes} minutes`} accessibilityHint="Opens the recipe">
+          <PhotoFrame recipe={recipe} iconSize={48} radius={16} style={styles.tonightPhoto}>
             <SourceMark recipe={recipe} />
           </PhotoFrame>
-          <View style={[styles.tonightText, styles.tonightWhite]}>
-            <Text style={[t.type.title1, { color: t.colors.label, fontSize: 20, lineHeight: 25 }]} numberOfLines={3}>
+          <View style={styles.tonightText}>
+            <Text style={[t.type.title2, { color: t.colors.label }]} numberOfLines={2}>
               {recipe.title}
             </Text>
-            {/* Nothing at home yet: just how big the job is. From one item up: how close you are. */}
-            <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]} testID="tonight-meta">
+            <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]} numberOfLines={1} testID="tonight-meta">
               {duration(recipe.minutes)} · {needed === 0 ? recipe.difficulty : have === 0 ? nb(needed, needed === 1 ? 'ingredient' : 'ingredients') : `you have ${have} of\u00A0${needed}`}
             </Text>
             {note ? (
-              <Text style={[t.type.caption1, { color: t.colors.label }]} testID="tonight-note">
+              <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]} numberOfLines={2} testID="tonight-note">
                 {note}
               </Text>
             ) : null}
           </View>
         </PressableScale>
-        <View style={styles.tonightBottom}>
-        <View style={[styles.tonightBtn, { flexDirection: 'row', gap: 12 }]}>
-          <PopButton label="Cook it!" iconRight="arrowRight" onPress={onCook} accessibilityLabel={`Cook ${recipe.title}`} style={{ flex: 1 }} />
-          {onShuffle && <PopIconButton icon="shuffle" size={56} iconSize={22} onPress={onShuffle} accessibilityLabel="Show me another" testID="tonight-shuffle" />}
+        <Sticker label="Tonight's pick" rotate={0} style={styles.tonightSticker} />
+        <View style={styles.featuredFav}>
+          <FavoriteButton recipe={recipe} onPhoto />
         </View>
-        {/* "Cook it!" goes straight to Get ready; the full recipe is one small tap away. */}
-        <TextButton label="See recipe" onPress={() => openRecipe(recipe.id)} accessibilityRole="link" accessibilityLabel={`See the recipe for ${recipe.title}`} style={styles.seeRecipe} />
-        </View>
-      </PopCard>
-      {/* Slapped on where the photo meets the card. */}
-      <Sticker label="Tonight's pick" rotate={0} style={styles.tonightSticker} />
-      <View style={styles.featuredFav}>
-        <FavoriteButton recipe={recipe} onPhoto />
+      </View>
+      <View style={{ flexDirection: 'row', gap: 12 }}>
+        <PopButton label="Cook it" iconRight="arrowRight" onPress={onCook} accessibilityLabel={`Cook ${recipe.title}`} style={{ flex: 1 }} />
+        {onShuffle && <PopIconButton icon="shuffle" size={52} iconSize={22} onPress={onShuffle} accessibilityLabel="Show me another" testID="tonight-shuffle" />}
       </View>
     </View>
   );
@@ -339,14 +331,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tonightPhoto: { height: 150 },
-  tonightText: { paddingHorizontal: 16, paddingTop: 22, gap: 4 },
+  tonightPhoto: { width: '100%', aspectRatio: 16 / 10 },
+  tonightText: { paddingTop: 10, paddingHorizontal: 2, gap: 2 },
   // The white part of the card below the photo (the card's face is ink behind the photo).
   tonightWhite: { backgroundColor: pop.white },
   tonightBottom: { backgroundColor: pop.white, borderBottomLeftRadius: 14, borderBottomRightRadius: 14 },
   tonightBtn: { marginHorizontal: 16, marginTop: 12 },
   seeRecipe: { alignSelf: 'center', minHeight: 44, justifyContent: 'center', paddingHorizontal: 16, marginBottom: 4 },
-  tonightSticker: { position: 'absolute', top: 134, left: 14 },
+  tonightSticker: { position: 'absolute', top: 12, left: 12 },
   featuredFav: { position: 'absolute', top: 4, right: 4 },
   row: { flexDirection: 'row', alignItems: 'center', paddingRight: 8 },
   metaLine: { fontFamily: fonts.medium, fontSize: 15, lineHeight: 20 },
