@@ -421,15 +421,24 @@ export function ProgressBar({ value, color, track, height = 8, label }: { /** 0 
   const bar = Math.min(height, 12);
   const shown = useSharedValue(0);
   const trackW = useSharedValue(0);
+  // After the fill lands, a soft shine sweeps across it once (0 → 1). Not with Reduce Motion.
+  const shine = useSharedValue(0);
   useEffect(() => {
     // Fills smoothly over 500 ms (ease-out cubic), no bounce past the value.
     shown.set(reduceMotion ? withTiming(pct, { duration: 200 }) : withTiming(pct, { duration: 500, easing: Easing.out(Easing.cubic) }));
-  }, [pct, reduceMotion, shown]);
+    if (!reduceMotion && pct > 0) shine.set(withSequence(withTiming(0, { duration: 0 }), withDelay(450, withTiming(1, { duration: 650, easing: Easing.inOut(Easing.quad) }))));
+  }, [pct, reduceMotion, shown, shine]);
   // Empty means empty: no fill at all at 0. Above 0 the fill is at least as wide as it is tall (a round end, not a sliver).
   const fill = useAnimatedStyle(() => {
     const v = shown.get();
     if (v <= 0.001) return { width: 0, opacity: 0 };
     return { width: Math.min(trackW.get(), Math.max(bar, v * trackW.get())), opacity: 1 };
+  });
+  // The shine: a slanted light band crossing the fill from left to right.
+  const shineStyle = useAnimatedStyle(() => {
+    const w = Math.max(bar, shown.get() * trackW.get());
+    const p = shine.get();
+    return { opacity: p > 0 && p < 1 ? 1 : 0, transform: [{ translateX: -SHINE_W + p * (w + SHINE_W * 2) }, { skewX: '-20deg' }] };
   });
   return (
     <View
@@ -440,10 +449,14 @@ export function ProgressBar({ value, color, track, height = 8, label }: { /** 0 
       accessibilityLabel={label}
       accessibilityValue={{ min: 0, max: 100, now: Math.round(pct * 100) }}
     >
-      <Animated.View style={[{ height: bar, borderRadius: bar / 2, backgroundColor: color ?? t.colors.success }, fill]} />
+      <Animated.View style={[{ height: bar, borderRadius: bar / 2, backgroundColor: color ?? t.colors.success, overflow: 'hidden' }, fill]}>
+        {!reduceMotion && <Animated.View pointerEvents="none" style={[{ position: 'absolute', top: -2, bottom: -2, left: 0, width: SHINE_W, backgroundColor: 'rgba(255,255,255,0.5)' }, shineStyle]} />}
+      </Animated.View>
     </View>
   );
 }
+/** Width of the progress bar's shine band. */
+const SHINE_W = 18;
 
 /* ---------- Progress ring ---------- */
 
