@@ -12,7 +12,6 @@ import { haptics } from '../lib/haptics';
 import { useStore } from '../state/store';
 import { fonts, pop, useTheme } from '../theme';
 import { PhotoFrame } from './PhotoFrame';
-import { PopCard } from './pop/PopCard';
 import { CardText, HeartIcon } from './RecipeCard';
 import { PressableScale } from './PressableScale';
 import { Text } from './Text';
@@ -89,22 +88,12 @@ export function DiscoverCard({ card, width }: { card: DiscoverCardData; width: n
   const [count, setCount] = useState(card.saves);
   return (
     <View style={{ width }} testID={`discover-card-${card.id}`}>
-      <PopCard
-        onPress={() => void open(card)}
-        accessibilityLabel={`${card.title}, by ${card.creatorHandle}, ${savesLabel(count)}`}
-        accessibilityHint="Opens the recipe"
-        // Ink behind the photo, so its soft edges never show a light hairline (see PhotoFrame).
-        color={pop.white}
-        radius={16}
-        style={{ flexGrow: 1 }}
-        contentStyle={{ flexGrow: 1 }}
-      >
-        <PhotoFrame recipe={photoRecipe(card)} radius={14} corners="top" edge="bottom" style={styles.photo} />
-        {/* The same text as every recipe card: @creator, title, one meta line. */}
-        <View style={[styles.body, { backgroundColor: pop.white }]}>
-          <CardText creator={card.creatorHandle} title={card.title} meta={savesLabel(count)} metaTestID="discover-saves" />
-        </View>
-      </PopCard>
+      {/* The same card as every recipe: the photo (the owner's crop), then the title and one meta
+          line ("@creator · 3 saves") underneath, no box. */}
+      <PressableScale onPress={() => void open(card)} haptic={null} accessibilityLabel={`${card.title}, by ${card.creatorHandle}, ${savesLabel(count)}`} accessibilityHint="Opens the recipe">
+        <PhotoFrame recipe={photoRecipe(card)} radius={16} style={styles.photo} />
+        <CardText title={card.title} meta={`${card.creatorHandle}\u00A0· ${savesLabel(count)}`} metaTestID="discover-saves" />
+      </PressableScale>
       {/* The save button sits on top of the card, beside its button (not inside it). */}
       <PressableScale
         onPress={async () => {
@@ -130,7 +119,6 @@ export function DiscoverCard({ card, width }: { card: DiscoverCardData; width: n
 
 const styles = StyleSheet.create({
   photo: { width: '100%', aspectRatio: 4 / 5 },
-  body: { flexGrow: 1, borderBottomLeftRadius: 14, borderBottomRightRadius: 14 },
   creator: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   letter: { alignItems: 'center', justifyContent: 'center' },
   letterText: { fontFamily: fonts.black, color: pop.ink },

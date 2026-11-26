@@ -131,24 +131,17 @@ const useMeta = () => (r: Recipe) => `${duration(r.minutes)} · ${nb(r.calories,
 export const cardMeta = (r: Pick<Recipe, 'minutes' | 'difficulty'>) => `${duration(r.minutes)}\u00A0· ${r.difficulty}`;
 
 /**
- * Under a card's photo: "@creator" for imported and Discover recipes (1 line), the title (2 lines,
- * then "…"), then one meta line. Shared by recipe cards and Discover cards.
+ * Under a card's photo, with no box around it (Pinterest style): the title (Nunito 800 16, two
+ * lines, then "…"; the full title is on the recipe page) and one meta line (Nunito 700 13, muted,
+ * never wraps). Shared by recipe cards and Discover cards.
  */
-export function CardText({ creator, title, meta, metaTestID }: { creator?: string; title: string; meta: string; metaTestID?: string }) {
+export function CardText({ title, meta, metaTestID }: { title: string; meta: string; metaTestID?: string }) {
   const t = useTheme();
   return (
     <View style={styles.cardBody}>
-      <View style={{ gap: 2 }}>
-        {creator ? (
-          <Text style={[styles.cardCreator, { color: t.colors.secondaryLabel }]} numberOfLines={1}>
-            {creator}
-          </Text>
-        ) : null}
-        <Text style={[styles.cardTitle, { color: t.colors.label }]} numberOfLines={2}>
-          {title}
-        </Text>
-      </View>
-      {/* Never cut a time short: with large text the meta may take a second line. */}
+      <Text style={[styles.cardTitle, { color: t.colors.label }]} numberOfLines={2}>
+        {title}
+      </Text>
       <Text style={[styles.cardMetaText, { color: t.colors.secondaryLabel }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} testID={metaTestID}>
         {meta}
       </Text>
@@ -157,34 +150,23 @@ export function CardText({ creator, title, meta, metaTestID }: { creator?: strin
 }
 
 /**
- * Grid and row card, photo first: a 4:5 photo across the whole card (the shared ink frame), then
- * the compact text. Cards in a row share the tallest card's height.
+ * Grid and row card: a 4:5 photo (radius 16, no outline) with the text underneath and no box.
+ * Pressed: the whole card dims and settles to 97% (100 ms). The heart floats on the photo.
  */
 export const RecipeCard = memo(RecipeCardView);
 
-/** (Memoized above: a card redraws only when its recipe, width or color change.) */
-function RecipeCardView({ recipe, width, color }: { recipe: Recipe; width: number; /** Card color (white by default). */ color?: string }) {
+/** (Memoized above: a card redraws only when its recipe or width change.) */
+function RecipeCardView({ recipe, width }: { recipe: Recipe; width: number; /** Older prop: cards have no box now. */ color?: string }) {
   return (
-    // The heart sits on top of the card, beside its button (a button inside a button confuses
+    // The heart sits beside the card's button, not inside it (a button inside a button confuses
     // screen readers and the web).
     <View style={{ width }}>
-      <PopCard
-        onPress={() => openRecipe(recipe.id)}
-        accessibilityLabel={`${recipe.title}, ${recipe.minutes} minutes, ${recipe.difficulty}`}
-        accessibilityHint="Opens the recipe"
-        // Ink behind the photo, so its soft edges never show a light hairline (see PhotoFrame).
-        color={pop.white}
-        radius={16}
-        style={{ flexGrow: 1 }}
-        contentStyle={{ flexGrow: 1 }}
-      >
-        <PhotoFrame recipe={recipe} radius={14} corners="top" edge="bottom" style={styles.imageWrap}>
+      <PressableScale onPress={() => openRecipe(recipe.id)} haptic={null} accessibilityLabel={`${recipe.title}, ${recipe.minutes} minutes, ${recipe.difficulty}`} accessibilityHint="Opens the recipe">
+        <PhotoFrame recipe={recipe} radius={16} style={styles.imageWrap}>
           <SourceMark recipe={recipe} />
         </PhotoFrame>
-        <View style={[styles.cardWhite, { backgroundColor: color ?? pop.white }]}>
-          <CardText creator={recipe.creatorHandle && isImportedSource(recipe) ? recipe.creatorHandle : undefined} title={recipe.title} meta={cardMeta(recipe)} />
-        </View>
-      </PopCard>
+        <CardText title={recipe.title} meta={cardMeta(recipe)} />
+      </PressableScale>
       <View style={styles.favOnPhoto}>
         <FavoriteButton recipe={recipe} onPhoto />
       </View>
@@ -195,7 +177,6 @@ function RecipeCardView({ recipe, width, color }: { recipe: Recipe; width: numbe
 /** A lighter card shadow (3pt) for recipe and Discover cards. */
 /** Older name: cards are flat now (no shadow). */
 export const CARD_DEPTH = 0;
-const isImportedSource = (r: Recipe) => r.source === 'tiktok' || r.source === 'youtube' || r.source === 'instagram' || r.source === 'web';
 
 export function RecipeCardSkeleton({ width }: { width: number }) {
   const t = useTheme();
@@ -331,10 +312,11 @@ const styles = StyleSheet.create({
   // Flush with the card's top border (no gap): the photo's top corners follow the card's inner curve (24 − 2.5).
   sourceMark: { position: 'absolute', left: 8, bottom: 8, width: 24, height: 24, borderRadius: 12, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   // Photo first: 4:5 portrait, the whole card's width.
-  imageWrap: { width: '100%', aspectRatio: 4 / 5 },
+  imageWrap: { width: '100%', aspectRatio: 4 / 5, borderWidth: 0 },
   cardWhite: { flexGrow: 1, borderBottomLeftRadius: 14, borderBottomRightRadius: 14 },
   // 14pt inside on every side; the meta sits at the bottom so cards in a row line up.
-  cardBody: { flexGrow: 1, paddingHorizontal: 12, paddingTop: 10, paddingBottom: 12, gap: 6, justifyContent: 'space-between' },
+  // Text under the photo: no box, a little air above, title then meta.
+  cardBody: { paddingTop: 8, paddingHorizontal: 2, gap: 2 },
   // Fredoka 700, 17, up to 2 lines then "…".
   // Card title: Nunito 800, 16, max 2 lines.
   cardTitle: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 21 },
