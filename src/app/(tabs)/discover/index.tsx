@@ -15,7 +15,8 @@ import { Icon } from '../../../components/Icon';
 import { PopButton } from '../../../components/pop/PopButton';
 import { TabScreen } from '../../../components/TabScreen';
 import { Text } from '../../../components/Text';
-import { Chip, EmptyState, SearchField, Skeleton, TextButton } from '../../../components/ui';
+import { Chip, EmptyState, SearchField, TextButton } from '../../../components/ui';
+import { RecipeCardSkeleton } from '../../../components/RecipeCard';
 import { CUISINES, DIETS, INGREDIENT_CHIPS, MEAL_TYPES, discoverList, type DiscoverCardData, type DiscoverFilters } from '../../../lib/discoverApi';
 import { useTheme } from '../../../theme';
 
@@ -123,9 +124,10 @@ export default function DiscoverScreen() {
         {error && !items ? (
           <EmptyState icon="info" title="Couldn’t load Discover" message={error} action={{ label: 'Try again', onPress: () => setRetry((n) => n + 1) }} />
         ) : !items ? (
-          <View style={[styles.grid, { gap }]}>
+          // Loading: shimmering stand-ins shaped like the cards (photo, title, one line).
+          <View style={[styles.grid, { columnGap: gap, rowGap: 20 }]} testID="discover-loading">
             {[0, 1, 2, 3].map((k) => (
-              <Skeleton key={k} style={{ width: cardWidth, height: cardWidth * 1.45, borderRadius: 16 }} />
+              <RecipeCardSkeleton key={k} width={cardWidth} />
             ))}
           </View>
         ) : items.length === 0 ? (
