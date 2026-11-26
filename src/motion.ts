@@ -29,8 +29,9 @@ export const popSpring: WithSpringConfig = spring;
 
 /** The one curve for timed motion: Easing.out(Easing.cubic). */
 export const EASE_CUBIC = Easing.out(Easing.cubic);
-/** Press: a button, card or chip moves down onto its shadow in 120 ms and back up in 160 ms. */
-export const pressIn = { duration: 120, easing: EASE_CUBIC };
+/** Press: a button, card or chip moves down in 90 ms (visibly moving from the first frame, well
+ * under 50 ms) and back up in 160 ms. */
+export const pressIn = { duration: 90, easing: EASE_CUBIC };
 export const pressOut = { duration: 160, easing: EASE_CUBIC };
 
 /**
