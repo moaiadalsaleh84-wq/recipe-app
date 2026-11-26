@@ -24,7 +24,6 @@ import { useTonightPick } from '../../../lib/tonightPick';
 import { FREE_LIMITS, useStore } from '../../../state/store';
 import { fonts, pop, useTheme } from '../../../theme';
 import { PhotoFrame } from '../../../components/PhotoFrame';
-import { DiscoverRow } from '../../../components/DiscoverRow';
 import { HorizontalList } from '../../../components/HorizontalList';
 import { WelcomeChecklist } from '../../../components/WelcomeChecklist';
 
@@ -157,8 +156,6 @@ export default function RecipesScreen() {
   // Two columns with a 12pt gap; carousels use exactly the same card width.
   const gap = t.spacing.sm;
   const cardWidth = Math.floor((contentWidth - margin * 2 - gap * (columns - 1)) / columns);
-  // Cards in a sideways row: a bit narrower than the grid, so the next one peeks in.
-  const railWidth = cardWidth;
   const countLabel = `${filtered.length} ${filtered.length === 1 ? 'recipe' : 'recipes'}`;
 
   // Favorites only shows up once you've hearted something, so it never opens to an empty page.
@@ -338,8 +335,6 @@ export default function RecipesScreen() {
             </Reveal>
           )}
 
-          {/* Discover: recipes the owner published (hidden when there are none) */}
-          <DiscoverRow width={railWidth} />
 
         </Animated.View>
       )}
