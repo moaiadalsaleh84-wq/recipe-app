@@ -62,7 +62,7 @@ const MOODS: { id: TileMood | 'surprise'; label: string; hint: string; icon: Ico
   { id: 'quick', label: 'Quick', hint: '30 minutes or less', icon: 'timer', color: pop.sunshine },
   { id: 'favorites', label: 'Favorites', hint: 'Your hearted recipes', icon: 'heart', color: pop.leaf },
   { id: 'cozy', label: 'Cozy', hint: 'Comfort food', icon: 'pot', color: pop.sky },
-  { id: 'surprise', label: 'Surprise me', hint: 'Opens a random recipe', icon: 'shuffle', color: pop.lilac },
+  { id: 'surprise', label: 'Surprise', hint: 'Opens a random recipe', icon: 'shuffle', color: pop.lilac },
 ];
 
 export default function RecipesScreen() {
@@ -159,8 +159,6 @@ export default function RecipesScreen() {
   const cardWidth = Math.floor((contentWidth - margin * 2 - gap * (columns - 1)) / columns);
   // Sideways rows: a bit narrower than the grid, so the next card peeks in.
   const railWidth = Math.round(cardWidth * 0.82);
-  // Four mood tiles in a row (at least 80 wide each; the row scrolls on narrow phones).
-  const moodWidth = Math.max(80, Math.floor((contentWidth - margin * 2 - 8 * 3) / 4));
   const countLabel = `${filtered.length} ${filtered.length === 1 ? 'recipe' : 'recipes'}`;
 
   // Favorites only shows up once you've hearted something, so it never opens to an empty page.
@@ -210,6 +208,12 @@ export default function RecipesScreen() {
             {/* No streak yet: a quiet gray flame and no "0". From day one: a colored flame and the number. */}
             <Icon name="flameFill" size={18} color={streak > 0 ? t.pop.tomato : '#B9B5C6'} />
           </Flicker>
+          {/* At 0: "Start" next to the gray flame, so the pill never looks empty or broken. */}
+          {streak === 0 && (
+            <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]} testID="streak-start">
+              Start
+            </Text>
+          )}
           {streak > 0 && (
             <Text style={[t.type.headline, { color: t.pop.ink, fontFamily: t.fonts.black }]} testID="streak-count-home">
               {streak}
@@ -256,9 +260,9 @@ export default function RecipesScreen() {
         onCook={() => (featured ? router.push({ pathname: '/cook/[id]', params: { id: featured.id } }) : router.push('/import'))}
       />
 
-      {/* 1. Mood tiles: one row of four compact tiles (80 high: icon + label); scrolls if it must. */}
+      {/* 1. Mood tiles: four equal tiles (80 high: icon + label) that always fit the width. */}
       <Reveal index={0}>
-        <HorizontalList gap={8} contentStyle={{ paddingBottom: 2 }}>
+        <View style={styles.moods}>
           {MOODS.map((m) => {
             const on = mood === m.id;
             return (
@@ -268,19 +272,19 @@ export default function RecipesScreen() {
                 pressed={on}
                 onPress={() => pickMood(m.id)}
                 accessibilityLabel={`${m.label}. ${m.hint}${on ? '. Selected, tap to show all recipes' : ''}`}
-                style={{ width: moodWidth }}
+                style={styles.mood}
                 contentStyle={styles.moodFace}
                 testID={`mood-${m.id}`}
               >
                 <Icon name={on ? 'check' : m.icon} size={22} color={t.pop.ink} weight="bold" />
-                {/* Small fixed tiles: the label grows only a little with large text and never splits a word. */}
-                <Text style={[styles.moodLabel, { color: t.pop.ink }]} numberOfLines={2} maxFontSizeMultiplier={1.1}>
+                {/* One word on one line: it shrinks a little rather than wrap or cut. */}
+                <Text style={[styles.moodLabel, { color: t.pop.ink }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} maxFontSizeMultiplier={1.1}>
                   {m.label}
                 </Text>
               </PopCard>
             );
           })}
-        </HorizontalList>
+        </View>
       </Reveal>
 
       {/* 2. A mood is on: its recipes, right here. */}
@@ -587,6 +591,8 @@ const styles = StyleSheet.create({
   reminder: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 16, paddingRight: 4, paddingVertical: 8, borderRadius: 20, borderWidth: 2.5, marginBottom: 16, borderCurve: 'continuous' },
   reminderBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
   // Icon in a circle at the top left, the label underneath on one line.
+  moods: { flexDirection: 'row', gap: 8 },
+  mood: { flex: 1, minWidth: 0 },
   moodFace: { height: 80, paddingHorizontal: 4, paddingVertical: 10, alignItems: 'center', justifyContent: 'center', gap: 6 },
   moodLabel: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 16, textAlign: 'center' },
   sortBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', minHeight: 44, marginBottom: 4 },

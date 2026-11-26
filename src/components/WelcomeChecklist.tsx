@@ -32,10 +32,10 @@ export function WelcomeChecklist({ onImport, onCookbook, onCook }: Props) {
   const { importsUsed, customRecipes, cookbooks, plan, cooked } = useStore();
 
   const steps: { id: string; label: string; icon: IconName; done: boolean; onPress: () => void }[] = [
-    { id: 'import', label: 'Import your first recipe', icon: 'link', done: importsUsed > 0 || customRecipes.some(isImported), onPress: onImport },
-    { id: 'cookbook', label: 'Create your first cookbook', icon: 'book', done: cookbooks.length > 0, onPress: onCookbook },
+    { id: 'import', label: 'Import a recipe', icon: 'link', done: importsUsed > 0 || customRecipes.some(isImported), onPress: onImport },
+    { id: 'cookbook', label: 'Make a cookbook', icon: 'book', done: cookbooks.length > 0, onPress: onCookbook },
     { id: 'plan', label: 'Plan a meal', icon: 'calendar', done: Object.values(plan).some((day) => Object.values(day ?? {}).some(Boolean)), onPress: () => router.navigate('/plan') },
-    { id: 'cook', label: 'Cook your first recipe', icon: 'pot', done: cooked.length > 0, onPress: onCook },
+    { id: 'cook', label: 'Cook a recipe', icon: 'pot', done: cooked.length > 0, onPress: onCook },
   ];
   const doneCount = steps.filter((s) => s.done).length;
   const next = steps.find((s) => !s.done);
@@ -54,14 +54,13 @@ export function WelcomeChecklist({ onImport, onCookbook, onCook }: Props) {
           <Icon name={next.icon} size={18} color={t.pop.ink} weight="bold" />
         </View>
         <View style={{ flex: 1, minWidth: 0, gap: 6 }}>
-          <View style={styles.line}>
-            <Text style={[t.type.headline, { color: t.colors.label, flex: 1 }]} numberOfLines={1}>
-              {next.label}
+          {/* "Import a recipe · 0 of 4" on one line (it shrinks a little before it would wrap). */}
+          <Text style={[t.type.headline, { color: t.colors.label }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
+            {next.label}
+            <Text style={{ color: t.colors.secondaryLabel }} testID="welcome-count">
+              {` · ${doneCount} of ${steps.length}`}
             </Text>
-            <Text style={[t.type.caption1, { color: t.colors.secondaryLabel }]} testID="welcome-count">
-              {doneCount} of {steps.length}
-            </Text>
-          </View>
+          </Text>
           <ProgressBar value={doneCount / steps.length} color={t.pop.sunshine} track={t.pop.white} height={8} label="Getting started" />
         </View>
         <Icon name="chevronRight" size={14} color={t.colors.secondaryLabel} weight="bold" />
@@ -73,5 +72,4 @@ export function WelcomeChecklist({ onImport, onCookbook, onCook }: Props) {
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 64, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 16, borderCurve: 'continuous' },
   icon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  line: { flexDirection: 'row', alignItems: 'center', gap: 8 },
 });
