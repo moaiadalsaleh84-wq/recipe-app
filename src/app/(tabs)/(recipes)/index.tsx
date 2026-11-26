@@ -11,7 +11,7 @@ import { Reveal } from '../../../components/Reveal';
 import { RecipeCard, RecipePhoto, TonightCard } from '../../../components/RecipeCard';
 import { TabScreen } from '../../../components/TabScreen';
 import { useToast } from '../../../components/Toast';
-import { Chip, EmptyState, IconButton, SearchField, SectionHeader } from '../../../components/ui';
+import { Chip, EmptyState, IconButton, Odometer, SearchField, SectionHeader } from '../../../components/ui';
 import { FAVORITES_ID, QUICK_FILTER, matchesFilter, type Recipe } from '../../../data/mock';
 import { fitsDiet } from '../../../lib/onboardingPicks';
 import { haptics } from '../../../lib/haptics';
@@ -215,9 +215,8 @@ export default function RecipesScreen() {
             </Text>
           )}
           {streak > 0 && (
-            <Text style={[t.type.headline, { color: t.pop.ink, fontFamily: t.fonts.black }]} testID="streak-count-home">
-              {streak}
-            </Text>
+            // The streak rolls up on odometer wheels when Recipes opens and when it grows.
+            <Odometer value={streak} style={[t.type.headline, { color: t.pop.ink, fontFamily: t.fonts.black }]} testID="streak-count-home" />
           )}
         </PressableScale>
         <View style={{ flex: 1 }} />

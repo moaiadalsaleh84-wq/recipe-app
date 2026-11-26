@@ -15,7 +15,7 @@ import { stickers } from '../data/stickers';
 import { nb } from '../lib/text';
 import { weekDotSize } from '../lib/weekDots';
 import { useToast } from '../components/Toast';
-import { AnimatedNumber, Button, IconButton, ProgressBar, Ring, Section, SectionHeader, Separator, Stepper } from '../components/ui';
+import { AnimatedNumber, Button, IconButton, Odometer, ProgressBar, Ring, Section, SectionHeader, Separator, Stepper } from '../components/ui';
 import { Reveal } from '../components/Reveal';
 import { showPaywall, useProGate } from '../lib/pro';
 import { BADGES, levelFor, streakInfo, xpFor } from '../lib/progress';
@@ -144,7 +144,11 @@ export default function ProgressScreen() {
             </View>
             <View style={{ flex: 1 }}>
               {streak > 0 ? (
-                <AnimatedNumber value={streak} suffix={'\u00A0day streak'} style={[t.type.title1, { color: t.pop.ink }]} testID="streak-count" />
+                // "3 day streak": the number rolls on odometer wheels.
+                <View style={{ flexDirection: 'row', alignItems: 'flex-end' }} accessible accessibilityLabel={`${streak} day streak`}>
+                  <Odometer value={streak} style={[t.type.title1, { color: t.pop.ink }]} testID="streak-count" />
+                  <Text style={[t.type.title1, { color: t.pop.ink }]}>{'\u00A0day streak'}</Text>
+                </View>
               ) : (
                 // Smaller than the streak number and never split: no word ends up alone on a line.
                 <Text style={[t.type.title2, { color: t.pop.ink }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} testID="streak-count">

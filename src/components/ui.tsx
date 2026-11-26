@@ -231,6 +231,62 @@ export function RollingNumber({ value, style, format = num, testID }: { value: n
   );
 }
 
+/* ---------- Odometer (the streak) ---------- */
+
+/**
+ * A number on odometer wheels: each digit rolls up to its value (600 ms, ease-out, no overshoot)
+ * when it first shows and whenever it changes; 9 → 10 rolls the last wheel forward through to 0.
+ * Reduce Motion: the digits just show.
+ */
+export function Odometer({ value, style, testID }: { value: number; style?: StyleProp<TextStyle>; testID?: string }) {
+  const flat: TextStyle = StyleSheet.flatten([{ fontVariant: ['tabular-nums'] as TextStyle['fontVariant'] }, style]) ?? {};
+  const lh = flat.lineHeight ?? Math.round((flat.fontSize ?? 17) * 1.25);
+  const digits = String(Math.max(0, Math.round(value))).split('').map(Number);
+  return (
+    <View style={{ flexDirection: 'row' }} accessible accessibilityLabel={String(value)} testID={testID}>
+      {digits.map((d, i) => (
+        // Keyed by place (ones, tens…), so each wheel keeps its own position.
+        <OdometerWheel key={digits.length - i} digit={d} lineHeight={lh} style={flat} />
+      ))}
+    </View>
+  );
+}
+
+const WHEEL = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+function OdometerWheel({ digit, lineHeight, style }: { digit: number; lineHeight: number; style: TextStyle }) {
+  const reduceMotion = useReducedMotion();
+  const y = useSharedValue(reduceMotion ? -digit * lineHeight : 0);
+  const prev = useRef(reduceMotion ? digit : 0);
+  useEffect(() => {
+    const from = prev.current;
+    prev.current = digit;
+    if (reduceMotion) {
+      y.set(-digit * lineHeight);
+      return;
+    }
+    // Always roll forward: a smaller digit (9 → 0) rolls on into the second set of 0–9, then snaps back.
+    const target = digit < from ? digit + 10 : digit;
+    y.set(
+      withTiming(-target * lineHeight, { duration: 600, easing: Easing.out(Easing.cubic) }, (done) => {
+        if (done && target !== digit) y.set(-digit * lineHeight);
+      }),
+    );
+  }, [digit, lineHeight, reduceMotion, y]);
+  const wheel = useAnimatedStyle(() => ({ transform: [{ translateY: y.get() }] }));
+  return (
+    <View style={{ height: lineHeight, overflow: 'hidden' }} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+      <Animated.View style={wheel}>
+        {WHEEL.map((n, i) => (
+          <Text key={i} style={[style, { height: lineHeight, lineHeight }]}>
+            {n}
+          </Text>
+        ))}
+      </Animated.View>
+    </View>
+  );
+}
+
 /* ---------- Stepper (servings, goals) ---------- */
 
 /**
