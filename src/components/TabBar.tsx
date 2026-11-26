@@ -32,10 +32,11 @@ export function useTabBarHeight() {
 
 /**
  * Room a scrolling tab screen leaves at the bottom, so its last item never hides behind the bar:
- * the bar's full height + 24.
+ * 120pt plus the home-indicator area (the bar is 64 of that).
  */
 export function useTabBarSpace() {
-  return useTabBarHeight() + 24;
+  const insets = useSafeAreaInsets();
+  return 120 + insets.bottom;
 }
 
 // A slide ends with the finger lifting over some tab: that lift must not also count as a tap.
