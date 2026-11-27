@@ -3,7 +3,7 @@
  * All tappable pieces are at least 44pt and give press + haptic feedback.
  */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native';
+import { StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native';
 import { Text } from './Text';
 import { noWidow, num } from '../lib/text';
 import { EASE_CUBIC, duration as motionDuration } from '../motion';
@@ -111,17 +111,20 @@ export function TextButton({ label, onPress, icon, color, small, disabled, style
   const t = useTheme();
   const ink = color ?? (small ? t.colors.secondaryLabel : t.colors.label);
   return (
-    <Pressable
+    // Dims the moment your finger lands (on the UI thread), like every other button.
+    <PressableScale
       onPress={onPress}
       disabled={disabled}
+      haptic={null}
+      scaleTo={0.99}
       accessibilityRole={accessibilityRole}
       accessibilityLabel={accessibilityLabel ?? label}
       testID={testID}
-      style={({ pressed }) => [styles.textButton, { opacity: disabled ? 0.4 : pressed ? 0.6 : 1 }, style]}
+      style={[styles.textButton, style]}
     >
       {icon && <Icon name={icon} size={small ? 13 : 16} color={ink} weight="bold" />}
       <Text style={[small ? styles.textButtonSmall : styles.textButtonLabel, { color: ink }]}>{label}</Text>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -397,14 +400,9 @@ export function Stepper({
           testID="stepper-input"
         />
       ) : editable ? (
-        <Pressable
-          onPress={() => setEditing(true)}
-          accessibilityRole="button"
-          accessibilityLabel={`${num(value)}. Tap to type your ${label}`}
-          hitSlop={8}
-        >
+        <PressableScale onPress={() => setEditing(true)} haptic={null} scaleTo={0.99} accessibilityRole="button" accessibilityLabel={`${num(value)}. Tap to type your ${label}`} hitSlop={8}>
           <RollingNumber value={value} style={[t.type.headline, styles.stepperValue, { color: t.colors.label }]} testID="stepper-value" />
-        </Pressable>
+        </PressableScale>
       ) : (
         <RollingNumber value={value} style={[t.type.headline, styles.stepperValue, { color: t.colors.label }]} testID="stepper-value" />
       )}

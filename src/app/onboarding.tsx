@@ -10,7 +10,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native';
+import { PressableScale } from '../components/PressableScale';
 import Animated, { FadeIn, SlideInLeft, SlideInRight, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppIcon } from '../components/AppIcon';
@@ -357,9 +358,9 @@ function Welcome({ onStart, onRestore, restoring }: { onStart: () => void; onRes
       <Animated.View entering={riseIn(350, reduceMotion, 6, 340)}>
         <PopButton label="Let’s go" color={pop.ink} textColor={pop.white} onPress={onStart} style={{ marginTop: 24 }} testID="ob-start" />
       </Animated.View>
-      <Pressable onPress={onRestore} disabled={restoring} accessibilityRole="button" style={({ pressed }) => [styles.link, pressed && { opacity: 0.6 }]} hitSlop={6}>
+      <PressableScale onPress={onRestore} disabled={restoring} haptic={null} scaleTo={0.99} accessibilityRole="button" style={styles.link} hitSlop={6}>
         <Text style={styles.linkText}>{restoring ? 'Checking…' : 'I already have an account'}</Text>
-      </Pressable>
+      </PressableScale>
     </View>
   );
 }
@@ -581,9 +582,9 @@ function ReminderStep({ time, preview, onYes, onNo }: { time: string; preview: P
             }}
             testID="ob-remind-yes"
           />
-          <Pressable onPress={onNo} accessibilityRole="button" style={({ pressed }) => [styles.link, pressed && { opacity: 0.6 }]} testID="ob-remind-no">
+          <PressableScale onPress={onNo} haptic={null} scaleTo={0.99} accessibilityRole="button" style={styles.link} testID="ob-remind-no">
             <Text style={styles.linkText}>Not now</Text>
-          </Pressable>
+          </PressableScale>
         </View>
       }
     >
