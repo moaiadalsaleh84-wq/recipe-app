@@ -83,3 +83,17 @@ test('spoons: tbsp to the nearest ½, tsp to the nearest ¼, cups keep thirds', 
   assert.equal(showAmount(160, 'ml', 'Flour', 'us').qty, '⅔');
   assert.equal(showAmount(160, 'ml', 'Flour', 'us').unit, 'cup');
 });
+
+test('small weighed salt, sugar, yeast and spices show in spoons (both units)', () => {
+  assert.equal(showAmount(6, 'g', 'salt').text, '1\u00A0tsp');
+  assert.equal(showAmount(3, 'g', 'Kosher salt').text, '1\u00A0tsp');
+  assert.equal(showAmount(7, 'g', 'instant yeast', 'us').text, '2¼\u00A0tsp');
+  assert.equal(showAmount(25, 'g', 'sugar').text, '2\u00A0tbsp');
+  assert.equal(showAmount(5, 'g', 'smoked paprika').text, '2\u00A0tsp');
+  assert.equal(showAmount(2, 'g', 'ground black pepper').text, '¾\u00A0tsp');
+  // Not spices, fresh herbs, or bigger amounts: still grams.
+  assert.equal(showAmount(10, 'g', 'Fresh basil').text, '10\u00A0g');
+  assert.equal(showAmount(15, 'g', 'Butter').text, '15\u00A0g');
+  assert.equal(showAmount(100, 'g', 'sugar').text, '100\u00A0g');
+  assert.equal(showAmount(20, 'g', 'red bell pepper').text, '20\u00A0g');
+});

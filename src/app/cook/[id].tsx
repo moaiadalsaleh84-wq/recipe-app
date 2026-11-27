@@ -36,7 +36,7 @@ import { Icon } from '../../components/Icon';
 import { PressableScale } from '../../components/PressableScale';
 import { useToast } from '../../components/Toast';
 import { Lift, PopButton, PopCard, PopChip, PopIconButton } from '../../components/pop';
-import { AnimatedNumber, CheckCircle, DrawnCheck, EmptyState, ProgressBar, TextButton } from '../../components/ui';
+import { AnimatedNumber, CheckCircle, DrawnCheck, EmptyState, ProgressBar, Separator, TextButton } from '../../components/ui';
 import type { Ingredient, Rating, Recipe } from '../../data/mock';
 import { clock, isReady, secondsLeft, type CookTimer } from '../../lib/cookTimers';
 import { haptics } from '../../lib/haptics';
@@ -269,9 +269,11 @@ function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; serv
         <>
           {/* Header: close, where you are, all ingredients */}
           <View style={[styles.header, { paddingTop: Math.max(insets.top, 12) + 4 }]}>
-            <PopIconButton icon="close" accessibilityLabel="Exit cook mode" onPress={close} />
-            {/* Centered on the screen, not between the buttons. */}
-            <View style={[StyleSheet.absoluteFill, styles.headerCenter, { top: Math.max(insets.top, 12) + 4 }]} pointerEvents="none">
+            {/* Three columns: the two sides are the same width, so the middle is the screen's centre. */}
+            <View style={styles.headerSide}>
+              <PopIconButton icon="close" accessibilityLabel="Exit cook mode" onPress={close} />
+            </View>
+            <View style={styles.headerCenter} pointerEvents="none">
               {page === 0 ? (
                 <View style={[styles.readyPill, { backgroundColor: setOut === gatherTiles.length ? pop.leaf : pop.white }]}>
                   {setOut === gatherTiles.length ? (
@@ -291,12 +293,9 @@ function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; serv
                 </Text>
               )}
             </View>
-            <View style={{ flex: 1 }} />
-            {page === 0 ? (
-              <View style={{ width: 44 }} />
-            ) : (
-              <PopIconButton icon="notes" accessibilityLabel="Show all ingredients" onPress={() => setListOpen(true)} />
-            )}
+            <View style={[styles.headerSide, { alignItems: 'flex-end' }]}>
+              {page > 0 && <PopIconButton icon="notes" accessibilityLabel="Show all ingredients" onPress={() => setListOpen(true)} />}
+            </View>
           </View>
 
           {/* One chunky segment per step; tap one to jump there. */}
@@ -349,11 +348,20 @@ function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; serv
                   }
                   testID="gather-fox"
                 />
-                <View style={styles.grid}>
-                  {gatherTiles.map(({ key, item, parts }) => (
-                    <GatherTile key={key} {...partsOf(item, parts > 1)} checked={!!gathered[key]} onPress={() => toggleGathered(key)} />
-                  ))}
-                </View>
+                {/* Up to 10 things: big tiles. More: a compact checklist, one row each. */}
+                {gatherTiles.length > 10 ? (
+                  <View style={styles.gatherList} testID="gather-list">
+                    {gatherTiles.map(({ key, item, parts }, i) => (
+                      <GatherRow key={key} {...partsOf(item, parts > 1)} first={i === 0} checked={!!gathered[key]} onPress={() => toggleGathered(key)} />
+                    ))}
+                  </View>
+                ) : (
+                  <View style={styles.grid}>
+                    {gatherTiles.map(({ key, item, parts }) => (
+                      <GatherTile key={key} {...partsOf(item, parts > 1)} checked={!!gathered[key]} onPress={() => toggleGathered(key)} />
+                    ))}
+                  </View>
+                )}
               </Animated.View>
             )}
 
@@ -505,6 +513,22 @@ function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; serv
  * One ingredient on the counter. Unchecked: white with a dashed empty circle, sitting high on a
  * 5px shadow. Checked: leaf green with a white check, pressed down to a 2px shadow. A small pop when tapped.
  */
+/** One thing to set out, as a checklist row (recipes with more than 10 ingredients). */
+function GatherRow({ name, qty, checked, first, onPress }: { name: string; qty: string; checked: boolean; first: boolean; onPress: () => void }) {
+  return (
+    <View>
+      {!first && <Separator inset={56} />}
+      <PressableScale onPress={onPress} haptic="select" scaleTo={0.98} accessibilityRole="checkbox" aria-checked={checked} accessibilityLabel={qty ? `${qty} ${name}` : name} style={styles.gatherRow}>
+        <CheckCircle checked={checked} color={pop.leaf} />
+        <Text style={[styles.gatherRowName, checked && { color: pop.inkMuted }]} numberOfLines={2}>
+          {name}
+        </Text>
+        {qty ? <Text style={styles.tileQty}>{qty}</Text> : null}
+      </PressableScale>
+    </View>
+  );
+}
+
 function GatherTile({ name, qty, checked, onPress }: { name: string; qty: string; checked: boolean; onPress: () => void }) {
   const reduceMotion = useReducedMotion();
   const pressed = useSharedValue(checked ? 1 : 0);
@@ -515,7 +539,7 @@ function GatherTile({ name, qty, checked, onPress }: { name: string; qty: string
   // Numbers only in here: this runs on the UI thread.
   const face = useAnimatedStyle(() => ({ transform: [{ translateY: pressed.get() * 3 }] }));
   const { width } = useWindowDimensions();
-  const tileWidth = (Math.min(width, 640) - 40 - 12) / 2;
+  const tileWidth = (Math.min(width, 640) - 32 - 12) / 2;
   return (
     <Pressable
       onPress={() => {
@@ -528,7 +552,7 @@ function GatherTile({ name, qty, checked, onPress }: { name: string; qty: string
       style={{ width: tileWidth, paddingBottom: 5 }}
     >
       <View style={styles.tileShadow} />
-      <Animated.View style={[styles.tile, { backgroundColor: checked ? pop.leaf : pop.white }, face]}>
+      <Animated.View style={[styles.tile, { backgroundColor: checked ? pop.leafTint : pop.white, borderColor: checked ? pop.leaf : pop.line }, face]}>
         {checked ? (
           <Animated.View entering={reduceMotion ? undefined : FadeIn.duration(150)} style={styles.tileCheck}>
             <DrawnCheck size={16} delay={60} />
@@ -543,7 +567,7 @@ function GatherTile({ name, qty, checked, onPress }: { name: string; qty: string
           </Text>
           {qty ? (
             // Muted grey only on white; ink on the green of a ticked tile (contrast).
-            <Text style={[styles.tileQty, checked && { color: pop.ink }]} numberOfLines={1}>
+            <Text style={styles.tileQty} numberOfLines={1}>
               {qty}
             </Text>
           ) : null}
@@ -964,11 +988,15 @@ const shortStep = (step: string) => {
 const NOTE_KEY = 'pantry-pop-timer-note-seen';
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingBottom: 10, gap: 10 },
-  headerCenter: { bottom: 13, alignItems: 'center', justifyContent: 'center' },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 10, gap: 8 },
+  headerSide: { width: 48, alignItems: 'flex-start', justifyContent: 'center' },
+  headerCenter: { flex: 1, minWidth: 0, alignItems: 'center', justifyContent: 'center' },
   readyPill: { alignSelf: 'center', minHeight: 40, paddingHorizontal: 16, borderRadius: 999, borderWidth: 2, borderColor: pop.line, alignItems: 'center', justifyContent: 'center' },
-  segments: { flexDirection: 'row', gap: 6, paddingHorizontal: 20, marginBottom: 4 },
-  progressRow: { paddingHorizontal: 20, paddingVertical: 4 },
+  gatherList: { backgroundColor: pop.white, borderRadius: 16, borderWidth: 2, borderColor: pop.line, overflow: 'hidden', borderCurve: 'continuous' },
+  gatherRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, paddingHorizontal: 14, paddingVertical: 8 },
+  gatherRowName: { flex: 1, fontFamily: fonts.bold, fontSize: 16, lineHeight: 21, color: pop.ink },
+  segments: { flexDirection: 'row', gap: 6, paddingHorizontal: 16, marginBottom: 4 },
+  progressRow: { paddingHorizontal: 16, paddingVertical: 4 },
   fadeTop: { position: 'absolute', top: 0, left: 0, right: 0, height: 20 },
   fadeBottom: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 28 },
   // A full 44pt tap area around each 12pt segment.
@@ -982,16 +1010,16 @@ const styles = StyleSheet.create({
   tomorrowThumb: { width: 64, height: 64 },
   drainTrack: { height: 8, borderRadius: 4, backgroundColor: pop.track, overflow: 'hidden', marginVertical: 6 },
   drainFill: { flex: 1, backgroundColor: pop.tomato, transformOrigin: 'left' },
-  pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 20, marginTop: 14 },
+  pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, marginTop: 14 },
   pill: { flexDirection: 'row', alignItems: 'center', borderRadius: 999, borderWidth: 2, borderColor: pop.line, paddingLeft: 12, paddingRight: 4, minHeight: 36 },
   pillMain: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 36, paddingRight: 8 },
   pillStop: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  content: { padding: 20, paddingTop: 24, paddingBottom: 24, width: '100%', maxWidth: 640, alignSelf: 'center' },
+  content: { padding: 16, paddingTop: 24, paddingBottom: 24, width: '100%', maxWidth: 640, alignSelf: 'center' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 },
   tileShadow: { position: 'absolute', left: 0, right: 0, top: 5, bottom: 0, borderRadius: 20, backgroundColor: 'transparent' },
   // At least 92 tall; a long name makes the tile (and its row partner) taller instead of being cut.
   // Same height for every tile (room for a 2-line name + the amount), text top-aligned under the circle.
-  tile: { flex: 1, height: 116, borderRadius: 20, borderWidth: 2.5, borderColor: pop.line, padding: 12, justifyContent: 'flex-start', gap: 8, borderCurve: 'continuous' },
+  tile: { flex: 1, height: 116, borderRadius: 16, borderWidth: 2, borderColor: pop.line, padding: 12, justifyContent: 'flex-start', gap: 8, borderCurve: 'continuous' },
   tileEmpty: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderStyle: 'dashed', borderColor: pop.line },
   tileCheck: { width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: pop.line, backgroundColor: pop.white, alignItems: 'center', justifyContent: 'center' },
   tileName: { fontFamily: fonts.black, fontSize: 17, lineHeight: 21, color: pop.ink },

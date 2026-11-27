@@ -156,6 +156,32 @@ export type Shown = {
 const join = (qty: string, unit: string): Shown => ({ qty, unit, text: qty && unit ? `${qty} ${unit}` : qty || unit });
 
 /**
+ * Grams in one teaspoon, for the things nobody weighs in small amounts: salt, sugar, yeast, baking
+ * powder/soda and dried spices. Fresh herbs and vegetables are never turned into spoons.
+ */
+const GRAMS_PER_TSP: [RegExp, number][] = [
+  [/\b(kosher|flaky|flake|sea salt flakes)\b.*\bsalt|\bsalt flakes\b/, 3],
+  [/\bsalt\b/, 6],
+  [/\b(powdered|icing|confectioners'?) sugar\b/, 2.6],
+  [/\bbrown sugar\b/, 4.6],
+  [/\bsugar\b/, 4.2],
+  [/\byeast\b/, 3.1],
+  [/\b(baking soda|bicarbonate)\b/, 5],
+  [/\bbaking powder\b/, 4],
+  [/\bdried (oregano|thyme|basil|parsley|rosemary|mint|dill|herbs)\b/, 1],
+  [/\b(black|white|ground) pepper\b|^pepper$|\b(paprika|cumin|cinnamon|turmeric|chil(i|li) (powder|flakes)|red pepper flakes|garam masala|curry powder|cayenne|nutmeg|allspice|cardamom|five spice|za'?atar|sumac|onion powder|garlic powder|ginger powder|ground ginger|ground coriander|mustard powder|italian seasoning|cajun seasoning|taco seasoning|spice mix)\b/, 2.5],
+];
+
+/** Small weighed amounts of salt, sugar, yeast and spices, in teaspoons (or null when it isn't one). */
+export function spoonsForWeighed(grams: number, name: string): number | null {
+  if (!(grams > 0) || grams >= 30) return null;
+  const n = name.toLowerCase();
+  if (/\bfresh\b/.test(n)) return null;
+  const match = GRAMS_PER_TSP.find(([re]) => re.test(n));
+  return match ? grams / match[1] : null;
+}
+
+/**
  * How an (already scaled, unrounded) amount is shown. This is the only place amounts are rounded.
  */
 export function showAmount(value: number | null, unit: string, name: string, units: Units = 'metric', aisle?: string): Shown {
@@ -163,6 +189,12 @@ export function showAmount(value: number | null, unit: string, name: string, uni
   if (value == null || info.family === 'none' || !(value > 0)) return join('', info.family === 'none' ? unitKey(unit) : value == null ? 'pinch' : '');
   const base = value * info.factor;
   if (info.family === 'mass') {
+    // "5 g salt" reads better as "1 tsp salt" (both units): small weighed spices, salt, sugar, yeast.
+    const tsp = spoonsForWeighed(base, name);
+    if (tsp != null) {
+      const s = spoons(tsp);
+      return join(s.qty, s.unit);
+    }
     if (units === 'us' && !(aisle === 'Produce' && base < US_SMALL_PRODUCE_G)) return base < 453.6 ? join(kitchenFraction(base / 28.35).text, 'oz') : join(kitchenFraction(base / 453.6).text, 'lb');
     const m = metricMass(base, 'g', 'kg');
     return join(m.qty, m.unit);
