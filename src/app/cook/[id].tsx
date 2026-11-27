@@ -42,7 +42,7 @@ import { clock, isReady, secondsLeft, type CookTimer } from '../../lib/cookTimer
 import { haptics } from '../../lib/haptics';
 import { takePhoto } from '../../lib/photos';
 import { levelFor, streakOf, xpFor } from '../../lib/progress';
-import { playSuccess } from '../../lib/sounds';
+import { playSound, playSuccess } from '../../lib/sounds';
 import { keepTogether, nb } from '../../lib/text';
 import { ingredientsInStep, splitTip, warnStepProblems } from '../../lib/steps';
 import { durationLabel, findTimers } from '../../lib/timers';
@@ -228,8 +228,12 @@ function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; serv
   const toggleGathered = (key: string) => {
     const next = { ...gathered, [key]: !gathered[key] };
     setGathered(next);
-    // The last one set out: a small "ready" moment.
-    if (!gathered[key] && gatherTiles.every((g) => next[g.key])) haptics.success();
+    if (gathered[key]) return;
+    // Set out: a soft tick. The last one: a small "ready" moment (a chime and a success buzz).
+    if (gatherTiles.every((g) => next[g.key])) {
+      haptics.success();
+      playSound('celebrate');
+    } else playSound('tick');
   };
   const setOut = gatherTiles.filter((g) => gathered[g.key]).length;
   const allOut = setOut === gatherTiles.length;
@@ -239,7 +243,10 @@ function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; serv
   const gatherAll = () => {
     setGathered(Object.fromEntries(gatherTiles.map((g) => [g.key, !allOut])));
     if (allOut) haptics.tap();
-    else haptics.success();
+    else {
+      haptics.success();
+      playSound('celebrate');
+    }
   };
 
   const onStep = page >= 1 && page <= steps.length;

@@ -1,9 +1,9 @@
 import { router } from 'expo-router';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Share, StyleSheet, TextInput, View } from 'react-native';
 import { Text } from '../../../components/Text';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
-import Animated, { FadeIn, FadeOut, LinearTransition, FadeOutDown, FadeOutLeft, useAnimatedStyle, useReducedMotion, type SharedValue } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut, LinearTransition, FadeOutDown, FadeOutLeft, interpolateColor, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming, type SharedValue } from 'react-native-reanimated';
 import { enter, uiEase } from '../../../motion';
 import { Icon, type IconName } from '../../../components/Icon';
 import { PressableScale } from '../../../components/PressableScale';
@@ -20,8 +20,8 @@ import { useTonightPick } from '../../../lib/tonightPick';
 import { TabScreen } from '../../../components/TabScreen';
 import { useStore } from '../../../state/store';
 import { showAmount } from '../../../lib/scale';
-import { fonts, useTheme } from '../../../theme';
-import { Fox } from '../../../components/mascot/Fox';
+import { fonts, pop, useTheme } from '../../../theme';
+import { Fox, foxReact } from '../../../components/mascot/Fox';
 
 /** How an aisle is named on screen (saved data keeps the short names). */
 /** Grocery-store names for the aisles. */
@@ -74,13 +74,17 @@ export default function GroceriesScreen() {
   // Nothing to share on an empty list: no share button then.
   const headerRight = groceries.length > 0 ? <HeaderButton icon="share" accessibilityLabel="Share grocery list" onPress={shareList} /> : undefined;
 
-  const toggle = (item: GroceryItem) => {
+  // `quiet`: the row already ticked and played the sound itself (a tap); a swipe hasn't.
+  const toggle = (item: GroceryItem, quiet = false) => {
     toggleGrocery(item.key);
     if (item.checked) return;
     // A soft tick when something goes in the basket (Settings → Sounds; follows the silent switch).
-    playSound('tick');
+    if (!quiet) playSound('tick');
+    // The last one: a small celebration (confetti, a chime, the fox cheers).
     if (done + 1 === total) {
       haptics.success();
+      playSound('celebrate');
+      foxReact('cheer');
       setParty((n) => n + 1);
     }
   };
@@ -163,7 +167,7 @@ export default function GroceriesScreen() {
                 {g.items.map((item, i) => (
                   <Animated.View key={item.key} layout={glide} entering={FadeIn.duration(200)} exiting={reduceMotion ? FadeOut.duration(150) : uiEase(FadeOutDown.duration(200))}>
                     {i > 0 && <Separator inset={60} />}
-                    <GroceryRow item={item} onToggle={() => toggle(item)} onDelete={() => remove(item)} />
+                    <GroceryRow item={item} onToggle={(quiet) => toggle(item, quiet)} onDelete={() => remove(item)} />
                   </Animated.View>
                 ))}
               </Section>
@@ -257,7 +261,7 @@ function AddItemField() {
   );
 }
 
-function GroceryRow({ item, onToggle, onDelete }: { item: GroceryItem; onToggle: () => void; onDelete: () => void }) {
+function GroceryRow({ item, onToggle, onDelete }: { item: GroceryItem; onToggle: (quiet?: boolean) => void; onDelete: () => void }) {
   const t = useTheme();
   const { getRecipe, units } = useStore();
   const names = item.recipeIds.map((id) => getRecipe(id)?.title).filter((n): n is string => !!n);
@@ -265,10 +269,24 @@ function GroceryRow({ item, onToggle, onDelete }: { item: GroceryItem; onToggle:
   const combined = item.recipeIds.length > 1 && item.quantity > 0;
   // One recipe: its name. Several: "For 2 recipes", which opens the list of names.
   const [showSources, setShowSources] = useState(false);
+  // Ticking: the check fills and the name fades to muted right away (with a soft tick and a light
+  // haptic), then a moment later the item moves into the basket. Unticking is immediate.
+  const [ticking, setTicking] = useState(false);
+  const shown = item.checked || ticking;
+  const muted = useSharedValue(item.checked ? 1 : 0);
+  useEffect(() => {
+    muted.set(withTiming(shown ? 1 : 0, { duration: 200 }));
+  }, [shown, muted]);
+  const nameStyle = useAnimatedStyle(() => ({ color: interpolateColor(muted.get(), [0, 1], [pop.ink, pop.inkMuted]) }));
+  const tickTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(tickTimer.current), []);
   const tick = () => {
-    if (swiping.current) return;
+    if (swiping.current || ticking) return;
     haptics.select();
-    onToggle();
+    if (item.checked) return onToggle();
+    setTicking(true);
+    playSound('tick');
+    tickTimer.current = setTimeout(() => onToggle(true), 380);
   };
   // A swipe must never also count as a tap that ticks the item.
   const swiping = useRef(false);
@@ -310,13 +328,13 @@ function GroceryRow({ item, onToggle, onDelete }: { item: GroceryItem; onToggle:
           haptic={null}
           scaleTo={0.96}
           accessibilityRole="checkbox"
-          aria-checked={item.checked}
+          aria-checked={shown}
           accessibilityLabel={`${item.name}, ${showAmount(item.quantity, item.unit, item.name, units, item.aisle).text}${combined ? ' total' : ''}`}
           accessibilityActions={[{ name: 'delete', label: 'Delete' }]}
           onAccessibilityAction={(e) => e.nativeEvent.actionName === 'delete' && onDelete()}
           style={styles.checkTap}
         >
-          <CheckCircle checked={item.checked} color={t.pop.leaf} />
+          <CheckCircle checked={shown} color={t.pop.leaf} />
         </PressableScale>
         <PressableScale
           onPress={() => {
@@ -335,9 +353,9 @@ function GroceryRow({ item, onToggle, onDelete }: { item: GroceryItem; onToggle:
         >
           <View style={{ flex: 1, minWidth: 0 }}>
             {/* A name you typed can be long: it gets two lines, then "…". */}
-            <Text style={[t.type.body, { color: item.checked ? t.colors.secondaryLabel : t.colors.label }, item.checked && styles.struck]} numberOfLines={2}>
+            <Animated.Text style={[t.type.body, nameStyle, shown && styles.struck]} numberOfLines={2}>
               {item.name}
-            </Text>
+            </Animated.Text>
             {/* "For <recipe>" (up to 2 lines, so the name isn't cut short) or "For 2 recipes". */}
             {names.length === 1 && (
               <Text style={[styles.sub, { color: t.colors.secondaryLabel }]} numberOfLines={2}>
