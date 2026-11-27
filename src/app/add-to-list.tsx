@@ -150,7 +150,7 @@ export default function AddToList() {
       </View>
 
       {groups.length === 0 ? (
-        <EmptyState icon="cart" title="Nothing new to add" message={week ? 'This week’s meals are already on your list.' : 'This recipe has no ingredients yet.'} action={{ label: 'Close', onPress: close }} />
+        <EmptyState icon="cart" fox="happy" title="Nothing new to add" message={week ? 'This week’s meals are already on your list.' : 'This recipe has no ingredients yet.'} action={{ label: 'Close', onPress: close }} />
       ) : (
         <ScrollView contentContainerStyle={[styles.content, { paddingBottom: 24 }]}>
           {groups.map((g) => (

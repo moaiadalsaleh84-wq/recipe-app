@@ -17,6 +17,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { MascotSays } from '../components/mascot/MascotSays';
 import type { Line } from '../components/mascot/lines';
+import { Fox, FoxSays } from '../components/mascot/Fox';
 import { Icon } from '../components/Icon';
 import { PageHeader } from '../components/PageHeader';
 import { PressableScale } from '../components/PressableScale';
@@ -394,7 +395,7 @@ export default function ImportScreen() {
             {/* The picture as soon as we have it; the tinted card until then. */}
             <Lift radius={22}>
               <PhotoFrame uri={preview?.imageUrl && !previewFailed ? preview.imageUrl : null} radius={22} placeholderColor={t.pop.tomatoTint} onError={() => setPreviewFailed(true)} style={styles.loadPhoto} testID={preview?.imageUrl && !previewFailed ? 'loading-thumb' : undefined}>
-                {!(preview?.imageUrl && !previewFailed) && <Icon name="pot" size={56} color={t.pop.inkMuted} />}
+                {!(preview?.imageUrl && !previewFailed) && <Fox pose="reading" size={104} />}
               </PhotoFrame>
             </Lift>
             {preview?.credit?.handle || preview?.credit?.siteName ? (
@@ -402,6 +403,7 @@ export default function ImportScreen() {
                 {preview.credit.handle ? `From ${preview.credit.handle} on ${preview.kind === 'youtube' ? 'YouTube' : preview.kind === 'tiktok' ? 'TikTok' : (preview.credit.siteName ?? 'the web')}` : `From ${preview.credit.siteName}`}
               </Text>
             ) : null}
+            {preview?.imageUrl && !previewFailed && <FoxSays pose="reading" text="Reading every step for you…" size={44} style={{ marginTop: 16 }} />}
             <View style={styles.stages}>
               {STAGES.map((label, k) => (
                 <StageLine key={label} label={label} index={k} state={shown > k ? 'done' : shown === k ? 'active' : 'todo'} />
@@ -413,6 +415,7 @@ export default function ImportScreen() {
 
         {failure && (
           <Animated.View entering={FadeIn.duration(200)} testID="import-failed">
+            <Fox pose="oops" size={88} style={{ alignSelf: 'center', marginBottom: 12 }} />
             <Lift radius={18}>
               <View style={[styles.card, { backgroundColor: t.colors.cell, ...t.chunky.card }]}>
                 <Text style={[t.type.headline, { color: t.colors.label }]}>{failureTitle(failure)}</Text>

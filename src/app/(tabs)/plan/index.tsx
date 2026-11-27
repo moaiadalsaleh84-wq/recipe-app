@@ -18,6 +18,7 @@ import { fonts, pop, useTheme } from '../../../theme';
 import { weekDays } from '../../../lib/week';
 import { nb, duration } from '../../../lib/text';
 import { PhotoFrame } from '../../../components/PhotoFrame';
+import { FoxSays } from '../../../components/mascot/Fox';
 
 
 export default function PlanScreen() {
@@ -99,6 +100,9 @@ export default function PlanScreen() {
       <Text style={styles.hidden} testID="plan-count">
         {plannedToday} of 3 planned
       </Text>
+
+      {/* Nothing planned all week: the fox says what planning gets you. */}
+      {weekRecipes.length === 0 && <FoxSays pose="idle" size={44} text="Plan one dinner and I’ll write the shopping list." style={{ marginTop: 16 }} testID="plan-fox" />}
 
       {/* Breakfast, lunch and dinner: three simple rows (64 high) in one card. A planned meal shows
           its photo, name and meta; an empty one is "+ Breakfast". */}

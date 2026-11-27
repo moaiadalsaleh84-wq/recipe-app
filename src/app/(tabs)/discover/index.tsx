@@ -126,7 +126,7 @@ export default function DiscoverScreen() {
         </HorizontalList>
 
         {error && !items ? (
-          <EmptyState icon="info" title="Couldn’t load Discover" message={error} action={{ label: 'Try again', onPress: () => setRetry((n) => n + 1) }} />
+          <EmptyState icon="info" fox="oops" title="Couldn’t load Discover" message={error} action={{ label: 'Try again', onPress: () => setRetry((n) => n + 1) }} />
         ) : !items ? (
           // Loading: shimmering stand-ins shaped like the cards (photo, title, one line).
           <View style={[styles.grid, { columnGap: gap, rowGap: 20 }]} testID="discover-loading">
@@ -137,6 +137,7 @@ export default function DiscoverScreen() {
         ) : items.length === 0 ? (
           <EmptyState
             icon="search"
+            fox={filtered ? 'oops' : 'sleepy'}
             title={filtered ? 'No matches yet' : 'Nothing here yet'}
             message={filtered ? 'Try fewer words or another dish.' : 'New recipes land here every week.'}
             action={filtered ? { label: 'Clear filters', onPress: clearAll } : { label: 'Browse my recipes', onPress: () => router.navigate('/') }}

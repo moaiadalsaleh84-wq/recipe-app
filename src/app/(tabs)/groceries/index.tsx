@@ -21,7 +21,7 @@ import { TabScreen } from '../../../components/TabScreen';
 import { useStore } from '../../../state/store';
 import { showAmount } from '../../../lib/scale';
 import { fonts, useTheme } from '../../../theme';
-import { FOX_READY, FoxMascot } from '../../../components/mascot/FoxMascot';
+import { Fox } from '../../../components/mascot/Fox';
 
 /** How an aisle is named on screen (saved data keeps the short names). */
 /** Grocery-store names for the aisles. */
@@ -135,13 +135,7 @@ export default function GroceriesScreen() {
       {total === 0 ? (
         // Empty: a small picture, one line, and one next step (nothing is ever added for you).
         <Animated.View entering={enter(0, reduceMotion)} style={styles.empty} testID="list-empty">
-          {FOX_READY ? (
-            <FoxMascot mood="playful" size={96} />
-          ) : (
-            <View style={[styles.emptyArt, { backgroundColor: t.pop.sunshineTint }]}>
-              <Icon name="cart" size={36} color={t.pop.ink} weight="bold" />
-            </View>
-          )}
+          <Fox pose="sleepy" size={96} />
           <Text style={[t.type.body, { color: t.colors.secondaryLabel, textAlign: 'center' }]}>Nothing on your list yet.</Text>
           {tonight && (
             <PopButton

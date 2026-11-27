@@ -5,6 +5,7 @@ import { Text } from '../components/Text';
 import Animated, { FadeIn, FadeOut, useReducedMotion } from 'react-native-reanimated';
 import { enter } from '../motion';
 import { Icon } from '../components/Icon';
+import { Fox } from '../components/mascot/Fox';
 import { PressableScale } from '../components/PressableScale';
 import { PopButton, PopCard, PopChip, PopIconButton } from '../components/pop';
 import { BottomSheet } from '../components/BottomSheet';
@@ -23,7 +24,6 @@ import { TabScreen } from '../components/TabScreen';
 import { totalsFor, useStore } from '../state/store';
 import { fonts, pop, popCycle, useTheme } from '../theme';
 import { PhotoFrame } from '../components/PhotoFrame';
-import { FoxMascot } from '../components/mascot/FoxMascot';
 
 const dayKey = (d: Date) => d.toDateString();
 const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -104,8 +104,6 @@ export default function ProgressScreen() {
         <PopIconButton icon="back" accessibilityLabel="Back" onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} testID="you-back" />
         <PopIconButton icon="gear" accessibilityLabel="Settings" onPress={() => router.push('/settings')} />
       </View>
-      {/* Fox slot (Phase 2): the champion, next to your name. */}
-      <FoxMascot mood="champion" size={64} />
       <View style={styles.row}>
         <View style={[styles.avatar, { backgroundColor: t.pop.berry }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
           <Text style={[t.type.title1, { color: t.pop.ink }]}>{(firstName[0] ?? '?').toUpperCase()}</Text>
@@ -333,16 +331,14 @@ export default function ProgressScreen() {
           onPress={() => tonight && router.push({ pathname: '/cook/[id]', params: { id: tonight.recipe.id } })}
           disabled={!tonight}
           scaleTo={0.98}
-          accessibilityLabel={tonight ? `Your first dish lands here. Cook tonight’s pick: ${tonight.recipe.title}` : 'Your first dish lands here'}
+          accessibilityLabel={tonight ? `Your first dish shows up here. Cook tonight’s pick: ${tonight.recipe.title}` : 'Your first dish shows up here'}
           style={[styles.emptyHistory, { backgroundColor: t.pop.lilacTint }]}
           testID="history-empty"
         >
-          <View style={[styles.emptyHistoryIcon, { backgroundColor: t.pop.white }]}>
-            <Icon name="pot" size={18} color={t.pop.ink} weight="bold" />
-          </View>
+          <Fox pose="sleepy" size={44} still />
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={[t.type.headline, { color: t.colors.label }]} numberOfLines={2}>
-              Your first dish lands here
+              Your first dish shows up here
             </Text>
             {tonight && (
               <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]} numberOfLines={1} testID="history-cook-pick">

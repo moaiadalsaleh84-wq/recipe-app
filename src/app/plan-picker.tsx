@@ -5,6 +5,7 @@ import { Text } from '../components/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PressableScale } from '../components/PressableScale';
 import { RecipeRow } from '../components/RecipeCard';
+import { Fox } from '../components/mascot/Fox';
 import { useToast } from '../components/Toast';
 import { SearchField, Separator } from '../components/ui';
 import { meals, type Meal, type Recipe } from '../data/mock';
@@ -97,7 +98,12 @@ export default function PlanPicker() {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 24 }}
-        ListEmptyComponent={<Text style={[t.type.body, { color: t.colors.secondaryLabel, textAlign: 'center', marginTop: 24 }]}>No recipes match “{query.trim()}”.</Text>}
+        ListEmptyComponent={
+          <View style={{ alignItems: 'center', gap: 8, marginTop: 24 }}>
+            <Fox pose="oops" size={88} />
+            <Text style={[t.type.body, { color: t.colors.secondaryLabel, textAlign: 'center' }]}>No recipes match “{query.trim()}”.</Text>
+          </View>
+        }
       />
     </View>
   );

@@ -111,7 +111,7 @@ function RecipeScreen() {
   if (!recipe) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', backgroundColor: t.colors.background }}>
-        <EmptyState icon="fork" title="Oops, that recipe’s gone" message="It may have been removed." action={{ label: 'Back to recipes', onPress: goBack }} />
+        <EmptyState icon="fork" fox="oops" title="Oops, that recipe’s gone" message="It may have been removed." action={{ label: 'Back to recipes', onPress: goBack }} />
       </View>
     );
   }

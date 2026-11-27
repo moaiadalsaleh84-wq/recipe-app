@@ -28,6 +28,7 @@ import { Mascot, MASCOT_ON } from './mascot/Mascot';
 import type { Mood } from './mascot/moods';
 import { Icon, type IconName } from './Icon';
 import { PressableScale } from './PressableScale';
+import { Fox, type FoxPose } from './mascot/Fox';
 import { PopButton } from './pop/PopButton';
 import { PopChip } from './pop/PopChip';
 import { PopIconButton } from './pop/PopIconButton';
@@ -638,6 +639,7 @@ export function EmptyState({
   action,
   secondary,
   cat,
+  fox,
 }: {
   icon: IconName;
   title: string;
@@ -648,11 +650,15 @@ export function EmptyState({
   secondary?: { label: string; onPress: () => void };
   /** Show Biscuit acting out the empty state instead of an icon: pass the mood. */
   cat?: Mood;
+  /** Show the fox instead of the icon circle: pass his pose (96pt). */
+  fox?: FoxPose;
 }) {
   const t = useTheme();
   return (
     <View style={styles.empty} accessibilityRole="summary">
-      {cat && MASCOT_ON ? (
+      {fox ? (
+        <Fox pose={fox} size={96} />
+      ) : cat && MASCOT_ON ? (
         <Mascot mood={cat} size={132} />
       ) : (
         <View style={[styles.emptyIcon, { backgroundColor: t.colors.tintSoft }]}>

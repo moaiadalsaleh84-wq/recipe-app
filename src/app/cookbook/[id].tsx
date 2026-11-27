@@ -24,7 +24,7 @@ export default function CookbookScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: t.colors.groupedBackground }}>
         <PageHeader title="Cookbook" />
-        <EmptyState icon="book" cat="oops" title="Oops, that cookbook’s gone" message="It may have been deleted." action={{ label: 'Back to recipes', onPress: () => router.dismissTo('/') }} />
+        <EmptyState icon="book" fox="oops" title="Oops, that cookbook’s gone" message="It may have been deleted." action={{ label: 'Back to recipes', onPress: () => router.dismissTo('/') }} />
       </View>
     );
   }
@@ -63,7 +63,7 @@ export default function CookbookScreen() {
         {recipes.length === 0 ? (
           <EmptyState
             icon="book"
-            cat={isFavorites ? 'love' : 'thinking'}
+            fox="sleepy"
             title={isFavorites ? 'No favorites yet' : 'Nothing in here yet'}
             message={isFavorites ? say('savedEmpty').text : 'Open a recipe, tap ⋯ and save it here.'}
             action={{ label: 'Browse recipes', icon: 'book', onPress: () => router.dismissTo('/') }}
