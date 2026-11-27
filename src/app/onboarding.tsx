@@ -131,10 +131,11 @@ export default function Onboarding() {
     }
   };
 
-  if (!screen) return <View style={{ flex: 1, backgroundColor: pop.sunshine }} />;
+  if (!screen) return <View style={{ flex: 1, backgroundColor: pop.sunshineTint }} />;
 
   const segment = SEGMENT[screen];
-  const bg = screen === 'welcome' ? pop.sunshine : screen === 'reminder' ? pop.skyTint : screen === 'pick' ? pop.sunshineTint : pop.white;
+  // Big surfaces are soft tints; bright colors stay on buttons and small accents.
+  const bg = screen === 'welcome' ? pop.sunshineTint : screen === 'reminder' ? pop.skyTint : screen === 'pick' ? pop.sunshineTint : pop.white;
 
   let body: ReactNode;
   switch (screen) {

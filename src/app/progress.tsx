@@ -133,12 +133,12 @@ export default function ProgressScreen() {
 
   return (
     <TabScreen title="You" header={header}>
-      {/* The streak: one big sunshine card with this week underneath */}
+      {/* The streak: a white card with a sunshine flame, and this week underneath. */}
       <Reveal index={0}>
-        <PopCard color={t.pop.sunshine} contentStyle={styles.streakCard} testID="streak-card">
+        <PopCard color={t.colors.cell} contentStyle={styles.streakCard} testID="streak-card">
           <View style={styles.row} accessible accessibilityLabel={`${streak > 0 ? `${streak} day streak` : 'No streak yet'}. ${streakLine}`}>
-            <View style={[styles.flame, { backgroundColor: t.pop.white, borderColor: t.colors.border }]}>
-              <Icon name="flameFill" size={30} color={t.pop.tomato} />
+            <View style={[styles.flame, { backgroundColor: t.pop.sunshineTint, borderColor: 'transparent' }]}>
+              <Icon name="flameFill" size={30} color={streak > 0 ? t.edge(t.pop.sunshine) : '#B9B5C6'} />
             </View>
             <View style={{ flex: 1 }}>
               {streak > 0 ? (

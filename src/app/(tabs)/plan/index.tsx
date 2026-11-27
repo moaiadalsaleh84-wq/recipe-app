@@ -135,14 +135,14 @@ export default function PlanScreen() {
         </Text>
       )}
 
-      {/* The week's shopping, in one tap: a basil banner. */}
+      {/* The week's shopping, in one tap: a soft sky card (the button is the only bright thing). */}
       {weekRecipes.length > 0 && (
         <Reveal index={4}>
-        <Lift radius={26} style={{ marginTop: 24 }}>
-          <View style={[styles.weekCard, { backgroundColor: t.pop.sky, ...t.chunky.card }]} testID="week-groceries">
+        <Lift radius={16} style={{ marginTop: 24 }}>
+          <View style={[styles.weekCard, { backgroundColor: t.pop.skyTint }]} testID="week-groceries">
             <View style={{ gap: 2 }}>
-              <Text style={[t.type.title2, { color: t.colors.onTint }]}>This week</Text>
-              <Text style={[t.type.subhead, { color: t.colors.onTint }]}>
+              <Text style={[t.type.title2, { color: t.colors.label }]}>This week</Text>
+              <Text style={[t.type.subhead, { color: t.colors.secondaryLabel }]}>
                 {weekRecipes.length} {weekRecipes.length === 1 ? 'meal' : 'meals'} planned. You pick what to{'\u00A0'}buy.
               </Text>
             </View>
@@ -196,5 +196,5 @@ const styles = StyleSheet.create({
   plus: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   mealMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, minWidth: 0 },
   mealPhoto: { width: 48, height: 48 },
-  weekCard: { padding: 18, gap: 16, borderRadius: 26, borderCurve: 'continuous' },
+  weekCard: { padding: 16, gap: 14, borderRadius: 16, borderCurve: 'continuous' },
 });

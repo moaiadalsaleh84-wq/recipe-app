@@ -335,12 +335,12 @@ function Welcome({ onDone, trialEndsAt, name, benefits }: { onDone: () => void; 
   const insets = useSafeAreaInsets();
   const reduceMotion = useReducedMotion();
   const ends = trialEndsAt ? new Date(trialEndsAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) : null;
-  // Peak-end: a sunshine page, a confetti burst, the crown drops in once (a soft spring that
+  // Peak-end: a soft sunshine page, a confetti burst, the crown drops in once (a soft spring that
   // settles without bouncing) and stays still, then what's now unlocked.
   const crownIn = reduceMotion ? FadeIn.duration(200) : FadeInDown.springify(600).dampingRatio(1).delay(120);
   const row = (i: number) => (reduceMotion ? FadeIn.duration(200) : FadeInDown.duration(320).delay(500 + i * 120));
   return (
-    <View style={{ flex: 1, backgroundColor: t.pop.sunshine }}>
+    <View style={{ flex: 1, backgroundColor: t.pop.sunshineTint }}>
       {!reduceMotion && <ConfettiBurst count={36} />}
       <ScrollView contentContainerStyle={{ paddingTop: insets.top + 48, paddingHorizontal: t.layout.screen, paddingBottom: 24, alignItems: 'center' }}>
         <Animated.View entering={crownIn}>
@@ -370,7 +370,7 @@ function Welcome({ onDone, trialEndsAt, name, benefits }: { onDone: () => void; 
           ))}
         </View>
       </ScrollView>
-      <BottomBar color={t.pop.sunshine}>
+      <BottomBar color={t.pop.sunshineTint}>
         <PopButton label="Start cooking" icon="pot" color={t.pop.ink} textColor={t.pop.white} onPress={onDone} style={{ flex: 1 }} testID="welcome-start" />
       </BottomBar>
     </View>
