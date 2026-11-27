@@ -16,9 +16,16 @@ export function useRenderInStages(total: number, first = 6) {
 
 /**
  * A list that renders in stages each time it appears (e.g. a mood's recipes, or the grid coming
- * back): the first `first` items at once, the rest right after in a background render.
+ * back): the first `first` items at once, the rest right after in a background render. Until then,
+ * up to 4 shimmering stand-ins in the same shape (`placeholder`) hold their places.
  */
-export function StagedList<T>({ items, first = 4, render }: { items: T[]; first?: number; render: (item: T, index: number) => ReactNode }) {
+export function StagedList<T>({ items, first = 4, render, placeholder }: { items: T[]; first?: number; render: (item: T, index: number) => ReactNode; placeholder?: (index: number) => ReactNode }) {
   const shown = useRenderInStages(items.length, first);
-  return items.slice(0, shown).map(render);
+  const waiting = placeholder ? Math.min(4, items.length - shown) : 0;
+  return (
+    <>
+      {items.slice(0, shown).map(render)}
+      {Array.from({ length: waiting }, (_, i) => placeholder!(i))}
+    </>
+  );
 }

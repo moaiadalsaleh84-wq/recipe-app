@@ -10,7 +10,7 @@ import { Menu } from '../../../components/Menu';
 import { PopButton, PopCard, PopChip } from '../../../components/pop';
 import { PressableScale } from '../../../components/PressableScale';
 import { Reveal } from '../../../components/Reveal';
-import { RecipeCard, RecipePhoto, TonightCard, openRecipe } from '../../../components/RecipeCard';
+import { RecipeCard, RecipeCardSkeleton, RecipePhoto, TonightCard, openRecipe } from '../../../components/RecipeCard';
 import { TabScreen } from '../../../components/TabScreen';
 import { useToast } from '../../../components/Toast';
 import { Chip, EmptyState, IconButton, Odometer, SearchField, SectionHeader } from '../../../components/ui';
@@ -343,6 +343,11 @@ function RecipesScreen() {
                     <RecipeCard recipe={r} width={cardWidth} />
                   </Animated.View>
                 )}
+                placeholder={(i) => (
+                  <View key={`skeleton-${i}`} style={styles.cardSlot}>
+                    <RecipeCardSkeleton width={cardWidth} />
+                  </View>
+                )}
               />
             </View>
           )}
@@ -504,6 +509,11 @@ function RecipesScreen() {
                   <Animated.View key={r.id} layout={sorted.length <= 20 ? LinearTransition.duration(220) : undefined} style={styles.cardSlot}>
                     <RecipeCard recipe={r} width={cardWidth} />
                   </Animated.View>
+                )}
+                placeholder={(i) => (
+                  <View key={`skeleton-${i}`} style={styles.cardSlot}>
+                    <RecipeCardSkeleton width={cardWidth} />
+                  </View>
                 )}
               />
             </View>
