@@ -13,7 +13,7 @@ import { PopButton } from '../components/pop/PopButton';
 import { PressableScale } from '../components/PressableScale';
 import { Text } from '../components/Text';
 import { useToast } from '../components/Toast';
-import { CheckCircle, EmptyState, Section, Separator, TextButton } from '../components/ui';
+import { CheckCircle, EmptyState, Section, Separator } from '../components/ui';
 import { meals, type Ingredient, type Recipe } from '../data/mock';
 import { slotKey, weekId } from '../lib/groceries';
 import { haptics } from '../lib/haptics';
@@ -127,7 +127,7 @@ export default function AddToList() {
     <View style={{ flex: 1, backgroundColor: t.colors.groupedBackground }}>
       {/* Our own grab handle (the system one floated over the header), then one 44pt row: Cancel,
           the title, All/None. The recipe name sits on its own muted line under it. */}
-      <View style={[styles.top, { paddingTop: isIOS ? 8 : insets.top + 8, borderBottomColor: t.colors.separator }]}>
+      <View style={[styles.top, { paddingTop: isIOS ? 8 : insets.top + 8, borderBottomColor: t.colors.separator, backgroundColor: t.colors.groupedBackground }]}>
         <View style={[styles.handle, { backgroundColor: t.colors.border }]} />
         <View style={styles.header}>
           <PressableScale onPress={close} style={styles.side} accessibilityLabel="Cancel">
@@ -139,7 +139,14 @@ export default function AddToList() {
             Add to your list
           </Text>
           <View style={[styles.side, { alignItems: 'flex-end' }]}>
-            {total > 0 && <TextButton label={allOn ? 'None' : 'All'} small onPress={() => setAll(!allOn)} accessibilityLabel={allOn ? 'Untick everything' : 'Tick everything'} />}
+            {/* The same look as Cancel (it's a button, never grey like it's switched off). */}
+            {total > 0 && (
+              <PressableScale onPress={() => setAll(!allOn)} accessibilityLabel={allOn ? 'Untick everything' : 'Tick everything'} style={styles.sideBtn}>
+                <Text style={[t.type.body, { color: t.colors.tint }]} numberOfLines={1}>
+                  {allOn ? 'None' : 'All'}
+                </Text>
+              </PressableScale>
+            )}
           </View>
         </View>
         {!!subtitle && (
@@ -152,9 +159,13 @@ export default function AddToList() {
       {groups.length === 0 ? (
         <EmptyState icon="cart" fox="happy" title="Nothing new to add" message={week ? 'This week’s meals are already on your list.' : 'This recipe has no ingredients yet.'} action={{ label: 'Close', onPress: close }} />
       ) : (
-        <ScrollView contentContainerStyle={[styles.content, { paddingBottom: 24 }]}>
+        <ScrollView contentInsetAdjustmentBehavior="never" contentContainerStyle={[styles.content, { paddingBottom: 24 }]}>
+          {/* The hint, above the list. */}
+          <Text style={[t.type.subhead, styles.hint, { color: t.colors.secondaryLabel }]} testID="add-to-list-hint">
+            Untick what you already have.
+          </Text>
           {groups.map((g) => (
-            <Section key={g.recipe.id} title={week ? g.recipe.title : undefined} footer={week ? undefined : 'Untick what you already have.'}>
+            <Section key={g.recipe.id} title={week ? g.recipe.title : undefined}>
               {g.recipe.ingredients.map((i, index) => row(g, i, index))}
             </Section>
           ))}
@@ -178,13 +189,15 @@ export default function AddToList() {
 }
 
 const styles = StyleSheet.create({
-  top: { paddingBottom: 10, borderBottomWidth: StyleSheet.hairlineWidth },
+  top: { paddingBottom: 10, borderBottomWidth: StyleSheet.hairlineWidth, zIndex: 1 },
   handle: { alignSelf: 'center', width: 36, height: 5, borderRadius: 3, marginBottom: 6 },
   // Cancel and All/None get equal widths, so the title is truly centred and never runs into them.
   header: { flexDirection: 'row', alignItems: 'center', height: 44, paddingHorizontal: 8 },
   side: { width: 84, height: 44, justifyContent: 'center', paddingHorizontal: 8 },
+  sideBtn: { height: 44, justifyContent: 'center' },
   title: { flex: 1, textAlign: 'center' },
   subtitle: { textAlign: 'center', paddingHorizontal: 24 },
   content: { padding: 16, gap: 8 },
+  hint: { marginBottom: 4 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 52, paddingHorizontal: 16, paddingVertical: 8 },
 });
