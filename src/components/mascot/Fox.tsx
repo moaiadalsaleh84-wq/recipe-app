@@ -19,11 +19,29 @@ import { Text } from '../Text';
 import { FoxArt } from './FoxArt';
 import { FOX_BLINK_IMAGES, FOX_IMAGES } from './foxImages';
 import type { FoxPose } from './foxPoses';
+import { onFoxReact } from './foxReact';
 
 export type { FoxPose } from './foxPoses';
+export { foxReact } from './foxReact';
 
-export function Fox({ pose = 'idle', size = 64, style, still = false }: { pose?: FoxPose; size?: number; style?: StyleProp<ViewStyle>; /** No breathing or blinking (e.g. tiny inline foxes). */ still?: boolean }) {
+export function Fox({ pose: basePose = 'idle', size = 64, style, still = false, reacts = false }: { pose?: FoxPose; size?: number; style?: StyleProp<ViewStyle>; /** No breathing or blinking (e.g. tiny inline foxes). */ still?: boolean; /** Shows a quick reaction (e.g. happy when you heart a recipe) for 1.2 s. */ reacts?: boolean }) {
   const reduceMotion = useReducedMotion();
+  // A quick reaction from elsewhere in the app (foxReact), shown for a moment, then back.
+  const [reaction, setReaction] = useState<FoxPose | null>(null);
+  useEffect(() => {
+    if (!reacts) return;
+    let back: ReturnType<typeof setTimeout>;
+    const off = onFoxReact((p) => {
+      setReaction(p);
+      clearTimeout(back);
+      back = setTimeout(() => setReaction(null), 1200);
+    });
+    return () => {
+      off();
+      clearTimeout(back);
+    };
+  }, [reacts]);
+  const pose = reaction ?? basePose;
   const calm = reduceMotion || still;
   const image = FOX_IMAGES[pose];
   const blinkImage = FOX_BLINK_IMAGES[pose];
@@ -79,7 +97,7 @@ export function Fox({ pose = 'idle', size = 64, style, still = false }: { pose?:
  * The fox with one short speech bubble to his right. Keep the line short, warm and a little funny.
  * Tap the bubble (when `onPress` is given) to act on it.
  */
-export function FoxSays({ pose = 'idle', text, size = 48, onPress, style, testID }: { pose?: FoxPose; text: string; size?: number; onPress?: () => void; style?: StyleProp<ViewStyle>; testID?: string }) {
+export function FoxSays({ pose = 'idle', text, size = 48, onPress, style, testID, reacts = false }: { pose?: FoxPose; text: string; size?: number; onPress?: () => void; style?: StyleProp<ViewStyle>; testID?: string; reacts?: boolean }) {
   const t = useTheme();
   const bubble = (
     <View style={[styles.bubble, { backgroundColor: t.colors.cell, borderColor: t.colors.border }]}>
@@ -92,7 +110,7 @@ export function FoxSays({ pose = 'idle', text, size = 48, onPress, style, testID
   );
   return (
     <View style={[styles.says, style]} testID={testID} accessible={!onPress} accessibilityLabel={onPress ? undefined : text}>
-      <Fox pose={pose} size={size} />
+      <Fox pose={pose} size={size} reacts={reacts} />
       {onPress ? (
         <PressableScale onPress={onPress} scaleTo={0.98} accessibilityLabel={text} style={{ flex: 1, minWidth: 0 }}>
           {bubble}

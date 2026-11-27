@@ -253,7 +253,7 @@ function RecipesScreen() {
         {firstName ? `${greet}, ${firstName}` : `${greet}!`}
       </Text>
       {/* The fox, with one line that fits the moment. Tapping it opens the day's pick. */}
-      <FoxSays pose={foxLine.pose} text={foxLine.text} size={44} onPress={featured ? () => openRecipe(featured.id) : undefined} style={{ marginTop: 12 }} testID="home-fox" />
+      <FoxSays reacts pose={foxLine.pose} text={foxLine.text} size={44} onPress={featured ? () => openRecipe(featured.id) : undefined} style={{ marginTop: 12 }} testID="home-fox" />
     </View>
   );
 

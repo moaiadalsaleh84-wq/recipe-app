@@ -1,8 +1,8 @@
 import { Link, router } from 'expo-router';
 import { Platform, StyleSheet, View } from 'react-native';
 import { Text } from './Text';
-import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withTiming, type SharedValue } from 'react-native-reanimated';
-import { memo, useEffect, useState } from 'react';
+import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
+import { memo, useEffect } from 'react';
 import type { Recipe } from '../data/mock';
 import { useStoreGetter, useStoreSelector } from '../state/store';
 import { haptics } from '../lib/haptics';
@@ -15,6 +15,7 @@ import { PopButton } from './pop/PopButton';
 import { PopIconButton } from './pop/PopIconButton';
 import { Sticker } from './pop/Sticker';
 import { Skeleton } from './ui';
+import { foxReact } from './mascot/foxReact';
 import { useToast } from './Toast';
 import { weekDays } from '../lib/week';
 import { todayIndex } from '../lib/tonightPick';
@@ -42,9 +43,10 @@ export function FavoriteButton({ recipe, onPhoto }: { recipe: Recipe; onPhoto?: 
   const getStore = useStoreGetter();
   const onPress = () => {
     const now = getStore().toggleFavorite(recipe.id);
-    // No message: the heart itself shows it (tap it again to undo). Liking gets the burst.
-    if (now) haptics.success();
-    else haptics.tap();
+    // No message: the heart itself shows it (tap it again to undo). A light tap either way, and the
+    // fox looks happy for a moment when you like something.
+    haptics.tap();
+    if (now) foxReact('happy');
   };
   const label = fav ? `Remove ${recipe.title} from Favorites` : `Add ${recipe.title} to Favorites`;
   if (onPhoto) {
@@ -64,68 +66,25 @@ export function FavoriteButton({ recipe, onPhoto }: { recipe: Recipe; onPhoto?: 
   );
 }
 
-/** A heart that fills berry with a 200 ms fade (outline underneath, filled on top). No scaling. */
-/** The 6 little dots that burst out when you like something (every 60°). */
-const BURST = [0, 1, 2, 3, 4, 5].map((i) => (i * Math.PI) / 3 - Math.PI / 2);
-
 /**
- * The favorite heart. Liking it: the heart dips and fills berry, a berry ring ripples out and six
- * small dots burst around it (420 ms, ease-out, nothing overshoots). Un-liking: the fill just fades
- * out. Reduce Motion: only the fill changes.
+ * The favorite heart: liking it fills it berry with a soft 250 ms color fade (the outline stays
+ * underneath); un-liking fades the fill out. No scaling, no burst. Reduce Motion: it just changes.
  */
 export function HeartIcon({ on, size, offColor }: { on: boolean; size: number; offColor: string }) {
   const reduceMotion = useReducedMotion();
   const fill = useSharedValue(on ? 1 : 0);
-  const squeeze = useSharedValue(1);
-  const burst = useSharedValue(1);
-  // Only a change to "liked" bursts (not the first render), noted during render, played below.
-  // The ring and dots only exist while they play (cards at rest stay light: just the heart).
-  const [likes, setLikes] = useState({ was: on, n: 0, bursting: false });
-  if (on !== likes.was) setLikes({ was: on, n: on ? likes.n + 1 : likes.n, bursting: on && !reduceMotion });
-  const bursting = likes.bursting;
   useEffect(() => {
-    fill.set(reduceMotion ? (on ? 1 : 0) : withTiming(on ? 1 : 0, { duration: 200, easing: Easing.out(Easing.cubic) }));
+    fill.set(reduceMotion ? (on ? 1 : 0) : withTiming(on ? 1 : 0, { duration: 250, easing: Easing.out(Easing.cubic) }));
   }, [on, reduceMotion, fill]);
-  useEffect(() => {
-    if (!likes.n || reduceMotion) return;
-    const done = setTimeout(() => setLikes((l) => ({ ...l, bursting: false })), 460);
-    const out = Easing.out(Easing.cubic);
-    squeeze.set(withSequence(withTiming(0.72, { duration: 90, easing: out }), withTiming(1, { duration: 240, easing: out })));
-    burst.set(withSequence(withTiming(0, { duration: 0 }), withTiming(1, { duration: 420, easing: out })));
-    return () => clearTimeout(done);
-  }, [likes.n, reduceMotion, squeeze, burst]);
   const filled = useAnimatedStyle(() => ({ opacity: fill.get() }));
-  const heart = useAnimatedStyle(() => ({ transform: [{ scale: squeeze.get() }] }));
-  const ring = useAnimatedStyle(() => ({ opacity: burst.get() < 1 ? 0.55 * (1 - burst.get()) : 0, transform: [{ scale: 0.5 + burst.get() * 1.3 }] }));
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-      {bursting && (
-        <>
-          <Animated.View pointerEvents="none" style={[styles.likeRing, { width: size * 1.4, height: size * 1.4, borderRadius: size, borderColor: pop.berry }, ring]} />
-          {BURST.map((angle) => (
-            <BurstDot key={angle} angle={angle} size={size} progress={burst} />
-          ))}
-        </>
-      )}
-      <Animated.View style={heart}>
-        <Icon name="heart" size={size} color={offColor} weight="bold" />
-        <Animated.View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, filled]}>
-          <Icon name="heartFill" size={size} color={pop.berry} weight="bold" />
-        </Animated.View>
+      <Icon name="heart" size={size} color={offColor} weight="bold" />
+      <Animated.View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, filled]}>
+        <Icon name="heartFill" size={size} color={pop.berry} weight="bold" />
       </Animated.View>
     </View>
   );
-}
-
-/** One dot of the like burst: flies out from the heart and fades. */
-function BurstDot({ angle, size, progress }: { angle: number; size: number; progress: SharedValue<number> }) {
-  const d = Math.max(3, Math.round(size / 5));
-  const style = useAnimatedStyle(() => {
-    const p = progress.get();
-    const dist = size * (0.45 + p * 0.55);
-    return { opacity: p < 1 ? (p < 0.15 ? p / 0.15 : 1 - p) : 0, transform: [{ translateX: Math.cos(angle) * dist }, { translateY: Math.sin(angle) * dist }] };
-  });
-  return <Animated.View pointerEvents="none" style={[styles.likeDot, { width: d, height: d, borderRadius: d / 2, backgroundColor: pop.berry }, style]} />;
 }
 
 const useMeta = () => (r: Recipe) => `${duration(r.minutes)} · ${nb(r.calories, 'kcal')}`;
@@ -227,8 +186,8 @@ function useCardActions(recipe: Recipe) {
     },
     favorite: () => {
       const now = getStore().toggleFavorite(recipe.id);
-      if (now) haptics.success();
-      else haptics.tap();
+      haptics.tap();
+      if (now) foxReact('happy');
     },
   };
 }
@@ -361,8 +320,6 @@ export function RecipeRow({
 }
 
 const styles = StyleSheet.create({
-  likeRing: { position: 'absolute', borderWidth: 2 },
-  likeDot: { position: 'absolute' },
   // Photos (4:3) with a thick ink line underneath.
   // Flush with the card's top border (no gap): the photo's top corners follow the card's inner curve (24 − 2.5).
   sourceMark: { position: 'absolute', left: 8, bottom: 8, width: 24, height: 24, borderRadius: 12, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
