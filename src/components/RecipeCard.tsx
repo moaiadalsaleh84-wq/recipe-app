@@ -7,7 +7,7 @@ import type { Recipe } from '../data/mock';
 import { useStoreGetter, useStoreSelector } from '../state/store';
 import { haptics } from '../lib/haptics';
 import { fonts, useTheme, pop } from '../theme';
-import { nb, duration } from '../lib/text';
+import { nb, duration, noWidow } from '../lib/text';
 import { Icon } from './Icon';
 import { PhotoFrame, RecipePhoto } from './PhotoFrame';
 import { PressableScale } from './PressableScale';
@@ -101,8 +101,9 @@ export function CardText({ title, meta, metaTestID }: { title: string; meta: str
   const t = useTheme();
   return (
     <View style={styles.cardBody}>
+      {/* Never one word alone on the second line ("Crispy Rice Salmon / Bites"). */}
       <Text style={[styles.cardTitle, { color: t.colors.label }]} numberOfLines={2}>
-        {title}
+        {noWidow(title)}
       </Text>
       <Text style={[styles.cardMetaText, { color: t.colors.secondaryLabel }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} testID={metaTestID}>
         {meta}
@@ -332,7 +333,8 @@ const styles = StyleSheet.create({
   cardWhite: { flexGrow: 1, borderBottomLeftRadius: 14, borderBottomRightRadius: 14 },
   // 14pt inside on every side; the meta sits at the bottom so cards in a row line up.
   // Text under the photo: no box, a little air above, title then meta.
-  cardBody: { paddingTop: 8, paddingHorizontal: 2, gap: 2 },
+  // On the same 16pt edge as the photo above it.
+  cardBody: { paddingTop: 8, gap: 2 },
   // Fredoka 700, 17, up to 2 lines then "…".
   // Card title: Nunito 800, 16, max 2 lines.
   cardTitle: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 21 },
@@ -356,7 +358,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   tonightPhoto: { width: '100%', aspectRatio: 16 / 10 },
-  tonightText: { paddingTop: 10, paddingHorizontal: 2, gap: 2 },
+  tonightText: { paddingTop: 10, gap: 2 },
   // The white part of the card below the photo (the card's face is ink behind the photo).
   tonightWhite: { backgroundColor: pop.white },
   tonightBottom: { backgroundColor: pop.white, borderBottomLeftRadius: 14, borderBottomRightRadius: 14 },
