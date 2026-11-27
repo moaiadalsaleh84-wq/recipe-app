@@ -7,7 +7,7 @@ import { PressableScale } from '../components/PressableScale';
 import { RecipeRow } from '../components/RecipeCard';
 import { Fox } from '../components/mascot/Fox';
 import { useToast } from '../components/Toast';
-import { SearchField, Separator } from '../components/ui';
+import { SearchField, Separator, TextButton } from '../components/ui';
 import { meals, type Meal, type Recipe } from '../data/mock';
 import { isIOS } from '../navigation/screenOptions';
 import { useStore } from '../state/store';
@@ -102,6 +102,8 @@ export default function PlanPicker() {
           <View style={{ alignItems: 'center', gap: 8, marginTop: 24 }}>
             <Fox pose="oops" size={88} />
             <Text style={[t.type.body, { color: t.colors.secondaryLabel, textAlign: 'center' }]}>No recipes match “{query.trim()}”.</Text>
+            {/* Never a dead end: one tap back to every recipe. */}
+            <TextButton label="Clear search" onPress={() => setQuery('')} testID="picker-clear" />
           </View>
         }
       />
