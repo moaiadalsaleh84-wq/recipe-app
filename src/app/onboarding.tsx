@@ -35,7 +35,7 @@ import { duration, riseIn, uiEase } from '../motion';
 import { useStore } from '../state/store';
 import { fonts, noWidows, pop, stroke } from '../theme';
 import { PhotoFrame } from '../components/PhotoFrame';
-import { FoxMascot } from '../components/mascot/FoxMascot';
+import { Fox } from '../components/mascot/Fox';
 
 const SCREENS = ['welcome', 'name', 'goal', 'household', 'diet', 'dinner', 'reminder', 'building', 'pick'] as const;
 type Screen = (typeof SCREENS)[number];
@@ -345,8 +345,8 @@ function Welcome({ onStart, onRestore, restoring }: { onStart: () => void; onRes
         </Animated.View>
       </View>
       <View style={{ flex: 1 }} />
-      {/* Fox slot (Phase 2): says hello above the promise. Draws nothing until the art is in. */}
-      <FoxMascot mood="happy" size={88} style={{ alignSelf: 'center', marginBottom: 8 }} />
+      {/* The fox says hello above the promise. */}
+      <Fox pose="wave" size={88} style={{ alignSelf: 'center', marginBottom: 8 }} />
       <Animated.View entering={riseIn(220, reduceMotion, 12)}>
         <Text style={styles.welcomeTitle} accessibilityRole="header">
           Never wonder what’s for dinner{' '}again.
@@ -636,7 +636,7 @@ function Building({ servings, onCompute, onDone }: { servings: number; onCompute
   }, []);
   return (
     <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 32 }} accessibilityLiveRegion="polite">
-      <FoxMascot mood="studying" size={96} style={{ alignSelf: 'center', marginBottom: 16 }} />
+      <Fox pose="reading" size={96} style={{ alignSelf: 'center', marginBottom: 16 }} />
       <Text style={[styles.title, { textAlign: 'center' }]}>Setting up your kitchen…</Text>
       <View style={{ gap: 16, marginTop: 28, alignSelf: 'center' }}>
         {lines.map((line, i) => (

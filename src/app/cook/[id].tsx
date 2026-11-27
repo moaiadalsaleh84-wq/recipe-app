@@ -34,7 +34,7 @@ import { todayIndex, useTonightPick } from '../../lib/tonightPick';
 import { Icon } from '../../components/Icon';
 import { PressableScale } from '../../components/PressableScale';
 import { useToast } from '../../components/Toast';
-import { Lift, MascotSlot, PopButton, PopCard, PopChip, PopIconButton, SHOW_MASCOT_PLACEHOLDER } from '../../components/pop';
+import { Lift, PopButton, PopCard, PopChip, PopIconButton } from '../../components/pop';
 import { AnimatedNumber, CheckCircle, DrawnCheck, EmptyState, ProgressBar, TextButton } from '../../components/ui';
 import type { Ingredient, Rating, Recipe } from '../../data/mock';
 import { clock, isReady, secondsLeft, type CookTimer } from '../../lib/cookTimers';
@@ -52,7 +52,7 @@ import { useStore } from '../../state/store';
 import { useTimers } from '../../state/timers';
 import { fonts, pop, popCycle, useTheme } from '../../theme';
 import { PhotoFrame } from '../../components/PhotoFrame';
-import { FoxMascot } from '../../components/mascot/FoxMascot';
+import { Fox, FoxSays } from '../../components/mascot/Fox';
 
 type FinishEntry = { date: string; xpBefore: number; levelBefore: number; bonus: Bonus };
 
@@ -64,7 +64,7 @@ function CookMode() {
   if (!recipe) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', backgroundColor: t.colors.background }}>
-        <EmptyState icon="fork" title="Oops, that recipe’s gone" message="It may have been removed." action={{ label: 'Close', onPress: () => router.back() }} />
+        <EmptyState icon="fork" fox="oops" title="Oops, that recipe’s gone" message="It may have been removed." action={{ label: 'Close', onPress: () => router.back() }} />
       </View>
     );
   }
@@ -95,10 +95,23 @@ function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; serv
   const [listOpen, setListOpen] = useState(false);
   // Which way the last move went, so the next step slides in from the right side.
   const [forward, setForward] = useState(true);
+  // When you last finished a step (the fox looks happy for 1.6 s after).
+  const [stepDoneAt, setStepDone] = useState(0);
+  const [stepDone, setStepDoneShown] = useState(false);
+  useEffect(() => {
+    if (!stepDoneAt) return;
+    const show = setTimeout(() => setStepDoneShown(true), 0);
+    const hide = setTimeout(() => setStepDoneShown(false), 1600);
+    return () => {
+      clearTimeout(show);
+      clearTimeout(hide);
+    };
+  }, [stepDoneAt]);
   // The cooking-history entry made when you finish, and your XP and level just before it.
   const [entry, setEntry] = useState<FinishEntry | null>(null);
   // Timers live app-wide (src/state/timers.tsx): they keep going outside Cook Mode and ring when the app is closed.
   const { timers, now, support, start, pause, resume, reset, stop, addTime } = useTimers();
+  const timerRinging = timers.some((tm) => tm.recipeId === recipe?.id && tm.status === 'ringing');
 
   const steps = recipe?.steps ?? [];
   const last = steps.length + 1;
@@ -142,6 +155,8 @@ function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; serv
 
   const go = (p: number) => {
     const next = Math.max(0, Math.min(last, p));
+    // Moving on from a step: the fox is happy for a moment.
+    if (next > page && page > 0) setStepDone(Date.now());
     haptics.select();
     setForward(next >= page);
     // A finished timer doesn't follow you to the next step. Running ones keep counting.
@@ -312,14 +327,17 @@ function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; serv
                   <Text style={[t.type.body, { color: pop.inkMuted }]}>Tap each one as it lands on the counter.</Text>
                 </View>
                 <PopChip label={allOut ? 'Untick all' : 'I’ve got everything'} icon={allOut ? 'undo' : 'check'} onPress={gatherAll} accessibilityLabel={allOut ? 'Untick every ingredient' : 'Tick every ingredient'} style={{ alignSelf: 'flex-start' }} />
-                <MascotSlot
-                  message={
+                <FoxSays
+                  pose={setOut === gatherTiles.length ? 'cheer' : 'chef'}
+                  size={48}
+                  text={
                     setOut === gatherTiles.length
-                      ? 'Everything’s here. Let’s go!'
+                      ? 'Everything’s here. Let’s cook!'
                       : setOut >= Math.ceil(gatherTiles.length / 2) && setOut > 0
-                        ? 'Halfway there!'
-                        : 'Let’s gather everything!'
+                        ? 'Halfway there. Keep them coming!'
+                        : 'Let’s gather everything first.'
                   }
+                  testID="gather-fox"
                 />
                 <View style={styles.grid}>
                   {gatherTiles.map(({ key, item, parts }) => (
@@ -338,6 +356,9 @@ function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; serv
                   <View style={[styles.stepBadge, { backgroundColor: color.fill }]} accessibilityElementsHidden>
                     <Text style={[t.type.title2, { color: pop.ink }]}>{page}</Text>
                   </View>
+                  {/* The fox sits on the card's top edge and reacts: happy when you finish a step,
+                      alert when a timer rings, the chef otherwise. */}
+                  <Fox pose={timerRinging ? 'alert' : stepDone ? 'happy' : 'chef'} size={52} style={styles.stepFox} />
                   {/* One sentence per line: easy to find your place at arm's length. */}
                   <View style={{ gap: 10 }} testID="cook-step" accessible accessibilityRole="header" accessibilityLabel={main}>
                     {stepLines(main).map((line, i) => (
@@ -703,9 +724,8 @@ function Finish({
               <PhotoFrame recipe={recipe} iconSize={56} radius={100} square style={styles.finishPhoto} />
             )}
           </Lift>
-          {SHOW_MASCOT_PLACEHOLDER && <MascotSlot message="Chef’s kiss!" size={56} />}
-          {/* Fox slot (Phase 2): celebrates the finished dish. */}
-          <FoxMascot mood="celebration" size={120} style={{ alignSelf: 'center' }} />
+          {/* The fox cheers the finished dish. */}
+          <Fox pose="cheer" size={112} style={{ alignSelf: 'center', marginTop: 8 }} />
         </Animated.View>
 
         <Animated.View entering={enter(1, reduceMotion)} style={{ alignItems: 'center', gap: 6 }}>
@@ -959,6 +979,7 @@ const styles = StyleSheet.create({
   tileName: { fontFamily: fonts.black, fontSize: 17, lineHeight: 21, color: pop.ink },
   tileQty: { fontFamily: fonts.body, fontSize: 14, lineHeight: 18, color: pop.inkMuted },
   stepCard: { paddingHorizontal: 20, paddingTop: 36, paddingBottom: 20, gap: 16 },
+  stepFox: { position: 'absolute', top: -40, right: 14 },
   stepBadge: { position: 'absolute', top: -26, left: 18, width: 50, height: 50, borderRadius: 25, borderWidth: 2.5, borderColor: pop.line, alignItems: 'center', justifyContent: 'center' },
   stepText: { fontFamily: fonts.headingSemi, fontSize: 28, lineHeight: 35 },
   // Long steps (over 120 characters) a little smaller; the step area scrolls if it still doesn't fit.

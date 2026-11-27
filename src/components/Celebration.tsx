@@ -18,6 +18,7 @@ import { playSound } from '../lib/sounds';
 import { edge, fonts, pop, useTheme } from '../theme';
 import { ConfettiBurst } from './ConfettiBurst';
 import { Icon, type IconName } from './Icon';
+import { Fox } from './mascot/Fox';
 import { PopButton } from './pop/PopButton';
 import { Text } from './Text';
 import { Odometer } from './ui';
@@ -91,6 +92,8 @@ function CelebrationView({ info, onDone }: { info: CelebrationInfo; onDone: () =
     <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(180)} style={[StyleSheet.absoluteFill, styles.backdrop]} accessibilityViewIsModal>
       {!reduceMotion && <ConfettiBurst count={48} />}
       <Animated.View style={[styles.card, { width: Math.min(340, width - 48), backgroundColor: t.pop.white }, card]} accessibilityRole="alert" accessibilityLiveRegion="assertive" testID={`celebration-${info.kind}`}>
+        {/* The fox cheers from the card's top edge. */}
+        <Fox pose="cheer" size={84} style={styles.fox} />
         <Animated.View style={[styles.circle, { backgroundColor: info.color, borderBottomColor: edge(info.color) }, circle]}>
           {info.number != null ? (
             <Odometer value={info.number} style={styles.big} />
@@ -110,7 +113,8 @@ function CelebrationView({ info, onDone }: { info: CelebrationInfo; onDone: () =
 
 const styles = StyleSheet.create({
   backdrop: { backgroundColor: 'rgba(27, 19, 64, 0.55)', alignItems: 'center', justifyContent: 'center', zIndex: 100 },
-  card: { alignItems: 'center', gap: 10, paddingHorizontal: 24, paddingTop: 28, paddingBottom: 20, borderRadius: 24, borderCurve: 'continuous' },
+  fox: { position: 'absolute', top: -58, alignSelf: 'center' },
+  card: { alignItems: 'center', gap: 10, paddingHorizontal: 24, paddingTop: 36, paddingBottom: 20, borderRadius: 24, borderCurve: 'continuous' },
   circle: { width: 112, height: 112, borderRadius: 56, borderBottomWidth: 5, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
   big: { fontFamily: fonts.heading, fontSize: 52, lineHeight: 60, color: pop.ink },
   center: { textAlign: 'center' },
