@@ -1,4 +1,6 @@
 import { router } from 'expo-router';
+import { withProfiler } from '../../../lib/devProfiler';
+import { StagedList, useRenderInStages } from '../../../lib/useRenderInStages';
 import { useDeferredValue, useMemo, useRef, useState } from 'react';
 import { Linking, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Text } from '../../../components/Text';
@@ -65,7 +67,7 @@ const MOODS: { id: TileMood | 'surprise'; label: string; hint: string; icon: Ico
   { id: 'surprise', label: 'Surprise', hint: 'Opens a random recipe', icon: 'shuffle', color: pop.lilac },
 ];
 
-export default function RecipesScreen() {
+function RecipesScreen() {
   const t = useTheme();
   const toast = useToast();
   const { width } = useWindowDimensions();
@@ -144,6 +146,8 @@ export default function RecipesScreen() {
   // One Tonight's Pick (no shuffle button: "Surprise me" is the randomizer).
   const pick = dayPick;
   const quickTonight = useMemo(() => allRecipes.filter((r) => matchesFilter(r, QUICK_FILTER) && r.id !== dayPick?.recipe.id && fitsDiet(r, profile.diets)).slice(0, 8), [allRecipes, dayPick, profile.diets]);
+  // Opening Recipes: the first two cards of the sideways row now, the rest a frame later.
+  const railShown = useRenderInStages(quickTonight.length, 2);
   const tonight = dayPick?.fromPlan ? dayPick.recipe : undefined;
   const featured = pick?.recipe;
   const featuredMatch = pick ? { have: pick.have, needed: pick.needed } : { have: 0, needed: 0 };
@@ -304,12 +308,16 @@ export default function RecipesScreen() {
             />
           ) : (
             <View style={[styles.grid, { gap, rowGap: t.spacing.md }]}>
-              {moodRecipes.map((r, i) => (
-                // One entrance per container: the mood view fades in; its cards are just there.
-                <Animated.View key={r.id} style={styles.cardSlot}>
-                  <RecipeCard recipe={r} width={cardWidth} />
-                </Animated.View>
-              ))}
+              {/* One entrance per container: the mood view fades in; its first cards are there at once,
+                  the rest a frame later. */}
+              <StagedList
+                items={moodRecipes}
+                render={(r) => (
+                  <Animated.View key={r.id} style={styles.cardSlot}>
+                    <RecipeCard recipe={r} width={cardWidth} />
+                  </Animated.View>
+                )}
+              />
             </View>
           )}
         </Animated.View>
@@ -336,7 +344,7 @@ export default function RecipesScreen() {
             <View style={{ marginTop: t.layout.section }}>
               <SectionHeader title="Quick tonight" subtitle="30 minutes or less" action={{ label: 'See all', onPress: () => setView('quick') }} style={{ marginTop: 0 }} />
               <HorizontalList gap={12}>
-                {quickTonight.map((r) => (
+                {quickTonight.slice(0, railShown).map((r) => (
                   <RecipeCard key={r.id} recipe={r} width={railWidth} />
                 ))}
               </HorizontalList>
@@ -459,14 +467,16 @@ export default function RecipesScreen() {
             />
           ) : (
             <View style={[styles.grid, { gap, rowGap: t.spacing.md }]}>
-              {sorted.map((r, i) => (
-                // Cards glide when the order changes, but not in long lists (over 20): too much motion.
-                // No entrance per card: Home fades in as one, and filtering (many times a day) shows
-                // results at once. Reordering glides.
-                <Animated.View key={r.id} layout={sorted.length <= 20 ? LinearTransition.duration(220) : undefined} style={styles.cardSlot}>
-                  <RecipeCard recipe={r} width={cardWidth} />
-                </Animated.View>
-              ))}
+              {/* The cards you can see first, the rest a frame later (whenever the grid appears).
+                  Cards glide when the order changes, but not in long lists (over 20): too much motion. */}
+              <StagedList
+                items={sorted}
+                render={(r) => (
+                  <Animated.View key={r.id} layout={sorted.length <= 20 ? LinearTransition.duration(220) : undefined} style={styles.cardSlot}>
+                    <RecipeCard recipe={r} width={cardWidth} />
+                  </Animated.View>
+                )}
+              />
             </View>
           )}
         </>
@@ -615,3 +625,5 @@ const styles = StyleSheet.create({
   cardSlot: { flexDirection: 'row' },
   newBookSlim: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 14, paddingVertical: 12 },
 });
+
+export default withProfiler('Home', RecipesScreen);

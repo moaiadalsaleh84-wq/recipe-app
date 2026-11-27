@@ -19,6 +19,7 @@ import { Chip, EmptyState, SearchField, TextButton } from '../../../components/u
 import { RecipeCardSkeleton } from '../../../components/RecipeCard';
 import { CUISINES, DIETS, INGREDIENT_CHIPS, MEAL_TYPES, discoverList, type DiscoverCardData, type DiscoverFilters } from '../../../lib/discoverApi';
 import { useTheme } from '../../../theme';
+import { useRenderInStages } from '../../../lib/useRenderInStages';
 
 type Key = Exclude<keyof DiscoverFilters, 'q'>;
 type Quick = { key: Key; value: string; label: string };
@@ -81,6 +82,9 @@ export default function DiscoverScreen() {
     return () => clearTimeout(timer);
   }, [q, filters, retry]);
 
+  // The first cards render with the screen, the rest a frame later (taps never wait on them).
+  const shown = useRenderInStages(items?.length ?? 0, 4);
+
   const toggle = (f: Pick<Quick, 'key' | 'value'>) => {
     const on = filters[f.key] === f.value;
     setFilters((cur) => ({ ...cur, [f.key]: on ? undefined : f.value }));
@@ -141,7 +145,7 @@ export default function DiscoverScreen() {
           <>
             {/* The cards fade in over the loading boxes once (one entrance for the whole grid). */}
             <Animated.View entering={reduceMotion ? undefined : FadeIn.duration(200)} style={[styles.grid, { columnGap: gap, rowGap: 20 }]} testID="discover-grid">
-              {items.map((c) => (
+              {items.slice(0, shown).map((c) => (
                 <DiscoverCard key={c.id} card={c} width={cardWidth} />
               ))}
             </Animated.View>
