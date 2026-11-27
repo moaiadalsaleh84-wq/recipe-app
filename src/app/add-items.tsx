@@ -22,6 +22,7 @@ export default function AddItems() {
   const toast = useToast();
   const { addCustomItem } = useStore();
   const [text, setText] = useState('');
+  const [focused, setFocused] = useState(false);
   const items = splitItems(text);
 
   const close = () => (router.canGoBack() ? router.back() : router.replace('/groceries'));
@@ -55,7 +56,10 @@ export default function AddItems() {
           maxLength={2000}
           maxFontSizeMultiplier={1.3}
           accessibilityLabel="Groceries to add, one per line"
-          style={[t.type.body, styles.box, { color: t.colors.label, backgroundColor: t.colors.cell, ...t.chunky.card }]}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          // Like the "Add an item" box: a soft fill and a 2px border that turns sky while you type.
+          style={[t.type.body, styles.box, { color: t.colors.label, backgroundColor: t.colors.fill, borderColor: focused ? t.pop.sky : t.colors.border }]}
           testID="add-items-input"
         />
         <PopButton label={items.length > 1 ? `Add ${items.length} items` : 'Done'} icon={items.length ? 'cartAdd' : undefined} onPress={done} disabled={!items.length} testID="add-items-done" />
@@ -69,5 +73,5 @@ const styles = StyleSheet.create({
   side: { minWidth: 72, minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
   title: { flex: 1, textAlign: 'center' },
   body: { padding: 20, gap: 16 },
-  box: { minHeight: 140, maxHeight: 260, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 14, borderRadius: 20, textAlignVertical: 'top' },
+  box: { minHeight: 140, maxHeight: 260, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 14, borderRadius: 16, borderWidth: 2, borderCurve: 'continuous', textAlignVertical: 'top', outlineStyle: 'none' } as never,
 });
