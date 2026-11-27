@@ -128,7 +128,15 @@ function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; serv
   const swipeTo = useRef<(dir: 1 | -1) => void>(() => {});
   const reduceMotion = useReducedMotion();
   const drag = useSharedValue(0);
-  const onSwipe = useCallback((dir: 1 | -1) => swipeTo.current(dir), []);
+  const { width: screenW } = useWindowDimensions();
+  // Committed: the next step comes in and the card's drag resets (it was thrown off-screen).
+  const onSwipe = useCallback(
+    (dir: 1 | -1) => {
+      drag.set(0);
+      swipeTo.current(dir);
+    },
+    [drag],
+  );
   const swipe = usePanGesture({
     activeOffsetX: [-24, 24],
     failOffsetY: [-14, 14],
@@ -140,9 +148,16 @@ function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; serv
       'worklet';
       const far = Math.abs(e.translationX) > 60 || Math.abs(e.velocityX) > 500;
       if (far) {
-        // Committed: the card resets at once and only the new step slides in (no two motions fighting).
-        drag.set(0);
-        scheduleOnRN(onSwipe, e.translationX < 0 ? 1 : -1);
+        // Committed: the card keeps going the way you threw it (at least your speed), then the new
+        // step slides in from the other side.
+        const dir = e.translationX < 0 ? -1 : 1;
+        const left = screenW / 0.6 - Math.abs(e.translationX);
+        const ms = Math.max(90, Math.min(200, (left / Math.max(1, Math.abs(e.velocityX))) * 1000));
+        drag.set(
+          withTiming(dir * (screenW / 0.6), { duration: ms, easing: Easing.out(Easing.quad) }, (done) => {
+            if (done) scheduleOnRN(onSwipe, dir < 0 ? 1 : -1);
+          }),
+        );
       } else {
         // Not far enough: spring back, carrying the finger's speed.
         drag.set(withSpring(0, { duration: 300, dampingRatio: 1, velocity: e.velocityX }));
