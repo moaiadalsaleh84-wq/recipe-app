@@ -88,6 +88,7 @@ export function RecipePhoto({
             contentFit="cover"
             transition={200}
             cachePolicy="memory-disk"
+            recyclingKey={recipe.id}
             onError={() => setFailed(image)}
             accessibilityIgnoresInvertColors
           />
@@ -107,6 +108,7 @@ export function RecipePhoto({
           contentFit="cover"
           transition={200}
           cachePolicy="memory-disk"
+          recyclingKey={recipe.id}
           onLoad={() => setLoaded(image)}
           onError={() => setFailed(image)}
           accessibilityIgnoresInvertColors
@@ -164,6 +166,8 @@ export function PhotoFrame({ radius, corners = 'all', edge = 'all', recipe, uri,
               style={[StyleSheet.absoluteFill, cornerRadii(inner, corners)]}
               contentFit="cover"
               transition={200}
+              cachePolicy="memory-disk"
+              recyclingKey={uri}
               onError={onError}
               accessibilityLabel={accessibilityLabel}
               accessibilityIgnoresInvertColors

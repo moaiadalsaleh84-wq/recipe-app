@@ -25,7 +25,7 @@ export function FoodIcon({ name, aisle, size = 32, bare = false }: { name: strin
       accessibilityElementsHidden
       importantForAccessibility="no"
     >
-      <Image source={photo} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={150} accessibilityIgnoresInvertColors />
+      <Image source={photo} style={{ width: size, height: size }} contentFit="cover" transition={150} cachePolicy="memory-disk" recyclingKey={foodKind(name, aisle)} accessibilityIgnoresInvertColors />
     </View>
   );
 }
