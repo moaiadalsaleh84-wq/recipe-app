@@ -4,7 +4,7 @@ import { Text } from './Text';
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withTiming, type SharedValue } from 'react-native-reanimated';
 import { memo, useEffect, useState } from 'react';
 import type { Recipe } from '../data/mock';
-import { useStore } from '../state/store';
+import { useStoreGetter, useStoreSelector } from '../state/store';
 import { haptics } from '../lib/haptics';
 import { fonts, useTheme, pop } from '../theme';
 import { nb, duration } from '../lib/text';
@@ -37,10 +37,11 @@ function SourceMark({ recipe }: { recipe: Recipe }) {
 /** Heart button used on cards and rows: tap to like (with a little burst), tap again to undo. */
 export function FavoriteButton({ recipe, onPhoto }: { recipe: Recipe; onPhoto?: boolean }) {
   const t = useTheme();
-  const { isFavorite, toggleFavorite } = useStore();
-  const fav = isFavorite(recipe.id);
+  // Only this heart re-renders when it changes (not every card on the screen).
+  const fav = useStoreSelector((s) => s.favorites.includes(recipe.id));
+  const getStore = useStoreGetter();
   const onPress = () => {
-    const now = toggleFavorite(recipe.id);
+    const now = getStore().toggleFavorite(recipe.id);
     // No message: the heart itself shows it (tap it again to undo). Liking gets the burst.
     if (now) haptics.success();
     else haptics.tap();
@@ -207,14 +208,16 @@ function RecipeCardView({ recipe, width }: { recipe: Recipe; width: number; /** 
 
 /** The card's press-and-hold menu: cook it, put it on the plan (the next free dinner), favorite it. */
 function useCardActions(recipe: Recipe) {
-  const { isFavorite, toggleFavorite, plan, setMeal } = useStore();
+  // The heart state is all this card listens to; the actions read the store when tapped.
+  const fav = useStoreSelector((s) => s.favorites.includes(recipe.id));
+  const getStore = useStoreGetter();
   const toast = useToast();
-  const fav = isFavorite(recipe.id);
   return {
     fav,
     cook: () => router.push({ pathname: '/cook/[id]', params: { id: recipe.id } }),
     addToPlan: () => {
       // The next dinner without a meal, from today to Sunday (or tonight when the week is full).
+      const { plan, setMeal } = getStore();
       const today = todayIndex();
       const day = [0, 1, 2, 3, 4, 5, 6].find((d) => d >= today && !plan[d]?.Dinner) ?? today;
       const before = plan[day]?.Dinner ?? null;
@@ -223,7 +226,7 @@ function useCardActions(recipe: Recipe) {
       toast({ message: `Added to ${day === today ? 'tonight' : `${weekDays[day].long}’s dinner`}`, icon: 'calendar', action: { label: 'Undo', onPress: () => setMeal(day, 'Dinner', before) } });
     },
     favorite: () => {
-      const now = toggleFavorite(recipe.id);
+      const now = getStore().toggleFavorite(recipe.id);
       if (now) haptics.success();
       else haptics.tap();
     },

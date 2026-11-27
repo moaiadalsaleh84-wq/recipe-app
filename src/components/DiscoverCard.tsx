@@ -9,7 +9,7 @@ import { StyleSheet, View } from 'react-native';
 import type { Recipe } from '../data/mock';
 import { discoverGet, discoverSave, discoverToRecipe, savedCopy, type DiscoverCardData } from '../lib/discoverApi';
 import { haptics } from '../lib/haptics';
-import { useStore } from '../state/store';
+import { useStore, useStoreGetter } from '../state/store';
 import { fonts, pop, useTheme } from '../theme';
 import { PhotoFrame } from './PhotoFrame';
 import { CardText, HeartIcon } from './RecipeCard';
@@ -46,9 +46,11 @@ export function useDiscoverSave() {
 
 /** Opens a Discover recipe on the recipe page (your saved copy, if you have one). */
 export function useOpenDiscover() {
-  const { findBySource, rememberDiscover } = useStore();
+  // Read at tap time: opening a card doesn't need the card to re-render on every store change.
+  const getStore = useStoreGetter();
   const toast = useToast();
   return async (card: DiscoverCardData) => {
+    const { findBySource, rememberDiscover } = getStore();
     const mine = findBySource(card.sourceUrl);
     if (mine) return router.push({ pathname: '/recipe/[id]', params: { id: mine.id } });
     const res = await discoverGet(card.id);

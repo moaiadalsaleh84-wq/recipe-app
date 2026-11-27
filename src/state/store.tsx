@@ -1,7 +1,7 @@
 import { addWeekToList, mergeIngredients, weekId } from '../lib/groceries';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState, Platform } from 'react-native';
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import type { BuddyId } from '../components/cats/types';
 import { emptyProfile, type Profile } from '../data/onboarding';
 import type { RecipeDraft } from '../lib/importApi';
@@ -178,6 +178,13 @@ type Store = Saved & {
 };
 
 const StoreContext = createContext<Store | null>(null);
+
+/**
+ * The same store, for components that only need one small piece of it (a card's heart): they read
+ * it through `useStoreSelector` and re-render only when that piece changes, not on every change.
+ */
+type StoreHandle = { get: () => Store; subscribe: (listener: () => void) => () => void };
+const StoreHandleContext = createContext<StoreHandle | null>(null);
 
 export { formatQty, nameFor, roundQty } from '../lib/qty';
 
@@ -560,7 +567,50 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     ],
   );
 
-  return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
+  // Keep the latest store for selector subscribers, and tell them after each change.
+  const latest = useRef(value);
+  const listeners = useRef(new Set<() => void>());
+  useLayoutEffect(() => {
+    latest.current = value;
+    listeners.current.forEach((l) => l());
+  }, [value]);
+  const handle = useMemo<StoreHandle>(
+    () => ({
+      get: () => latest.current,
+      subscribe: (listener) => {
+        listeners.current.add(listener);
+        return () => listeners.current.delete(listener);
+      },
+    }),
+    [],
+  );
+
+  return (
+    <StoreHandleContext.Provider value={handle}>
+      <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
+    </StoreHandleContext.Provider>
+  );
+}
+
+function useStoreHandle() {
+  const handle = useContext(StoreHandleContext);
+  if (!handle) throw new Error('useStoreSelector must be used inside <StoreProvider>');
+  return handle;
+}
+
+/**
+ * One small piece of the store; the component re-renders only when that piece changes. Return a
+ * plain value (a boolean, a number, a string) or something the store keeps stable.
+ *   const fav = useStoreSelector((s) => s.favorites.includes(id));
+ */
+export function useStoreSelector<T>(select: (s: Store) => T): T {
+  const handle = useStoreHandle();
+  return useSyncExternalStore(handle.subscribe, () => select(handle.get()), () => select(handle.get()));
+}
+
+/** Reads the store at the moment you call it (for press handlers), without re-rendering on changes. */
+export function useStoreGetter() {
+  return useStoreHandle().get;
 }
 
 export function useStore() {
