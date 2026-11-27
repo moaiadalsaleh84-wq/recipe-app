@@ -312,10 +312,11 @@ function RecipeScreen() {
 
           {/* Three colored stat tiles: time, difficulty + steps, kcal */}
           <Reveal index={1}>
-            <View style={styles.stats}>
-              <StatTile color={t.pop.sunshine} icon="clock" value={duration(recipe.minutes)} label="total" est={!!recipe.estimated?.time} a11y={`${recipe.minutes} minutes total${recipe.estimated?.time ? ', estimated' : ''}`} />
+            {/* One soft row of three stats with colored icons (color is an accent, not a block). */}
+            <View style={[styles.stats, { backgroundColor: t.colors.fill }]}>
+              <StatTile color={t.pop.sky} icon="clock" value={duration(recipe.minutes)} label="total" est={!!recipe.estimated?.time} a11y={`${recipe.minutes} minutes total${recipe.estimated?.time ? ', estimated' : ''}`} />
               <StatTile color={t.pop.leaf} hats={level} value={recipe.difficulty} label={nb(recipe.steps.length, recipe.steps.length === 1 ? 'step' : 'steps')} a11y={`${recipe.difficulty}, ${recipe.steps.length} steps`} />
-              <StatTile color={t.pop.sky} icon="flame" value={num(recipe.calories)} label={'kcal\u00A0each'} a11y={`${recipe.calories} calories per serving`} />
+              <StatTile color={t.pop.tomato} icon="flame" value={num(recipe.calories)} label={'kcal\u00A0each'} a11y={`${recipe.calories} calories per serving`} />
             </View>
             {/* What one serving is, when the source says it. */}
             {!!recipe.servingSize && (
@@ -539,37 +540,38 @@ function EstTag() {
   );
 }
 
-/** One colored stat tile: an icon (or chef hats), the value and a label. All three are the same height and size. */
-function StatTile({ color, icon, hats, value, label, est, a11y }: { color: string; icon?: IconName; hats?: number; value: string; label: string; /** Show a small "est." tag after the label. */ est?: boolean; a11y?: string }) {
+/**
+ * One stat in the soft stats row: a colored icon (or chef hats), the value, a label, and an "est."
+ * tag on its own line when the value was estimated. The value always shows in full on one line
+ * ("1 h 15 min"): the font shrinks to fit (Fredoka is about 0.56 em per letter, 0.28 per space).
+ */
+function StatTile({ color, icon, hats, value, label, est, a11y }: { color: string; icon?: IconName; hats?: number; value: string; label: string; /** Estimated: a small "est." tag under the label. */ est?: boolean; a11y?: string }) {
   const t = useTheme();
-  // The value always shows in full on one line ("1 h 5 min"): the font shrinks to fit the tile
-  // (Fredoka is about 0.56 em per letter, 0.28 per space) instead of cutting it off.
   const [width, setWidth] = useState(0);
   const scale = Math.min(PixelRatio.getFontScale(), MAX_FONT_SCALE);
   const ems = [...value].reduce((n, c) => n + (/\s/.test(c) ? 0.28 : 0.56), 0);
-  const fontSize = width ? Math.max(12, Math.min(22, Math.floor(width / (ems * scale)))) : 22;
+  const fontSize = width ? Math.max(12, Math.min(20, Math.floor(width / (ems * scale)))) : 20;
   return (
-    <Lift radius={20} style={styles.statLift}>
-      <View style={[styles.stat, { backgroundColor: color, ...t.chunky.card }]} accessible accessibilityLabel={a11y ?? `${label}: ${value}`}>
-        <View style={styles.statIcon}>{hats ? <ChefHats level={hats} color={t.pop.ink} empty={t.pop.ink} /> : icon ? <Icon name={icon} size={18} color={t.pop.ink} weight="bold" /> : null}</View>
-        <Text
-          style={[styles.statValue, { color: t.pop.ink, fontSize, lineHeight: 27, alignSelf: 'stretch' }]}
-          numberOfLines={1}
-          adjustsFontSizeToFit
-          minimumFontScale={0.5}
-          onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
-        >
-          {value}
-        </Text>
-        {/* "total", then a small "est." tag when the time was estimated (never "total, e…"). */}
-        <View style={styles.statLabelRow}>
-          <Text style={[styles.statLabel, { color: t.pop.ink, flexShrink: 1 }]} numberOfLines={1}>
-            {label}
-          </Text>
-          {est && <EstTag />}
+    <View style={styles.stat} accessible accessibilityLabel={a11y ?? `${label}: ${value}`}>
+      <View style={styles.statIcon}>{hats ? <ChefHats level={hats} color={color} empty={t.colors.secondaryLabel} /> : icon ? <Icon name={icon} size={18} color={color} weight="bold" /> : null}</View>
+      <Text
+        style={[styles.statValue, { color: t.colors.label, fontSize, lineHeight: 26, alignSelf: 'stretch' }]}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.5}
+        onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
+      >
+        {value}
+      </Text>
+      <Text style={[styles.statLabel, { color: t.colors.secondaryLabel }]} numberOfLines={1}>
+        {label}
+      </Text>
+      {est && (
+        <View style={{ alignSelf: 'center', marginTop: 2 }}>
+          <EstTag />
         </View>
-      </View>
-    </Lift>
+      )}
+    </View>
   );
 }
 
@@ -771,17 +773,15 @@ const styles = StyleSheet.create({
   // The frame carries the ink border and clips; the photo inside has corners 2.5 smaller.
   body: { paddingHorizontal: 20, paddingTop: 16 },
   source: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, alignSelf: 'flex-start' },
-  stats: { flexDirection: 'row', marginTop: 18, gap: 10 },
-  statLift: { flex: 1 },
+  stats: { flexDirection: 'row', marginTop: 18, borderRadius: 16, borderCurve: 'continuous', paddingVertical: 14, paddingHorizontal: 6 },
   noteRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
   est: { alignSelf: 'flex-start', borderWidth: 1.5, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 1 },
   estText: { fontFamily: fonts.black, fontSize: 11, lineHeight: 15 },
   estBanner: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginTop: 12, padding: 12, borderRadius: 16, borderWidth: 2, borderCurve: 'continuous' },
-  stat: { flex: 1, alignItems: 'flex-start', gap: 2, paddingHorizontal: 10, paddingVertical: 10, borderRadius: 20, borderCurve: 'continuous' },
-  statValue: { fontFamily: fonts.heading, fontSize: 22, lineHeight: 27 },
+  stat: { flex: 1, minWidth: 0, alignItems: 'center', gap: 2, paddingHorizontal: 8 },
+  statValue: { fontFamily: fonts.heading, fontSize: 20, lineHeight: 26, textAlign: 'center' },
   statIcon: { height: 20, justifyContent: 'center' },
   statLabel: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 18 },
-  statLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'stretch' },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 18 },
   kicker: { flexDirection: 'row', gap: 8 },
   h2: { marginTop: 32, marginBottom: 14 },
