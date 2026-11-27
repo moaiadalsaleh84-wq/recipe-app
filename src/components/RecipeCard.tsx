@@ -121,11 +121,15 @@ export const RecipeCard = memo(RecipeCardView);
 function RecipeCardView({ recipe, width }: { recipe: Recipe; width: number; /** Older prop: cards have no box now. */ color?: string }) {
   const actions = useCardActions(recipe);
   const label = `${recipe.title}, ${recipe.minutes} minutes, ${recipe.difficulty}`;
-  const face = (
+  const photo = (
+    <PhotoFrame recipe={recipe} radius={16} style={styles.imageWrap}>
+      <SourceMark recipe={recipe} />
+    </PhotoFrame>
+  );
+  const face = (zoom: boolean) => (
     <>
-      <PhotoFrame recipe={recipe} radius={16} style={styles.imageWrap}>
-        <SourceMark recipe={recipe} />
-      </PhotoFrame>
+      {/* iPhone (iOS 18+): the photo grows into the recipe page's hero (the system zoom transition). */}
+      {zoom ? <Link.AppleZoom>{photo}</Link.AppleZoom> : photo}
       <CardText title={recipe.title} meta={cardMeta(recipe)} />
     </>
   );
@@ -138,7 +142,7 @@ function RecipeCardView({ recipe, width }: { recipe: Recipe; width: number; /** 
         <Link href={{ pathname: '/recipe/[id]', params: { id: recipe.id } }} asChild>
           <Link.Trigger>
             <PressableScale haptic={null} accessibilityLabel={label} accessibilityHint="Opens the recipe. Press and hold for more">
-              {face}
+              {face(true)}
             </PressableScale>
           </Link.Trigger>
           <Link.Menu>
@@ -155,7 +159,7 @@ function RecipeCardView({ recipe, width }: { recipe: Recipe; width: number; /** 
         </Link>
       ) : (
         <PressableScale onPress={() => openRecipe(recipe.id)} haptic={null} accessibilityLabel={label} accessibilityHint="Opens the recipe">
-          {face}
+          {face(false)}
         </PressableScale>
       )}
       <View style={styles.favOnPhoto}>

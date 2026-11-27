@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { Link, router, useLocalSearchParams } from 'expo-router';
 import { withProfiler } from '../../lib/devProfiler';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -238,12 +238,15 @@ function RecipeScreen() {
         {/* The hero: the photo edge to edge (4:3), under the status bar. A soft shade at the top keeps the
             clock and buttons readable; a soft fade at the bottom eases it into the page. */}
         <View style={{ width, height: heroHeight }} testID="hero">
+          {/* Where a recipe card's photo zooms to (iPhone, iOS 18+). */}
+          <Link.AppleZoomTarget>
           <PhotoFrame recipe={recipe} hero iconSize={64} radius={0} style={{ width, height: heroHeight }}>
             <LinearGradient pointerEvents="none" colors={['rgba(27,19,64,0.28)', 'rgba(27,19,64,0)']} style={[styles.heroTop, { height: insets.top + 64 }]} />
             <LinearGradient pointerEvents="none" colors={['rgba(255,255,255,0)', 'rgba(255,255,255,0.85)']} style={styles.heroBottom} />
             {/* Not on Discover recipes you haven't saved: there's nothing of yours to change yet. */}
             {imported && !recipe.discover && <ImportedPhotoOverlay recipe={recipe} onOwnPhoto={onOwnPhoto} ownPhoto={usingOwnPhoto} />}
           </PhotoFrame>
+          </Link.AppleZoomTarget>
           {recipe.custom && !imported && (
             <PopButton
               label={recipe.image ? 'Change photo' : 'Add a photo'}
