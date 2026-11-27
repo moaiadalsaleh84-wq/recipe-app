@@ -1,28 +1,39 @@
-# Fox mascot slots (Phase 2)
+# The fox
 
-The component is `src/components/mascot/FoxMascot.tsx`: `<FoxMascot mood="…" size={…} />`.
-Moods: `happy`, `excited`, `chef`, `celebration`, `playful`, `studying`, `champion`, `loving`.
+`src/components/mascot/Fox.tsx`: `<Fox pose="…" size={…} />`, and `<FoxSays pose="…" text="…" />`
+for the fox with one short speech bubble.
 
-Until the art exists it draws nothing (`FOX_READY = false`), so screens look finished without it.
-To see every slot while designing, set `SHOW_MASCOT_PLACEHOLDER = true` in
-`src/components/pop/MascotSlot.tsx`: each slot then shows a dashed circle with its mood.
+He breathes gently (up 2pt and back, 2.4 s) and blinks every 4–7 s. No scale pops. With Reduce
+Motion he's a still picture. He only appears where he adds feeling, never as decoration.
 
-## Plugging the art in
+## Poses
 
-1. Add the files to `assets/mascot/fox/` (one per mood: PNG/WebP, or Lottie/Rive).
-2. Fill `FOX_ART` in `FoxMascot.tsx` (mood → `require(...)`) and render it in place of the
-   placeholder circle.
-3. Set `FOX_READY = true`.
+`idle`, `happy`, `wave`, `reading`, `oops`, `chef`, `alert`, `cheer`, `sleepy` (see `foxPoses.ts`).
 
-## Where the slots are
+## Adding the artwork
 
-| Screen | File | Mood | Size |
-| --- | --- | --- | --- |
-| Welcome (first screen), above the headline | `src/app/onboarding.tsx` (Welcome) | `happy` | 88 |
-| "Setting up your kitchen…" | `src/app/onboarding.tsx` (Building) | `studying` | 96 |
-| Cook Mode finish screen | `src/app/cook/[id].tsx` (Finish) | `celebration` | 120 |
-| Empty shopping list (replaces the basket circle) | `src/app/(tabs)/groceries/index.tsx` | `playful` | 128 |
-| You tab header, before your name | `src/app/(tabs)/progress/index.tsx` | `champion` | 64 |
-| Paywall, top | `src/app/paywall.tsx` | `loving` | 104 |
+1. Put transparent PNGs in `assets/mascot/`, named `fox-<pose>.png` (for example `fox-happy.png`).
+   For blinking, add the same pose with closed eyes as `fox-<pose>-blink.png` (optional).
+2. Run `node scripts/fox-images.mjs`. It writes `src/components/mascot/foxImages.ts`.
 
-`chef` and `excited` are free: `chef` suits Cook Mode's "Grab your stuff", `excited` the streak moments (e.g. the streak card on You) when the art arrives.
+A pose without a PNG uses the drawn fox (`FoxArt.tsx`), so every spot works before the art is in.
+
+## Where he is
+
+| Screen | Pose | What he says / does |
+| --- | --- | --- |
+| Recipes (Home), under the greeting | changes | One bubble: the streak, today's cooking, tonight's plan or the day's idea. Tap: opens it |
+| Empty shopping list | `sleepy` | |
+| Plan, when the week is empty | `idle` | "Plan one dinner and I'll write the shopping list." |
+| You, empty cooking history | `sleepy` | |
+| Search with no results (Recipes, Discover, recipe picker) | `oops` | |
+| Empty mood, cookbook, Discover | `sleepy` | |
+| Recipe or cookbook not found | `oops` | |
+| Import: loading | `reading` | |
+| Import: error | `oops` | |
+| Get ready (Cook mode) | `chef`, then `cheer` | "Let's gather everything first." → "Everything's here. Let's cook!" |
+| Cook mode step card | `chef` / `happy` / `alert` | Happy for a moment after each step; alert while a timer rings |
+| Finish screen | `cheer` | |
+| Full-screen celebrations (streak, level, badge) | `cheer` | On the card's top edge |
+| Welcome (first screen) | `wave` | |
+| "Setting up your kitchen" | `reading` | |
