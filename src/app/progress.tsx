@@ -22,7 +22,7 @@ import { showPaywall, useProGate } from '../lib/pro';
 import { BADGES, levelFor, streakInfo, xpFor } from '../lib/progress';
 import { TabScreen } from '../components/TabScreen';
 import { totalsFor, useStore } from '../state/store';
-import { fonts, pop, popCycle, useTheme } from '../theme';
+import { fonts, pop, useTheme } from '../theme';
 import { PhotoFrame } from '../components/PhotoFrame';
 
 const dayKey = (d: Date) => d.toDateString();
@@ -73,7 +73,10 @@ export default function ProgressScreen() {
       : 'Back again! Your streak is\u00A0sizzling.'
     : streak > 0
       ? 'Cook anything today to keep it\u00A0going.'
-      : 'Fresh start today. Every chef takes a day\u00A0off.';
+      : cooked.length > 0
+        // They had a streak before: a kind fresh start.
+        ? 'Fresh start today. Every chef takes a day\u00A0off.'
+        : 'Cook anything today to start your\u00A0streak.';
 
   // "Your kitchen" numbers and the photo gallery.
   const minutesCooked = history.reduce((n, c) => n + (getRecipe(c.recipeId)?.minutes ?? 0), 0);
@@ -92,8 +95,13 @@ export default function ProgressScreen() {
   }, [history]);
   const shownDishes = allHistory ? dishes : dishes.slice(0, 5);
   // The badges you have, then the next two to earn as progress rings.
-  const nextBadges = BADGES.filter((b) => !fun.badges.includes(b.id)).slice(0, 2);
-  const badgeRow = [...earned, ...nextBadges];
+  // Three badges: the ones you have first, then the closest to earn (most of the way there).
+  const progressOf = (b: (typeof BADGES)[number]) => {
+    const [done, needed] = b.count(input);
+    return Math.min(done, needed) / needed;
+  };
+  const nextBadges = BADGES.filter((b) => !fun.badges.includes(b.id)).sort((a, b) => progressOf(b) - progressOf(a));
+  const badgeRow = [...earned, ...nextBadges].slice(0, 3);
   const stickersFound = (fun.stickers ?? []).length;
   const firstName = profile.name.trim().split(/\s+/)[0] ?? '';
 
@@ -206,10 +214,10 @@ export default function ProgressScreen() {
         }
       />
       <HorizontalList gap={8} testID="badge-row">
-        {badgeRow.map((b, i) => {
+        {badgeRow.map((b) => {
           const got = fun.badges.includes(b.id);
           const [done, needed] = b.count(input);
-          const tone = popCycle[i % popCycle.length];
+          const color = badgeColor(b.id);
           return (
             <PressableScale
               key={b.id}
@@ -217,19 +225,25 @@ export default function ProgressScreen() {
               accessibilityLabel={got ? `${b.title}, earned` : `${b.title}, not earned yet. ${Math.min(done, needed)} of ${needed}. ${b.hint}.`}
               style={styles.badgeCell}
             >
+              {/* Earned: the badge's own color. Locked: grey, with a ring for how close you are. */}
               {got ? (
-                <View style={[styles.badgeCoin, { backgroundColor: tone.fill }]}>
+                <View style={[styles.badgeCoin, { backgroundColor: color }]}>
                   <Icon name={b.icon} size={26} color={t.pop.ink} weight="bold" />
                 </View>
               ) : (
-                <Ring value={Math.min(done, needed) / needed} size={64} stroke={5} color={t.pop.lilac} track={t.colors.track}>
-                  <Icon name={b.icon} size={24} color={t.pop.inkMuted} weight="bold" />
+                <Ring value={Math.min(done, needed) / needed} size={64} stroke={5} color={LOCKED} track={t.colors.track}>
+                  <Icon name={b.icon} size={24} color={LOCKED} weight="bold" />
                 </Ring>
               )}
               {/* Two lines of room for every name, so the row stays level. */}
               <Text style={[t.type.caption1, styles.badgeName, { color: got ? t.colors.label : t.colors.secondaryLabel }]} numberOfLines={2}>
                 {b.title}
               </Text>
+              {!got && (
+                <Text style={[t.type.caption2, { color: t.colors.secondaryLabel, fontVariant: ['tabular-nums'] }]} testID="badge-progress">
+                  {Math.min(done, needed)} of {needed}
+                </Text>
+              )}
             </PressableScale>
           );
         })}
@@ -244,16 +258,18 @@ export default function ProgressScreen() {
                 <View key={b.id}>
                   {i > 0 && <Separator inset={64} />}
                   <View style={styles.badgeRow} accessible accessibilityLabel={`${b.title}. ${b.hint}. ${got ? 'Earned' : `${Math.min(done, needed)} of ${needed}`}.`}>
-                    <View style={[styles.badgeRowIcon, { backgroundColor: got ? t.pop.sunshine : t.pop.lilacTint }]}>
-                      <Icon name={got ? 'check' : b.icon} size={18} color={t.pop.ink} weight="bold" />
+                    <View style={[styles.badgeRowIcon, { backgroundColor: got ? badgeColor(b.id) : t.colors.fill }]}>
+                      <Icon name={b.icon} size={18} color={got ? t.pop.ink : LOCKED} weight="bold" />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={[t.type.headline, { color: t.colors.label }]}>{b.title}</Text>
                       <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>{b.hint}</Text>
                     </View>
-                    {!got && needed > 1 && done > 0 && (
-                      <Text style={[t.type.footnote, { color: t.colors.label, fontVariant: ['tabular-nums'] }]}>
-                        {Math.min(done, needed)}/{needed}
+                    {got ? (
+                      <Icon name="check" size={16} color={t.pop.leaf} weight="bold" />
+                    ) : (
+                      <Text style={[t.type.footnote, { color: t.colors.secondaryLabel, fontVariant: ['tabular-nums'] }]}>
+                        {Math.min(done, needed)} of {needed}
                       </Text>
                     )}
                   </View>
@@ -458,6 +474,12 @@ function GoalRow({ label, goalName, unit, eaten, goal, color, onEdit }: { label:
     </View>
   );
 }
+
+/** Locked badges are grey. */
+const LOCKED = '#B9B5C6';
+/** Each badge has its own color (earned). */
+const BADGE_COLORS: Record<string, string> = { 'first-dish': pop.sunshine, 'on-a-roll': pop.tomato, 'ten-club': pop.lilac, explorer: pop.sky, writer: pop.berry, planner: pop.sky, shopper: pop.leaf, collector: pop.berry, 'best-friends': pop.lilac };
+const badgeColor = (id: string) => BADGE_COLORS[id] ?? pop.sunshine;
 
 const styles = StyleSheet.create({
   // "33 of 285 g" and the Edit button on one line (the button keeps its 44pt tap height without adding space).
