@@ -1,6 +1,8 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { withProfiler } from '../../lib/devProfiler';
 import { StatusBar } from 'expo-status-bar';
+import { LinearGradient } from 'expo-linear-gradient';
+import { scheduleOnRN } from 'react-native-worklets';
 import { startTransition, useEffect, useRef, useState } from 'react';
 import { Reveal } from '../../components/Reveal';
 import { Linking, Modal, PixelRatio, Pressable, Share, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
@@ -11,6 +13,7 @@ import Animated, {
   FadeIn,
   interpolate,
   interpolateColor,
+  useAnimatedReaction,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
@@ -70,8 +73,6 @@ function RecipeScreen() {
   // Opens sized for your household (from onboarding), or the recipe's own servings.
   const [servings, setServings] = useState(profile.household ?? recipe?.servings ?? 2);
   const [menuOpen, setMenuOpen] = useState(false);
-  // Where the big title ends, so the small one appears only once it has scrolled away.
-  const [titleBottom, setTitleBottom] = useState(0);
   const admin = useAdminMode();
   const [confirmDelete, setConfirmDelete] = useState(false);
   // The page opens with its top (photo, title, stats) right away, so the screen slides in at once;
@@ -91,20 +92,28 @@ function RecipeScreen() {
     [],
   );
 
-  // Height of the tomato header band (measured), so the small bar knows when the title has gone.
-  const [headerHeight, setHeaderHeight] = useState(0);
   const scrollY = useSharedValue(0);
   const onScroll = useAnimatedScrollHandler((e) => {
     scrollY.set(e.contentOffset.y);
   });
 
-  // The top bar (back, heart, more) is a solid row above the page: tomato tint like the photo band,
-  // turning white with the light 2px line once the title has scrolled under it. Nothing shows through.
-  const barThreshold = Math.max(80, titleBottom - 40);
+  // The buttons (back, heart, more) float over the photo on white circles. Once the photo has
+  // scrolled up under them, a white bar with the light 2px line fades in behind them, and the status
+  // bar turns dark to match.
+  const heroHeight = Math.round(width * 0.75);
+  const barThreshold = Math.max(80, heroHeight - insets.top - 56);
   const barStyle = useAnimatedStyle(() => {
     const p = interpolate(scrollY.get(), [barThreshold - 40, barThreshold], [0, 1], Extrapolation.CLAMP);
-    return { backgroundColor: interpolateColor(p, [0, 1], [pop.tomatoTint, pop.white]), borderBottomColor: interpolateColor(p, [0, 1], [pop.tomatoTint, pop.line]) };
+    return { backgroundColor: interpolateColor(p, [0, 1], ['rgba(255,255,255,0)', pop.white]), borderBottomColor: interpolateColor(p, [0, 1], ['rgba(231,229,238,0)', pop.line]) };
   });
+  const [barSolid, setBarSolid] = useState(false);
+  useAnimatedReaction(
+    () => scrollY.get() > barThreshold - 20,
+    (solid, was) => {
+      if (solid !== was) scheduleOnRN(setBarSolid, solid);
+    },
+    [barThreshold],
+  );
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
@@ -196,13 +205,12 @@ function RecipeScreen() {
   const estimatedNote = estParts.length || estOther ? `Some ${estParts.length ? estParts.join(' and ') : 'details'} were estimated. Check before cooking.` : null;
 
   const level = recipe.difficulty === 'Easy' ? 1 : recipe.difficulty === 'Medium' ? 2 : 3;
-  // Full content width (20pt margins), 4:3.
-  const photoWidth = Math.min(width - 40, 560);
 
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.background }}>
-      <StatusBar style="dark" animated />
-      {/* Back, heart and more: their own row above the photo (12pt gap), never over it. */}
+      {/* Light over the photo (with a soft shade behind the clock), dark once the white bar is in. */}
+      <StatusBar style={barSolid ? 'dark' : 'light'} animated />
+      {/* Back, heart and more float over the photo on white circles. */}
       <Animated.View style={[styles.controls, { paddingTop: insets.top + 8 }, barStyle]} testID="detail-controls">
         <PopIconButton icon="back" accessibilityLabel="Back" onPress={goBack} />
         <View style={styles.controlsRight}>
@@ -227,15 +235,15 @@ function RecipeScreen() {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ paddingBottom: 24 }}
       >
-        {/* Header: a tomato-tint band with the photo as a tilted card */}
-        {/* Header: the buttons sit above the photo (12pt gap); the photo is straight, framed in ink. */}
-        <View style={[styles.header, { backgroundColor: t.pop.tomatoTint, paddingTop: 16, borderBottomColor: t.colors.border }]} testID="hero" onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}>
-          <Lift radius={24}>
-            <PhotoFrame recipe={recipe} iconSize={64} radius={24} style={{ width: photoWidth, height: Math.round(photoWidth * 0.75) }}>
-              {/* Not on Discover recipes you haven't saved: there's nothing of yours to change yet. */}
-              {imported && !recipe.discover && <ImportedPhotoOverlay recipe={recipe} onOwnPhoto={onOwnPhoto} ownPhoto={usingOwnPhoto} />}
-            </PhotoFrame>
-          </Lift>
+        {/* The hero: the photo edge to edge (4:3), under the status bar. A soft shade at the top keeps the
+            clock and buttons readable; a soft fade at the bottom eases it into the page. */}
+        <View style={{ width, height: heroHeight }} testID="hero">
+          <PhotoFrame recipe={recipe} hero iconSize={64} radius={0} style={{ width, height: heroHeight }}>
+            <LinearGradient pointerEvents="none" colors={['rgba(27,19,64,0.28)', 'rgba(27,19,64,0)']} style={[styles.heroTop, { height: insets.top + 64 }]} />
+            <LinearGradient pointerEvents="none" colors={['rgba(255,255,255,0)', 'rgba(255,255,255,0.85)']} style={styles.heroBottom} />
+            {/* Not on Discover recipes you haven't saved: there's nothing of yours to change yet. */}
+            {imported && !recipe.discover && <ImportedPhotoOverlay recipe={recipe} onOwnPhoto={onOwnPhoto} ownPhoto={usingOwnPhoto} />}
+          </PhotoFrame>
           {recipe.custom && !imported && (
             <PopButton
               label={recipe.image ? 'Change photo' : 'Add a photo'}
@@ -254,7 +262,7 @@ function RecipeScreen() {
                   toast({ message: 'Couldn’t open your photos', tone: 'warning' });
                 }
               }}
-              style={{ alignSelf: 'center', marginTop: 14 }}
+              style={styles.heroButton}
             />
           )}
         </View>
@@ -268,7 +276,6 @@ function RecipeScreen() {
             style={[t.type.largeTitle, t.noWidows.style, { color: t.colors.label, marginTop: 10 }]}
             {...t.noWidows.props}
             accessibilityRole="header"
-            onLayout={(e) => setTitleBottom(e.nativeEvent.layout.y + e.nativeEvent.layout.height + headerHeight)}
           >
             {recipe.title}
           </Text>
@@ -769,9 +776,11 @@ function shareText(r: Recipe, servings: number, units: Units) {
 }
 
 const styles = StyleSheet.create({
-  header: { alignItems: 'center', paddingBottom: 24, borderBottomWidth: 2 },
+  heroTop: { position: 'absolute', top: 0, left: 0, right: 0 },
+  heroBottom: { position: 'absolute', left: 0, right: 0, bottom: 0, height: '22%' },
+  heroButton: { position: 'absolute', right: 16, bottom: 16 },
   // The frame carries the ink border and clips; the photo inside has corners 2.5 smaller.
-  body: { paddingHorizontal: 20, paddingTop: 16 },
+  body: { paddingHorizontal: 16, paddingTop: 16 },
   source: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, alignSelf: 'flex-start' },
   stats: { flexDirection: 'row', marginTop: 18, borderRadius: 16, borderCurve: 'continuous', paddingVertical: 14, paddingHorizontal: 6 },
   noteRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
@@ -803,7 +812,7 @@ const styles = StyleSheet.create({
   stepNum: { width: 34, height: 34, borderRadius: 17, borderWidth: 2, alignItems: 'center', justifyContent: 'center', marginTop: -4 },
   notes: { minHeight: 96, borderRadius: 20, padding: 16, textAlignVertical: 'top', borderCurve: 'continuous', outlineStyle: 'none' } as never,
   resetServings: { minHeight: 44, justifyContent: 'center' },
-  controls: { paddingHorizontal: 16, paddingBottom: 8, flexDirection: 'row', justifyContent: 'space-between', borderBottomWidth: 2 },
+  controls: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, paddingHorizontal: 16, paddingBottom: 8, flexDirection: 'row', justifyContent: 'space-between', borderBottomWidth: 2 },
   controlsRight: { flexDirection: 'row', gap: 10 },
   menu: { position: 'absolute', right: 16, width: 260, maxWidth: '90%' },
   menuFace: { borderRadius: 20, overflow: 'hidden', borderCurve: 'continuous' },
