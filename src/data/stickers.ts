@@ -5,7 +5,7 @@ export const stickers: { id: string; name: string; icon: IconName; color: 'sunsh
   { id: 'golden-pan', name: 'Golden Pan', icon: 'pot', color: 'sunshine' },
   { id: 'hot-stuff', name: 'Hot Stuff', icon: 'flameFill', color: 'tomato' },
   { id: 'green-thumb', name: 'Green Thumb', icon: 'fridge', color: 'leaf' },
-  { id: 'cool-chef', name: 'Cool Chef', icon: 'sparkles', color: 'sky' },
+  { id: 'cool-chef', name: 'Cool Chef', icon: 'snowflake', color: 'sky' },
   { id: 'sweetheart', name: 'Sweetheart', icon: 'heartFill', color: 'berry' },
   { id: 'night-owl', name: 'Night Owl', icon: 'moon', color: 'lilac' },
   { id: 'early-bird', name: 'Early Bird', icon: 'sun', color: 'sunshine' },

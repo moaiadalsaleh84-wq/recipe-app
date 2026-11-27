@@ -153,7 +153,7 @@ export default function DiscoverScreen() {
             {/* Only a few so far: say more are coming, instead of an empty-looking page. */}
             {items.length < 4 && !filtered && (
               <View style={[styles.soon, { backgroundColor: t.pop.skyTint }]} testID="discover-soon">
-                <Icon name="sparkles" size={20} color={t.pop.ink} weight="bold" />
+                <Icon name="calendar" size={20} color={t.pop.ink} weight="bold" />
                 <Text style={[t.type.headline, { color: t.colors.label, flex: 1 }]}>New recipes land here every week</Text>
               </View>
             )}

@@ -44,7 +44,7 @@ export default function DevSystem() {
         <Button label="Add to shopping list" icon="cartAdd" variant="tinted" onPress={() => {}} />
         <View style={{ flexDirection: 'row', gap: 12 }}>
           <Button label="Done" icon="check" variant="success" onPress={() => {}} style={{ flex: 1 }} />
-          <Button label="Claim" icon="sparkles" variant="reward" onPress={() => {}} style={{ flex: 1 }} />
+          <Button label="Claim" icon="gift" variant="reward" onPress={() => {}} style={{ flex: 1 }} />
         </View>
         <Button label="Not now" variant="plain" onPress={() => {}} />
       </View>

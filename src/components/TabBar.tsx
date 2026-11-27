@@ -15,7 +15,7 @@ const tabs: Record<string, { label: string; long: string; icon: IconName }> = {
   '(recipes)': { label: 'Recipes', long: 'Recipes', icon: 'pot' },
   plan: { label: 'Plan', long: 'Meal plan', icon: 'calendar' },
   groceries: { label: 'List', long: 'Shopping list', icon: 'cart' },
-  discover: { label: 'Discover', long: 'Discover', icon: 'sparkles' },
+  discover: { label: 'Discover', long: 'Discover', icon: 'compass' },
 };
 
 const PILL_W = 52;

@@ -3,8 +3,9 @@ import type { ColorValue, StyleProp, ViewStyle } from 'react-native';
 import { SymbolView, type SFSymbol } from 'expo-symbols';
 
 /**
- * Every icon in the app, as an SF Symbol (iOS) and a Material Symbol (Android and web).
- * Add new icons here so both platforms stay in sync.
+ * Every icon in the app, as an SF Symbol (iOS) and a Material Symbol (Android and web): one icon set,
+ * drawn at one stroke weight (semibold) everywhere. Add new icons here so both platforms stay in sync.
+ * No "magic" sparkle or star icons: every icon names what it does.
  */
 const icons = {
   back: { ios: 'chevron.left', md: 'arrow_back_ios_new' },
@@ -35,7 +36,11 @@ const icons = {
   info: { ios: 'info.circle.fill', md: 'info' },
   warning: { ios: 'exclamationmark.circle.fill', md: 'error' },
   undo: { ios: 'arrow.uturn.backward', md: 'undo' },
-  sparkles: { ios: 'sparkles', md: 'auto_awesome' },
+  compass: { ios: 'safari', md: 'explore' },
+  bolt: { ios: 'bolt.fill', md: 'bolt' },
+  gift: { ios: 'gift.fill', md: 'redeem' },
+  bulb: { ios: 'lightbulb.fill', md: 'lightbulb' },
+  snowflake: { ios: 'snowflake', md: 'ac_unit' },
   paw: { ios: 'pawprint.fill', md: 'pets' },
   bookmark: { ios: 'bookmark', md: 'bookmark_add' },
   bookmarkFill: { ios: 'bookmark.fill', md: 'bookmark' },
@@ -76,11 +81,15 @@ type Props = {
   name: IconName;
   size?: number;
   color: ColorValue;
+  /** @deprecated Every icon uses the same stroke weight (semibold); this is ignored. */
   weight?: 'regular' | 'medium' | 'semibold' | 'bold';
   style?: StyleProp<ViewStyle>;
 };
 
-export function Icon({ name, size = 20, color, weight = 'medium', style }: Props) {
+/** One stroke weight for every icon in the app. */
+const WEIGHT = 'semibold';
+
+export function Icon({ name, size = 20, color, style }: Props) {
   const i = icons[name];
   return (
     <SymbolView
@@ -88,7 +97,7 @@ export function Icon({ name, size = 20, color, weight = 'medium', style }: Props
       name={{ ios: i.ios, android: i.md as never, web: i.md as never }}
       size={size}
       tintColor={color}
-      weight={weight}
+      weight={WEIGHT}
       // The share symbol is taller than it is wide: give it a taller frame so its arrow is never cut off.
       style={[name === 'share' ? { width: size, height: size * 1.3 } : null, style]}
       accessibilityElementsHidden

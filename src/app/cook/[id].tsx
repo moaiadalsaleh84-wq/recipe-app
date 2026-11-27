@@ -755,7 +755,7 @@ function Finish({
           {/* What actually happened this cook: XP earned, and how close the next level is. Only a
               level-up from this cook turns the card into "unlocked!". */}
           <PopCard style={{ flex: 1 }} color={leveledUp ? pop.lilac : pop.white} contentStyle={[styles.reward, { flexGrow: 1 }]}>
-            <Icon name={leveledUp ? 'crown' : 'sparkles'} size={26} color={pop.ink} weight="bold" />
+            <Icon name={leveledUp ? 'crown' : 'bolt'} size={26} color={pop.ink} weight="bold" />
             {leveledUp ? (
               <Text style={[t.type.title2, { color: pop.ink, textAlign: 'center' }]} testID="finish-xp">{`LEVEL\u00A0${lvl.level}`}</Text>
             ) : (
@@ -886,7 +886,7 @@ function BonusCard({ bonus }: { bonus: Bonus }) {
     return (
       <PopCard color={pop.lilacTint} radius={20} contentStyle={styles.bonus} testID="bonus-sticker">
         <View style={[styles.bonusIcon, { backgroundColor: s ? pop[s.color] : pop.sunshine }]}>
-          <Icon name={s?.icon ?? 'sparkles'} size={22} color={pop.ink} weight="bold" />
+          <Icon name={s?.icon ?? 'gift'} size={22} color={pop.ink} weight="bold" />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[t.type.headline, { color: pop.ink }]}>New sticker: {bonus.name}!</Text>
@@ -898,7 +898,7 @@ function BonusCard({ bonus }: { bonus: Bonus }) {
   return (
     <PopCard color={pop.skyTint} radius={20} contentStyle={styles.bonus} testID="bonus-tip">
       <View style={[styles.bonusIcon, { backgroundColor: pop.white }]}>
-        <Icon name="sparkles" size={20} color={pop.ink} weight="bold" />
+        <Icon name="bulb" size={20} color={pop.ink} weight="bold" />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={[t.type.headline, { color: pop.ink }]}>Chef tip</Text>
