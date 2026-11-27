@@ -1,4 +1,5 @@
 import { useKeepAwake } from 'expo-keep-awake';
+import { withProfiler } from '../../lib/devProfiler';
 import { router, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -55,7 +56,7 @@ import { FoxMascot } from '../../components/mascot/FoxMascot';
 
 type FinishEntry = { date: string; xpBefore: number; levelBefore: number; bonus: Bonus };
 
-export default function CookMode() {
+function CookMode() {
   const t = useTheme();
   const params = useLocalSearchParams<{ id: string; servings?: string; step?: string }>();
   const { getRecipe, profile } = useStore();
@@ -980,3 +981,5 @@ const styles = StyleSheet.create({
   ratingText: { fontFamily: fonts.black, fontSize: 16, lineHeight: 21, color: pop.ink, textAlign: 'center' },
   later: { minHeight: 48, alignItems: 'center', justifyContent: 'center' },
 });
+
+export default withProfiler('Cook', CookMode);

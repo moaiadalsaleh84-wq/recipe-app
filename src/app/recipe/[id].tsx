@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import { withProfiler } from '../../lib/devProfiler';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useRef, useState } from 'react';
+import { startTransition, useEffect, useRef, useState } from 'react';
 import { Reveal } from '../../components/Reveal';
 import { Linking, Modal, PixelRatio, Pressable, Share, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
 import { MAX_FONT_SCALE, Text } from '../../components/Text';
@@ -43,7 +44,7 @@ import { useAdminMode } from '../../lib/discoverApi';
 import { useDiscoverSave } from '../../components/DiscoverCard';
 import { HorizontalList } from '../../components/HorizontalList';
 
-export default function RecipeScreen() {
+function RecipeScreen() {
   const reduceMotion = useReducedMotion();
   const t = useTheme();
   const insets = useSafeAreaInsets();
@@ -73,11 +74,12 @@ export default function RecipeScreen() {
   const [titleBottom, setTitleBottom] = useState(0);
   const admin = useAdminMode();
   const [confirmDelete, setConfirmDelete] = useState(false);
-  // The page opens with its top (photo, title, stats, ingredients) right away; the method, notes and
-  // "You might also like" follow one frame later, so opening a recipe never waits on the whole page.
+  // The page opens with its top (photo, title, stats) right away, so the screen slides in at once;
+  // nutrition, ingredients, the method, notes and "You might also like" follow a frame later in a
+  // background render that a tap can interrupt.
   const [rest, setRest] = useState(false);
   useEffect(() => {
-    const id = requestAnimationFrame(() => setRest(true));
+    const id = requestAnimationFrame(() => startTransition(() => setRest(true)));
     return () => cancelAnimationFrame(id);
   }, []);
   const [noteDraft, setNoteDraft] = useState(recipe ? notes[recipe.id] ?? '' : '');
@@ -332,6 +334,9 @@ export default function RecipeScreen() {
             </View>
           )}
 
+          {/* Below the photo, title and stats: rendered a frame later (see `rest`). */}
+          {rest && (
+            <>
           {/* Nutrition: a one-line summary that opens into the details */}
           <Reveal index={2}>
             <Nutrition recipe={recipe} proteinGoal={isPro && goalsOn(goals) ? goals.protein : undefined} />
@@ -394,6 +399,9 @@ export default function RecipeScreen() {
               );
             })}
           </PopCard>
+            </>
+          )}
+
           {rest && (
           <>
           {/* Method */}
@@ -801,3 +809,5 @@ const styles = StyleSheet.create({
   menuFace: { borderRadius: 20, overflow: 'hidden', borderCurve: 'continuous' },
   menuRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, minHeight: 56 },
 });
+
+export default withProfiler('Recipe', RecipeScreen);
