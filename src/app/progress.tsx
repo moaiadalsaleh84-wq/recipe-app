@@ -509,7 +509,7 @@ const styles = StyleSheet.create({
   dayDot: { borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   level: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 20 },
   badgeCell: { width: 80, alignItems: 'center', gap: 6, minHeight: 44 },
-  badgeName: { textAlign: 'center', minHeight: 34 },
+  badgeName: { textAlign: 'center' },
   badgeCoin: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center' },
   badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12, minHeight: 60 },
   badgeRowIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },

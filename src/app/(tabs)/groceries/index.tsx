@@ -157,7 +157,8 @@ export default function GroceriesScreen() {
           {/* Each aisle on its own outlined card, with its name and count above it */}
           {groups.map((g, gi) => (
             <Animated.View key={g.aisle} layout={glide} entering={enter(gi, reduceMotion)}>
-              <View style={styles.aisleHead}>
+              {/* The first aisle sits 20pt under the add box; the rest follow their card's own spacing. */}
+              <View style={[styles.aisleHead, gi === 0 && { marginTop: 20 }]}>
                 <Text style={[t.type.title3, { color: t.colors.label }]} accessibilityRole="header">
                   {aisleName(g.aisle)}
                 </Text>
@@ -399,7 +400,7 @@ const styles = StyleSheet.create({
   heroTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   heroBar: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   // Lined up with the card's edges: the name at its left, the count at its right.
-  aisleHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 22, marginBottom: 8 },
+  aisleHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 0, marginBottom: 8 },
   addField: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48, paddingLeft: 14, paddingRight: 4, borderRadius: 16, borderWidth: 2, borderCurve: 'continuous' },
   addInput: { flex: 1, minHeight: 44, paddingVertical: 10 },
   empty: { alignItems: 'center', gap: 12, paddingTop: 40, paddingHorizontal: 12 },
