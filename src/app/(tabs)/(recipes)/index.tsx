@@ -28,7 +28,8 @@ import { fonts, pop, useTheme } from '../../../theme';
 import { PhotoFrame } from '../../../components/PhotoFrame';
 import { HorizontalList } from '../../../components/HorizontalList';
 import { WelcomeChecklist } from '../../../components/WelcomeChecklist';
-import { FoxSays, type FoxPose } from '../../../components/mascot/Fox';
+import { Fox, FoxSays, type FoxPose } from '../../../components/mascot/Fox';
+import { BottomSheet } from '../../../components/BottomSheet';
 
 
 type Sort = 'suggested' | 'az' | 'quickest' | 'cooked';
@@ -77,6 +78,8 @@ function RecipesScreen() {
 
   const [query, setQuery] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
+  // "Start streak": a short sheet that says how streaks work.
+  const [streakInfoOpen, setStreakInfoOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const [sort, setSort] = useState<Sort>('suggested');
   const [mood, setMood] = useState<TileMood | null>(null);
@@ -219,19 +222,19 @@ function RecipesScreen() {
       {/* 44 high: streak, then Import and your avatar on the right. */}
       <View style={styles.topRow}>
         <PressableScale
-          onPress={() => router.push('/progress')}
-          accessibilityLabel={streak > 0 ? `${streak} day cooking streak. Opens You` : 'No streak yet. Opens You'}
-          style={[styles.streak, { backgroundColor: streak > 0 ? t.pop.sunshineTint : t.colors.fill }]}
+          onPress={() => (streak > 0 ? router.push('/progress') : setStreakInfoOpen(true))}
+          accessibilityLabel={streak > 0 ? `${streak} day cooking streak. Opens You` : 'Start a streak. How streaks work'}
+          style={[styles.streak, streak > 0 ? { backgroundColor: t.pop.sunshineTint } : { backgroundColor: t.colors.cell, borderWidth: 2, borderColor: t.pop.sunshine }]}
           testID="streak-pill"
         >
           <Flicker on={streak >= 1 && !cookedToday}>
-            {/* No streak yet: a quiet gray flame and no "0". From day one: a colored flame and the number. */}
-            <Icon name="flameFill" size={18} color={streak > 0 ? t.pop.tomato : '#B9B5C6'} />
+            {/* No streak yet: a sunshine flame and "Start streak" (never grey, never a "0"). From day one:
+                the tomato flame and the number. */}
+            <Icon name="flameFill" size={18} color={streak > 0 ? t.pop.tomato : t.edge(t.pop.sunshine)} />
           </Flicker>
-          {/* At 0: "Start" next to the gray flame, so the pill never looks empty or broken. */}
           {streak === 0 && (
-            <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]} testID="streak-start">
-              Start
+            <Text style={[t.type.footnote, { color: t.colors.label, fontFamily: t.fonts.bold }]} testID="streak-start">
+              Start streak
             </Text>
           )}
           {streak > 0 && (
@@ -535,6 +538,38 @@ function RecipesScreen() {
           },
         ]}
       />
+      {/* How streaks work (from "Start streak"). */}
+      <BottomSheet visible={streakInfoOpen} onClose={() => setStreakInfoOpen(false)} accessibilityLabel="How streaks work">
+        {(close) => (
+          <View style={styles.streakSheet}>
+            <Fox pose="cheer" size={88} style={{ alignSelf: 'center' }} />
+            <Text style={[t.type.title2, { color: t.colors.label, textAlign: 'center' }]}>Start a cooking streak</Text>
+            <View style={{ gap: 10 }}>
+              {[
+                { icon: 'pot' as const, text: 'Cook any recipe in Cook Mode: that’s a day.' },
+                { icon: 'flameFill' as const, text: 'Cook again tomorrow and your streak grows.' },
+                { icon: 'snowflake' as const, text: 'Missed a day? A Streak Freeze saves one a week.' },
+              ].map((row) => (
+                <View key={row.text} style={styles.streakRow}>
+                  <View style={[styles.streakRowIcon, { backgroundColor: t.pop.sunshineTint }]}>
+                    <Icon name={row.icon} size={16} color={t.pop.ink} />
+                  </View>
+                  <Text style={[t.type.body, { color: t.colors.label, flex: 1 }]}>{row.text}</Text>
+                </View>
+              ))}
+            </View>
+            <PopButton
+              label={featured ? 'Cook today’s idea' : 'Got it'}
+              icon={featured ? 'pot' : undefined}
+              onPress={() => {
+                close();
+                if (featured) router.push({ pathname: '/cook/[id]', params: { id: featured.id } });
+              }}
+              testID="streak-sheet-cta"
+            />
+          </View>
+        )}
+      </BottomSheet>
       <Menu
         visible={sortOpen}
         onClose={() => setSortOpen(false)}
@@ -623,6 +658,9 @@ const styles = StyleSheet.create({
   avatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   // A small pill: 36 high (44 to tap).
   streak: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 36, minWidth: 44, justifyContent: 'center', paddingHorizontal: 12, borderRadius: 999 },
+  streakSheet: { paddingHorizontal: 16, paddingTop: 4, gap: 16 },
+  streakRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  streakRowIcon: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   reminder: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 16, paddingRight: 4, paddingVertical: 8, borderRadius: 20, borderWidth: 2.5, marginBottom: 16, borderCurve: 'continuous' },
   reminderBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
   // Icon in a circle at the top left, the label underneath on one line.
