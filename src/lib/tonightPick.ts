@@ -40,7 +40,9 @@ export function useTonightPick() {
   const tonight: TonightPick | undefined = useMemo(() => {
     if (planned) return { ...withMatch(planned, pantry), fromPlan: true };
     const p = pickForDay(picks, dayNumber());
-    return p ? { ...p, fromPlan: false } : allRecipes[0] ? { ...withMatch(allRecipes[0], pantry), fromPlan: false } : undefined;
+    // No pick that fits: the first main dish (never a dessert, snack or breakfast), else nothing.
+    const main = allRecipes.find((r) => r.category === 'Dinner' || r.category === 'Lunch');
+    return p ? { ...p, fromPlan: false } : main ? { ...withMatch(main, pantry), fromPlan: false } : undefined;
   }, [planned, picks, pantry, allRecipes]);
 
   /** Tomorrow's pick (a different recipe than tonight when possible). */

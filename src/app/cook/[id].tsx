@@ -1,4 +1,5 @@
 import { useKeepAwake } from 'expo-keep-awake';
+import { LinearGradient } from 'expo-linear-gradient';
 import { withProfiler } from '../../lib/devProfiler';
 import { router, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -299,7 +300,13 @@ function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; serv
           </View>
 
           {/* One chunky segment per step; tap one to jump there. */}
-          {page > 0 && (
+          {/* More than 8 steps: a thin progress bar (the header says "Step 2 of 13"). */}
+          {page > 0 && steps.length > 8 && (
+            <View style={styles.progressRow} testID="step-progress">
+              <ProgressBar value={Math.min(page, steps.length) / steps.length} color={pop.sunshine} track={pop.white} height={6} label={`Step ${Math.min(page, steps.length)} of ${steps.length}`} />
+            </View>
+          )}
+          {page > 0 && steps.length <= 8 && (
             <View style={styles.segments} accessibilityLabel="Steps" accessibilityValue={{ min: 0, max: steps.length, now: page }}>
               {steps.map((_, i) => (
                 <PressableScale key={i} onPress={() => go(i + 1)} haptic={null} scaleTo={0.96} accessibilityLabel={`Go to step ${i + 1}${i + 1 < page ? ', done' : i + 1 === page ? ', current' : ''}`} style={styles.segmentTap}>
@@ -318,6 +325,8 @@ function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; serv
             </View>
           )}
 
+          {/* The page scrolls under soft fades at its top and bottom edges (never a hard cut). */}
+          <View style={{ flex: 1 }}>
           <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="never" automaticallyAdjustContentInsets={false} contentContainerStyle={styles.content}>
             {page === 0 && (
               <Animated.View key="gather" entering={uiEase((forward ? FadeInRight : FadeInLeft).duration(240))} style={{ gap: 18 }}>
@@ -422,6 +431,9 @@ function CookSession({ recipe, servings, startStep = 0 }: { recipe: Recipe; serv
               </Animated.View>
             )}
           </ScrollView>
+          <LinearGradient pointerEvents="none" colors={[bg, `${bg}00`]} style={styles.fadeTop} />
+          <LinearGradient pointerEvents="none" colors={[`${bg}00`, bg]} style={styles.fadeBottom} />
+          </View>
 
           {/* Footer: back + the one big button, under the scroll view (never over it). */}
           <BottomBar color={bg}>
@@ -956,6 +968,9 @@ const styles = StyleSheet.create({
   headerCenter: { bottom: 13, alignItems: 'center', justifyContent: 'center' },
   readyPill: { alignSelf: 'center', minHeight: 40, paddingHorizontal: 16, borderRadius: 999, borderWidth: 2, borderColor: pop.line, alignItems: 'center', justifyContent: 'center' },
   segments: { flexDirection: 'row', gap: 6, paddingHorizontal: 20, marginBottom: 4 },
+  progressRow: { paddingHorizontal: 20, paddingVertical: 4 },
+  fadeTop: { position: 'absolute', top: 0, left: 0, right: 0, height: 20 },
+  fadeBottom: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 28 },
   // A full 44pt tap area around each 12pt segment.
   segmentTap: { flex: 1, height: 44, marginVertical: -12, justifyContent: 'center' },
   segment: { height: 12, borderRadius: 6, borderWidth: 2, borderColor: pop.line },

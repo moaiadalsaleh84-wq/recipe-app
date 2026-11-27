@@ -355,6 +355,8 @@ function RecipesScreen() {
                 note={pick?.because ? `Picked for you because ${pick.because}` : undefined}
                 recipe={featured}
                 label={tonight ? 'On the menu tonight' : 'Recipe of the day'}
+                // Before 11:00 it's the day's pick, not tonight's.
+                sticker={hour < 11 ? 'Today’s pick' : 'Tonight’s pick'}
                 have={featuredMatch.have}
                 needed={featuredMatch.needed}
                 onCook={() => router.push({ pathname: '/cook/[id]', params: { id: featured.id } })}

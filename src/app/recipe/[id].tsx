@@ -621,10 +621,12 @@ const NUTRITION_KEY = 'pantry-pop-nutrition-open';
  */
 function Nutrition({ recipe, proteinGoal }: { recipe: Recipe; proteinGoal?: number }) {
   const t = useTheme();
-  const [open, setOpen] = useState(true);
+  // Starts folded ("Nutrition · 520 kcal ›"): the stats row already shows the calories. Opening it
+  // is remembered.
+  const [open, setOpen] = useState(false);
   useEffect(() => {
     AsyncStorage.getItem(NUTRITION_KEY)
-      .then((v) => v === '0' && setOpen(false))
+      .then((v) => v === '1' && setOpen(true))
       .catch(() => {});
   }, []);
   const toggle = () => {
@@ -655,12 +657,9 @@ function Nutrition({ recipe, proteinGoal }: { recipe: Recipe; proteinGoal?: numb
           accessibilityLabel={`Nutrition: ${recipe.calories} calories per serving, estimated. ${open ? 'Hide details' : 'Show details'}`}
           style={styles.kcal}
         >
-          <View style={{ flex: 1 }}>
-            <Text style={[t.type.title2, { color: t.colors.label }]} numberOfLines={1}>
-              {nb(recipe.calories, 'kcal')}
-            </Text>
-            <Text style={[t.type.footnote, { color: t.colors.secondaryLabel }]}>per serving · estimated</Text>
-          </View>
+          <Text style={[t.type.headline, { color: t.colors.label, flex: 1 }]} numberOfLines={1} testID="nutrition-summary">
+            Nutrition<Text style={{ color: t.colors.secondaryLabel }}>{` · ${nb(recipe.calories, 'kcal')}`}</Text>
+          </Text>
           <Icon name={open ? 'chevronDown' : 'chevronRight'} size={14} color={t.colors.tertiaryLabel} weight="semibold" />
         </PressableScale>
         {open && total > 0 && (
@@ -698,7 +697,7 @@ function Nutrition({ recipe, proteinGoal }: { recipe: Recipe; proteinGoal?: numb
                 ))}
               </View>
             )}
-            <Text style={[t.type.caption1, { color: t.colors.tertiaryLabel }]}>{'Estimated from the ingredients. Not medical\u00A0advice.'}</Text>
+            <Text style={[t.type.caption1, { color: t.colors.tertiaryLabel }]}>{'Per serving, estimated from the ingredients. Not medical\u00A0advice.'}</Text>
           </Animated.View>
         )}
       </View>

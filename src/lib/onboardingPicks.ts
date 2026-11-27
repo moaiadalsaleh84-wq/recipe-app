@@ -112,7 +112,8 @@ export function rankPicks({
   /** Ratings from your cooking history (see tasteScore). */
   ratings?: Ratings;
 }): Pick[] {
-  const mains = recipes.filter((r) => r.category !== 'Dessert' && fitsDiet(r, diets));
+  // Main dishes only (lunch or dinner): never a dessert, a snack or breakfast.
+  const mains = recipes.filter((r) => (r.category === 'Dinner' || r.category === 'Lunch') && fitsDiet(r, diets));
   const quick = mains.filter((r) => r.minutes <= maxMinutes);
   const pool = quick.length ? quick : mains;
   const scored = pool.map((recipe) => {

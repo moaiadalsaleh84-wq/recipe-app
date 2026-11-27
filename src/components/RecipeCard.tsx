@@ -260,10 +260,13 @@ export function TonightCard({
   onCook,
   onShuffle,
   note,
+  sticker = 'Tonight’s pick',
 }: {
   recipe: Recipe;
   /** For screen readers: why it's featured. */
   label: string;
+  /** The sticker on the photo: "Tonight's pick", or "Today's pick" in the morning. */
+  sticker?: string;
   have: number;
   needed: number;
   onCook: () => void;
@@ -295,7 +298,7 @@ export function TonightCard({
             ) : null}
           </View>
         </PressableScale>
-        <Sticker label="Tonight's pick" rotate={0} style={styles.tonightSticker} />
+        <Sticker label={sticker} rotate={0} style={styles.tonightSticker} />
         <View style={styles.featuredFav}>
           <FavoriteButton recipe={recipe} onPhoto />
         </View>
