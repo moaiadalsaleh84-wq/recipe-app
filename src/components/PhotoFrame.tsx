@@ -20,8 +20,9 @@ import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import type { Recipe, RecipeImage } from '../data/mock';
 import { recipePhotos } from '../data/recipePhotos';
 import { photoUri } from '../lib/photos';
-import { pop, useTheme } from '../theme';
-import { Icon } from './Icon';
+import { pop } from '../theme';
+import { isLowResolution } from '../lib/crop';
+import { Fox } from './mascot/Fox';
 import { Skeleton } from './ui';
 
 /** Photos have no outline now (the flat design): 0. Kept as a name so callers still line up. */
@@ -46,6 +47,7 @@ export function RecipePhoto({
   iconSize = 36,
   radius = 0,
   square = false,
+  hero = false,
   corners = 'all',
 }: {
   recipe: Recipe;
@@ -54,16 +56,20 @@ export function RecipePhoto({
   radius?: number;
   /** A square spot (thumbnails, circles): uses the 1:1 crop when the recipe has one. */
   square?: boolean;
+  /** The recipe page's big 4:3 photo: an imported recipe's 4:3 crop (or its original). */
+  hero?: boolean;
   /** Which corners `radius` rounds (photos at the top of a card: only the top ones). */
   corners?: PhotoCorners;
 }) {
   const round = cornerRadii(radius, corners);
-  const t = useTheme();
   // Remembers which image failed (an expired link), so a new photo gets a fresh try.
   const [failed, setFailed] = useState<RecipeImage>(null);
   const [loaded, setLoaded] = useState<RecipeImage>(null);
+  // A picture too small to look sharp: the tinted placeholder with the fox instead (never blurry).
+  const [tooSmall, setTooSmall] = useState<RecipeImage>(null);
   const image = recipe.image;
-  if (image && image !== failed) {
+  const lowQuality = !!recipe.importedImage?.lowQuality || (!!image && image === tooSmall);
+  if (image && image !== failed && !lowQuality) {
     // The app's own photos have a 1:1 crop and a blurhash; a photo you picked yourself doesn't.
     const set = recipePhotos[recipe.id];
     const own = set && image === set.card ? set : undefined;
@@ -75,7 +81,7 @@ export function RecipePhoto({
         : own.card
       : typeof image === 'number'
         ? image
-        : { uri: photoUri(imp && square ? imp.square : image.uri) };
+        : { uri: photoUri(imp && square ? imp.square : imp && hero ? (imp.hero ?? imp.original) : image.uri) };
     const blurhash = own ? (square ? own.squareBlurhash : own.blurhash) : imp?.blurhash;
     // A Discover photo with the owner's crop (4:3 spots): the chosen part fills the frame.
     const crop = !square && !own && recipe.photoCrop ? recipe.photoCrop : null;
@@ -109,7 +115,11 @@ export function RecipePhoto({
           transition={200}
           cachePolicy="memory-disk"
           recyclingKey={recipe.id}
-          onLoad={() => setLoaded(image)}
+          onLoad={(e) => {
+            setLoaded(image);
+            // Linked pictures (Discover, imports) are checked once they load.
+            if (typeof image === 'object' && isLowResolution(e.source.width, e.source.height)) setTooSmall(image);
+          }}
           onError={() => setFailed(image)}
           accessibilityIgnoresInvertColors
         />
@@ -119,7 +129,7 @@ export function RecipePhoto({
   // No photo yet: a soft tinted card (one of the palette's tints, the same for the same recipe every time).
   return (
     <View style={[StyleSheet.absoluteFill, styles.noPhoto, { backgroundColor: placeholderTint(recipe.id), ...round }]} testID="photo-placeholder">
-      <Icon name="pot" size={iconSize} color={t.pop.inkMuted} />
+      <Fox pose="chef" size={Math.round(iconSize * 1.9)} still />
     </View>
   );
 }
@@ -137,6 +147,8 @@ type Props = {
   uri?: string | null;
   /** Thumbnails: the recipe's 1:1 crop. */
   square?: boolean;
+  /** The recipe page's 4:3 hero: an imported recipe's 4:3 crop. */
+  hero?: boolean;
   /** Size of the pot on the placeholder. */
   iconSize?: number;
   /** Behind a picture that has no recipe (while loading or missing). Never white. */
@@ -150,14 +162,14 @@ type Props = {
   testID?: string;
 };
 
-export function PhotoFrame({ radius, corners = 'all', edge = 'all', recipe, uri, square, iconSize, placeholderColor, onError, accessibilityLabel, style, children, testID }: Props) {
+export function PhotoFrame({ radius, corners = 'all', edge = 'all', recipe, uri, square, hero, iconSize, placeholderColor, onError, accessibilityLabel, style, children, testID }: Props) {
   // The photo's own corners: inside the border on the corners that touch it.
   const inner = Math.max(0, edge === 'all' ? radius - PHOTO_BORDER : radius);
   const border: ViewStyle = edge === 'all' ? { borderWidth: PHOTO_BORDER } : { borderBottomWidth: PHOTO_BORDER };
   return (
     <View style={[styles.frame, cornerRadii(radius, corners), border, style]} testID={testID}>
       {recipe ? (
-        <RecipePhoto recipe={recipe} square={square} iconSize={iconSize} radius={inner} corners={corners} />
+        <RecipePhoto recipe={recipe} square={square} hero={hero} iconSize={iconSize} radius={inner} corners={corners} />
       ) : (
         <View style={[StyleSheet.absoluteFill, cornerRadii(inner, corners), placeholderColor ? { backgroundColor: placeholderColor } : null]}>
           {uri ? (
