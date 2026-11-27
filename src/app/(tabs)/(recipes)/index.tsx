@@ -10,7 +10,7 @@ import { Menu } from '../../../components/Menu';
 import { PopButton, PopCard, PopChip } from '../../../components/pop';
 import { PressableScale } from '../../../components/PressableScale';
 import { Reveal } from '../../../components/Reveal';
-import { RecipeCard, RecipePhoto, TonightCard } from '../../../components/RecipeCard';
+import { RecipeCard, RecipePhoto, TonightCard, openRecipe } from '../../../components/RecipeCard';
 import { TabScreen } from '../../../components/TabScreen';
 import { useToast } from '../../../components/Toast';
 import { Chip, EmptyState, IconButton, Odometer, SearchField, SectionHeader } from '../../../components/ui';
@@ -28,6 +28,7 @@ import { fonts, pop, useTheme } from '../../../theme';
 import { PhotoFrame } from '../../../components/PhotoFrame';
 import { HorizontalList } from '../../../components/HorizontalList';
 import { WelcomeChecklist } from '../../../components/WelcomeChecklist';
+import { FoxSays, type FoxPose } from '../../../components/mascot/Fox';
 
 
 type Sort = 'suggested' | 'az' | 'quickest' | 'cooked';
@@ -197,6 +198,21 @@ function RecipesScreen() {
 
   // One line, by time of day: "Good evening, Moaiad".
   const hour = new Date().getHours();
+  // What the fox says: the streak first, then today's cooking, then the day's pick.
+  const foxLine: { pose: FoxPose; text: string } =
+    streak >= 2 && cookedToday
+      ? { pose: 'cheer', text: `${streak} days in a row. Chef behavior.` }
+      : streak >= 2
+        ? { pose: 'happy', text: `You’re on a ${streak}-day roll. Keep it going tonight?` }
+        : cookedToday
+          ? { pose: 'happy', text: 'You cooked today. I’m very proud of us.' }
+          : tonight
+            ? { pose: 'chef', text: `Tonight: ${tonight.title}. Apron on?` }
+            : featured
+              ? hour < 11
+                ? { pose: 'wave', text: 'Morning! Today’s idea is ready.' }
+                : { pose: 'happy', text: 'Dinner idea ready! Have a look.' }
+              : { pose: 'wave', text: 'Hi! Save a recipe and I’ll keep it safe.' };
   const greet = hour < 5 ? 'Good evening' : hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
   const header = (
     <View style={styles.header}>
@@ -233,6 +249,8 @@ function RecipesScreen() {
       <Text style={[styles.greeting, { color: t.colors.label }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} accessibilityRole="header" testID="screen-kicker">
         {firstName ? `${greet}, ${firstName}` : `${greet}!`}
       </Text>
+      {/* The fox, with one line that fits the moment. Tapping it opens the day's pick. */}
+      <FoxSays pose={foxLine.pose} text={foxLine.text} size={44} onPress={featured ? () => openRecipe(featured.id) : undefined} style={{ marginTop: 12 }} testID="home-fox" />
     </View>
   );
 
@@ -302,6 +320,7 @@ function RecipesScreen() {
           {moodRecipes.length === 0 ? (
             <EmptyState
               icon={moodInfo.icon}
+              fox="sleepy"
               title={moodShown === 'favorites' ? 'No favorites yet' : 'Nothing here yet'}
               message={moodShown === 'favorites' ? 'Tap the heart on any recipe and it shows up here.' : 'Add a few more recipes and they’ll show up here.'}
               action={moodShown === 'favorites' ? { label: 'Browse recipes', onPress: () => setMood(null) } : { label: 'Import a recipe', onPress: () => router.push('/import') }}
@@ -453,6 +472,7 @@ function RecipesScreen() {
           ) : filtered.length === 0 ? (
             <EmptyState
               icon="search"
+              fox="oops"
               title="No matches yet"
               message={profile.diets.length ? `Try another word, or clear the filters. Only recipes that fit your diet (${profile.diets.join(', ')}) are shown; change it in Settings.` : 'Try fewer words or another dish.'}
               action={{
