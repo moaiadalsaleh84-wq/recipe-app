@@ -61,11 +61,11 @@ const VIEWS: { id: HomeView; label: string }[] = [
 type TileMood = Exclude<Mood, 'pantry'> | 'favorites';
 
 /** The four mood tiles. "Surprise me" opens a random pick instead of filtering. */
-const MOODS: { id: TileMood | 'surprise'; label: string; hint: string; icon: IconName; color: string }[] = [
-  { id: 'quick', label: 'Quick', hint: '30 minutes or less', icon: 'timer', color: pop.sunshine },
-  { id: 'favorites', label: 'Favorites', hint: 'Your hearted recipes', icon: 'heart', color: pop.leaf },
-  { id: 'cozy', label: 'Cozy', hint: 'Comfort food', icon: 'pot', color: pop.sky },
-  { id: 'surprise', label: 'Surprise', hint: 'Opens a random recipe', icon: 'shuffle', color: pop.lilac },
+const MOODS: { id: TileMood | 'surprise'; label: string; hint: string; icon: IconName; color: string; tint: string }[] = [
+  { id: 'quick', label: 'Quick', hint: '30 minutes or less', icon: 'timer', color: pop.sunshine, tint: pop.sunshineTint },
+  { id: 'favorites', label: 'Favorites', hint: 'Your hearted recipes', icon: 'heart', color: pop.leaf, tint: pop.leafTint },
+  { id: 'cozy', label: 'Cozy', hint: 'Comfort food', icon: 'pot', color: pop.sky, tint: pop.skyTint },
+  { id: 'surprise', label: 'Surprise', hint: 'Opens a random recipe', icon: 'shuffle', color: pop.lilac, tint: pop.lilacTint },
 ];
 
 function RecipesScreen() {
@@ -287,22 +287,26 @@ function RecipesScreen() {
           {MOODS.map((m) => {
             const on = mood === m.id;
             return (
-              <PopCard
+              // White tiles with a light border and a colored icon circle; selected: the soft tint and a
+              // colored border. Color stays an accent.
+              <PressableScale
                 key={m.id}
-                color={m.color}
-                pressed={on}
                 onPress={() => pickMood(m.id)}
+                haptic="select"
+                scaleTo={0.96}
+                aria-selected={on}
                 accessibilityLabel={`${m.label}. ${m.hint}${on ? '. Selected, tap to show all recipes' : ''}`}
-                style={styles.mood}
-                contentStyle={styles.moodFace}
+                style={[styles.mood, styles.moodFace, { backgroundColor: on ? m.tint : t.colors.cell, borderColor: on ? m.color : t.colors.border }]}
                 testID={`mood-${m.id}`}
               >
-                <Icon name={on ? 'check' : m.icon} size={22} color={t.pop.ink} weight="bold" />
+                <View style={[styles.moodIcon, { backgroundColor: m.color }]}>
+                  <Icon name={m.icon} size={17} color={t.pop.ink} weight="bold" />
+                </View>
                 {/* One word on one line: it shrinks a little rather than wrap or cut. */}
                 <Text style={[styles.moodLabel, { color: t.pop.ink }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} maxFontSizeMultiplier={1.1}>
                   {m.label}
                 </Text>
-              </PopCard>
+              </PressableScale>
             );
           })}
         </View>
@@ -622,7 +626,8 @@ const styles = StyleSheet.create({
   // Icon in a circle at the top left, the label underneath on one line.
   moods: { flexDirection: 'row', gap: 8 },
   mood: { flex: 1, minWidth: 0 },
-  moodFace: { height: 80, paddingHorizontal: 4, paddingVertical: 10, alignItems: 'center', justifyContent: 'center', gap: 6 },
+  moodFace: { height: 80, paddingHorizontal: 4, paddingVertical: 10, alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 2, borderRadius: 16, borderCurve: 'continuous' },
+  moodIcon: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
   moodLabel: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 16, textAlign: 'center' },
   sortBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', minHeight: 44, marginBottom: 4 },
   rail: { paddingBottom: 4 },
