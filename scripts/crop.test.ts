@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { centerCrop } from '../src/lib/crop.ts';
+import { centerCrop, foodCrop, isLowResolution, sharperFrameUrl } from '../src/lib/crop.ts';
 
 test('centerCrop: 4:3 and 1:1 from portrait, landscape and square pictures, centered', () => {
   // A TikTok thumbnail (portrait 9:16).
@@ -31,4 +31,26 @@ test('card crop: 4:3 part of the photo, zoom and drag stay inside it', async () 
   assert.equal(up.y, 0);
   const down = dragCrop(tall, 0, -1000, 300);
   assert.equal(down.y, Math.round((1 - tall.h) * 10000) / 10000);
+});
+
+test('foodCrop: 4:5, zoomed in a little and just below the middle on tall video frames', () => {
+  const r = foodCrop(720, 1280);
+  assert.equal(Math.round((r.width / r.height) * 100) / 100, 0.8);
+  assert.ok(r.width < 720, 'zoomed in on a tall frame');
+  assert.ok(r.originY + r.height / 2 > 640, 'centred just below the middle');
+  assert.ok(r.originY >= 0 && r.originY + r.height <= 1280 && r.originX >= 0 && r.originX + r.width <= 720);
+});
+
+test('foodCrop: a landscape photo keeps the full height, centred', () => {
+  const r = foodCrop(1600, 1200);
+  assert.equal(r.height, 1200);
+  assert.equal(r.width, 960);
+  assert.equal(r.originX, 320);
+});
+
+test('isLowResolution and sharperFrameUrl', () => {
+  assert.equal(isLowResolution(320, 180), true);
+  assert.equal(isLowResolution(1280, 720), false);
+  assert.equal(sharperFrameUrl('https://i.ytimg.com/vi/abc_DEF-123/hqdefault.jpg'), 'https://i.ytimg.com/vi/abc_DEF-123/maxresdefault.jpg');
+  assert.equal(sharperFrameUrl('https://p16.tiktokcdn.com/x.jpg'), null);
 });

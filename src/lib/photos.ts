@@ -14,7 +14,7 @@ import { Image } from 'expo-image';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import { Platform } from 'react-native';
 import type { ImportedPicture } from '../data/mock';
-import { MAX_PICTURE_BYTES, WEBP_QUALITIES, centerCrop, type Rect } from './crop';
+import { MAX_PICTURE_BYTES, WEBP_QUALITIES, centerCrop, foodCrop, isLowResolution, sharperFrameUrl, type Rect } from './crop';
 
 const FOLDER = 'photos';
 const native = Platform.OS !== 'web';
@@ -97,27 +97,34 @@ export async function takePhoto(): Promise<string | null> {
 
 /**
  * Saves an imported recipe's picture once (TikTok's links expire within hours): the original, a
- * 4:3 crop for cards and a 1:1 crop for thumbnails, both centered and WebP under 300 KB, plus a
- * blurhash shown while they load. Returns null when there is no picture to keep (no link,
- * offline, a broken image): the recipe is imported anyway, with the tinted placeholder.
+ * 4:5 food crop for cards (zoomed in a little on tall video frames, past burned-in captions), a
+ * 4:3 crop for the recipe page, a 1:1 crop for thumbnails (WebP under 300 KB), plus a blurhash shown
+ * while they load. A sharper frame of the same video is used when there is one (YouTube). A picture
+ * that is still too small to look sharp is marked `lowQuality`: the app shows the recipe's color
+ * with the fox instead of a blurry, stretched image. Returns null when there is no picture to keep
+ * (no link, offline, a broken image): the recipe is imported anyway, with the tinted placeholder.
  * Never throws. On web nothing is stored: the link itself is used (for testing only).
  */
 export async function saveImportedPicture(url: string | null | undefined): Promise<ImportedPicture | null> {
   if (!url || !/^https?:\/\//i.test(url)) return null;
   if (!native) return { original: url, card: url, square: url };
-  const original = await downloadPhoto(url);
+  // The sharper frame first (when the link has one), the link itself if that fails.
+  const sharper = sharperFrameUrl(url);
+  const original = (sharper && (await downloadPhoto(sharper))) || (await downloadPhoto(url));
   if (!original) return null;
   const picture: ImportedPicture = { original, card: original, square: original };
   try {
     const source = await ImageManipulator.manipulate(original).renderAsync();
     const { width, height } = source;
-    picture.card = (await cropToWebp(original, centerCrop(width, height, 4 / 3), 1600)) ?? original;
-    picture.square = (await cropToWebp(original, centerCrop(width, height, 1), 800)) ?? original;
+    if (isLowResolution(width, height)) picture.lowQuality = true;
+    picture.card = (await cropToWebp(original, foodCrop(width, height, 4 / 5), 1200)) ?? original;
+    picture.hero = (await cropToWebp(original, centerCrop(width, height, 4 / 3), 1600)) ?? original;
+    picture.square = (await cropToWebp(original, foodCrop(width, height, 1), 800)) ?? original;
   } catch {
     // Not an image we can read: keep the original as it is.
   }
   try {
-    picture.blurhash = (await Image.generateBlurhashAsync(picture.card, [4, 3])) ?? undefined;
+    picture.blurhash = (await Image.generateBlurhashAsync(picture.card, [4, 5])) ?? undefined;
   } catch {
     // No blurhash: a shimmer shows while it loads instead.
   }

@@ -40,11 +40,13 @@ export const filterTags: FilterTag[] = [QUICK_FILTER, ...dietTags];
 export type ImportSource = 'tiktok' | 'youtube' | 'instagram' | 'web';
 
 /**
- * An imported recipe's picture, stored on the phone: the original as downloaded, a 4:3 crop for
- * cards and a 1:1 crop for thumbnails (WebP, centered), and a blurhash shown while they load.
+ * An imported recipe's picture, stored on the phone: the original as downloaded, a 4:5 food crop for
+ * cards (4:3 on pictures saved before), a 4:3 crop for the recipe page (`hero`; older pictures use the
+ * original), a 1:1 crop for thumbnails (WebP), and a blurhash shown while they load. `lowQuality`:
+ * too small to look sharp, so the color placeholder with the fox shows instead.
  * `card` and `square` fall back to the original when cropping wasn't possible.
  */
-export type ImportedPicture = { original: string; card: string; square: string; blurhash?: string };
+export type ImportedPicture = { original: string; card: string; square: string; hero?: string; blurhash?: string; lowQuality?: boolean };
 
 /** A bundled photo (require), a picked photo ({ uri }), or none. */
 export type RecipeImage = number | { uri: string } | null;

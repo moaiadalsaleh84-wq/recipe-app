@@ -14,6 +14,35 @@ export function centerCrop(width: number, height: number, aspect: number): Rect 
   return { originX: Math.floor((width - w) / 2), originY: Math.floor((height - h) / 2), width: w, height: h };
 }
 
+/**
+ * The food crop for a card (4:5 by default) from a video frame or photo with burned-in text: the
+ * largest crop of that shape, then zoomed in a little on tall frames (TikTok, Reels, Shorts put
+ * captions at the top and bottom) and centred just below the middle, where the dish usually is.
+ */
+export function foodCrop(width: number, height: number, aspect = 4 / 5): Rect {
+  const tall = height / width > 1.3;
+  const zoom = tall ? 1.12 : 1;
+  const base = centerCrop(width, height, aspect);
+  const w = Math.round(base.width / zoom);
+  const h = Math.round(base.height / zoom);
+  const cy = tall ? 0.53 : 0.5;
+  const originX = Math.floor((width - w) / 2);
+  const originY = Math.min(height - h, Math.max(0, Math.round(height * cy - h / 2)));
+  return { originX, originY, width: w, height: h };
+}
+
+/** True when a picture is too small to look sharp on a card (shorter side under 360px). */
+export const isLowResolution = (width: number, height: number) => Math.min(width, height) < 360;
+
+/**
+ * A sharper version of a known thumbnail link, if there is one: YouTube's small thumbnails
+ * (default, mq, hq, sd) have a 1280px "maxres" frame of the same video.
+ */
+export function sharperFrameUrl(url: string): string | null {
+  const m = url.match(/^(https:\/\/i\d?\.ytimg\.com\/vi(?:_webp)?\/[\w-]+\/)(default|mqdefault|hqdefault|sddefault)(\.jpg|\.webp)/);
+  return m ? `${m[1]}maxresdefault${m[3]}` : null;
+}
+
 /** Compression levels tried in turn until a WebP is under the size limit. */
 export const WEBP_QUALITIES = [0.8, 0.7, 0.6, 0.5, 0.4] as const;
 /** Imported pictures are kept under 300 KB each. */
