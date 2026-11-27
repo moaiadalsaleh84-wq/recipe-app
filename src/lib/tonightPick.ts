@@ -23,7 +23,8 @@ export type TonightPick = Pick & {
 
 const NO_PANTRY: string[] = [];
 
-export function useTonightPick() {
+/** `shift`: pull to refresh on Recipes asks for another idea (the next of the top three). */
+export function useTonightPick(shift = 0) {
   const { plan, getRecipe, allRecipes, profile, cooked } = useStore();
   // The pantry feature was removed: picks no longer weigh what you have at home.
   const pantry = NO_PANTRY;
@@ -39,11 +40,11 @@ export function useTonightPick() {
 
   const tonight: TonightPick | undefined = useMemo(() => {
     if (planned) return { ...withMatch(planned, pantry), fromPlan: true };
-    const p = pickForDay(picks, dayNumber());
+    const p = pickForDay(picks, dayNumber() + shift);
     // No pick that fits: the first main dish (never a dessert, snack or breakfast), else nothing.
     const main = allRecipes.find((r) => r.category === 'Dinner' || r.category === 'Lunch');
     return p ? { ...p, fromPlan: false } : main ? { ...withMatch(main, pantry), fromPlan: false } : undefined;
-  }, [planned, picks, pantry, allRecipes]);
+  }, [planned, picks, pantry, allRecipes, shift]);
 
   /** Tomorrow's pick (a different recipe than tonight when possible). */
   const tomorrow = useMemo(() => {

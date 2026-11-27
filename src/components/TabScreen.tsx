@@ -5,8 +5,9 @@
  *
  *   <TabScreen title="Pantry" kicker="8 things at home" right={<HeaderButton … />}>…</TabScreen>
  */
-import { useEffect, type ReactNode } from 'react';
-import { StyleSheet, View, type ScrollViewProps } from 'react-native';
+import { useEffect, useState, type ReactNode } from 'react';
+import { RefreshControl, StyleSheet, View, type ScrollViewProps } from 'react-native';
+import { Fox } from './mascot/Fox';
 import { Text } from './Text';
 import Animated, { Extrapolation, interpolate, useAnimatedRef, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -33,9 +34,11 @@ type Props = Omit<ScrollViewProps, 'children'> & {
   scrollToTopTab?: string;
   /** Floats above the page and stays put while it scrolls (e.g. a round + button). */
   overlay?: ReactNode;
+  /** Pull to refresh: the fox peeks down from the top while you pull, and stays while it works. */
+  onRefresh?: () => Promise<void>;
 };
 
-export function TabScreen({ title, kicker, right, children, maxWidth = 700, header, scrollToTopTab, overlay, contentContainerStyle, ...rest }: Props) {
+export function TabScreen({ title, kicker, right, children, maxWidth = 700, header, scrollToTopTab, overlay, onRefresh, contentContainerStyle, ...rest }: Props) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const tabSpace = useTabBarSpace();
@@ -64,6 +67,22 @@ export function TabScreen({ title, kicker, right, children, maxWidth = 700, head
   // The small bar is always solid (nothing shows through it): it slides down from behind the
   // status strip instead of fading in.
   const barStyle = useAnimatedStyle(() => ({ transform: [{ translateY: interpolate(y.get(), [fadeAt - 24, fadeAt - 4], [-BAR - 4, 0], Extrapolation.CLAMP) }] }));
+  // Pull to refresh: the fox hangs upside down from the top edge, lowered as far as you pull.
+  const [refreshing, setRefreshing] = useState(false);
+  const refresh = onRefresh
+    ? async () => {
+        setRefreshing(true);
+        try {
+          await onRefresh();
+        } finally {
+          setRefreshing(false);
+        }
+      }
+    : undefined;
+  const foxStyle = useAnimatedStyle(() => {
+    const pull = Math.min(96, Math.max(0, -y.get()));
+    return { opacity: pull > 6 ? 1 : 0, transform: [{ translateY: -60 + pull * 0.9 }, { rotate: '180deg' }] };
+  });
 
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.background }}>
@@ -72,8 +91,9 @@ export function TabScreen({ title, kicker, right, children, maxWidth = 700, head
         ref={scrollRef}
         onScroll={onScroll}
         scrollEventThrottle={16}
-        // No pulling past the top (it showed an empty gap and stretched the title).
-        bounces={false}
+        // Only a screen with pull to refresh bounces at the top (the fox fills that space).
+        bounces={!!refresh}
+        refreshControl={refresh ? <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="transparent" colors={['transparent']} progressBackgroundColor="transparent" /> : undefined}
         overScrollMode="never"
         contentInsetAdjustmentBehavior="never"
         automaticallyAdjustContentInsets={false}
@@ -109,6 +129,11 @@ export function TabScreen({ title, kicker, right, children, maxWidth = 700, head
           {title}
         </Text>
       </Animated.View>
+      {refresh && (
+        <Animated.View pointerEvents="none" style={[styles.pullFox, { top: insets.top }, foxStyle]}>
+          <Fox pose={refreshing ? 'cheer' : 'happy'} size={56} still />
+        </Animated.View>
+      )}
       {overlay}
       {/* Behind the clock: always solid. */}
       <View style={[styles.status, { height: insets.top, backgroundColor: t.colors.background }]} testID="screen-status" />
@@ -117,6 +142,7 @@ export function TabScreen({ title, kicker, right, children, maxWidth = 700, head
 }
 
 const styles = StyleSheet.create({
+  pullFox: { position: 'absolute', alignSelf: 'center' },
   titleRow: { flexDirection: 'row', alignItems: 'flex-end', minHeight: TITLE, marginBottom: 16, gap: 12 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   status: { position: 'absolute', top: 0, left: 0, right: 0 },

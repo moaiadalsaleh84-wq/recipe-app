@@ -146,7 +146,15 @@ function RecipesScreen() {
   const showExtras = view === 'all' && !moodShown && !q;
   // Tonight's dinner from the plan, otherwise the day's pick: fits your diet and goal, 45 minutes or
   // less, best pantry match (the same pick as onboarding, the reminder and the empty states).
-  const { tonight: dayPick } = useTonightPick();
+  // Pull to refresh: another idea for the day (a planned dinner stays put).
+  const [ideaShift, setIdeaShift] = useState(0);
+  const { tonight: dayPick } = useTonightPick(ideaShift);
+  const anotherIdea = async () => {
+    haptics.select();
+    setIdeaShift((n) => n + 1);
+    // A short beat so the fox's cheer is seen.
+    await new Promise((done) => setTimeout(done, 650));
+  };
   // One Tonight's Pick (no shuffle button: "Surprise me" is the randomizer).
   const pick = dayPick;
   const quickTonight = useMemo(() => allRecipes.filter((r) => matchesFilter(r, QUICK_FILTER) && r.id !== dayPick?.recipe.id && fitsDiet(r, profile.diets)).slice(0, 8), [allRecipes, dayPick, profile.diets]);
@@ -258,7 +266,7 @@ function RecipesScreen() {
   );
 
   return (
-    <TabScreen maxWidth={900} title="Recipes" header={header} scrollToTopTab="(recipes)" keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled">
+    <TabScreen maxWidth={900} title="Recipes" header={header} scrollToTopTab="(recipes)" onRefresh={anotherIdea} keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled">
       {showTrialReminder && (
         <View style={[styles.reminder, { backgroundColor: t.colors.rewardSoft, borderColor: t.colors.border }]} accessibilityRole="alert">
           <Icon name="crown" size={18} color={t.colors.rewardText} />
